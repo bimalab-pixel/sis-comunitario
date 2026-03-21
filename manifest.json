@@ -1,0 +1,29 @@
+{
+  "name": "SIS Comunitario – Salud Integral Familiar",
+  "short_name": "SIS Comunitario",
+  "description": "Portal de aplicaciones de salud comunitaria MINSAL El Salvador",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f0f7fa",
+  "theme_color": "#0d6e8a",
+  "lang": "es",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["health", "medical", "productivity"],
+  "prefer_related_applications": false
+}

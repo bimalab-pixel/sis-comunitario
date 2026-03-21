@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d6e8a" />
+  <meta name="description" content="SIS Comunitario – Salud Integral Familiar" />
+  <title>SIS Comunitario</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --teal:    #0d6e8a;
+      --teal-lt: #17a2b8;
+      --green:   #2e7d32;
+      --orange:  #e65100;
+      --blue:    #1565c0;
+      --violet:  #6a1b9a;
+      --card-bg: #ffffff;
+      --body-bg: #f0f7fa;
+      --text:    #1a2e3a;
+      --sub:     #546e7a;
+      --radius:  18px;
+      --shadow:  0 8px 32px rgba(13,110,138,.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--body-bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── HEADER ── */
+    header {
+      width: 100%;
+      background: linear-gradient(135deg, #0d6e8a 0%, #1a9abb 60%, #2bb5d8 100%);
+      color: #fff;
+      padding: 28px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      width: 360px; height: 360px;
+      background: rgba(255,255,255,.07);
+      border-radius: 50%;
+      top: -140px; right: -100px;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,.05);
+      border-radius: 50%;
+      bottom: -80px; left: -60px;
+    }
+
+    .logo-wrap {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: #fff;
+      padding: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+      position: relative; z-index: 1;
+    }
+    .logo-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+    .header-text { text-align: center; position: relative; z-index: 1; }
+    .header-text h1 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -.3px;
+    }
+    .header-text p {
+      font-size: .9rem;
+      opacity: .88;
+      font-weight: 300;
+      letter-spacing: .5px;
+      margin-top: 3px;
+    }
+
+    /* ── INSTALL BANNER ── */
+    #install-banner {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      margin: 14px 16px 0;
+      background: #fff3e0;
+      border: 1.5px solid #ffb74d;
+      border-radius: 12px;
+      padding: 12px 16px;
+      align-items: center;
+      gap: 12px;
+    }
+    #install-banner span { flex: 1; font-size: .88rem; color: #e65100; font-weight: 600; }
+    #install-banner button {
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: .85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #install-banner.show { display: flex; }
+
+    /* ── GRID ── */
+    main {
+      width: 100%;
+      max-width: 520px;
+      padding: 24px 16px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ── APP CARD ── */
+    .app-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform .18s, box-shadow .18s;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .app-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .app-card:active { transform: scale(.96); }
+    @media (hover:hover) { .app-card:hover { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(13,110,138,.22); } }
+
+    /* accent lines per card */
+    .card-vigilancia::before { background: linear-gradient(90deg,#d32f2f,#f44336); }
+    .card-calculadora::before { background: linear-gradient(90deg,#1565c0,#42a5f5); }
+    .card-mef::before        { background: linear-gradient(90deg,#6a1b9a,#ab47bc); }
+    .card-visita::before     { background: linear-gradient(90deg,#2e7d32,#66bb6a); }
+
+    .card-icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .icon-vigilancia { background: #ffebee; }
+    .icon-calculadora { background: #e3f2fd; }
+    .icon-mef        { background: #f3e5f5; }
+    .icon-visita     { background: #e8f5e9; }
+
+    .card-label {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: .95rem;
+      text-align: center;
+      line-height: 1.3;
+      color: var(--text);
+    }
+    .card-sub {
+      font-size: .75rem;
+      color: var(--sub);
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .card-arrow {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem;
+      margin-top: 4px;
+    }
+    .arrow-vigilancia { background: #ffebee; color: #d32f2f; }
+    .arrow-calculadora { background: #e3f2fd; color: #1565c0; }
+    .arrow-mef        { background: #f3e5f5; color: #6a1b9a; }
+    .arrow-visita     { background: #e8f5e9; color: #2e7d32; }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: auto;
+      padding: 16px;
+      text-align: center;
+      font-size: .75rem;
+      color: var(--sub);
+    }
+
+    /* ── OFFLINE TOAST ── */
+    #offline-toast {
+      display: none;
+      position: fixed;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: #263238;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: .85rem;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    #offline-toast.show { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img src="icon-192.png" alt="SIS Comunitario" />
+  </div>
+  <div class="header-text">
+    <h1>SIS Comunitario</h1>
+    <p>Salud Integral Familiar · MINSAL El Salvador</p>
+  </div>
+</header>
+
+<div id="install-banner">
+  <span>📲 Instalar app en tu dispositivo</span>
+  <button id="install-btn">Instalar</button>
+</div>
+
+<main>
+
+  <!-- 1. Vigilancia Materna -->
+  <a class="app-card card-vigilancia" href="Vigilancia_Materna.html">
+    <div class="card-icon icon-vigilancia">👩‍⚕️</div>
+    <div class="card-label">Vigilancia Materna</div>
+    <div class="card-sub">Alertas y seguimiento de embarazadas</div>
+    <div class="card-arrow arrow-vigilancia">→</div>
+  </a>
+
+  <!-- 2. Calculadora Materna -->
+  <a class="app-card card-calculadora" href="calculadora_materna.html">
+    <div class="card-icon icon-calculadora">🗓️</div>
+    <div class="card-label">Calculadora Materna</div>
+    <div class="card-sub">Parto, puerperio y componente materno</div>
+    <div class="card-arrow arrow-calculadora">→</div>
+  </a>
+
+  <!-- 3. Control MEF -->
+  <a class="app-card card-mef" href="mef.html">
+    <div class="card-icon icon-mef">📋</div>
+    <div class="card-label">Control MEF</div>
+    <div class="card-sub">Seguimiento integral a la MEF · MINSAL</div>
+    <div class="card-arrow arrow-mef">→</div>
+  </a>
+
+  <!-- 4. Visita Domiciliar -->
+  <a class="app-card card-visita" href="visita_domiciliar.html">
+    <div class="card-icon icon-visita">🏠</div>
+    <div class="card-label">Visita Domiciliar</div>
+    <div class="card-sub">Registro de visitas domiciliares</div>
+    <div class="card-arrow arrow-visita">→</div>
+  </a>
+
+</main>
+
+<footer>© 2025 SIS Comunitario · Todos los derechos reservados</footer>
+
+<div id="offline-toast">📶 Sin conexión – modo sin conexión activo</div>
+
+<script>
+  // ── Service Worker ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(r => console.log('SW registrado:', r.scope))
+        .catch(e => console.warn('SW error:', e));
+    });
+  }
+
+  // ── Install prompt ──
+  let deferredPrompt;
+  const banner = document.getElementById('install-banner');
+  const installBtn = document.getElementById('install-btn');
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    banner.classList.add('show');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('Install outcome:', outcome);
+    deferredPrompt = null;
+    banner.classList.remove('show');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('show');
+  });
+
+  // ── Offline toast ──
+  const toast = document.getElementById('offline-toast');
+  window.addEventListener('offline', () => toast.classList.add('show'));
+  window.addEventListener('online',  () => toast.classList.remove('show'));
+  if (!navigator.onLine) toast.classList.add('show');
+</script>
+
+</body>
+</html>

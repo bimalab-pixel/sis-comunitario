@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Parto y Seguimiento de Puerperio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+
+        body {
+            background-color: rgb(243, 248, 248) ;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 5px;
+            background-color: White;
+            border: 2px solid blue;
+            border-radius: 10px;
+            box-shadow: 0 0 5px blue;
+        }
+        h1, h2 {
+            color: blue;
+
+        }
+        label {
+            font-size: 16px;
+            color: blue;
+            display: block;
+            margin-top: 4px;
+        }
+        input {
+            padding: 7px;
+            font-size: 18px;
+            text-align: center;
+            border: 3px solid blue;
+            border-radius: 6px;
+            margin-top: 3px;
+            width: 250px;
+
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 220px;
+        }
+        button:hover {
+            background-color: red;
+        }
+        .tabcontent {
+            display: none;
+            padding: 1px;
+        }
+        .footer-text {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+        }
+        .hidden {
+            background-color: hsla(60, 100%, 48%, 0);           display: none;
+            text-align: center;
+            margin-top: 19px;
+            color: black;
+            border-radius: 16px;
+            border: 3px solid orange
+        }
+
+        /* Estilos para resultados */
+        #resultado {
+            background-color: #FFF0F5; /* Rosa tierno */
+            color: red; /* Rojo brillante */
+            padding: 3px;
+            font-size: 18px;
+            border: 2px solid red ;
+            border-radius: 16px;
+            margin: 7px 0;
+            box-shadow: 0 4px red;
+        }
+        #controlesPrenatales {
+            background-color: rgba(223, 236, 255, 0.37); /* Celeste tierno */
+            color: #0000ff; /* Azul brillante */
+            padding: 11px;
+            font-size: 17px;
+            border: 2px solid blue;
+            border-radius: 14px;
+            margin: 2px 0;
+            box-shadow: 0 5px blue;
+        }
+        #seguimientosPromotor {
+            background-color: rgba(223, 245, 244, 0.56); /* Celeste tierno */
+            color: #0000ff; /* Azul brillante */
+            padding: 10px;
+            font-size: 17px;
+            border: 2px solid blue;
+            border-radius: 10px;
+            margin: 8px 0;
+            box-shadow: 0 4px blue;
+
+        }
+        #fechasSeguimiento {
+            background-color: rgba(223, 245, 244, 0.35); /* Celeste tierno */
+            color: #0000ff; /* Azul brillante */
+            padding: 10px;
+            border: 2px solid blue;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 4px blue;
+        }
+        #infoPuerperio {
+            background-color: #FFFFE0;
+            color: #ff0000;
+            padding: 4px;
+            font-size: 17px;
+            border: 2px solid red;
+            border-radius: 18px;
+            margin: 8px 0;
+            box-shadow: 0 4px red;
+       }
+        #fechaFinPuerperio {
+            background-color: #FFE4E1 ;
+            color: #FFFFE0; /* Rojo brillante */
+            padding: 4px;
+            font-size: 17px;
+            border: 2px solid red;
+            border-radius: 18px;
+            margin: 8px 0;
+            box-shadow: 0 4px red;
+        }
+        #fechasIVU,
+        #fechasVaginosis {
+            background-color: #fff9c4; /* Amarillo tierno */
+            color: #0000ff; /* Azul brillante */
+            padding: 10px;
+            border: 2px solid red;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 0 6px blue;
+        }
+        .btn-limpiar {
+            background-color: blueviolet; /* Rojo brillante */
+        }
+        .btn-protocolos,
+        .btn-lineamientos {
+            background-color: green; /* Azul brillante */
+
+        }
+
+    </style>
+</head>
+<div class="header-text">
+    <h2>Salud Comunitaria El Salvador</h2>
+    <h3>"Herramienta de Apoyo para una salud Materna Integral"</h3>
+</div>
+<div class="container">
+    <button onclick="window.location.href='index.html'" style="background: red; color: white; padding: 10px; border-radius: 5px; margin: 10px; border: none; cursor: pointer;">
+    <i class="fas fa-arrow-left"></i> Volver a Vigilancia Materna
+</button>
+
+    
+    <h2 id="menuTitle">Componente Materno</h2>
+    <div id="menuButtons">
+        <button onclick="openTab('Calculadora')"><strong>Gestograma Digital- Controles Prenatales</strong></button>
+
+        <button onclick="openTab('IVU')"><strong>Seguimiento a IVU Embarazadas</strong></button>
+        <button onclick="openTab('Vaginosis')"><strong>Seguimiento a Vaginosis</strong></button>
+        <button onclick="openTab('Seguimiento')"><strong>Seguimiento de Puerperio</strong></button>
+    </div>
+    <div id="Calculadora" class="tabcontent">
+        <h3>Gestograma Digital</h3>
+        <label for="fechaUltimaRegla"><strong>Fecha de Última Regla:</strong></label>
+        <input type="date" id="fechaUltimaRegla" required>
+        <label for="fechaActual"><strong>Fecha Actual:</strong></label>
+        <input type="date" id="fechaActual" required>
+        <button onclick="calcularFecha()">Calcular</button>
+        <div id="resultado"></div>
+
+        <p id="controlesLabel" class="hidden"><strong>Controles Prenatales en Unidad de Salud</strong></p>
+        <div id="controlesPrenatales" class="hidden"></div>
+
+        <p id="seguimientosLabel" class="hidden"><strong>Seguimientos por Promotor de Salud</strong></p>
+        <div id="seguimientosPromotor" class="hidden"></div>
+
+        <strong id="nota" class="hidden" style="color: blue;">Nota: Estos Cálculos son solo referencia, tomar en cuenta que apartir de la fecha de detección Comunitaria hay que darle seguimientos a la embarazada cada mes hasta las 36 semanas y luego deben ser cada semana hasta el parto</strong>
+
+        <button class="btn-protocolos" onclick="mostrarProtocolos()">Protocolos de Asistencia</button>
+        <div id="protocolos" class="hidden" style="text-align: center;">
+            <h4>Protocolos de asistencia para los periodos preconcepcional, prenatal, parto, puerperio, a la persona recién nacida y lactancia materna en situación de bajo riesgo en Primer Nivel de Atención (Año 2022)(Fragmento) </h4>
+            <h4>2.3 ATENCIONES PRENATALES Y SEMANAS DE GESTACIÓN</h4>
+            <p>1. *Inscripción antes de las primeras doce semanas de gestación.</p>
+            <p>2. *Primer control a las 20 semanas de gestación.</p>
+            <p>3. *Segundo control a las 26 semanas de gestación.</p>
+            <p>4. *Tercer control a las 30 semanas de gestación.</p>
+            <p>5. *Cuarto control a las 34 semanas de gestación.</p>
+            <p>6. *Quinto control a las 36 semanas de gestación.</p>
+            <p>7. *Sexto control a las 38 semanas de gestación.</p>
+            <p>8. *Al cumplir 40 semanas de gestación, la mujer en etapa de embarazo debe ser referida al hospital que corresponda, en el cual un especialista en Ginecología y Obstetricia realizará pruebas de bienestar fetal y evaluación completa.</p>
+            <p>9. *Al cumplir las 41 semanas de gestación, la mujer en etapa de embarazo debe ser referida al hospital para ingreso.</p>
+            <h3>Ultrasonografías durante el Embarazo</h3>
+            <p>*Debe indicarse en la primera consulta para fechar el embarazo, es fundamental recalcar la importancia de la ultrasonografía antes de las 12 semanas, ya que con esa se puede obtener una edad gestacional confiable.</p>
+            <p><u>Primera Ultrasonografía:</u> Entre las 11-14 semanas para obtener una edad gestacional confiable.</p>
+            <p><u>Segunda Ultrasonografía:</u> Entre las 20-24 semanas.</p>
+            <p><u>Tercera Ultrasonografía:</u> Entre las 32-34 semanas.</p>
+            <h3>Exámenes de Laboratorio</h3>
+            <p><u>-Primer Perfil:</u> Se indica en la Inscripción Prenatal antes de las 12 semanas (Indicar exámenes de laboratorio, Hemograma completo: VIH, PRS, EGO, EGH, glicemia en ayunas, tipeo sanguíneo y citar a la mujer embarazada en consulta de seguimiento para reporte y análisis de exámenes una semana después del primer control prenatal)</p>
+            <p><u>-Segundo Perfil:</u> Segundo Control Prenatal a las 26 semanas de gestación (Hemograma completo: EGO, VIH, PRS, Glicemia en ayunas, Test de O'Sullivan)</p>
+            <p><u>-Tercer Perfil:</u> Quinto Control Prenatal a las 36 semanas de gestación (Hemograma completo, EGO, VIH, PRS, Glicemia en ayunas)</p>
+            <p>**Indicar Tipeo Rh a la pareja de aquella mujer embarazada con tipeo Rh negativo. Indicar profilaxis con gammaglobulina hiperinmune anti-O a mujeres si el tipeo Rh de la pareja es positivo, a las 28 semanas de gestación.**</p>
+            <h2>*****************</h2>
+            <h2>Detección de signos de Alarma de la Emabarazada</h2>
+            <h3>Preguntar:</h3>
+            <ul>
+                <li>¿Presenta pérdida momentánea de la visión, ve luces o borroso?</li>
+                <li>¿Tiene o ha tenido dolor de cabeza fuerte e intenso?</li>
+                <li>¿Presenta sangramiento o secreción vaginal?</li>
+                <li>¿Presenta dolor en la «boca» del estómago?</li>
+                <li>¿Tiene fiebre o escalofrío?</li>
+                <li>¿Ha notado que el bebé se mueve menos de lo usual?</li>
+            </ul>
+
+            <h3>Preguntar y observar:</h3>
+            <ul>
+                <li>¿Presenta inflamación en cara o manos (o ambas)?</li>
+                <li>¿Presenta alguna situación de violencia?</li>
+            </ul>
+
+            <h3>Observar:</h3>
+            <ul>
+                <li>¿Presenta convulsiones o ataques?</li>
+                <li>¿Se encuentra letárgica o inconsciente?</li>
+            </ul>
+
+            <h2>Embarazada con signo de peligro grave</h2>
+            <ul style="color:red">
+                <li>Convulsiones o ataques.</li>
+                <li>Está inconsciente.</li>
+                <li>Pérdida momentánea de la visión, ve luces o borroso.</li>
+                <li>Dolor de cabeza fuerte e intenso.</li>
+                <li>Tiene salida de sangre o agua por la vagina.</li>
+                <li>Dolor en la boca del estómago.</li>
+                <li>Fiebre o escalofrío.</li>
+                <li>Movimientos fetales disminuidos.</li>
+                <li>Dolores o inicio de trabajo de parto antes de la fecha esperada.</li>
+                <li>Si tiene 40 o más semanas de embarazo.</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul style="color:red">
+                <li>Referir urgentemente al hospital, acompañarla para garantizar la atención durante el traslado hasta ser recibida en el hospital.</li>
+                <li>Explicar a la paciente y sus familiares la necesidad de referirla urgentemente al hospital.</li>
+                <li>Buscar ayuda comunitaria o de familiares.</li>
+                <li>Entregar la referencia que presentará en el hospital.</li>
+                <li>Informar a la UCSF sobre la situación de la embarazada que ha sido referida.</li>
+                <li>Realizar visita domiciliar de seguimiento 24 horas posteriores a la referencia.</li>
+            </ul>
+
+            <h2>Embarazada con factor de riesgo</h2>
+            <ul>
+                <li>Signos de depresión.</li>
+                <li>Hallazgos de situación de violencia.</li>
+                <li>Sin control prenatal o faltista.</li>
+                <li>Aumento brusco de peso (más de 2 kg en el mes).</li>
+                <li>Presencia de infecciones vaginales o de la cavidad oral.</li>
+                <li>Ardor y dolor al orinar.</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Referir a la UCSF correspondiente.</li>
+                <li>Dar seguimiento a la referencia a las 72 horas para verificar cumplimiento.</li>
+                <li>Dar seguimiento a la situación de salud según sea el caso.</li>
+            </ul>
+
+            <h2>Sin signos Aparentes de Peligro</h2>
+            <ul>
+                <li style="color:green">No presenta signos de peligro o factor de riesgo evidente.</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul style="color:green">
+                <li>Brindar consejería en:</li>
+                <li>Identificación de signos y síntomas de complicación del embarazo.</li>
+                <li>Importancia de control prenatal y parto hospitalario.</li>
+                <li>Importancia de cuidados básicos, alimentación y micronutrientes, lactancia materna exclusiva, salud bucal.</li>
+                <li>Verificar suministro y consumo de los suplementos: hierro, ácido fólico y multivitaminas según norma.</li>
+                <li>Dar seguimiento al plan de parto.</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p style="color:red">Es fundamental que las mujeres embarazadas estén atentas a estos signos de alarma y busquen atención médica si experimentan alguno de ellos. La salud de la madre y el bebé es lo más importante.</p>
+            <p><strong>Ministerio de Salud El Salvador</strong></p>
+        </div>
+        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
+        <button onclick="goBack()">Volver al Menú Principal</button>
+    </div>
+
+    <div id="Seguimiento" class="tabcontent">
+        <h3>Seguimiento de Puerperio</h3>
+        <label for="fechaParto"><strong>Fecha de Parto:</strong></label>
+        <input type="date" id="fechaParto" required>
+        <button onclick="calcularFechasPuerperio()">Calcular Fechas de Seguimiento</button>
+
+        <ul id="fechasSeguimiento"></ul>
+
+        <div id="infoPuerperio"></div>
+        <div id="fechaFinPuerperio"></div> <!-- Aquí se mostrará la fecha de finalización -->
+        <button class="btn-lineamientos" onclick="mostrarLineamientos()">Lineamientos Técnicos</button>
+        <div id="lineamientos" class="hidden" style="text-align: center;">
+            <h3>Lineamientos técnicos para promotores y supervisores de salud comunitaria en las Redes Integrales e Integradas de Salud</h3>
+            <p></p><strong>Línea de acción 2: Atención integral en salud a la persona en el curso de vida.</strong>
+            <p><strong>2.2: Atención a grupos priorizados: mujeres en edad fértil, a la madre durante el embarazo, parto y post parto.</strong>
+            <h4>Atención a la madre durante el periodo post parto:</h4>
+            <p>* Realizar visita de detección de puérperas, en las <u>primeras 24 horas del parto,</u> si éste ha ocurrido en la comunidad, o en las <u>primeras 24 horas de su regreso del hospital,</u> evaluar su condición de salud, a través de la búsqueda de signos de peligro, y su referencia a la UCSF.(Anexo 12 y Anexo No.16)</p>
+            <p>* Verificar la condición de salud y búsqueda de signos de peligro en la madre y referirla oportunamente si el caso lo amerita; brindar consejería sobre cuidados básicos de ambos, de acuerdo a la normativa vigente, en las <u>primeras 24 horas si el parto</u> ha sido comunitario o en las <u>24 horas después del regreso del hospital.</u></p>
+            <p>* Realizar cuatro seguimientos a las madres puérperas; <u>a los tres, siete, quince, veintiocho días,</u> para verificar la condición de salud y buscar signos de peligro, su referencia y su seguimiento en forma oportuna, brindar consejería en métodos de anticocepción y la importancia de realizar la toma de citología cérvico vaginal a los cuarenta días a la madre para prevenir cáncer de cérvix.</p>
+            <p>* Referir a toda puérpera detectada a la UCSF en los <u>primeros siete días,</u> para el control médico y la inscripción del recién nacido.(anexo 16)</p>
+            <p>* Referir a la puérpera a los <u>cuarenta días</u> para realizar el examen de citología cérvico vaginal e inscripción para uso de métodos de anticoncepción y dar seguimiento a la referencia, para verificar su cumplimiento.(anexo 16)</p>
+            <p>* Desarrollar acciones educativas que fortalezcan los conocimientos sobre derechos sexuales y derechos reproductivos, prevención de violencia de género, así como dar seguimiento al ejercicio de los mismos.</p>
+            <p>* Educar a la comunidad sobre la importancia de espacios educativos orientados a reforzar el vínculo madre-hija(o), como herramientas para prevenir trastornos mentales y del comportamiento.</p>
+            <h2>****************</h2>
+            <h2>Signos de Alarma de la Madre Puérpera y el Recién Nacido</h2>
+            <h3>Evaluar</h3>
+            <h3>Preguntar:</h3>
+            <ul>
+                <li>¿Presenta o ha presentado sangramiento vaginal mayor que una regla?</li>
+                <li>¿Presenta fiebre o escalofrío?</li>
+                <li>¿Presenta dolor continuo del vientre?</li>
+                <li>¿Presenta flujo vaginal con mal olor?</li>
+                <li>¿Presenta ardor y dolor para orinar?</li>
+                <li>¿Presenta salida de cualquier líquido por la herida después de una cesárea o episiotomía?</li>
+                <li>Presencia de algún signo o síntoma de enfermedad en mamas: inflamación, dolor, enrojecimiento, sensibilidad, induración, acompañadas o no de sangre o pus por los pezones.</li>
+            </ul>
+
+            <h3>Observe</h3>
+            <p>Presenta convulsiones o ataques</p>
+            <p>Pregunte y observe:</p>
+            <ul>
+                <li>Estado de tristeza, quiere solo llorar, sentimientos de decepción, ansiedad</li>
+                <li>Indague situación de violencia.</li>
+            </ul>
+
+            <h2>Madre puérpera con signos de peligro Grave</h2>
+            <h3>Con la presencia de uno de los siguientes signos y síntomas de complicación:</h3>
+            <ul style="color:red">
+                <li>Convulsiones o está inconsciente.</li>
+                <li>Sangramiento vaginal mayor que una regla.</li>
+                <li>Fiebre o escalofríos</li>
+                <li>Pérdida momentánea de la visión, ve luces o borroso</li>
+                <li>Flujo vaginal con mal olor.</li>
+                <li>Salida de cualquier líquido por la herida después de una cesárea o episiotomía.</li>
+                <li>Herida abierta (dehiscencia) de la episiotomía o de la cesárea</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul style="color:red">
+                <li>Referir urgentemente al hospital, acompañarla para garantizar la atención durante el traslado hasta ser recibida en el hospital.</li>
+                <li>Explique a ella y a sus familiares la necesidad de referirla urgentemente al hospital.</li>
+                <li>Buscar ayuda comunitaria o de familiares.</li>
+                <li>Entregue la referencia que presentará en el hospital.</li>
+                <li>Informar a la UCSF sobre la situación de la puérpera que ha sido referida.</li>
+                <li>Realizar visita domiciliar de seguimiento a las 24 horas posterior a la referencia.</li>
+            </ul>
+
+            <h2>Madre puérpera con factor de riesgo</h2>
+            <ul>
+                <li>Ardor o dolor al orinar.</li>
+                <li>Algún signo de depresión: tristeza, ansiedad, insomnio</li>
+                <li>Mamas con inflamación, dolor, salida de secreción purulenta</li>
+                <li>Situación de violencia</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Referir a la UCSF correspondiente.</li>
+                <li>Informar a la UCSF sobre la situación de la puérpera que ha sido referida.</li>
+                <li>Verificar cumplimiento de la referencia a las 24 horas.</li>
+                <li>Dar seguimiento y reforzar el cumplimiento de las indicaciones proporcionadas en la UCSF.</li>
+            </ul>
+
+            <h2>Sin aparente Signo de Peligro</h2>
+            <p>No presenta signo de peligro o factor de riesgo evidente.</p>
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Brindar consejería en: la aparición de signos y síntomas de complicación en el puerperio y consulta oportuna.</li>
+                <li>Cuidados básicos de salud y nutrición.</li>
+                <li>Asistir al control puerperal en la UCSF antes de los 7 días y a los 40 días después del parto.</li>
+                <li>Importancia de uso de métodos anticonceptivos y dar seguimiento hasta la adopción de un método, priorizando los temporales de larga duración.</li>
+                <li>Importancia del consumo de micronutrientes.</li>
+                <li>Reforzar la técnica correcta de amamantamiento.</li>
+            </ul>
+
+            <h2>Signos de Alarma del Recién Nacido</h2>
+            <h3>Preguntar:</h3>
+            <ul>
+                <li>¿Presenta quejidos o llanto continuo (más de lo normal)?</li>
+                <li>¿Ha presentado ataques (convulsiones)?</li>
+                <li>¿Presenta abombamiento de las fontanelas (mollera)?</li>
+                <li>¿Presenta las fontanelas hundidas?</li>
+                <li>¿Ha presentado fiebre o ha estado muy frío?</li>
+                <li>¿Ha presentado alguna dificultad para alimentarse (toma bien el pecho)?</li>
+                <li>¿Ha orinado en las últimas 24 horas?</li>
+                <li>¿Ha presentado diarrea?</li>
+                <li>¿Presenta heces con sangre?</li>
+                <li>¿Lo nota menos activo (letárgico)?</li>
+                <li>¿Ha presentado secreción con pus en los ojos?</li>
+                <li>¿Ha presentado vómitos?</li>
+                <li>Verificar si la temperatura es menor de 36.5°C o arriba de 37.5°C.</li>
+                <li>Número de respiraciones en un minuto.</li>
+                <li>¿Está amarillo más abajo del ombligo (ictérico)?</li>
+                <li>Presenta cianosis (morado).</li>
+                <li>Si se observa pálido.</li>
+                <li>Si el ombligo está rojo, supura, está sangrando o tiene mal olor.</li>
+                <li>¿Si tiene ronchas con pus en la piel?</li>
+                <li>¿Se le ha aplicado la vacuna BCG?</li>
+                <li>¿Pesa menos de 2,500 gramos?</li>
+            </ul>
+
+            <h2>Enfermedad muy grave</h2>
+            <h3>Si el niño o niña presenta cualquiera de los siguientes signos o condiciones:</h3>
+            <ul>
+                <li>Quejumbroso, llanto continuo.</li>
+                <li>Convulsiones o ataques.</li>
+                <li>Fontanelas abombadas o hundidas.</li>
+                <li>Fiebre (temperatura por arriba de 37.5 °C).</li>
+                <li>Hipotermia (temperatura por debajo de 36.5°C).</li>
+                <li>Poco activo o sin respuesta a los estímulos.</li>
+                <li>Presenta cianosis (cambio de coloración en piel o se torna morado).</li>
+                <li>Palidez.</li>
+                <li>Dificultad para realizar la succión.</li>
+                <li>Diarrea.</li>
+                <li>Heces con sangre.</li>
+                <li>Vómitos.</li>
+                <li>Respiración rápida (60 o más por minuto).</li>
+                <li>Está amarillo por abajo del nivel del ombligo.</li>
+                <li>Ombligo con pus, sangra o tiene mal olor.</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Referir urgentemente al hospital y acompañar para garantizar la atención durante el traslado hasta ser recibido en el hospital.</li>
+                <li>Solicite ayuda al coordinador de la UCSF para la incorporación al traslado de un recurso con mayor experticia, y además que notifique al hospital de su llegada.</li>
+                <li>Explicar a la madre la importancia de llevar al hospital y el riesgo grave de morir de la niña o niño, si no lo lleva al hospital. Calme sus temores.</li>
+                <li>Explicar a la madre que mantenga al recién nacido abrigado en el trayecto al hospital, por ejemplo, colocándolo en contacto piel a piel, contra su cuerpo, debe ponerle cuturina, gorro y calcetines, cubriéndolo con una frazada si no está febril.</li>
+                <li>En caso que tenga fiebre, no sobre abrigarlo. No utilizar medios físicos, paños húmedos o bañarlo para disminuir la fiebre.</li>
+                <li>Si el estado del niño o niña lo permite, aconseje a la madre que continúe dándole lactancia materna en el camino mientras llega al hospital.</li>
+                <li>Realizar visita de seguimiento 2 días posteriores a la referencia para indagar sobre la evolución del niño/a en el hospital y estar pendiente de su regreso a casa para seguimiento al retorno.</li>
+            </ul>
+
+            <h2>Recién nacido con riesgo</h2>
+            <ul>
+                <li>No ha sido inscrito en control de crecimiento y desarrollo en la UCSF.</li>
+                <li>No tiene vacuna BCG.</li>
+                <li>Si está amarillo (ictérico) hasta el ombligo.</li>
+                <li>Ojos con secreción purulenta y sin edema (hinchazón) en los párpados.</li>
+                <li>Ombligo enrojecido.</li>
+                <li>Ronchas en la piel.</li>
+                <li>Pesa menos de 2,500 gramos.</li>
+            </ul>
+
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Referirlo a la UCSF para inscribirlo en control de crecimiento y desarrollo si no ha sido inscrito, o para la atención por morbilidad según corresponda.</li>
+                <li>Referirlo a la UCSF para administrar vacuna BCG.</li>
+                <li>Orientar a la madre sobre signos de peligro y cuidados básicos del recién nacido.</li>
+                <li>Dar seguimiento dos días después al cumplimiento de la referencia.</li>
+                <li>Informar sobre la referencia al coordinador/a del equipo comunitario que le corresponde.</li>
+                <li>No olvidar los registros correspondientes a las acciones realizadas y el llenado completo y correcto de la referencia.</li>
+                <li>Revisar indicaciones dadas en el hospital o en la UCSF y si aún no ha sido inscrito, referirlo a la UCSF para su inscripción de crecimiento y desarrollo.</li>
+                <li>Orientar a la madre sobre la importancia de alimentación con seno materno por lo menos cada 2 o 3 horas (de día y de noche).</li>
+                <li>Visitar cada semana para control de peso y verificar ganancia hasta que alcance un peso superior a los 2,500 gramos.</li>
+                <li>En cada visita verificar que no haya signos de peligro y reforzar los cuidados básicos del recién nacido.</li>
+            </ul>
+
+            <h2>Recién nacido sin signos de peligro</h2>
+            <h3>Niña o niño sin la presencia de signos de peligro ni de riesgo.</h3>
+            <h3>¿Qué hacer?</h3>
+            <ul>
+                <li>Orientar y recomendar a la madre o responsable de los siguientes cuidados básicos del recién nacido:</li>
+                <li>Lavarse las manos con agua y jabón, antes de tocar al niño o niña.</li>
+                <li>Dar lactancia materna exclusiva.</li>
+                <li>Curar el ombligo 2 veces al día con alcohol al 70% hasta que se le “caiga” el ombligo.</li>
+                <li>No utilizar fajero y mantener el ombligo fuera del pañal para evitar que se moje.</li>
+                <li>Aseo diario.</li>
+                <li>Baños de sol durante 10 minutos (antes de las 9:00 a.m.).</li>
+                <li>Mantener abrigado al niño o niña de acuerdo al clima.</li>
+                <li>No darle ningún medicamento si no es indicado por el médico.</li>
+                <li>Referir a la UCSF correspondiente para inscripción en el control de crecimiento y desarrollo en los primeros 7 días.</li>
+                <li>Dar consejería sobre la identificación de signos de peligro y cuando buscar ayuda médica.</li>
+                <li>Orientar para que cumpla las indicaciones dadas al alta del hospital.</li>
+            </ul>
+
+            <p><strong>Ministerio de Salud El Salvador</strong></p>
+        </div>
+        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
+        <button onclick="goBack()">Volver al Menú Principal</button>
+    </div>
+
+    <div id="IVU" class="tabcontent">
+        <h3>Seguimiento a IVU (Infecciones de Vías Urinarias en Embarazadas)</h3>
+        <label for="fechaIVU"><strong>Fecha de Inicio de Tratamiento:</strong></label>
+        <input type="date" id="fechaIVU" required>
+        <button onclick="calcularFechasIVU()">Calcular Fechas de Seguimiento</button>
+
+        <ul id="fechasIVU"></ul>
+
+        <button class="btn-info-IVU" onclick="mostrarinfoIVU()">Información sobre IVU</button>
+        <div id="infoIVU" class="hidden" style="text-align: center;">
+            <h4>Informacion sobre IVU en periodo de gestacion o embarazo</h4>
+            <h1>Infecciones de Vías Urinarias (IVU)</h1>
+            <p>Las infecciones de vías urinarias son infecciones que pueden afectar cualquier parte del sistema urinario, incluyendo los riñones, uréteres, vejiga y uretra.</p>
+
+            <h2>Tipos de IVU</h2>
+            <ul>
+                <li><strong>Cistitis:</strong> Infección de la vejiga.</li>
+                <li><strong>Pielonefritis:</strong> Infección de los riñones.</li>
+                <li><strong>Uretritis:</strong> Infección de la uretra.</li>
+            </ul>
+
+            <h2>Factores de Riesgo en Mujeres Embarazadas</h2>
+            <p>Durante el embarazo, las mujeres son más susceptibles a las IVU debido a varios factores:</p>
+            <ul>
+                <li>Cambios hormonales que afectan el tracto urinario.</li>
+                <li>Presión del útero en crecimiento sobre la vejiga.</li>
+                <li>Alteraciones en el flujo urinario.</li>
+            </ul>
+
+            <h2>Síntomas</h2>
+            <p>Los síntomas de una IVU pueden incluir:</p>
+            <ul>
+                <li>Urgencia y frecuencia urinaria.</li>
+                <li>Dolor o ardor al orinar.</li>
+                <li>Orina turbia o con mal olor.</li>
+                <li>Dolor en la parte baja del abdomen.</li>
+            </ul>
+
+            <h2>Consecuencias para la Mujer Embarazada</h2>
+            <p>Si no se tratan adecuadamente, las IVU pueden llevar a complicaciones serias, como:</p>
+            <ul>
+                <li>Infección renal (pielonefritis).</li>
+                <li>Parto prematuro.</li>
+                <li>Bajo peso al nacer.</li>
+            </ul>
+
+            <h2>Prevención</h2>
+            <p>Para prevenir las IVU durante el embarazo, se recomienda:</p>
+            <ul>
+                <li>Beber suficiente agua.</li>
+                <li>Orinar con frecuencia y no retener la orina.</li>
+                <li>Practicar buena higiene personal.</li>
+                <li>Evitar productos irritantes como duchas vaginales.</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>Las infecciones de vías urinarias son comunes durante el embarazo, pero con la atención adecuada y medidas preventivas, se pueden manejar efectivamente.</p>
+        </div>
+        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
+
+        <button onclick="goBack()">Volver al Menú Principal</button>
+    </div>
+
+
+    <div id="Vaginosis" class="tabcontent">
+        <h3>Seguimiento a Vaginosis en Embarazadas</h3>
+        <label for="fechaVaginosis"><strong>Fecha de Inicio de Tratamiento:</strong></label>
+        <input type="date" id="fechaVaginosis" required>
+        <button onclick="calcularFechasVaginosis()">Calcular Fechas de Seguimiento</button>
+
+        <ul id="fechasVaginosis"></ul>
+
+        <button class="btn-info-vaginosis" onclick="mostrarinfoVaginosis()">Información sobre Vaginosis</button>
+        <div id="infoVaginosis" class="hidden" style="text-align: center;">
+            <h4>Informacion sobre Vaginosis en periodo Gestacional o embarazo</h4>
+            <h1>Vaginosis Bacteriana</h1>
+            <p>La vaginosis bacteriana es una condición común que afecta a muchas mujeres, caracterizada por un desequilibrio en las bacterias que normalmente están presentes en la vagina.</p>
+
+            <h2>Causas</h2>
+            <p>La vaginosis bacteriana ocurre cuando hay un crecimiento excesivo de ciertas bacterias en la vagina, desplazando a las bacterias "buenas" (lactobacilos). Algunos factores que pueden contribuir a este desequilibrio incluyen:</p>
+            <ul>
+                <li>Cambios hormonales.</li>
+                <li>Uso de duchas vaginales.</li>
+                <li>Nuevos o múltiples compañeros sexuales.</li>
+                <li>Uso de antibióticos que alteran la flora vaginal.</li>
+            </ul>
+
+            <h2>Síntomas</h2>
+            <p>Los síntomas de la vaginosis bacteriana pueden incluir:</p>
+            <ul>
+                <li>Flujo vaginal anormal que puede ser gris o blanco.</li>
+                <li>Mal olor vaginal, especialmente después de relaciones sexuales.</li>
+                <li>Picazón o irritación vaginal (menos común).</li>
+            </ul>
+
+            <h2>Diagnóstico</h2>
+            <p>El diagnóstico de vaginosis se realiza generalmente a través de:</p>
+            <ul>
+                <li>Examen físico y revisión de síntomas.</li>
+                <li>Pruebas de pH vaginal.</li>
+                <li>Análisis del flujo vaginal bajo un microscopio.</li>
+            </ul>
+
+            <h2>Tratamiento</h2>
+            <p>El tratamiento para la vaginosis bacteriana puede incluir:</p>
+            <ul>
+                <li>Antibióticos orales o tópicos (como metronidazol o clindamicina).</li>
+                <li>Evitar duchas vaginales y productos irritantes.</li>
+            </ul>
+
+            <h2>Complicaciones</h2>
+            <p>Si no se trata, la vaginosis puede llevar a:</p>
+            <ul>
+                <li>Aumento del riesgo de infecciones de transmisión sexual (ITS).</li>
+                <li>Complicaciones durante el embarazo, como parto prematuro o bajo peso al nacer.</li>
+            </ul>
+
+            <h2>Prevención</h2>
+            <p>Para prevenir la vaginosis bacteriana, se recomienda:</p>
+            <ul>
+                <li>Mantener una buena higiene vaginal.</li>
+                <li>Usar preservativos para reducir el riesgo de ITS.</li>
+                <li>Evitar duchas vaginales y productos perfumados.</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>La vaginosis bacteriana es una condición tratable y común. Si experimentas síntomas o tienes preocupaciones, es importante consultar a un profesional de la salud para un diagnóstico y tratamiento adecuados.</p>
+        </div>
+        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
+
+        <button onclick="goBack()">Volver al Menú Principal</button>
+    </div>
+
+    <div class="footer-text">
+        <p>Creada por: Moisés Labor</p>
+        <p>Salud Comunitaria, Cantón Las Piletas, Distrito de Coatepeque, Santa Ana Este</p>
+    </div>
+
+    <script>
+        function openTab(tabName) {
+            document.getElementById('menuButtons').style.display = 'none'; // Ocultar menú principal
+            document.getElementById('menuTitle').style.display = 'none'; // Ocultar título del menú
+            var tabcontent = document.getElementsByClassName("tabcontent");
+            for (var i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            document.getElementById(tabName).style.display = "block";
+        }
+
+        function goBack() {
+            var tabcontent = document.getElementsByClassName("tabcontent");
+            for (var i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            document.getElementById('menuButtons').style.display = 'block'; // Mostrar menú principal
+            document.getElementById('menuTitle').style.display = 'block'; // Mostrar título del menú
+        }
+
+        function calcularFecha() {
+        const fechaInput = document.getElementById('fechaUltimaRegla').value;
+        const fechaActualInput = document.getElementById('fechaActual').value;
+
+        if (!fechaInput || !fechaActualInput) {
+            document.getElementById('resultado').innerText = 'Por favor, selecciona ambas fechas.';
+            return;
+        }
+
+        const fechaUltimaRegla = new Date(fechaInput + 'T00:00:00-06:00');
+        const fechaParto280 = new Date(fechaUltimaRegla);
+        fechaParto280.setDate(fechaParto280.getDate() + 280);
+        const fechaActual = new Date(fechaActualInput + 'T00:00:00-06:00');
+        const diferenciaDias = Math.floor((fechaActual - fechaUltimaRegla) / (1000 * 60 * 60 * 24));
+        const semanas = Math.floor(diferenciaDias / 7);
+        const dias = diferenciaDias % 7;
+
+        // Mostrar resultados
+        document.getElementById('resultado').innerHTML = `
+            <p class="fechaParto"><strong>Fecha estimada de parto:</strong> ${fechaParto280.toLocaleDateString()}</p>
+            <p><strong>Semanas de embarazo:</strong> ${semanas} semanas y ${dias} días.</p>
+        `;
+
+        // Calcular y mostrar controles prenatales
+        calcularControlesPrenatales(fechaUltimaRegla);
+        calcularSeguimientosPromotor(fechaUltimaRegla);
+
+        // Mostrar las secciones ocultas en orden
+        document.getElementById('controlesLabel').classList.remove('hidden');
+        document.getElementById('controlesPrenatales').classList.remove('hidden');
+        document.getElementById('seguimientosLabel').classList.remove('hidden');
+        document.getElementById('seguimientosPromotor').classList.remove('hidden');
+        document.getElementById('nota').classList.remove('hidden');
+    }
+
+
+
+    function calcularSeguimientosPromotor(fechaUltimaRegla) {
+        // Lógica para calcular y mostrar seguimientos por promotor
+        const seguimientos = "Ejemplo de seguimientos por promotor"; // Reemplaza con lógica real
+        document.getElementById('seguimientosPromotor').innerText = seguimientos;
+    }
+
+
+        function calcularControlesPrenatales(fechaUltimaRegla) {
+            const controles = [
+                { nombre: "Inscripción antes de las primeras doce semanas de gestación (fecha sugerida para efectos de cálculo).", semanas: 8 },
+                { nombre: "<p>Primer control a las 20 semanas de gestación.", semanas: 20 },
+                { nombre: "<p>Segundo control a las 26 semanas de gestación.", semanas: 26 },
+                { nombre: "<p>Tercer control a las 30 semanas de gestación.", semanas: 30 },
+                { nombre: "<p>Cuarto control a las 34 semanas de gestación.", semanas: 34 },
+                { nombre: "<p>Quinto control a las 36 semanas de gestación.", semanas: 36 },
+                { nombre: "<p>Sexto control a las 38 semanas de gestación.", semanas: 38 },
+                { nombre: "<p>Séptimo control a las 40 semanas de gestación.", semanas: 40 },
+                { nombre: "<p>Referido al hospital a las 41 semanas de gestación.", semanas: 41 }
+            ];
+            let controlesHtml = '';
+            controles.forEach(control => {
+                const fechaControl = new Date(fechaUltimaRegla);
+                fechaControl.setDate(fechaControl.getDate() + (control.semanas * 7));
+
+                controlesHtml += `<div class="control-item">${control.nombre} - Fecha: ${fechaControl.toLocaleDateString()}</div>`;
+            });
+            document.getElementById('controlesPrenatales').innerHTML = controlesHtml;
+        }
+        function calcularSeguimientosPromotor(fechaUltimaRegla) {
+            const seguimientosHtml = [];
+            const fechaControl = new Date(fechaUltimaRegla);
+
+            // Seguimientos cada 4 semanas hasta la semana 32
+            for (let semanas = 8; semanas <= 32; semanas += 4) {
+                const fechaSeguimiento = new Date(fechaControl);
+                fechaSeguimiento.setDate(fechaControl.getDate() + (semanas * 7));
+                seguimientosHtml.push(`<p>Seguimiento por Promotor de Salud a las ${semanas} semanas: ${fechaSeguimiento.toLocaleDateString()}</p>`);
+            }
+
+            // Seguimientos cada semana desde la semana 36 hasta la semana 40
+            for (let semanas = 36; semanas <= 40; semanas++) {
+                const fechaSeguimiento = new Date(fechaControl);
+                fechaSeguimiento.setDate(fechaControl.getDate() + (semanas * 7));
+                seguimientosHtml.push(`<p>Seguimiento por Promotor de Salud a las ${semanas} semanas: ${fechaSeguimiento.toLocaleDateString()}</p>`) ;
+            }
+
+            document.getElementById('seguimientosPromotor').innerHTML = seguimientosHtml.join('');
+        }
+
+        function calcularFechasPuerperio() {
+        const fechaInput = document.getElementById('fechaParto').value;
+        if (!fechaInput) {
+            document.getElementById('fechasSeguimiento').innerHTML = '<li>Por favor, selecciona una fecha de parto.</li>';
+            return;
+        }
+        const fechaParto = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
+        const hoy = new Date();
+        const diasPostparto = Math.floor((hoy - fechaParto) / (1000 * 60 * 60 * 24));
+        const diasRestantesPuerperio = 42 - diasPostparto;
+
+        // Mostrar información del puerperio
+        const infoPuerperio = document.getElementById('infoPuerperio');
+        let infoHtml = '';
+
+        if (diasPostparto < 42) {
+            infoHtml += `<p style="color:red"><strong>Días Postparto:</strong> ${diasPostparto} días</p>`;
+            infoHtml += `<p style="color:red"><strong>Días restantes para finalizar el puerperio:</strong> ${diasRestantesPuerperio} días</p>`;
+        } else {
+            infoHtml += `<p style="color:red"><strong>Puerperio finalizado hace ${diasPostparto - 42} días</strong></p>`;
+        }
+        infoPuerperio.innerHTML = infoHtml;
+
+        // Calcular y mostrar fechas de seguimiento
+        const listaFechas = document.getElementById('fechasSeguimiento');
+        listaFechas.innerHTML = '';
+
+        const intervalos = [1, 3, 7, 15, 28];
+        const nombresSeguimiento = [
+            "<p>Visita de detección en las primeras 24 horas del parto",
+            "<p>Seguimiento a los 3 días",
+            "<p>Seguimiento a los 7 días",
+            "<p>Seguimiento a los 15 días",
+            "<p>Seguimiento a los 28 días"
+        ];
+
+        intervalos.forEach((dias, index) => {
+            const fechaSeguimiento = new Date(fechaParto);
+            fechaSeguimiento.setDate(fechaParto.getDate() + dias);
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
+            listaFechas.appendChild(li);
+        });
+
+        // Calcular fecha de finalización del puerperio
+        const fechaFinPuerperio = new Date(fechaParto);
+        fechaFinPuerperio.setDate(fechaFinPuerperio.getDate() + 42); // 42 días de puerperio
+
+        // Mostrar fecha de finalización del puerperio
+        document.getElementById('fechaFinPuerperio').innerHTML = `<p style="color:black"><strong>Fecha de finalización del puerperio:</strong> ${fechaFinPuerperio.toLocaleDateString()}</p>`;
+
+        }
+
+        function calcularFechasIVU() {
+            const fechaInput = document.getElementById('fechaIVU').value;
+            if (!fechaInput) {
+                document.getElementById('fechasIVU').innerHTML = '<li>Por favor, selecciona una fecha de inicio de tratamiento.</li>';
+                return;
+            }
+            const fechaIVU = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
+            const listaFechas = document.getElementById('fechasIVU');
+            listaFechas.innerHTML = '';
+
+            const intervalos = [5, 10, 14]; // Intervalos de seguimiento
+            const nombresSeguimiento = [
+
+                "<p>Seguimiento en la comunidad por Promotor de Salud a los 5 días",
+                "<p>Consulta con Medico de Unidad de Salud a los 10 días",
+
+                "<p>Cita en Laboratorio de Unidad de Salud para Urocultivo a los 14 días si la infección persiste"
+            ];
+            intervalos.forEach((dias, index) => {
+                const fechaSeguimiento = new Date(fechaIVU);
+                fechaSeguimiento.setDate(fechaIVU.getDate() + dias);
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
+                listaFechas.appendChild(li);
+            });
+        }
+
+        function calcularFechasVaginosis() {
+            const fechaInput = document.getElementById('fechaVaginosis').value;
+            if (!fechaInput) {
+                document.getElementById('fechasVaginosis').innerHTML = '<li>Por favor, selecciona una fecha de inicio de tratamiento.</li>';
+                return;
+            }
+            const fechaVaginosis = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
+            const listaFechas = document.getElementById('fechasVaginosis');
+            listaFechas.innerHTML = '';
+
+            const intervalos = [4, 7]; // Intervalos de seguimiento
+            const nombresSeguimiento = [
+
+                "<p>Seguimiento en la comunidad por Promotor de Salud a los 4 días",
+                "<p>Consulta con médico de Unidad de Salud a los 7 días"
+            ];
+            intervalos.forEach((dias, index) => {
+                const fechaSeguimiento = new Date(fechaVaginosis);
+                fechaSeguimiento.setDate(fechaVaginosis.getDate() + dias);
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
+                listaFechas.appendChild(li);
+
+            });
+        }
+
+        function reiniciar() {
+            document.getElementById('fechaUltimaRegla').value = '';
+            document.getElementById('fechaActual').value = '';
+            document.getElementById('resultado').innerHTML = '';
+
+    document.getElementById('controlesLabel').classList.add('hidden');
+        document.getElementById('controlesPrenatales').classList.add('hidden');
+        document.getElementById('seguimientosLabel').classList.add('hidden');
+        document.getElementById('seguimientosPromotor').classList.add('hidden');
+        document.getElementById('nota').classList.add('hidden');
+            document.getElementById('controlesPrenatales').innerHTML = '';
+            document.getElementById('seguimientosPromotor').innerHTML = '';
+            document.getElementById('fechaParto').value = '';
+            document.getElementById('fechasSeguimiento').innerHTML = '';
+            document.getElementById('infoPuerperio').innerHTML = '';
+            document.getElementById('fechaFinPuerperio').innerHTML = ''; // Limpiar la fecha de finalización
+            document.getElementById('fechaIVU').value = '';
+            document.getElementById('fechasIVU').innerHTML = '';
+            document.getElementById('fechaVaginosis').value = '';
+            document.getElementById('fechasVaginosis').innerHTML = '';
+            document.getElementById('protocolos').style.display = 'none';
+            document.getElementById('lineamientos').style.display = 'none';
+            document.getElementById('infoIVU').style.display = 'none';
+            document.getElementById('infoVaginosis').style.display = 'none';
+        }
+        function mostrarProtocolos() {
+            const protocolosDiv = document.getElementById('protocolos');
+            protocolosDiv.style.display = protocolosDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function mostrarLineamientos() {
+            const lineamientosDiv = document.getElementById('lineamientos');
+            lineamientosDiv.style.display = lineamientosDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function mostrarinfoIVU() {
+            const infoIVUDiv = document.getElementById('infoIVU');
+            infoIVUDiv.style.display = infoIVUDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function mostrarinfoVaginosis() {
+            const infoVaginosisDiv = document.getElementById('infoVaginosis');
+            infoVaginosisDiv.style.display = infoVaginosisDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+    </script>
+</div>
+</html>
