@@ -1627,8 +1627,24 @@ function setFirebaseStatus(msg, tipo='') {
   el.className = 'firebase-status' + (tipo ? ' '+tipo : '');
 }
 
+function _docIdPromotor() {
+  const nombre = (perfil.nombre || '').trim();
+  if (!nombre) return null;
+  return nombre.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
 async function subirNube() {
   try {
+    const docId = _docIdPromotor();
+    if (!docId) {
+      toast('⚠️ Configura tu perfil antes de subir a la nube', 'error');
+      setFirebaseStatus('⚠️ Perfil sin nombre — no se puede subir', 'err');
+      return;
+    }
     setFirebaseStatus('☁️ Subiendo datos…');
     const db = initFirebase();
     const payload = {
@@ -1637,7 +1653,7 @@ async function subirNube() {
       perfil,
       registros
     };
-    await setDoc(doc(db, 'rdps', 'datos'), payload);
+    await setDoc(doc(db, 'rdps', docId), payload);
     setFirebaseStatus(`✅ Subido: ${registros.length} registros`, 'ok');
     toast('✅ Datos guardados en la nube', 'success');
   } catch(e) {
@@ -1649,12 +1665,18 @@ async function subirNube() {
 
 async function bajarNube() {
   try {
+    const docId = _docIdPromotor();
+    if (!docId) {
+      toast('⚠️ Configura tu perfil antes de bajar datos de la nube', 'error');
+      setFirebaseStatus('⚠️ Perfil sin nombre — no se puede descargar', 'err');
+      return;
+    }
     setFirebaseStatus('☁️ Descargando datos…');
     const db = initFirebase();
-    const snap = await getDoc(doc(db, 'rdps', 'datos'));
+    const snap = await getDoc(doc(db, 'rdps', docId));
     if (!snap.exists()) {
-      setFirebaseStatus('⚠️ No hay datos en la nube', 'err');
-      toast('⚠️ No hay datos guardados en la nube', 'error');
+      setFirebaseStatus('⚠️ No hay datos en la nube para este promotor', 'err');
+      toast('⚠️ No hay datos guardados en la nube para tu perfil', 'error');
       return;
     }
     const data = snap.data();
