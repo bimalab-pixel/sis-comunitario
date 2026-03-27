@@ -1,6 +1,6 @@
 // ── SIS Comunitario Service Worker ──
 // Cambia el número de versión para forzar actualización del caché
-const CACHE_NAME = 'sis-comunitario-v3';
+const CACHE_NAME = 'sis-comunitario-v4';
 
 // Archivos a guardar en caché al instalar
 const PRECACHE_URLS = [
@@ -11,7 +11,8 @@ const PRECACHE_URLS = [
   './Vigilancia_Materna.html',
   './calculadora_materna.html',
   './mef.html',
-  './visita_domiciliar.html'
+  './visita_domiciliar.html',
+  './RegistroDiario_Promotor.html'
 ];
 
 // ── INSTALL: pre-cachear todos los archivos core ──
