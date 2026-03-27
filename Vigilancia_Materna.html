@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vigilancia Materna</title>
 
-        <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00796b">
     <style>
         :root {
@@ -921,9 +921,9 @@
 
 <header>
     <div style="width:100%;display:flex;justify-content:flex-start;padding:6px 10px 0;">
-      <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.18);color:#fff;text-decoration:none;font-size:.82rem;font-weight:700;padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.35);backdrop-filter:blur(4px);transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">
-        ← Menú Principal
-      </a>
+        <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.18);color:#fff;text-decoration:none;font-size:.82rem;font-weight:700;padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.35);backdrop-filter:blur(4px);transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">
+            ← Menú Principal
+        </a>
     </div>
     <h1>👩‍⚕️ Vigilancia Materna</h1>
     <p>Salud Comunitaria Región Occidental</p>
@@ -983,6 +983,7 @@
                 <span class="dash-title">Acceso</span>
             </div>
 
+
         </div>
 
         <!-- Acciones de Respaldo -->
@@ -1029,10 +1030,22 @@
             <form id="registro-form-embarazada">
                 <label for="nombre-emb">Nombre de la Paciente:</label>
                 <input type="text" id="nombre-emb" required placeholder="Ej: Juana Pérez">
+                <label for="expediente-emb">Número de Expediente (Opcional):</label>
+                <input type="text" id="expediente-emb" placeholder="Ej: EXP-2025-001">
                 <label for="fn-emb">Fecha de Nacimiento (FN) (Opcional):</label>
                 <input type="date" id="fn-emb">
                 <label for="dir-emb">Dirección / Comunidad:</label>
                 <input type="text" id="dir-emb" placeholder="Ej: Caserío Los Pinos">
+
+                <label style="margin-top: 15px; font-weight: 600; color: #555;">⚠️ Riesgo Obstétrico:</label>
+                <div style="display: flex; gap: 20px; margin-top: 8px; margin-bottom: 8px;">
+                    <label><input type="radio" name="riesgo_obs_emb" value="no" checked onchange="toggleRiesgoFields('emb')"> Sin Riesgo</label>
+                    <label><input type="radio" name="riesgo_obs_emb" value="si" onchange="toggleRiesgoFields('emb')"> Con Riesgo</label>
+                </div>
+                <div id="fields-riesgo-emb" style="display:none;">
+                    <label for="tipo-riesgo-emb">Tipo de Riesgo Obstétrico:</label>
+                    <input type="text" id="tipo-riesgo-emb" placeholder="Ej: Hipertensión, Diabetes, Anemia...">
+                </div>
 
                 <label style="margin-top: 25px; font-weight: 600; color: #555;">Fuente de Cálculo (Requerido):</label>
                 <div style="display: flex; gap: 20px; margin-top: 10px; margin-bottom: 10px;">
@@ -1077,10 +1090,23 @@
             <form id="registro-form-puerpera">
                 <label for="nombre-puerp">Nombre de la Paciente:</label>
                 <input type="text" id="nombre-puerp" required placeholder="Ej: Ana Gómez">
+                <label for="expediente-puerp">Número de Expediente (Opcional):</label>
+                <input type="text" id="expediente-puerp" placeholder="Ej: EXP-2025-002">
                 <label for="fn-puerp">Fecha de Nacimiento (FN) (Opcional):</label>
                 <input type="date" id="fn-puerp">
                 <label for="dir-puerp">Dirección / Comunidad:</label>
                 <input type="text" id="dir-puerp" placeholder="Ej: Cantón El Carmen">
+
+                <label style="margin-top: 15px; font-weight: 600; color: #555;">⚠️ Riesgo Obstétrico:</label>
+                <div style="display: flex; gap: 20px; margin-top: 8px; margin-bottom: 8px;">
+                    <label><input type="radio" name="riesgo_obs_puerp" value="no" checked onchange="toggleRiesgoFields('puerp')"> Sin Riesgo</label>
+                    <label><input type="radio" name="riesgo_obs_puerp" value="si" onchange="toggleRiesgoFields('puerp')"> Con Riesgo</label>
+                </div>
+                <div id="fields-riesgo-puerp" style="display:none;">
+                    <label for="tipo-riesgo-puerp">Tipo de Riesgo Obstétrico:</label>
+                    <input type="text" id="tipo-riesgo-puerp" placeholder="Ej: Hemorragia, Preeclampsia...">
+                </div>
+
                 <label for="fp">Fecha de Parto/Aborto (FP):</label>
                 <input type="date" id="fp" required>
                 <button type="submit" class="btn-guardar">Guardar Puérpera</button>
@@ -1135,28 +1161,28 @@
 
         <h2>📦 Listado de Pacientes Archivadas</h2>
         <div style="background: #e1f5fe; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #b3e5fc;">
-    <p style="margin: 0 0 10px 0; font-weight: bold; color: #01579b;">🔍 Filtrar Archivo por Fecha:</p>
-    <div style="display: flex; gap: 10px;">
-        <select id="filtro-mes-arch" onchange="renderizarListadoArchivadas()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #81d4fa;">
-            <option value="todos">Todos los Meses</option>
-            <option value="01">Enero</option>
-            <option value="02">Febrero</option>
-            <option value="03">Marzo</option>
-            <option value="04">Abril</option>
-            <option value="05">Mayo</option>
-            <option value="06">Junio</option>
-            <option value="07">Julio</option>
-            <option value="08">Agosto</option>
-            <option value="09">Septiembre</option>
-            <option value="10">Octubre</option>
-            <option value="11">Noviembre</option>
-            <option value="12">Diciembre</option>
-        </select>
-        <select id="filtro-anio-arch" onchange="renderizarListadoArchivadas()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #81d4fa;">
-            <option value="todos">Todos los Años</option>
-        </select>
-    </div>
-</div>
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #01579b;">🔍 Filtrar Archivo por Fecha:</p>
+            <div style="display: flex; gap: 10px;">
+                <select id="filtro-mes-arch" onchange="renderizarListadoArchivadas()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #81d4fa;">
+                    <option value="todos">Todos los Meses</option>
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+                <select id="filtro-anio-arch" onchange="renderizarListadoArchivadas()" style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #81d4fa;">
+                    <option value="todos">Todos los Años</option>
+                </select>
+            </div>
+        </div>
 
         <div class="list-container" id="list-container-arch">
             <div class="list-nombres">
@@ -1206,15 +1232,15 @@
 
         <p style="color:#666; font-size:0.9rem; margin-bottom: 15px;">Ingresa la contraseña de administrador:</p>
 
-        <input type="password" id="input-pass-supervisor" placeholder="Contraseña" 
+        <input type="password" id="input-pass-supervisor" placeholder="Contraseña"
                style="width:100%; padding:12px; border:2px solid #ddd; border-radius:8px; font-size:1.1rem; text-align:center; margin-bottom:20px; outline:none;">
 
         <div style="display: flex; gap: 10px; justify-content: space-between;">
-            <button onclick="cerrarLoginSupervisor()" 
+            <button onclick="cerrarLoginSupervisor()"
                     style="flex:1; padding:12px; border:none; background:#cfd8dc; color:#455a64; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem;">
                 CANCELAR
             </button>
-            <button onclick="verificarSupervisor()" 
+            <button onclick="verificarSupervisor()"
                     style="flex:1; padding:12px; border:none; background:#263238; color:white; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
                 ENTRAR
             </button>
@@ -1248,29 +1274,42 @@
     <button onclick="regresarAlPanelSupervisor()" style="margin-left:15px; background:white; color:#d32f2f; border:none; padding:5px 15px; border-radius:15px; cursor:pointer;">SALIR DE VISTA</button>
 </div>
 
-<section id="seccion-reporte-interno" class="section">
-    <div class="header-registro">
-        <button class="btn-back" onclick="mostrarSeccion('inicio')">⬅ Volver</button>
-        <button onclick="imprimirReporteGeneral()" style="background:#00796b; color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; float:right;">
-            🖨️ Imprimir Reporte
-        </button>
-        <h2>Reporte Detallado General</h2>
+<section id="seccion-reporte-interno" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:500; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+
+    <!-- Barra superior fija dentro del overlay -->
+    <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:510;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+        <button onclick="cerrarReporte()" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);padding:7px 13px;border-radius:20px;font-weight:bold;cursor:pointer;font-size:0.85rem;">⬅ Volver</button>
+        <span style="font-weight:bold;font-size:0.95rem;">📋 Reporte General</span>
+        <button onclick="imprimirReporteGeneral()" style="background:#e91e63;color:white;border:none;padding:7px 13px;border-radius:20px;font-weight:bold;cursor:pointer;font-size:0.85rem;">🖨️ Imprimir</button>
     </div>
 
-    <div class="card" style="overflow-x: auto;">
-        <table id="tabla-reporte" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-            <tr style="background-color: var(--primary); color: white;">
-                <th style="padding: 8px; border: 1px solid #ddd;">Tipo</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">Nombre</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">Dirección</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">FUR/Parto</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">FPP</th>
-                <th style="padding: 8px; border: 1px solid #ddd;">Recurso</th>
-            </tr>
-            </thead>
-            <tbody id="cuerpo-reporte">
-            </tbody>
+    <!-- Contadores -->
+    <div id="reporte-contadores" style="display:flex;gap:8px;padding:10px 12px 0;"></div>
+
+    <!-- Filtro orden -->
+    <div style="padding:8px 12px;">
+        <div style="background:#e8f5e9;padding:8px 12px;border-radius:8px;border:1px solid #a5d6a7;display:flex;align-items:center;gap:8px;">
+            <span style="font-weight:bold;color:#1b5e20;font-size:0.8rem;white-space:nowrap;">🔃</span>
+            <select id="filtro-orden-reporte" onchange="generarReporteHTML()" style="padding:7px 8px;border-radius:6px;border:1px solid #81c784;font-size:0.82rem;flex:1;min-width:0;background:white;">
+                <option value="default">Original (EMB → PUE → ARC)</option>
+                <option value="fpp-asc">🤰 Próxima al parto primero</option>
+                <option value="fpp-desc">🤰 Más lejana al parto primero</option>
+                <option value="puerp-asc">🤱 Puérpera más reciente</option>
+                <option value="puerp-desc">🤱 Puérpera más antigua</option>
+                <option value="arch-asc">📦 Archivada más reciente</option>
+                <option value="arch-desc">📦 Archivada más antigua</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Vista tarjetas móvil (se llena por JS) -->
+    <div id="reporte-tarjetas" style="padding:8px 12px 20px;"></div>
+
+    <!-- Tabla oculta — solo para imprimirReporteGeneral -->
+    <div style="display:none;">
+        <table id="tabla-reporte" style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead><tr id="cuerpo-reporte-thead"><th>Tipo</th><th>Nombre</th><th>Dirección</th><th>FUR/Parto</th><th>FPP</th><th>Recurso</th></tr></thead>
+            <tbody id="cuerpo-reporte"></tbody>
         </table>
     </div>
 </section>
@@ -1357,22 +1396,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
 <script>
-  // Tu configuración de Firebase proporcionada
-  const firebaseConfig = {
-    apiKey: "AIzaSyD91mG4x4Av8SEESi8HR0F0-1U5ujXP5hg",
-    authDomain: "vigilancia-materna-2.firebaseapp.com",
-    projectId: "vigilancia-materna-2",
-    storageBucket: "vigilancia-materna-2.firebasestorage.app",
-    messagingSenderId: "777102606090",
-    appId: "1:777102606090:web:4578a705c28cd0d45304f3",
-    measurementId: "G-ERZ72YE3JZ"
-  };
+    // Tu configuración de Firebase proporcionada
+    const firebaseConfig = {
+      apiKey: "AIzaSyD91mG4x4Av8SEESi8HR0F0-1U5ujXP5hg",
+      authDomain: "vigilancia-materna-2.firebaseapp.com",
+      projectId: "vigilancia-materna-2",
+      storageBucket: "vigilancia-materna-2.firebasestorage.app",
+      messagingSenderId: "777102606090",
+      appId: "1:777102606090:web:4578a705c28cd0d45304f3",
+      measurementId: "G-ERZ72YE3JZ"
+    };
 
-  // Inicializar Firebase
-  if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-  }
-  const database = firebase.database();
+    // Inicializar Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const database = firebase.database();
 </script>
 
 
@@ -1605,6 +1644,14 @@ function importarDatos(event) {
 
     // --- FUNCIONES DE UTILIDAD para FUS ---
 
+    function toggleRiesgoFields(prefix) {
+        const val = document.querySelector(`input[name="riesgo_obs_${prefix}"]:checked`);
+        const div = document.getElementById(`fields-riesgo-${prefix}`);
+        if (val && div) {
+            div.style.display = (val.value === 'si') ? 'block' : 'none';
+        }
+    }
+
     function toggleFurFusFields(metodo) {
         const furFields = document.getElementById('fields-fur');
         const fusFields = document.getElementById('fields-fus');
@@ -1708,14 +1755,26 @@ function importarDatos(event) {
             return;
         }
 
-        const now = new Date();
-        const fechaHora = now.toLocaleString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        // Leer la fecha del campo si existe, si no usar hoy
+        let fechaHora;
+        const campoFecha = document.getElementById(`fecha-nota-${tipo}`);
+        if (campoFecha && campoFecha.value) {
+            try {
+                const d = crearFechaLocal(campoFecha.value);
+                const dia = String(d.getDate()).padStart(2,'0');
+                const mes = String(d.getMonth()+1).padStart(2,'0');
+                const anio = d.getFullYear();
+                // Obtener hora actual para complementar
+                const ahora = new Date();
+                const hh = String(ahora.getHours()).padStart(2,'0');
+                const mm = String(ahora.getMinutes()).padStart(2,'0');
+                fechaHora = `${dia}/${mes}/${anio}, ${hh}:${mm}`;
+            } catch(e) {
+                fechaHora = new Date().toLocaleString('es-ES', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+            }
+        } else {
+            fechaHora = new Date().toLocaleString('es-ES', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        }
 
         // --- CAMBIO: DETERMINAR ETAPA ---
         let etapaLabel = 'General';
@@ -1749,9 +1808,22 @@ function importarDatos(event) {
 
         if (!notaItem) return;
 
+        // Extraer la fecha actual para pre-llenar el campo (intentar parsear DD/MM/YYYY HH:MM o similar)
+        let fechaActualISO = obtenerFechaLocalISO(); // fallback a hoy
+        try {
+            // nota.fecha viene en formato localizado, intentamos reconstruir
+            const partesFecha = nota.fecha.split(',')[0]; // "DD/MM/YYYY"
+            const bits = partesFecha.split('/');
+            if (bits.length === 3) {
+                fechaActualISO = `${bits[2].trim()}-${bits[1].padStart(2,'0')}-${bits[0].padStart(2,'0')}`;
+            }
+        } catch(e) { /* usa fallback */ }
+
         // Reemplazar contenido con formulario de edición
         notaItem.innerHTML = `
-            <p style="margin: 0 0 5px 0; font-weight: 600; color: #3f51b5;">${nota.fecha} (Editando)</p>
+            <p style="margin: 0 0 5px 0; font-weight: 600; color: #3f51b5;">Editando nota</p>
+            <label style="font-size:0.85em; color:#555; margin-bottom:4px; display:block;">📅 Fecha de la nota:</label>
+            <input type="date" id="edit-nota-fecha-${pacienteIndex}-${notaIndex}" value="${fechaActualISO}" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; margin-bottom:8px;">
             <textarea id="edit-nota-texto-${pacienteIndex}-${notaIndex}" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px;">${nota.texto}</textarea>
             <div class="nota-acciones" style="text-align: right;">
                 <button style="color: #4CAF50;" onclick="guardarEdicionNota(${pacienteIndex}, ${notaIndex}, '${tipo}')">💾 Guardar</button>
@@ -1762,6 +1834,7 @@ function importarDatos(event) {
 
     function guardarEdicionNota(pacienteIndex, notaIndex, tipo) {
         const nuevoTexto = document.getElementById(`edit-nota-texto-${pacienteIndex}-${notaIndex}`).value.trim();
+        const nuevaFechaInput = document.getElementById(`edit-nota-fecha-${pacienteIndex}-${notaIndex}`);
 
         if (nuevoTexto === '') {
             alert('La nota no puede estar vacía.');
@@ -1772,9 +1845,25 @@ function importarDatos(event) {
         if (!data) return;
 
         data.paciente.notas[notaIndex].texto = nuevoTexto;
+
+        // Si se proporcionó una nueva fecha, actualizarla en formato legible
+        if (nuevaFechaInput && nuevaFechaInput.value) {
+            try {
+                const d = crearFechaLocal(nuevaFechaInput.value);
+                const dia = String(d.getDate()).padStart(2,'0');
+                const mes = String(d.getMonth()+1).padStart(2,'0');
+                const anio = d.getFullYear();
+                // Conservamos la hora original si existía, o usamos medianoche
+                const horaOriginal = data.paciente.notas[notaIndex].fecha.includes(',')
+                    ? data.paciente.notas[notaIndex].fecha.split(',')[1].trim()
+                    : '00:00';
+                data.paciente.notas[notaIndex].fecha = `${dia}/${mes}/${anio}, ${horaOriginal}`;
+            } catch(e) { /* mantener fecha original si hay error */ }
+        }
+
         guardarDatos(data.clave);
         alert('✅ Nota modificada con éxito.');
-        mostrarDetalle(pacienteIndex, tipo); // Recargar el detalle
+        mostrarDetalle(pacienteIndex, tipo);
     }
 
     function eliminarNota(pacienteIndex, notaIndex, tipo) {
@@ -1987,7 +2076,7 @@ function importarDatos(event) {
                     <div class="ficha-header header-emb">
                         <div>
                             <h3>${p.nombre}</h3>
-                            <small style="opacity:0.9">ID/Exp: ${index + 1}</small>
+                            <small style="opacity:0.9">Exp: ${p.expediente || (index + 1)}</small>
                         </div>
                         <span class="ficha-badge">🤰 Embarazada</span>
                     </div>
@@ -2008,6 +2097,14 @@ function importarDatos(event) {
                                                         <div class="dato-item">
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
+                            </div>
+                            <div class="dato-item">
+                                <span class="dato-label">N° Expediente</span>
+                                <span class="dato-valor">${p.expediente || 'No registrado'}</span>
+                            </div>
+                            <div class="dato-item">
+                                <span class="dato-label">⚠️ Riesgo Obstétrico</span>
+                                <span class="dato-valor" style="${(p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;'}">${(p.riesgo_obstetrico === 'si') ? '⚠️ SÍ — ' + (p.tipo_riesgo || 'No especificado') : '✅ Sin riesgo'}</span>
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Fecha Probable Parto</span>
@@ -2039,6 +2136,10 @@ function importarDatos(event) {
                 </div>
 
                 <form onsubmit="event.preventDefault(); añadirNota(${index}, 'embarazada');" style="margin-top: 15px; padding: 0 10px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <label style="font-size:0.82em; color:#555; white-space:nowrap; margin:0;">📅 Fecha:</label>
+                        <input type="date" id="fecha-nota-embarazada" value="${obtenerFechaLocalISO()}" style="flex:1; padding:7px; border:1px solid #ccc; border-radius:6px; font-size:0.9em;">
+                    </div>
                     <textarea id="nueva-nota-embarazada" rows="2" placeholder="Escribir nueva nota..." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"></textarea>
                     <button type="submit" class="btn-guardar" style="margin-top: 5px; padding: 8px;">Agregar Nota</button>
                 </form>
@@ -2152,7 +2253,7 @@ function importarDatos(event) {
                     <div class="ficha-header header-puerp">
                         <div>
                             <h3>${p.nombre}</h3>
-                            <small style="opacity:0.9">ID/Exp: ${index + 1}</small>
+                            <small style="opacity:0.9">Exp: ${p.expediente || (index + 1)}</small>
                         </div>
                         <span class="ficha-badge">🤱 Puérpera</span>
                     </div>
@@ -2175,6 +2276,14 @@ function importarDatos(event) {
                                                         <div class="dato-item">
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
+                            </div>
+                            <div class="dato-item">
+                                <span class="dato-label">N° Expediente</span>
+                                <span class="dato-valor">${p.expediente || 'No registrado'}</span>
+                            </div>
+                            <div class="dato-item">
+                                <span class="dato-label">⚠️ Riesgo Obstétrico</span>
+                                <span class="dato-valor" style="${(p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;'}">${(p.riesgo_obstetrico === 'si') ? '⚠️ SÍ — ' + (p.tipo_riesgo || 'No especificado') : '✅ Sin riesgo'}</span>
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Fecha de Parto</span>
@@ -2203,6 +2312,10 @@ function importarDatos(event) {
                 </div>
 
                 <form onsubmit="event.preventDefault(); añadirNota(${index}, 'puerpera');" style="margin-top: 15px; padding: 0 10px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <label style="font-size:0.82em; color:#555; white-space:nowrap; margin:0;">📅 Fecha:</label>
+                        <input type="date" id="fecha-nota-puerpera" value="${obtenerFechaLocalISO()}" style="flex:1; padding:7px; border:1px solid #ccc; border-radius:6px; font-size:0.9em;">
+                    </div>
                     <textarea id="nueva-nota-puerpera" rows="2" placeholder="Escribir nueva nota..." style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"></textarea>
                     <button type="submit" class="btn-guardar" style="margin-top: 5px; padding: 8px;">Agregar Nota</button>
                 </form>
@@ -2300,7 +2413,7 @@ function importarDatos(event) {
                     <tr><td><strong>VRS</strong></td><td>${checkVac(v.vrs)}</td></tr>
                 </table>
             `;
-        } 
+        }
         // --- CASO 2: ARCHIVADA DESDE PUERPERIO ---
         else {
             const fpDate = crearFechaLocal(p.fp);
@@ -2345,7 +2458,7 @@ function importarDatos(event) {
                     <div class="dato-item"><span class="dato-label">Fecha de Parto/Aborto (FP)</span><span class="dato-valor">${formatDate(fpDate)}</span></div>
                     <div class="dato-item"><span class="dato-label">Fin Puerperio</span><span class="dato-valor">${formatDate(calcularFinPuerperio(fpDate))}</span></div>
                 </div>
-                ${historialHTML} 
+                ${historialHTML}
             `;
         }
 
@@ -2510,11 +2623,24 @@ function importarDatos(event) {
                 <label for="edit-nombre">Nuevo Nombre:</label>
                 <input type="text" id="edit-nombre-${tipo}" value="${p.nombre}" required>
 
+                <label for="edit-expediente-${tipo}">N° Expediente:</label>
+                <input type="text" id="edit-expediente-${tipo}" value="${p.expediente || ''}" placeholder="Ej: EXP-2025-001">
+
                 <label for="edit-fn">Nueva Fecha de Nacimiento (Opcional):</label>
                 <input type="date" id="edit-fn-${tipo}" value="${fnValue}">
 
                                 <label for="edit-dir">Dirección:</label>
                 <input type="text" id="edit-dir-${tipo}" value="${p.direccion || ''}">
+
+                <label>Riesgo Obstétrico:</label>
+                <div style="display: flex; gap: 20px; margin-top: 8px; margin-bottom: 8px;">
+                    <label><input type="radio" name="edit_riesgo_${tipo}" value="no" ${(p.riesgo_obstetrico !== 'si') ? 'checked' : ''} onchange="document.getElementById('edit-fields-riesgo-${tipo}').style.display='none'"> Sin Riesgo</label>
+                    <label><input type="radio" name="edit_riesgo_${tipo}" value="si" ${(p.riesgo_obstetrico === 'si') ? 'checked' : ''} onchange="document.getElementById('edit-fields-riesgo-${tipo}').style.display='block'"> Con Riesgo</label>
+                </div>
+                <div id="edit-fields-riesgo-${tipo}" style="display:${(p.riesgo_obstetrico === 'si') ? 'block' : 'none'};">
+                    <label>Tipo de Riesgo:</label>
+                    <input type="text" id="edit-tipo-riesgo-${tipo}" value="${p.tipo_riesgo || ''}" placeholder="Ej: Hipertensión, Diabetes...">
+                </div>
 
                 <label for="edit-fecha">${fechaEtiqueta}:</label>
                 <input type="date" id="edit-fecha-${tipo}" value="${p[fechaKey]}" required>
@@ -2546,8 +2672,11 @@ function importarDatos(event) {
     function guardarEdicion(index, tipo) {
         const nuevoNombre = document.getElementById(`edit-nombre-${tipo}`).value.trim();
     const nuevaFechaNacimiento = document.getElementById(`edit-fn-${tipo}`).value;
-    const nuevaDireccion = document.getElementById(`edit-dir-${tipo}`).value.trim(); // <--- NUEVO
+    const nuevaDireccion = document.getElementById(`edit-dir-${tipo}`).value.trim();
     const nuevaFechaPrincipal = document.getElementById(`edit-fecha-${tipo}`).value;
+    const nuevoExpediente = document.getElementById(`edit-expediente-${tipo}`) ? document.getElementById(`edit-expediente-${tipo}`).value.trim() : '';
+    const nuevoRiesgo = document.querySelector(`input[name="edit_riesgo_${tipo}"]:checked`) ? document.querySelector(`input[name="edit_riesgo_${tipo}"]:checked`).value : 'no';
+    const nuevoTipoRiesgo = (nuevoRiesgo === 'si' && document.getElementById(`edit-tipo-riesgo-${tipo}`)) ? document.getElementById(`edit-tipo-riesgo-${tipo}`).value.trim() : '';
 
     if (nuevoNombre && nuevaFechaPrincipal) {
         if (tipo === 'embarazada') {
@@ -2557,8 +2686,11 @@ function importarDatos(event) {
                 const nuevaVRS = document.getElementById('edit-vrs-embarazada').value;
 
                 embarazadas[index].nombre = nuevoNombre;
+            embarazadas[index].expediente = nuevoExpediente;
+            embarazadas[index].riesgo_obstetrico = nuevoRiesgo;
+            embarazadas[index].tipo_riesgo = nuevoTipoRiesgo;
             embarazadas[index].fecha_nacimiento = nuevaFechaNacimiento;
-            embarazadas[index].direccion = nuevaDireccion; // <--- AGREGAR ESTO
+            embarazadas[index].direccion = nuevaDireccion;
             embarazadas[index].fur = nuevaFechaPrincipal;
 
                 embarazadas[index].vacunas = {
@@ -2572,8 +2704,11 @@ function importarDatos(event) {
                 guardarDatos('embarazadas');
             } else if (tipo === 'puerpera') {
             puerperas[index].nombre = nuevoNombre;
+            puerperas[index].expediente = nuevoExpediente;
+            puerperas[index].riesgo_obstetrico = nuevoRiesgo;
+            puerperas[index].tipo_riesgo = nuevoTipoRiesgo;
             puerperas[index].fecha_nacimiento = nuevaFechaNacimiento;
-            puerperas[index].direccion = nuevaDireccion; // <--- AGREGAR ESTO
+            puerperas[index].direccion = nuevaDireccion;
             puerperas[index].fp = nuevaFechaPrincipal;
 
             guardarDatos('puerperas');
@@ -2604,10 +2739,17 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         // Validación básica
         if(!nombre) { alert("El nombre es obligatorio"); return; }
 
+        const expedienteEmb = document.getElementById('expediente-emb') ? document.getElementById('expediente-emb').value.trim() : '';
+        const riesgoObsEmb = document.querySelector('input[name="riesgo_obs_emb"]:checked') ? document.querySelector('input[name="riesgo_obs_emb"]:checked').value : 'no';
+        const tipoRiesgoEmb = (riesgoObsEmb === 'si' && document.getElementById('tipo-riesgo-emb')) ? document.getElementById('tipo-riesgo-emb').value.trim() : '';
+
         let nuevoRegistro = {
             id: Date.now().toString(),
             registrado_por: MI_USUARIO,
             nombre,
+            expediente: expedienteEmb,
+            riesgo_obstetrico: riesgoObsEmb,
+            tipo_riesgo: tipoRiesgoEmb,
             fecha_nacimiento,
             direccion: direccion,
             metodo,
@@ -2640,7 +2782,7 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         guardarDatos('embarazadas');
 
         // --- LIMPIEZA TOTAL PARA EVITAR BLOQUEO ---
-        this.reset(); 
+        this.reset();
         document.getElementById('nombre-emb').value = ""; // Limpieza forzada
 
         // Reset visual de FUR
@@ -2662,8 +2804,11 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
     document.getElementById('registro-form-puerpera').addEventListener('submit', function(e) {
         e.preventDefault();
     const nombre = document.getElementById('nombre-puerp').value.trim();
+    const expedientePuerp = document.getElementById('expediente-puerp') ? document.getElementById('expediente-puerp').value.trim() : '';
     const fecha_nacimiento = document.getElementById('fn-puerp').value;
-    const direccion = document.getElementById('dir-puerp').value.trim(); // <--- NUEVO
+    const direccion = document.getElementById('dir-puerp').value.trim();
+    const riesgoObsPuerp = document.querySelector('input[name="riesgo_obs_puerp"]:checked') ? document.querySelector('input[name="riesgo_obs_puerp"]:checked').value : 'no';
+    const tipoRiesgoPuerp = (riesgoObsPuerp === 'si' && document.getElementById('tipo-riesgo-puerp')) ? document.getElementById('tipo-riesgo-puerp').value.trim() : '';
     const fp = document.getElementById('fp').value;
 
     if (nombre && fp) {
@@ -2671,8 +2816,11 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
             id: Date.now().toString(),
             registrado_por: MI_USUARIO,
             nombre,
+            expediente: expedientePuerp,
+            riesgo_obstetrico: riesgoObsPuerp,
+            tipo_riesgo: tipoRiesgoPuerp,
             fecha_nacimiento,
-            direccion: direccion, // <--- NUEVO
+            direccion: direccion,
             fp,
             notas: []
         });
@@ -2711,7 +2859,7 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         // 3. Procesos secundarios (limpieza automática y configuración de campos)
         // Los envolvemos para que no bloqueen el inicio
         setTimeout(() => {
-            verificarAutoArchivo(); 
+            verificarAutoArchivo();
 
             if (document.querySelector('input[name="metodo_calc"]')) {
                 toggleFurFusFields('FUR');
@@ -2722,7 +2870,7 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
             if (txtNombre && (txtNombre.innerText === "Cargando..." || txtNombre.innerText === "")) {
                 txtNombre.innerText = localStorage.getItem('MI_NOMBRE_RECURSO') || "USUARIO";
             }
-        }, 300); 
+        }, 300);
 
         /*
          * Información: Se recalculará automáticamente al hacer clic en cada paciente.
@@ -2734,9 +2882,9 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
    BLOQUE FINALIZAR EMBARAZO (V5 - ESTABLE PARA APK)
    Copia y pega esto al final de tu script, reemplazando lo anterior.
    ============================================================= */
-let indexTempParto = null; 
+let indexTempParto = null;
 
-// 1. ABRIR EL MODAL 
+// 1. ABRIR EL MODAL
 function finalizarEmbarazo(index) {
     // Protección básica
     if (typeof embarazadas === 'undefined' || !embarazadas[index]) {
@@ -2756,12 +2904,12 @@ function finalizarEmbarazo(index) {
     const inputFecha = document.getElementById('fecha-parto-calendario');
 
     // 1. Poner Datos
-    lblNombre.innerText = paciente.nombre; 
+    lblNombre.innerText = paciente.nombre;
     lblInstruccion.innerText = "Seleccione el motivo de finalización:";
     lblInstruccion.style.color = "#555";
 
     // 2. Reiniciar Vistas (Estado Inicial)
-    areaBotones.style.display = 'grid'; 
+    areaBotones.style.display = 'grid';
     areaFecha.style.display = 'none';
 
     // 3. Poner fecha de hoy por defecto (formato YYYY-MM-DD)
@@ -2777,7 +2925,7 @@ function finalizarEmbarazo(index) {
 
 // 2. ELEGIR PARTO O ABORTO
 function seleccionarMotivo(tipo) {
-    window.tipoEventoActual = tipo; 
+    window.tipoEventoActual = tipo;
 
     // Ocultamos botones, mostramos calendario
     document.getElementById('selector-tipo-final').style.display = 'none';
@@ -2835,8 +2983,8 @@ function confirmarParto() {
     guardarDatos('puerperas');
 
     // Refrescar Listas (IMPORTANTE)
-    renderizarListadoEmbarazadas(); 
-    document.getElementById('detalle-embarazada').innerHTML = ''; 
+    renderizarListadoEmbarazadas();
+    document.getElementById('detalle-embarazada').innerHTML = '';
 
     cancelarParto(); // Cerrar modal
 
@@ -2988,8 +3136,8 @@ async function guardarEnNube() {
     }
 
     // 2. Conteo local de registros
-    const totalLocal = (embarazadas ? embarazadas.length : 0) + 
-                       (puerperas ? puerperas.length : 0) + 
+    const totalLocal = (embarazadas ? embarazadas.length : 0) +
+                       (puerperas ? puerperas.length : 0) +
                        (archivadas ? archivadas.length : 0);
 
     // ESCUDO: Bloqueo por base vacía
@@ -3028,7 +3176,7 @@ async function guardarEnNube() {
 
                 if (!confirmCambio) {
                     btn.innerText = '☁️ Guardar en Nube';
-                    return; 
+                    return;
                 }
             }
         }
@@ -3057,7 +3205,7 @@ async function guardarEnNube() {
         await database.ref('respaldos/' + nodoUsuario).set(datosASincronizar);
 
         // --- ACTUALIZACIÓN DEL TOKEN LOCAL ---
-        // Recuperamos el nuevo timestamp que el servidor generó para que 
+        // Recuperamos el nuevo timestamp que el servidor generó para que
         // nuestro próximo guardado sea "pareja" con la nube.
         const nuevoSnapshot = await database.ref('respaldos/' + nodoUsuario + '/meta/timestamp').once('value');
         const nuevoTimestamp = nuevoSnapshot.val();
@@ -3113,19 +3261,19 @@ async function cargarDeNube(esDescargaTotal = false) {
             // Si es supervisor, sumamos los datos de todos los usuarios
             Object.keys(datosNube).forEach(key => {
                 const u = datosNube[key];
-                totalNube += (u.embarazadas ? u.embarazadas.length : 0) + 
-                             (u.puerperas ? u.puerperas.length : 0) + 
+                totalNube += (u.embarazadas ? u.embarazadas.length : 0) +
+                             (u.puerperas ? u.puerperas.length : 0) +
                              (u.archivadas ? u.archivadas.length : 0);
             });
         } else {
             // Si es promotor, sumamos sus propios datos
-            totalNube = (datosNube.embarazadas ? datosNube.embarazadas.length : 0) + 
-                        (datosNube.puerperas ? datosNube.puerperas.length : 0) + 
+            totalNube = (datosNube.embarazadas ? datosNube.embarazadas.length : 0) +
+                        (datosNube.puerperas ? datosNube.puerperas.length : 0) +
                         (datosNube.archivadas ? datosNube.archivadas.length : 0);
         }
 
         // 3. MENSAJE DE ADVERTENCIA Y CONFIRMACIÓN (LO QUE PEDISTE)
-        const mensajeConfirmacion = esDescargaTotal 
+        const mensajeConfirmacion = esDescargaTotal
             ? `👮 MODO SUPERVISOR:\n\nSe han encontrado ${totalNube} registros globales en la nube.\n\n¿Deseas bajarlos todos? Esto bloqueará la subida en este equipo.`
             : `⚠️ ADVERTENCIA DE DESCARGA:\n\nEn la nube hay ${totalNube} registros guardados.\n\nAl bajar esta información, se BORRARÁ lo que tienes actualmente en este teléfono y se reemplazará por lo de la nube.\n\n¿Estás seguro de bajar los ${totalNube} registros?`;
 
@@ -3139,7 +3287,7 @@ async function cargarDeNube(esDescargaTotal = false) {
 
         // 4. PROCESO DE CARGA (TU LÓGICA ORIGINAL)
         if (esDescargaTotal) {
-            localStorage.setItem('BLOQUEO_SUBIDA', 'true'); 
+            localStorage.setItem('BLOQUEO_SUBIDA', 'true');
             let totalEmb = [], totalPue = [], totalArc = [];
 
             Object.keys(datosNube).forEach(key => {
@@ -3172,7 +3320,7 @@ async function cargarDeNube(esDescargaTotal = false) {
         if(esDescargaTotal) {
             iniciarPanelSupervisor();
         } else {
-            location.reload(); 
+            location.reload();
         }
 
     } catch (error) {
@@ -3263,9 +3411,9 @@ function renderizarListadoArchivadas() {
         return cumpleMes && cumpleAnio;
     });
 
-    if (lista.length === 0) { 
-        ul.innerHTML = '<li>No hay registros que coincidan con el filtro.</li>'; 
-        return; 
+    if (lista.length === 0) {
+        ul.innerHTML = '<li>No hay registros que coincidan con el filtro.</li>';
+        return;
     }
 
     // 3. Renderizado final
@@ -3298,7 +3446,7 @@ function abrirLoginSupervisor() {
 
     if(modal) {
         // Usamos 'flex' para activar el centrado perfecto del CSS
-        modal.style.display = 'flex'; 
+        modal.style.display = 'flex';
 
         if(input) {
             input.value = ''; // Limpiar campo
@@ -3317,7 +3465,7 @@ function verificarSupervisor() {
     const pass = input.value;
 
     // TU CONTRASEÑA
-    const PASS_CORRECTA = "admin123"; 
+    const PASS_CORRECTA = "admin123";
 
     if (pass === PASS_CORRECTA) {
         cerrarLoginSupervisor();
@@ -3578,121 +3726,127 @@ function borrarTodoDeFabrica() {
 }
 
 
+function cerrarReporte() {
+    const reporte = document.getElementById('seccion-reporte-interno');
+    if (reporte) reporte.style.display = 'none';
+    const mainHeader = document.querySelector('header');
+    if (mainHeader) mainHeader.style.display = '';
+}
+
 function generarReporteHTML() {
-    // 1. FORZAR SCROLL AL PRINCIPIO
-    window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
+    // Mostrar el overlay de pantalla completa
+    const reporte = document.getElementById('seccion-reporte-interno');
+    if (!reporte) return;
+    reporte.style.display = 'block';
+    reporte.scrollTop = 0; // scroll interno al tope
 
-    mostrarSeccion('seccion-reporte-interno');
+    // ---- Ordenamiento ----
+    const filtroOrden = document.getElementById('filtro-orden-reporte') ? document.getElementById('filtro-orden-reporte').value : 'default';
 
-    const contenedorReporte = document.getElementById('seccion-reporte-interno');
-    const tabla = document.getElementById('cuerpo-reporte');
-    const cabeceraTabla = document.querySelector('#seccion-reporte-interno thead tr');
+    let embOrdenadas = [...embarazadas];
+    let pueOrdenadas = [...puerperas];
+    let arcOrdenadas = [...archivadas];
 
-    const ahora = new Date();
-    const fechaStr = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const horaStr = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-    // 2. LIMPIEZA DE ENCABEZADOS PREVIOS
-    const previoHeader = document.getElementById('stats-header-reporte');
-    if (previoHeader) previoHeader.remove();
-
-    // 3. CREACIÓN DEL ENCABEZADO (Botón arriba + Título + Contadores)
-    const statsHeader = document.createElement('div');
-    statsHeader.id = 'stats-header-reporte';
-    statsHeader.style.padding = '10px';
-
-    statsHeader.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <button onclick="mostrarSeccion('inicio'); window.scrollTo(0,0);" style="
-                background: linear-gradient(135deg, #ff5722, #f44336); 
-                color: white; border: none; padding: 10px 20px; border-radius: 8px; 
-                font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            ">
-                ⬅ VOLVER
-            </button>
-            <div style="text-align: right; color: black; font-size: 0.85rem; font-weight: bold;">
-                ${fechaStr} | ${horaStr}
-            </div>
-        </div>
-
-        <div style="text-align: center; margin-bottom: 15px; border-bottom: 3px solid black; padding-bottom: 5px;">
-            <h2 style="margin:0; color:black; font-size: 1.2rem; font-weight: bold;">REPORTE GENERAL DE VIGILANCIA</h2>
-        </div>
-
-        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-            <div style="flex: 1; background: #673ab7; color: white; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
-                <div style="font-size: 1.4rem; font-weight: bold;">${embarazadas.length}</div>
-                <div style="font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">Embarazadas</div>
-            </div>
-            <div style="flex: 1; background: #e91e63; color: white; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
-                <div style="font-size: 1.4rem; font-weight: bold;">${puerperas.length}</div>
-                <div style="font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">Puérperas</div>
-            </div>
-            <div style="flex: 1; background: #555; color: white; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
-                <div style="font-size: 1.4rem; font-weight: bold;">${archivadas.length}</div>
-                <div style="font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">Archivadas</div>
-            </div>
-        </div>
-    `;
-    contenedorReporte.insertBefore(statsHeader, contenedorReporte.firstChild);
-
-    // 4. ACTUALIZAR CABECERA DE TABLA (Incluye EDAD)
-    if (cabeceraTabla) {
-        cabeceraTabla.innerHTML = `
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">Tipo</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">Nombre</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">Edad</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">Dirección</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">FUR/Parto</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">FPP</th>
-            <th style="padding: 10px; border: 1.5px solid black; background: #eee; color: black; font-size: 0.8rem;">Recurso</th>
-        `;
+    if (filtroOrden === 'fpp-asc') {
+        embOrdenadas.sort((a,b) => (b.fur?crearFechaLocal(b.fur).getTime():0) - (a.fur?crearFechaLocal(a.fur).getTime():0));
+    } else if (filtroOrden === 'fpp-desc') {
+        embOrdenadas.sort((a,b) => (a.fur?crearFechaLocal(a.fur).getTime():0) - (b.fur?crearFechaLocal(b.fur).getTime():0));
+    } else if (filtroOrden === 'puerp-asc') {
+        pueOrdenadas.sort((a,b) => (b.fp?crearFechaLocal(b.fp).getTime():0) - (a.fp?crearFechaLocal(a.fp).getTime():0));
+    } else if (filtroOrden === 'puerp-desc') {
+        pueOrdenadas.sort((a,b) => (a.fp?crearFechaLocal(a.fp).getTime():0) - (b.fp?crearFechaLocal(b.fp).getTime():0));
+    } else if (filtroOrden === 'arch-asc') {
+        arcOrdenadas.sort((a,b) => (b.fecha_archivo?crearFechaLocal(b.fecha_archivo).getTime():0) - (a.fecha_archivo?crearFechaLocal(a.fecha_archivo).getTime():0));
+    } else if (filtroOrden === 'arch-desc') {
+        arcOrdenadas.sort((a,b) => (a.fecha_archivo?crearFechaLocal(a.fecha_archivo).getTime():0) - (b.fecha_archivo?crearFechaLocal(b.fecha_archivo).getTime():0));
     }
 
-    // 5. GENERAR FILAS (Bordes negros y datos completos)
-    tabla.innerHTML = ""; 
     const todas = [
-        ...embarazadas.map(p => ({...p, tipo: 'EMB'})),
-        ...puerperas.map(p => ({...p, tipo: 'PUE'})),
-        ...archivadas.map(p => ({...p, tipo: 'ARC'}))
+        ...embOrdenadas.map(p=>({...p,_tipo:'EMB'})),
+        ...pueOrdenadas.map(p=>({...p,_tipo:'PUE'})),
+        ...arcOrdenadas.map(p=>({...p,_tipo:'ARC'}))
     ];
 
+    // ---- Contadores ----
+    const ctDiv = document.getElementById('reporte-contadores');
+    if (ctDiv) {
+        ctDiv.innerHTML = `
+            <div style="flex:1;background:#673ab7;color:white;padding:10px;border-radius:8px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:bold;">${embarazadas.length}</div>
+                <div style="font-size:0.65rem;font-weight:bold;text-transform:uppercase;">Embarazadas</div>
+            </div>
+            <div style="flex:1;background:#e91e63;color:white;padding:10px;border-radius:8px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:bold;">${puerperas.length}</div>
+                <div style="font-size:0.65rem;font-weight:bold;text-transform:uppercase;">Puérperas</div>
+            </div>
+            <div style="flex:1;background:#546e7a;color:white;padding:10px;border-radius:8px;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:bold;">${archivadas.length}</div>
+                <div style="font-size:0.65rem;font-weight:bold;text-transform:uppercase;">Archivadas</div>
+            </div>`;
+    }
+
+    // ---- Tarjetas ----
+    const contenedor = document.getElementById('reporte-tarjetas');
+    if (!contenedor) return;
+
+    if (todas.length === 0) {
+        contenedor.innerHTML = '<p style="text-align:center;color:#777;padding:30px;">No hay registros para mostrar.</p>';
+        return;
+    }
+
+    const colores = { EMB: {bg:'#ede7f6', border:'#673ab7', tag:'#673ab7', label:'🤰 Embarazada'},
+                      PUE: {bg:'#fce4ec', border:'#e91e63', tag:'#e91e63', label:'🤱 Puérpera'},
+                      ARC: {bg:'#eceff1', border:'#607d8b', tag:'#546e7a', label:'📦 Archivada'} };
+
+    let html = '';
+    let seccionActual = '';
+
     todas.forEach(p => {
-        const fila = document.createElement('tr');
+        const c = colores[p._tipo] || colores.ARC;
 
-        // --- CORRECCIÓN AQUÍ: Se cambió " añ" por " años" ---
-        let edad = p.fecha_nacimiento ? calcularEdad(crearFechaLocal(p.fecha_nacimiento)) + " años" : "-";
-
-        let fpp = "-";
-        if(p.tipo === 'EMB' && p.fur) {
-            try { fpp = formatDate(calcularFPP(crearFechaLocal(p.fur))); } catch(e) { fpp = "Err"; }
+        // Separador de sección
+        if (p._tipo !== seccionActual) {
+            seccionActual = p._tipo;
+            html += `<div style="background:${c.tag};color:white;padding:6px 12px;border-radius:6px;font-weight:bold;font-size:0.8rem;margin:12px 0 6px;letter-spacing:0.5px;">${c.label.toUpperCase()} (${p._tipo==='EMB'?embOrdenadas.length:p._tipo==='PUE'?pueOrdenadas.length:arcOrdenadas.length})</div>`;
         }
 
-        const colorEtiqueta = p.tipo === 'EMB' ? '#673ab7' : (p.tipo === 'PUE' ? '#e91e63' : '#555');
+        // Calcular datos clave
+        let edad = p.fecha_nacimiento ? calcularEdad(crearFechaLocal(p.fecha_nacimiento)) + ' años' : '-';
+        let fpp = '-', furLabel = '-';
+        if (p._tipo === 'EMB' && p.fur) {
+            try {
+                fpp = formatDate(calcularFPP(crearFechaLocal(p.fur)));
+                furLabel = formatDate(crearFechaLocal(p.fur));
+            } catch(e) {}
+        } else if (p._tipo === 'PUE' && p.fp) {
+            furLabel = formatDate(crearFechaLocal(p.fp));
+        } else if (p._tipo === 'ARC') {
+            if (p.fp) furLabel = formatDate(crearFechaLocal(p.fp));
+            else if (p.fur) furLabel = formatDate(crearFechaLocal(p.fur));
+        }
 
-        fila.innerHTML = `
-            <td style="padding: 12px 5px; border: 1.5px solid black; text-align: center; background: white;">
-                <span style="background:${colorEtiqueta}; color:white; padding:2px 5px; border-radius:4px; font-size:0.6rem; font-weight:bold;">${p.tipo}</span>
-            </td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; font-weight:bold; color:black; background: white; font-size:0.8rem;">${p.nombre}</td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; text-align: center; color:black; background: white; font-size:0.8rem;">${edad}</td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; color:black; background: white; font-size: 0.75rem;">${p.direccion || '-'}</td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; text-align: center; color:black; background: white; font-size: 0.75rem;">${p.fur || p.fp || '-'}</td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; text-align: center; font-weight: bold; color:black; background: white; font-size: 0.75rem;">${fpp}</td>
-            <td style="padding: 12px 8px; border: 1.5px solid black; color:black; background: white; font-size: 0.65rem;">${p.registrado_por || '??'}</td>
-        `;
-        tabla.appendChild(fila);
+        const riesgoHtml = (p.riesgo_obstetrico === 'si')
+            ? `<span style="color:#c62828;font-size:0.75rem;font-weight:bold;">⚠️ ${p.tipo_riesgo||'Con riesgo'}</span>`
+            : `<span style="color:#2e7d32;font-size:0.75rem;">✅ Sin riesgo</span>`;
+
+        html += `
+        <div style="background:${c.bg};border-left:4px solid ${c.border};border-radius:8px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+                <strong style="font-size:0.95rem;color:#263238;flex:1;padding-right:8px;">${p.nombre}</strong>
+                <span style="background:${c.tag};color:white;font-size:0.65rem;font-weight:bold;padding:2px 7px;border-radius:10px;white-space:nowrap;">${p._tipo}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:0.78rem;color:#455a64;margin-top:4px;">
+                ${p.expediente ? `<span>📁 <b>Exp:</b> ${p.expediente}</span>` : ''}
+                <span>🎂 <b>Edad:</b> ${edad}</span>
+                <span>📍 <b>Dir:</b> ${p.direccion||'-'}</span>
+                ${p._tipo==='EMB' ? `<span>📅 <b>FUR:</b> ${furLabel}</span><span style="color:#c2185b;font-weight:bold;">🏁 <b>FPP:</b> ${fpp}</span>` : `<span>📅 <b>${p._tipo==='PUE'?'Parto':'Fecha'}:</b> ${furLabel}</span>`}
+                <span>👤 ${p.registrado_por||'?'}</span>
+                <span>${riesgoHtml}</span>
+            </div>
+        </div>`;
     });
 
-    // Ajuste de bordes negros para la tabla completa
-    const tablaElement = document.querySelector('#seccion-reporte-interno table');
-    if(tablaElement) {
-        tablaElement.style.borderCollapse = "collapse";
-        tablaElement.style.border = "2px solid black";
-        tablaElement.style.width = "100%";
-    }
+    contenedor.innerHTML = html;
 }
 
 function chequearBloqueoVisual() {
@@ -3793,9 +3947,9 @@ function filtrarNombres(inputElement) {
         const nombrePaciente = items[i].textContent.toLowerCase();
         // Si el nombre coincide con la búsqueda, se muestra; si no, se oculta
         if (nombrePaciente.indexOf(textoBusqueda) > -1) {
-            items[i].style.display = ""; 
+            items[i].style.display = "";
         } else {
-            items[i].style.display = "none"; 
+            items[i].style.display = "none";
         }
     }
 }
@@ -3819,12 +3973,12 @@ function descargarPDF(index, tipo) {
 
     // --- CÁLCULOS INICIALES ---
     let edadDoc = paciente.fecha_nacimiento ? calcularEdad(crearFechaLocal(paciente.fecha_nacimiento)) + " años" : "N/A";
-    
+
     // 1. Obtener FUR y calcular FPP (Teórica)
     let furDoc = "N/A";
     let fppDoc = "N/A";
     const furParaCalculo = paciente.fur || (paciente.historial_embarazo ? paciente.historial_embarazo.fur : null);
-    
+
     if (furParaCalculo) {
         furDoc = formatearConPlecas(furParaCalculo);
         try {
@@ -3868,13 +4022,13 @@ function descargarPDF(index, tipo) {
             .historial-box { border: 1.5px dashed #673ab7; padding: 10px; margin-top: 10px; background: #f3e5f5; page-break-inside: avoid; }
             .nota-final { margin-top: 10px; padding: 10px; border: 1px solid #ccc; page-break-inside: avoid; background: #fafafa; }
             .nota-fecha { font-weight: bold; font-size: 0.85em; color: #00796b; margin-bottom: 4px; }
-            @media print { 
-                body { padding: 0; } 
+            @media print {
+                body { padding: 0; }
                 .nota-final { border: 1px solid #999; }
                 .historial-box { border: 1.5px dashed #673ab7; -webkit-print-color-adjust: exact; }
             }
         </style></head><body>
-        
+
         <div class="h">
             <h2 style="margin:0; text-transform: uppercase;">FICHA OBSTÉTRICA: ${paciente.nombre}</h2>
             <p style="margin:5px 0; font-size: 14px;">Salud Comunitaria | Generado: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
@@ -3882,11 +4036,16 @@ function descargarPDF(index, tipo) {
 
         <div class="seccion-head">DATOS DE IDENTIFICACIÓN</div>
         <div class="fila"><span class="label">NOMBRE COMPLETO:</span><span class="valor">${paciente.nombre}</span></div>
+        <div class="fila"><span class="label">N° EXPEDIENTE:</span><span class="valor">${paciente.expediente || 'No registrado'}</span></div>
         <div class="fila"><span class="label">DIRECCIÓN:</span><span class="valor">${paciente.direccion || 'No registrada'}</span></div>
         <div class="fila"><span class="label">EDAD:</span><span class="valor">${edadDoc}</span></div>
-        
+        <div class="fila" style="${(paciente.riesgo_obstetrico === 'si') ? 'background:#fff3e0;' : ''}">
+            <span class="label">RIESGO OBSTÉTRICO:</span>
+            <span class="valor" style="${(paciente.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;'}">${(paciente.riesgo_obstetrico === 'si') ? '⚠️ SÍ — ' + (paciente.tipo_riesgo || 'No especificado') : '✅ Sin riesgo'}</span>
+        </div>
+
         <div class="seccion-head">ESTADO ACTUAL: ${tipo.toUpperCase()}</div>
-        
+
         <div class="fila"><span class="label">FECHA FUR (ÚLTIMA REGLA):</span><span class="valor">${furDoc}</span></div>
         <div class="fila"><span class="label">FECHA PROBABLE PARTO (FPP):</span><span class="valor" style="color: #555;">${fppDoc}</span></div>
 
@@ -3958,15 +4117,28 @@ function descargarPDF(index, tipo) {
 
 
 function imprimirReporteGeneral() {
-    // 1. Filtrar SOLO pacientes activas (Embarazadas y Puérperas)
-    // Se excluyen las archivadas para limpiar el reporte
+    // Usar el mismo ordenamiento del filtro activo en pantalla
+    const filtroOrden = document.getElementById('filtro-orden-reporte') ? document.getElementById('filtro-orden-reporte').value : 'default';
+
+    let embOrdenadas = [...embarazadas];
+    let pueOrdenadas = [...puerperas];
+    let arcOrdenadas = [...archivadas];
+
+    if (filtroOrden === 'fpp-asc') embOrdenadas.sort((a,b)=>(b.fur?crearFechaLocal(b.fur).getTime():0)-(a.fur?crearFechaLocal(a.fur).getTime():0));
+    else if (filtroOrden === 'fpp-desc') embOrdenadas.sort((a,b)=>(a.fur?crearFechaLocal(a.fur).getTime():0)-(b.fur?crearFechaLocal(b.fur).getTime():0));
+    else if (filtroOrden === 'puerp-asc') pueOrdenadas.sort((a,b)=>(b.fp?crearFechaLocal(b.fp).getTime():0)-(a.fp?crearFechaLocal(a.fp).getTime():0));
+    else if (filtroOrden === 'puerp-desc') pueOrdenadas.sort((a,b)=>(a.fp?crearFechaLocal(a.fp).getTime():0)-(b.fp?crearFechaLocal(b.fp).getTime():0));
+    else if (filtroOrden === 'arch-asc') arcOrdenadas.sort((a,b)=>(b.fecha_archivo?crearFechaLocal(b.fecha_archivo).getTime():0)-(a.fecha_archivo?crearFechaLocal(a.fecha_archivo).getTime():0));
+    else if (filtroOrden === 'arch-desc') arcOrdenadas.sort((a,b)=>(a.fecha_archivo?crearFechaLocal(a.fecha_archivo).getTime():0)-(b.fecha_archivo?crearFechaLocal(b.fecha_archivo).getTime():0));
+
     const activas = [
-        ...embarazadas.map(p => ({...p, tipo: 'EMB'})),
-        ...puerperas.map(p => ({...p, tipo: 'PUE'}))
+        ...embOrdenadas.map(p => ({...p, tipo: 'EMB'})),
+        ...pueOrdenadas.map(p => ({...p, tipo: 'PUE'})),
+        ...arcOrdenadas.map(p => ({...p, tipo: 'ARC'}))
     ];
 
     if (activas.length === 0) {
-        alert("No hay pacientes activas (Embarazadas o Puérperas) para generar el reporte.");
+        alert("No hay pacientes para generar el reporte.");
         return;
     }
 
@@ -3984,100 +4156,107 @@ function imprimirReporteGeneral() {
     // CSS de alta precisión: Elimina espacios arriba y optimiza para horizontal
     doc.write(`
         <style>
-            @page { 
-                size: letter landscape; 
+            @page {
+                size: letter landscape;
                 margin: 5mm; /* Margen mínimo para que empiece en el borde superior */
             }
-            body { 
-                font-family: Arial, sans-serif; 
-                margin: 0; 
-                padding: 0; 
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
                 background: white !important;
                 color: #000;
             }
-            .header-reporte { 
-                text-align: center; 
-                border-bottom: 2px solid #000; 
-                margin-bottom: 10px; 
+            .header-reporte {
+                text-align: center;
+                border-bottom: 2px solid #000;
+                margin-bottom: 10px;
                 padding-bottom: 5px;
             }
-            table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                font-size: 10px; 
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 10px;
             }
-            th { 
-                background-color: #f2f2f2 !important; 
-                border: 1px solid #000; 
-                padding: 5px; 
+            th {
+                background-color: #f2f2f2 !important;
+                border: 1px solid #000;
+                padding: 5px;
                 text-align: left;
                 -webkit-print-color-adjust: exact;
             }
-            td { 
-                border: 1px solid #000; 
-                padding: 5px; 
-                vertical-align: middle; 
+            td {
+                border: 1px solid #000;
+                padding: 5px;
+                vertical-align: middle;
             }
-            .tag { 
-                font-weight: bold; 
-                font-size: 8px; 
-                padding: 2px 5px; 
-                border-radius: 3px; 
-                color: white !important; 
+            .tag {
+                font-weight: bold;
+                font-size: 8px;
+                padding: 2px 5px;
+                border-radius: 3px;
+                color: white !important;
             }
             .tag-emb { background: #673ab7 !important; -webkit-print-color-adjust: exact; }
             .tag-pue { background: #e91e63 !important; -webkit-print-color-adjust: exact; }
+            .tag-arc { background: #546e7a !important; -webkit-print-color-adjust: exact; }
         </style>
     `);
     doc.write('</head><body>');
 
-    // 3. Encabezado del Reporte (Directo al grano)
+    // 3. Encabezado del Reporte
     const ahora = new Date();
     doc.write(`
         <div class="header-reporte">
-            <h2 style="margin:0; font-size: 15px;">REPORTE DE VIGILANCIA MATERNA (CASOS ACTIVOS)</h2>
+            <h2 style="margin:0; font-size: 15px;">REPORTE DE VIGILANCIA MATERNA</h2>
             <p style="margin:2px 0; font-size: 10px;">
-                Coatepeque | Generado: ${ahora.toLocaleDateString()} ${ahora.toLocaleTimeString()} | Total: ${activas.length}
+                Coatepeque | Generado: ${ahora.toLocaleDateString()} ${ahora.toLocaleTimeString()} | Total: ${activas.length} (EMB: ${embarazadas.length} | PUE: ${puerperas.length} | ARC: ${archivadas.length})
             </p>
         </div>
         <table>
             <thead>
                 <tr>
-                    <th style="width: 40px; text-align: center;">TIPO</th>
+                    <th style="width:35px;text-align:center;">TIPO</th>
+                    <th style="width:65px;">EXPEDIENTE</th>
                     <th>NOMBRE COMPLETO</th>
-                    <th style="width: 60px; text-align: center;">EDAD</th>
-                    <th>DIRECCIÓN / COMUNIDAD</th>
-                    <th style="width: 90px; text-align: center;">FUR / PARTO</th>
-                    <th style="width: 90px; text-align: center;">FPP</th>
-                    <th>RESPONSABLE</th>
+                    <th style="width:50px;text-align:center;">EDAD</th>
+                    <th>DIRECCIÓN</th>
+                    <th style="width:80px;text-align:center;">FUR / PARTO</th>
+                    <th style="width:80px;text-align:center;">FPP</th>
+                    <th style="width:90px;">RIESGO</th>
+                    <th style="width:70px;">RESPONSABLE</th>
                 </tr>
             </thead>
             <tbody>
     `);
 
-    // 4. Llenar la tabla con los datos filtrados
+    // 4. Llenar la tabla
     activas.forEach(p => {
         let edad = p.fecha_nacimiento ? calcularEdad(crearFechaLocal(p.fecha_nacimiento)) + " años" : "-";
 
         let fpp = "-";
         if(p.tipo === 'EMB' && p.fur) {
-            try { 
+            try {
                 const fppDate = new Date(crearFechaLocal(p.fur));
                 fppDate.setDate(fppDate.getDate() + 280);
                 fpp = fppDate.toLocaleDateString();
             } catch(e) { fpp = "Err"; }
         }
 
-        const claseTag = p.tipo === 'EMB' ? 'tag-emb' : 'tag-pue';
+        const claseTag = p.tipo === 'EMB' ? 'tag-emb' : (p.tipo === 'PUE' ? 'tag-pue' : 'tag-arc');
+        const riesgoTxt = (p.riesgo_obstetrico === 'si') ? `⚠️ ${p.tipo_riesgo||'Con riesgo'}` : '✅ Sin riesgo';
+        const riesgoColor = (p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;';
 
         doc.write(`
             <tr>
                 <td style="text-align:center;"><span class="tag ${claseTag}">${p.tipo}</span></td>
+                <td style="font-size:8px;">${p.expediente||'-'}</td>
                 <td><strong>${p.nombre}</strong></td>
                 <td style="text-align:center;">${edad}</td>
                 <td>${p.direccion || '-'}</td>
                 <td style="text-align:center;">${p.fur || p.fp || '-'}</td>
                 <td style="text-align:center;">${fpp}</td>
+                <td style="font-size:8px;${riesgoColor}">${riesgoTxt}</td>
                 <td style="font-size: 8px;">${p.registrado_por || '-'}</td>
             </tr>
         `);
@@ -4090,8 +4269,8 @@ function imprimirReporteGeneral() {
     setTimeout(() => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
-        setTimeout(() => { 
-            if(document.body.contains(iframe)) document.body.removeChild(iframe); 
+        setTimeout(() => {
+            if(document.body.contains(iframe)) document.body.removeChild(iframe);
         }, 2000);
     }, 600);
 }
