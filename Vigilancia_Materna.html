@@ -4387,168 +4387,215 @@ function imprimirReporteGeneral() {
         return;
     }
 
-    // 2. Crear Iframe temporal para aislamiento total de la impresión
+    // 2. Preparar datos como JSON para pasarlos a la ventana nueva
+    const ahora = new Date();
+    const datosJSON = JSON.stringify(activas);
+    const resumen = { emb: embarazadas.length, pue: puerperas.length, arc: archivadas.length, total: activas.length };
+    const resumenJSON = JSON.stringify(resumen);
+    const fechaGen = ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString();
+
     const ventana = window.open('', '_blank', 'width=1100,height=750');
     if (!ventana) { alert('⚠️ Permite las ventanas emergentes para generar el reporte.'); return; }
     const doc = ventana.document;
     doc.open();
-    doc.write(`<html><head><title>Reporte Vigilancia Materna - ${new Date().toLocaleDateString()}</title>`);
-
-    // CSS de alta precisión: Elimina espacios arriba y optimiza para horizontal
-    doc.write(`
+    doc.write(`<!DOCTYPE html><html><head>
+        <meta charset="UTF-8">
+        <title>Reporte Vigilancia Materna - ${ahora.toLocaleDateString()}</title>
         <style>
-            @page {
-                size: letter landscape;
-                margin: 5mm; /* Margen mínimo para que empiece en el borde superior */
+            @page { size: letter landscape; margin: 5mm; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: white; color: #000; }
+            .controles {
+                display: flex; align-items: center; gap: 12px;
+                padding: 8px 12px; background: #f5f5f5;
+                border-bottom: 2px solid #00796b;
             }
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
-                background: white !important;
-                color: #000;
+            .controles label { font-weight: bold; font-size: 13px; color: #00796b; }
+            .controles select {
+                padding: 5px 10px; border-radius: 6px; border: 1px solid #00796b;
+                font-size: 13px; cursor: pointer;
             }
-            .header-reporte {
-                text-align: center;
-                border-bottom: 2px solid #000;
-                margin-bottom: 10px;
-                padding-bottom: 5px;
+            .controles button {
+                padding: 6px 16px; background: #e91e63; color: white;
+                border: none; border-radius: 6px; font-weight: bold;
+                font-size: 13px; cursor: pointer;
             }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 10px;
+            .controles button:hover { background: #c2185b; }
+            .contador { font-size: 12px; color: #555; margin-left: auto; }
+            .header-reporte { text-align: center; border-bottom: 2px solid #000; margin: 8px 0; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            th { background-color: #f2f2f2 !important; border: 1px solid #000; padding: 5px; text-align: left; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            td { border: 1px solid #000; padding: 5px; vertical-align: middle; }
+            .tag { font-weight: bold; font-size: 8px; padding: 2px 5px; border-radius: 3px; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tag-EMB { background: #673ab7 !important; }
+            .tag-PUE { background: #e91e63 !important; }
+            .tag-ARC { background: #546e7a !important; }
+            .riesgo-si { color: #c62828; font-weight: bold; }
+            .riesgo-no { color: #2e7d32; }
+            .pend { color: #c62828; }
+            @media print {
+                .controles { display: none !important; }
+                body { padding: 0; }
             }
-            th {
-                background-color: #f2f2f2 !important;
-                border: 1px solid #000;
-                padding: 5px;
-                text-align: left;
-                -webkit-print-color-adjust: exact;
-            }
-            td {
-                border: 1px solid #000;
-                padding: 5px;
-                vertical-align: middle;
-            }
-            .tag {
-                font-weight: bold;
-                font-size: 8px;
-                padding: 2px 5px;
-                border-radius: 3px;
-                color: white !important;
-            }
-            .tag-emb { background: #673ab7 !important; -webkit-print-color-adjust: exact; }
-            .tag-pue { background: #e91e63 !important; -webkit-print-color-adjust: exact; }
-            .tag-arc { background: #546e7a !important; -webkit-print-color-adjust: exact; }
         </style>
-    `);
-    doc.write('</head><body>');
-
-    // 3. Encabezado del Reporte
-    const ahora = new Date();
-    doc.write(`
-        <div class="header-reporte">
-            <h2 style="margin:0; font-size: 15px;">REPORTE DE VIGILANCIA MATERNA</h2>
-            <p style="margin:2px 0; font-size: 10px;">
-                Coatepeque | Generado: ${ahora.toLocaleDateString()} ${ahora.toLocaleTimeString()} | Total: ${activas.length} (EMB: ${embarazadas.length} | PUE: ${puerperas.length} | ARC: ${archivadas.length})
-            </p>
+    </head><body>
+        <div class="controles">
+            <label>🔽 Mostrar:</label>
+            <select id="filtro-tipo" onchange="renderTabla()">
+                <option value="TODAS">Todas las pacientes</option>
+                <option value="EMB">Solo Embarazadas</option>
+                <option value="PUE">Solo Puérperas</option>
+                <option value="ARC">Solo Archivadas</option>
+            </select>
+            <span class="contador" id="contador-txt"></span>
+            <button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px;text-align:center;">TIPO</th>
-                    <th style="width:55px;">EXPEDIENTE</th>
-                    <th>NOMBRE COMPLETO</th>
-                    <th style="width:40px;text-align:center;">EDAD</th>
-                    <th style="width:35px;text-align:center;">GS</th>
-                    <th>DIRECCIÓN</th>
-                    <th style="width:70px;text-align:center;">EG / PUERPERIO</th>
-                    <th style="width:70px;text-align:center;">FPP / FIN PUERP.</th>
-                    <th style="width:80px;">RIESGO</th>
-                    <th style="width:20px;text-align:center;">Inf.</th>
-                    <th style="width:20px;text-align:center;">DTPa</th>
-                    <th style="width:20px;text-align:center;">DT</th>
-                    <th style="width:20px;text-align:center;">VRS</th>
-                    <th style="width:55px;">RESPONSABLE</th>
-                </tr>
-            </thead>
-            <tbody>
-    `);
+        <div id="contenido-reporte"></div>
 
-    // 4. Llenar la tabla
-    activas.forEach(p => {
-        let edad = p.fecha_nacimiento ? calcularEdad(crearFechaLocal(p.fecha_nacimiento)) + "a" : "-";
+        <script>
+            const DATOS = ${datosJSON};
+            const RESUMEN = ${resumenJSON};
+            const FECHA_GEN = "${fechaGen}";
 
-        const claseTag = p.tipo === 'EMB' ? 'tag-emb' : (p.tipo === 'PUE' ? 'tag-pue' : 'tag-arc');
-        const riesgoTxt = (p.riesgo_obstetrico === 'si') ? `⚠️ ${p.tipo_riesgo||'Con riesgo'}` : '✅ Sin riesgo';
-        const riesgoColor = (p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;';
+            function fmtFecha(str) {
+                if (!str) return '<span class="pend">Pend.</span>';
+                try {
+                    const p = str.split('-');
+                    return p[2] + '/' + p[1] + '/' + p[0];
+                } catch(e) { return str; }
+            }
 
-        // Columnas de tiempo y FPP/fin según tipo
-        let colTiempo = '-';
-        let colFecha = '-';
+            function calcEdad(fnac) {
+                if (!fnac) return '-';
+                try {
+                    const p = fnac.split('-');
+                    const hoy = new Date();
+                    const nac = new Date(+p[0], +p[1]-1, +p[2]);
+                    let a = hoy.getFullYear() - nac.getFullYear();
+                    if (hoy < new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate())) a--;
+                    return a + 'a';
+                } catch(e) { return '-'; }
+            }
 
-        if (p.tipo === 'EMB' && p.fur) {
-            try {
-                const eg = calcularEdadGestacional(crearFechaLocal(p.fur));
-                colTiempo = eg.semanas + 's ' + eg.dias + 'd';
-                const fppD = new Date(crearFechaLocal(p.fur));
-                fppD.setDate(fppD.getDate() + 280);
-                colFecha = fppD.toLocaleDateString();
-            } catch(e) { colTiempo = 'Err'; }
-        } else if (p.tipo === 'PUE' && p.fp) {
-            try {
-                const puerp = calcularPuerperio(crearFechaLocal(p.fp));
-                const restantes = puerp.diasRestantes;
-                colTiempo = puerp.diasPuerperio + 'd transcurridos';
-                colFecha = restantes > 0 ? 'Faltan ' + restantes + 'd' : 'Alta (hace ' + Math.abs(restantes) + 'd)';
-            } catch(e) { colTiempo = 'Err'; }
-        } else if (p.tipo === 'ARC') {
-            colTiempo = p.fp ? ('FP: ' + p.fp) : (p.fur ? ('FUR: ' + p.fur) : '-');
-            colFecha = p.fecha_archivo || '-';
-        }
+            function calcEG(fur) {
+                try {
+                    const p = fur.split('-');
+                    const f = new Date(+p[0], +p[1]-1, +p[2]);
+                    const dias = Math.floor((new Date() - f) / 86400000);
+                    if (dias < 0) return '-';
+                    return Math.floor(dias/7) + 's ' + (dias%7) + 'd';
+                } catch(e) { return '-'; }
+            }
 
-        // Vacunas — buscar en vacunas directas o en historial_embarazo
-        const vac = p.vacunas || (p.historial_embarazo && p.historial_embarazo.vacunas) || {};
-        const vFecha = (d) => {
-            if (!d) return '<span style="color:#c62828;">Pend.</span>';
-            try {
-                const f = crearFechaLocal(d);
-                return String(f.getDate()).padStart(2,'0') + '/' + String(f.getMonth()+1).padStart(2,'0') + '/' + f.getFullYear();
-            } catch(e) { return d; }
-        };
+            function calcFPP(fur) {
+                try {
+                    const p = fur.split('-');
+                    const f = new Date(+p[0], +p[1]-1, +p[2]);
+                    f.setDate(f.getDate() + 280);
+                    return String(f.getDate()).padStart(2,'0') + '/' + String(f.getMonth()+1).padStart(2,'0') + '/' + f.getFullYear();
+                } catch(e) { return '-'; }
+            }
 
-        doc.write(`
-            <tr>
-                <td style="text-align:center;"><span class="tag ${claseTag}">${p.tipo}</span></td>
-                <td style="font-size:8px;">${p.expediente||'-'}</td>
-                <td><strong>${p.nombre}</strong></td>
-                <td style="text-align:center; font-size:9px;">${edad}</td>
-                <td style="text-align:center; font-weight:bold; color:#c62828; font-size:9px;">${p.grupo_sanguineo||'-'}</td>
-                <td style="font-size:9px;">${p.direccion || '-'}</td>
-                <td style="text-align:center; font-size:9px;">${colTiempo}</td>
-                <td style="text-align:center; font-size:9px;">${colFecha}</td>
-                <td style="font-size:8px;${riesgoColor}">${riesgoTxt}</td>
-                <td style="text-align:center; font-size:8px;">${vFecha(vac.influenza)}</td>
-                <td style="text-align:center; font-size:8px;">${vFecha(vac.dtpa)}</td>
-                <td style="text-align:center; font-size:8px;">${vFecha(vac.dtadulto)}</td>
-                <td style="text-align:center; font-size:8px;">${vFecha(vac.vrs)}</td>
-                <td style="font-size: 8px;">${p.registrado_por || '-'}</td>
-            </tr>
-        `);
-    });
+            function calcPuerperio(fp) {
+                try {
+                    const p = fp.split('-');
+                    const f = new Date(+p[0], +p[1]-1, +p[2]);
+                    const dias = Math.floor((new Date() - f) / 86400000);
+                    const rest = 42 - dias;
+                    return {
+                        tiempo: dias + 'd transcurridos',
+                        fecha: rest > 0 ? 'Faltan ' + rest + 'd' : 'Alta (hace ' + Math.abs(rest) + 'd)'
+                    };
+                } catch(e) { return { tiempo: '-', fecha: '-' }; }
+            }
 
-    doc.write('</tbody></table></body></html>');
+            function renderTabla() {
+                const filtro = document.getElementById('filtro-tipo').value;
+                const datos = filtro === 'TODAS' ? DATOS : DATOS.filter(p => p.tipo === filtro);
+
+                const emb = datos.filter(p => p.tipo === 'EMB').length;
+                const pue = datos.filter(p => p.tipo === 'PUE').length;
+                const arc = datos.filter(p => p.tipo === 'ARC').length;
+                document.getElementById('contador-txt').textContent =
+                    'Mostrando ' + datos.length + ' pacientes (EMB: ' + emb + ' | PUE: ' + pue + ' | ARC: ' + arc + ')';
+
+                let filas = '';
+                datos.forEach(p => {
+                    const vac = p.vacunas || (p.historial_embarazo && p.historial_embarazo.vacunas) || {};
+                    const edad = calcEdad(p.fecha_nacimiento);
+                    const riesgoClass = p.riesgo_obstetrico === 'si' ? 'riesgo-si' : 'riesgo-no';
+                    const riesgoTxt = p.riesgo_obstetrico === 'si' ? '⚠️ ' + (p.tipo_riesgo||'Con riesgo') : '✅ Sin riesgo';
+
+                    let colTiempo = '-', colFecha = '-';
+                    if (p.tipo === 'EMB' && p.fur) {
+                        colTiempo = calcEG(p.fur);
+                        colFecha = calcFPP(p.fur);
+                    } else if (p.tipo === 'PUE' && p.fp) {
+                        const puerp = calcPuerperio(p.fp);
+                        colTiempo = puerp.tiempo;
+                        colFecha = puerp.fecha;
+                    } else if (p.tipo === 'ARC') {
+                        colTiempo = p.fp ? 'FP: ' + fmtFecha(p.fp) : (p.fur ? 'FUR: ' + fmtFecha(p.fur) : '-');
+                        colFecha = p.fecha_archivo ? fmtFecha(p.fecha_archivo) : '-';
+                    }
+
+                    filas += \`<tr>
+                        <td style="text-align:center;"><span class="tag tag-\${p.tipo}">\${p.tipo}</span></td>
+                        <td style="font-size:8px;">\${p.expediente||'-'}</td>
+                        <td><strong>\${p.nombre}</strong></td>
+                        <td style="text-align:center;">\${edad}</td>
+                        <td style="text-align:center;font-weight:bold;color:#c62828;">\${p.grupo_sanguineo||'-'}</td>
+                        <td style="font-size:9px;">\${p.direccion||'-'}</td>
+                        <td style="text-align:center;">\${colTiempo}</td>
+                        <td style="text-align:center;">\${colFecha}</td>
+                        <td class="\${riesgoClass}" style="font-size:8px;">\${riesgoTxt}</td>
+                        <td style="text-align:center;font-size:8px;">\${fmtFecha(vac.influenza)}</td>
+                        <td style="text-align:center;font-size:8px;">\${fmtFecha(vac.dtpa)}</td>
+                        <td style="text-align:center;font-size:8px;">\${fmtFecha(vac.dtadulto)}</td>
+                        <td style="text-align:center;font-size:8px;">\${fmtFecha(vac.vrs)}</td>
+                        <td style="font-size:8px;">\${p.registrado_por||'-'}</td>
+                    </tr>\`;
+                });
+
+                document.getElementById('contenido-reporte').innerHTML = \`
+                    <div class="header-reporte">
+                        <h2 style="margin:0;font-size:15px;">REPORTE DE VIGILANCIA MATERNA</h2>
+                        <p style="margin:2px 0;font-size:10px;">
+                            Coatepeque | Generado: \${FECHA_GEN} |
+                            Total general: \${RESUMEN.total} (EMB: \${RESUMEN.emb} | PUE: \${RESUMEN.pue} | ARC: \${RESUMEN.arc})
+                        </p>
+                    </div>
+                    <table>
+                        <thead><tr>
+                            <th style="width:30px;text-align:center;">TIPO</th>
+                            <th style="width:55px;">EXPEDIENTE</th>
+                            <th>NOMBRE COMPLETO</th>
+                            <th style="width:40px;text-align:center;">EDAD</th>
+                            <th style="width:35px;text-align:center;">GS</th>
+                            <th>DIRECCIÓN</th>
+                            <th style="width:70px;text-align:center;">EG / PUERPERIO</th>
+                            <th style="width:70px;text-align:center;">FPP / FIN PUERP.</th>
+                            <th style="width:80px;">RIESGO</th>
+                            <th style="width:55px;text-align:center;">Inf.</th>
+                            <th style="width:55px;text-align:center;">DTPa</th>
+                            <th style="width:55px;text-align:center;">DT</th>
+                            <th style="width:55px;text-align:center;">VRS</th>
+                            <th style="width:55px;">RESPONSABLE</th>
+                        </tr></thead>
+                        <tbody>\${filas}</tbody>
+                    </table>
+                \`;
+            }
+
+            renderTabla();
+        <\/script>
+    </body></html>`);
     doc.close();
 
-    // 5. Lanzar impresión
-    setTimeout(() => {
-        ventana.focus();
-        ventana.print();
-    }, 600);
+    // 5. La ventana ya tiene su propio botón de imprimir — no lanzar print automático
 }
 
 
 </script>
 </body>
 </html>
+
