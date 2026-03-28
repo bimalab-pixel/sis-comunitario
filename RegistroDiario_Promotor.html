@@ -336,7 +336,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 }
 
 /* ══ PREVIEW TABLA ══ */
-.prev-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:.7rem;border-radius:8px;border:1px solid var(--border)}
+.prev-table-wrap{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-top:.7rem;border-radius:8px;border:1px solid var(--border);max-height:45vh}
 .prev-table{width:100%;border-collapse:collapse;font-size:.72rem;}
 .prev-table th{background:var(--navy2);color:#fff;padding:.4rem .55rem;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left;white-space:nowrap;}
 .prev-table td{padding:.38rem .55rem;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text);}
@@ -354,13 +354,141 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 .copy-btn svg{width:13px;height:13px}
 .copy-hint{font-size:.7rem;color:var(--muted)}
 
-/* ══ RESPONSIVE ══ */
+/* ══════════════════════════════════════
+   RESPONSIVE — TABLET (481px – 768px)
+══════════════════════════════════════ */
+@media(max-width:768px){
+  /* Modal preview: pantalla casi completa en tablet */
+  #modal-preview .modal-box{
+    max-width:100vw;width:100%;margin:0;
+    border-radius:12px;max-height:95vh;
+    display:flex;flex-direction:column;
+    padding:0;
+  }
+  #modal-preview .modal-box-inner{
+    display:flex;flex-direction:column;height:100%;padding:1rem;overflow:hidden;
+  }
+  #modal-preview .prev-table-wrap{flex:1;overflow-y:auto;overflow-x:auto;min-height:0;}
+  #modal-preview .modal-btns{flex-shrink:0;padding-top:.7rem;margin-top:.5rem;}
+  /* Botones de reporte en columna */
+  .rep-actions{flex-direction:column}
+  .rep-actions .btn{width:100%;justify-content:center}
+  /* Fullpreview topbar compacta */
+  .fullprev-topbar{padding:0 .7rem;gap:.4rem}
+  .fullprev-topbar h3{font-size:.88rem}
+  .fp-close,.fp-print{padding:.32rem .6rem;font-size:.73rem}
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — MOVIL (<=480px)
+══════════════════════════════════════ */
 @media(max-width:480px){
+  /* General */
+  .scroller{padding:.75rem}
+
+  /* Home */
+  .home-header{padding:1.5rem 1rem 1rem}
+  .home-title{font-size:1.35rem}
+  .home-scroller{padding:.75rem .9rem 2rem}
+  .home-stats{padding:.5rem}
+  .home-stat{padding:.45rem .3rem}
+  .home-stat-num{font-size:1.3rem}
+  .home-stat-lbl{font-size:.52rem}
+
+  /* Topbar */
+  .topbar{padding:0 .7rem;gap:.4rem}
+  .back-btn{padding:.3rem .55rem;font-size:.72rem}
+  .topbar-title{font-size:.9rem}
+  .topbar-search{max-width:none;flex:1}
+
+  /* Sort bar */
+  .sort-bar{flex-wrap:wrap;padding:.4rem .7rem;gap:.35rem}
+  #filtro-fecha{flex:1;min-width:130px;font-size:.78rem}
+  #contador-listado{width:100%;text-align:right;font-size:.65rem;margin-top:.1rem}
+
+  /* Stats listado */
+  .stats-grid{grid-template-columns:1fr 1fr;gap:.5rem}
+  .stat-card{padding:.7rem .8rem}
+  .stat-number{font-size:1.5rem}
+
+  /* Tarjetas registro */
+  .record-card{padding:.7rem .8rem}
   .record-texts{grid-template-columns:1fr}
+  .record-campo{font-size:.77rem}
+
+  /* Formulario nuevo */
   .fg.c2{grid-template-columns:1fr}
   .fg.c2 .sp{grid-column:1}
+  .form-body{padding:.9rem}
+  .fs-title{margin-left:-.9rem;padding-left:.9rem}
+  .form-actions{padding:.7rem .9rem;gap:.4rem}
+  .form-actions .btn{flex:1;justify-content:center;font-size:.75rem;padding:.44rem .6rem}
+
+  /* Reportes */
   .rep-fields{grid-template-columns:1fr}
-  .stats-grid{grid-template-columns:1fr 1fr}
+  .rep-card-body{padding:.75rem}
+  .rep-actions{flex-direction:column;gap:.4rem}
+  .rep-actions .btn{width:100%;justify-content:center}
+
+  /* Modal preview: fullscreen, tabla scrollable en ambas direcciones */
+  .modal-bg{padding:0;align-items:flex-end}
+  #modal-preview .modal-box{
+    max-width:100%;width:100%;
+    border-radius:16px 16px 0 0;
+    max-height:96vh;height:96vh;
+    display:flex;flex-direction:column;
+    padding:0;overflow:hidden;
+  }
+  #modal-preview .modal-box-inner{
+    display:flex;flex-direction:column;
+    height:100%;padding:.8rem .8rem .5rem;
+    overflow:hidden;
+  }
+  #modal-preview h3{font-size:.93rem;padding-right:2.2rem}
+  #prev-resumen{font-size:.7rem;line-height:1.4}
+  #modal-preview .prev-table-wrap{
+    flex:1;
+    overflow-x:auto;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    min-height:0;margin-top:.5rem;
+  }
+  .prev-table{font-size:.67rem;min-width:500px}
+  .prev-table th{padding:.32rem .38rem;font-size:.58rem}
+  .prev-table td{padding:.28rem .38rem}
+  .prev-copy-bar{flex-wrap:wrap;gap:.3rem;margin-top:.4rem;flex-shrink:0}
+  .copy-btn{font-size:.71rem;padding:.32rem .6rem}
+  #copy-hint{font-size:.64rem;width:100%;margin-top:.1rem}
+  #modal-preview .modal-btns{
+    flex-shrink:0;border-top:1px solid var(--border);
+    padding-top:.55rem;margin-top:.4rem;gap:.4rem;
+  }
+  #modal-preview .modal-btns .btn{flex:1;justify-content:center;font-size:.75rem}
+
+  /* Modal editar: sheet desde abajo */
+  #modal-editar .modal-box{
+    padding:1.1rem;border-radius:16px 16px 0 0;
+    max-width:100%;width:100%;
+  }
+  #modal-editar .fg.c2{grid-template-columns:1fr}
+  #modal-editar .fg.c2 .sp{grid-column:1}
+  #modal-editar .modal-btns .btn{flex:1;justify-content:center}
+
+  /* Modal config: sheet desde abajo */
+  #modal-config .modal-box{
+    padding:1.1rem;border-radius:16px 16px 0 0;
+    max-width:100%;width:100%;max-height:90vh;
+  }
+
+  /* Vista tabla completa (fullpreview iframe) */
+  .fullprev-topbar{height:46px;padding:0 .55rem;gap:.3rem}
+  .fullprev-topbar h3{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fp-print,.fp-close{padding:.25rem .5rem;font-size:.68rem;white-space:nowrap}
+
+  /* Menú home */
+  .menu-btn{padding:.75rem .85rem}
+  .menu-btn-icon{width:36px;height:36px}
+  .menu-btn-text .mbt{font-size:.88rem}
+  .menu-btn-text .mbs{font-size:.7rem}
 }
 
 /* ══ MODAL VISUALIZACIÓN COMPLETA ══ */
@@ -539,6 +667,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
     </button>
     <div class="firebase-status" id="firebase-status">Firebase: no conectado aún</div>
 
+    <!-- Navegación -->
+    <div class="menu-section-label" style="margin-top:.6rem">Navegación</div>
+
+    <button class="menu-btn" onclick="window.location.href='index.html'">
+      <div class="menu-btn-icon" style="background:#1a3a5c">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="menu-btn-text">
+        <div class="mbt">Ir al Menú Principal</div>
+        <div class="mbs">Volver a index.html</div>
+      </div>
+      <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
     <!-- Danger -->
     <div class="danger-zone">
       <p>Zona peligrosa — las acciones aquí son irreversibles.</p>
@@ -596,8 +738,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
             <input type="text" id="r-vivienda" placeholder="Ej: 15"/>
           </div>
           <div class="f-group">
-            <label>Edad (años)</label>
-            <input type="number" id="r-edad" placeholder="0" min="0" max="120"/>
+            <label>Edad</label>
+            <input type="text" id="r-edad" placeholder="Ej: 25, 1 año, 6 meses"/>
           </div>
           <div class="f-group sp">
             <label>Nombre del Usuario *</label>
@@ -806,7 +948,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
         <div class="f-group"><label>Fecha</label><input type="date" id="e-fecha"/></div>
         <div class="f-group"><label>Hora</label><input type="time" id="e-hora"/></div>
         <div class="f-group"><label>No. Vivienda</label><input type="text" id="e-vivienda"/></div>
-        <div class="f-group"><label>Edad</label><input type="number" id="e-edad" min="0" max="120"/></div>
+        <div class="f-group"><label>Edad</label><input type="text" id="e-edad" placeholder="Ej: 25, 1 año, 6 meses"/></div>
         <div class="f-group sp"><label>Nombre del Usuario *</label><input type="text" id="e-nombre"/></div>
         <div class="f-group sp"><label>Hallazgos</label><textarea id="e-hallazgos"></textarea></div>
         <div class="f-group sp"><label>Acciones Ejecutadas</label><textarea id="e-acciones"></textarea></div>
@@ -823,14 +965,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
      MODAL: PREVISUALIZACIÓN (tabla completa + copiar)
 ════════════════════════════ -->
 <div class="modal-bg" id="modal-preview" onclick="cerrarModal('modal-preview')">
-  <div class="modal-box" style="max-width:96vw;width:680px;max-height:88vh" onclick="event.stopPropagation()">
-    <div class="modal-box-inner" style="position:relative">
+  <div class="modal-box" style="max-width:96vw;width:680px;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden" onclick="event.stopPropagation()">
+    <div class="modal-box-inner" style="position:relative;display:flex;flex-direction:column;height:100%;padding:1.2rem;overflow:hidden">
       <button class="modal-close-x" onclick="cerrarModal('modal-preview')">✕</button>
-      <h3 id="prev-titulo" style="font-family:'DM Serif Display',serif;color:var(--navy);padding-right:2rem">Previsualización</h3>
-      <div id="prev-resumen" style="font-size:.8rem;color:var(--muted);margin:.3rem 0 .7rem"></div>
+      <h3 id="prev-titulo" style="font-family:'DM Serif Display',serif;color:var(--navy);padding-right:2rem;flex-shrink:0">Previsualización</h3>
+      <div id="prev-resumen" style="font-size:.8rem;color:var(--muted);margin:.3rem 0 .7rem;flex-shrink:0"></div>
 
       <!-- Tabla completa -->
-      <div class="prev-table-wrap">
+      <div class="prev-table-wrap" style="flex:1;min-height:0">
         <table class="prev-table" id="prev-tabla">
           <thead>
             <tr>
@@ -843,7 +985,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
       </div>
 
       <!-- Barra copiar -->
-      <div class="prev-copy-bar">
+      <div class="prev-copy-bar" style="flex-shrink:0">
         <button class="copy-btn" id="btn-copy-tabla" onclick="copiarTabla()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           Copiar tabla
@@ -855,7 +997,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
         <span class="copy-hint" id="copy-hint"></span>
       </div>
 
-      <div class="modal-btns" style="border-top:1px solid var(--border);padding-top:.9rem;margin-top:.9rem">
+      <div class="modal-btns" style="border-top:1px solid var(--border);padding-top:.9rem;margin-top:.9rem;flex-shrink:0">
         <button class="btn secondary" onclick="cerrarModal('modal-preview')">Cerrar</button>
         <button class="btn bprint" onclick="imprimirDesdePreview()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -1164,7 +1306,7 @@ function tarjetaRegistro(r) {
           <span class="badge badge-fecha">📅 ${fmtFecha(r.fecha)}</span>
           ${r.hora     ? `<span class="badge badge-hora">🕐 ${r.hora}</span>` : ''}
           ${r.vivienda ? `<span class="badge badge-viv">🏠 Viv. ${r.vivienda}</span>` : ''}
-          ${r.edad     ? `<span class="badge badge-edad">🎂 ${r.edad} años</span>` : ''}
+          ${r.edad     ? `<span class="badge badge-edad">🎂 ${r.edad}</span>` : ''}
         </div>
       </div>
       <div class="record-actions">
@@ -1388,25 +1530,19 @@ function imprimirHTML(html) {
 function htmlReporteOficial(titulo, registrosFiltrados, subtitulo) {
   const p = perfil;
   const filas = [...registrosFiltrados];
-  const minFilas = Math.max(8, filas.length + 2);
 
   let rowsHTML = '';
-  for (let i = 0; i < minFilas; i++) {
-    const r = filas[i];
-    if (r) {
-      rowsHTML += `
+  for (const r of filas) {
+    rowsHTML += `
       <tr>
-        <td class="c-fecha">${fmtFecha(r.fecha)}</td>
-        <td class="c-hora">${r.hora || ''}</td>
-        <td class="c-viv">${r.vivienda || ''}</td>
-        <td class="c-nombre">${r.nombre || ''}</td>
-        <td class="c-edad">${r.edad || ''}</td>
-        <td class="c-hall">${(r.hallazgos||'').replace(/\n/g,'<br>')}</td>
-        <td class="c-acc">${(r.acciones||'').replace(/\n/g,'<br>')}</td>
+        <td class="c-fecha" data-label="Fecha">${fmtFecha(r.fecha)}</td>
+        <td class="c-hora" data-label="Hora">${r.hora || ''}</td>
+        <td class="c-viv" data-label="Vivienda">${r.vivienda || ''}</td>
+        <td class="c-nombre" data-label="Nombre">${r.nombre || ''}</td>
+        <td class="c-edad" data-label="Edad">${r.edad || ''}</td>
+        <td class="c-hall" data-label="Hallazgos">${(r.hallazgos||'').replace(/\n/g,'<br>')}</td>
+        <td class="c-acc" data-label="Acciones">${(r.acciones||'').replace(/\n/g,'<br>')}</td>
       </tr>`;
-    } else {
-      rowsHTML += `<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-    }
   }
 
   return `<!DOCTYPE html>
@@ -1414,7 +1550,9 @@ function htmlReporteOficial(titulo, registrosFiltrados, subtitulo) {
 <head>
 <meta charset="UTF-8">
 <title>${titulo}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
+/* ══ IMPRESIÓN ══ */
 @page { size: letter landscape; margin: 12mm 10mm 14mm 10mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; background: #fff; }
@@ -1430,44 +1568,221 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; b
 .info-cell { width: 65mm; border: 0.5pt solid #555; border-left: none; font-size: 6.5pt; padding: 1.5mm 2.5mm; }
 .info-row { display: flex; margin-bottom: 1mm; }
 .info-lbl { font-weight: bold; min-width: 26mm; }
-
 .datos-promotor { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
 .datos-promotor td { border: 0.4pt solid #888; padding: 1.5mm 2mm; font-size: 7pt; }
 .dp-lbl { font-weight: bold; width: 30mm; background: #f5f5f5; }
-
 .tabla { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .tabla th {
-  background-color: #1a5c48 !important;
-  color: #fff !important;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-  border: 0.4pt solid #0a3d2e;
-  padding: 2mm 1.5mm;
-  font-size: 7pt;
-  text-align: center;
-  vertical-align: middle;
-  font-weight: bold;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
+  background-color: #1a5c48 !important; color: #fff !important;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  border: 0.4pt solid #0a3d2e; padding: 2mm 1.5mm; font-size: 7pt;
+  text-align: center; vertical-align: middle; font-weight: bold;
+  word-wrap: break-word; overflow-wrap: break-word;
 }
 .tabla td { border: 0.4pt solid #aaa; padding: 2mm 1.5mm; vertical-align: top; font-size: 7pt; word-wrap: break-word; overflow-wrap: break-word; }
 .tabla tr:nth-child(even) td { background-color: #f5faf8; }
-
-.c-fecha  { width: 16mm; text-align: center; }
-.c-hora   { width: 12mm; text-align: center; }
-.c-viv    { width: 13mm; text-align: center; }
-.c-nombre { width: 44mm; }
-.c-edad   { width: 10mm; text-align: center; }
-.c-hall   { width: auto; }
-.c-acc    { width: auto; }
-
+.c-fecha { width: 16mm; text-align: center; }
+.c-hora  { width: 12mm; text-align: center; }
+.c-viv   { width: 13mm; text-align: center; }
+.c-nombre{ width: 44mm; }
+.c-edad  { width: 10mm; text-align: center; }
+.c-hall  { width: auto; }
+.c-acc   { width: auto; }
 .pie { margin-top: 3mm; font-size: 6pt; color: #555; display: flex; justify-content: space-between; }
 .firma-box { text-align: center; margin-top: 6mm; font-size: 7pt; }
 .firma-linea { border-top: 0.4pt solid #000; width: 55mm; margin: 0 auto 1mm; }
+.firmas-wrap { display: flex; justify-content: space-between; margin-top: 8mm; }
 .resumen-box { margin-top: 4mm; background: #f0faf5; border: 0.5pt solid #9fd4c5; padding: 2mm 3mm; font-size: 7pt; }
+.screen-topbar { display: none !important; }
+.tabla-wrap { }
+.page-body { }
+
+/* ══ PANTALLA — tablet / escritorio ══ */
+@media screen {
+  body { background: #f2f6f4; font-size: 14px; padding: 0; }
+  .screen-topbar {
+    display: flex; align-items: center; gap: .5rem;
+    position: sticky; top: 0; z-index: 100;
+    background: #0a3d2e; color: #fff;
+    padding: .55rem 1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  }
+  .screen-topbar h1 {
+    flex: 1; font-size: .95rem; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tb-btn {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .38rem .8rem; border-radius: 7px;
+    font-family: Arial, sans-serif; font-size: .78rem; font-weight: 700;
+    cursor: pointer; border: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .tb-btn.print { background: #00b89c; color: #fff; }
+  .tb-btn.print:hover { background: #009e85; }
+  .tb-btn.close { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .tb-btn.close:hover { background: rgba(255,255,255,.28); }
+  .page-body { padding: 1rem; }
+  .cab { font-size: 11px; margin-bottom: .75rem; }
+  .cab td { padding: 6px 8px; }
+  .logo-cell { width: 70px; font-size: 9px; border: 1px solid #888; }
+  .logo-escudo { font-size: 26px; }
+  .titulo-cell { border: 1px solid #888; border-left: none; }
+  .titulo-1 { font-size: 11px; }
+  .titulo-2 { font-size: 9px; }
+  .titulo-3 { font-size: 13px; }
+  .info-cell { width: auto; min-width: 120px; border: 1px solid #888; border-left: none; font-size: 10px; padding: 6px 8px; }
+  .info-lbl { min-width: auto; margin-right: 4px; }
+  .datos-promotor { font-size: 11px; margin-bottom: .75rem; }
+  .datos-promotor td { border: 1px solid #bbb; padding: 5px 8px; }
+  .dp-lbl { width: auto; }
+  .tabla-wrap {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border-radius: 8px; border: 1px solid #9fd4c5; margin-bottom: .75rem;
+  }
+  .tabla { table-layout: auto; min-width: 600px; font-size: 12px; }
+  .tabla th { font-size: 11px; padding: 8px 10px; border: 1px solid #0a7a5a; white-space: nowrap; }
+  .tabla td { font-size: 12px; border: 1px solid #c8e0d8; padding: 7px 10px; }
+  .c-fecha, .c-hora, .c-viv, .c-edad, .c-nombre, .c-hall, .c-acc { width: auto; }
+  .c-fecha  { min-width: 80px; }
+  .c-hora   { min-width: 55px; }
+  .c-viv    { min-width: 50px; }
+  .c-nombre { min-width: 140px; font-weight: 600; }
+  .c-edad   { min-width: 45px; }
+  .c-hall   { min-width: 160px; }
+  .c-acc    { min-width: 160px; }
+  .pie { font-size: 10px; color: #555; margin-top: .5rem; padding-top: .4rem; border-top: 1px solid #ddd; flex-wrap: wrap; gap: .3rem; }
+  .firmas-wrap { flex-direction: row; gap: 2rem; margin-top: 1.5rem; }
+  .firma-box { font-size: 11px; }
+  .firma-linea { width: 180px; border-top: 1px solid #000; margin-bottom: 4px; }
+  .resumen-box { font-size: 11px; padding: 8px 12px; border-radius: 6px; margin-bottom: .75rem; }
+}
+
+/* ══ MÓVIL (<=600px) — tarjetas ══ */
+@media screen and (max-width: 600px) {
+  body { font-size: 13px; }
+  .page-body { padding: .6rem; }
+  .screen-topbar { padding: .45rem .7rem; gap: .35rem; }
+  .screen-topbar h1 { font-size: .82rem; }
+  .tb-btn { padding: .32rem .6rem; font-size: .72rem; }
+  /* Cabecera institucional apilada */
+  .cab, .cab tbody, .cab tr, .cab td { display: block; width: 100%; }
+  .logo-cell {
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid #888; border-radius: 6px; padding: 6px 10px;
+    text-align: left; width: 100%;
+  }
+  .logo-escudo { font-size: 22px; display: inline; }
+  .titulo-cell { border: 1px solid #888; border-radius: 6px; padding: 8px; margin-top: 4px; }
+  .titulo-1 { font-size: 12px; }
+  .titulo-2 { font-size: 9px; }
+  .titulo-3 { font-size: 13px; }
+  .info-cell { border: 1px solid #888; border-radius: 6px; padding: 8px; margin-top: 4px; }
+  .info-lbl { display: inline-block; font-weight: 700; min-width: 90px; }
+  /* Datos promotor */
+  .datos-promotor, .datos-promotor tbody, .datos-promotor tr, .datos-promotor td { display: block; width: 100%; }
+  .datos-promotor {
+    background: #fff; border: 1px solid #bbb; border-radius: 8px;
+    overflow: hidden; margin-bottom: .6rem;
+  }
+  .datos-promotor td { border: none; border-bottom: 1px solid #e8f0ec; padding: 5px 10px; font-size: 12px; }
+  .datos-promotor td:last-child { border-bottom: none; }
+  .dp-lbl {
+    background: #eef7f2; font-weight: 700; color: #0a3d2e;
+    font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+    padding: 4px 10px 2px;
+  }
+  /* Tabla → tarjetas */
+  .tabla-wrap { border: none; border-radius: 0; overflow: visible; }
+  .tabla, .tabla thead, .tabla tbody, .tabla th, .tabla td, .tabla tr { display: block; width: 100%; }
+  .tabla thead { display: none; }
+  .tabla tr {
+    background: #fff;
+    border: 1px solid #9fd4c5;
+    border-radius: 10px;
+    margin-bottom: .55rem;
+    padding: .4rem .5rem;
+    box-shadow: 0 1px 6px rgba(10,60,46,.09);
+  }
+  .tabla tr:nth-child(even) td { background: transparent; }
+  .tabla td {
+    border: none;
+    border-bottom: 1px solid #eef5f1;
+    padding: 5px 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    text-align: left;
+  }
+  .tabla td:last-child { border-bottom: none; }
+  .tabla td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #0a3d2e;
+    min-width: 75px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .c-fecha, .c-hora, .c-viv, .c-nombre, .c-edad, .c-hall, .c-acc {
+    width: 100%; min-width: 0; white-space: normal; text-align: left;
+  }
+  .pie { flex-direction: column; gap: 2px; font-size: 10px; margin-top: .4rem; }
+  .firmas-wrap { flex-direction: column; gap: .8rem; margin-top: 1rem; }
+  .firma-linea { width: 140px; }
+}
+
+/* ══ AL IMPRIMIR: restaurar layout de tabla ══ */
+@media print {
+  .screen-topbar { display: none !important; }
+  .page-body { padding: 0; }
+  .tabla-wrap { overflow: visible; border: none; border-radius: 0; }
+  .tabla { table-layout: fixed; min-width: unset; font-size: 7pt; }
+  .tabla th { font-size: 7pt; padding: 2mm 1.5mm; }
+  .tabla td {
+    display: table-cell !important;
+    font-size: 7pt; padding: 2mm 1.5mm;
+    border: 0.4pt solid #aaa;
+  }
+  .tabla td::before { display: none !important; }
+  .tabla thead { display: table-header-group !important; }
+  .tabla tr {
+    display: table-row !important;
+    background: transparent !important;
+    border: none !important; border-radius: 0 !important;
+    box-shadow: none !important; margin: 0 !important; padding: 0 !important;
+  }
+  .tabla tr:nth-child(even) td { background-color: #f5faf8 !important; }
+  .c-fecha  { width: 16mm !important; }
+  .c-hora   { width: 12mm !important; }
+  .c-viv    { width: 13mm !important; }
+  .c-nombre { width: 44mm !important; }
+  .c-edad   { width: 10mm !important; }
+  .c-hall   { width: auto !important; }
+  .c-acc    { width: auto !important; }
+  .cab td   { border: 0.5pt solid #555; }
+  .cab { display: table !important; }
+  .cab tr { display: table-row !important; }
+  .cab td { display: table-cell !important; }
+  .datos-promotor { display: table !important; }
+  .datos-promotor tr { display: table-row !important; }
+  .datos-promotor td { display: table-cell !important; border: 0.4pt solid #888; }
+  .logo-cell { width: 25mm; display: table-cell !important; }
+  .firmas-wrap { display: flex !important; flex-direction: row !important; margin-top: 8mm; }
+}
 </style>
 </head>
 <body>
+
+<div class="screen-topbar">
+  <h1>Registro Diario — Promotor de Salud</h1>
+  <button class="tb-btn print" onclick="window.print()">🖨️ Imprimir</button>
+  <button class="tb-btn close" onclick="try{parent.cerrarFullPreview()}catch(e){window.close()}">✕ Cerrar</button>
+</div>
+
+<div class="page-body">
 
 <table class="cab">
 <tr>
@@ -1505,12 +1820,13 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; b
 </tr>
 </table>
 
+<div class="tabla-wrap">
 <table class="tabla">
 <thead>
   <tr>
     <th class="c-fecha">Fecha</th>
     <th class="c-hora">Hora</th>
-    <th class="c-viv">No.<br>Vivienda</th>
+    <th class="c-viv">No. Vivienda</th>
     <th class="c-nombre">Nombre del Usuario</th>
     <th class="c-edad">Edad</th>
     <th class="c-hall">Hallazgos</th>
@@ -1521,13 +1837,14 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; b
   ${rowsHTML}
 </tbody>
 </table>
+</div>
 
 <div class="pie">
   <span>Sistema de Registro Diario — Promotor de Salud MINSAL El Salvador</span>
   <span>Impreso: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span>
 </div>
 
-<div style="display:flex; justify-content:space-between; margin-top:8mm;">
+<div class="firmas-wrap">
   <div class="firma-box">
     <div class="firma-linea"></div>
     <div>Firma del Promotor de Salud</div>
@@ -1539,6 +1856,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; b
   </div>
 </div>
 
+</div>
 </body></html>`;
 }
 
