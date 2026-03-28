@@ -4166,17 +4166,13 @@ function descargarPDF(index, tipo) {
         } catch (e) { finPuerperioDoc = "Error en cálculo"; }
     }
 
-    const iframe = document.createElement('iframe');
-    Object.assign(iframe.style, {
-        position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: 'none', visibility: 'hidden'
-    });
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
+    const ventana = window.open('', '_blank', 'width=900,height=700');
+    if (!ventana) { alert('⚠️ Permite las ventanas emergentes para generar el PDF.'); return; }
+    const doc = ventana.document;
     doc.open();
 
     doc.write(`
-        <html><head><style>
+        <html><head><title>FICHA - ${paciente.nombre}</title><style>
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; line-height: 1.6; color: #000; background: #fff; }
             .h { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
             .seccion-head { background: #eee; padding: 5px 10px; font-weight: bold; margin-top: 20px; border-bottom: 1px solid #000; text-transform: uppercase; font-size: 13px; }
@@ -4358,16 +4354,10 @@ function descargarPDF(index, tipo) {
 
     doc.write('</body></html>');
     doc.close();
-
     setTimeout(() => {
-        try {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        } catch (e) { console.error(e); }
-        finally {
-            setTimeout(() => { if(document.body.contains(iframe)) document.body.removeChild(iframe); }, 3000);
-        }
-    }, 1000);
+        ventana.focus();
+        ventana.print();
+    }, 600);
 }
 
 
@@ -4398,15 +4388,11 @@ function imprimirReporteGeneral() {
     }
 
     // 2. Crear Iframe temporal para aislamiento total de la impresión
-    const iframe = document.createElement('iframe');
-    Object.assign(iframe.style, {
-        position: 'fixed', right: '0', bottom: '0', width: '0', height: '0', border: 'none'
-    });
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
+    const ventana = window.open('', '_blank', 'width=1100,height=750');
+    if (!ventana) { alert('⚠️ Permite las ventanas emergentes para generar el reporte.'); return; }
+    const doc = ventana.document;
     doc.open();
-    doc.write('<html><head><title>Reporte de Vigilancia Activa</title>');
+    doc.write(`<html><head><title>Reporte Vigilancia Materna - ${new Date().toLocaleDateString()}</title>`);
 
     // CSS de alta precisión: Elimina espacios arriba y optimiza para horizontal
     doc.write(`
@@ -4480,7 +4466,7 @@ function imprimirReporteGeneral() {
                     <th style="width:70px;text-align:center;">EG / PUERPERIO</th>
                     <th style="width:70px;text-align:center;">FPP / FIN PUERP.</th>
                     <th style="width:80px;">RIESGO</th>
-                    <th style="width:20px;text-align:center;">FLU</th>
+                    <th style="width:20px;text-align:center;">Inf.</th>
                     <th style="width:20px;text-align:center;">DTPa</th>
                     <th style="width:20px;text-align:center;">DT</th>
                     <th style="width:20px;text-align:center;">VRS</th>
@@ -4524,7 +4510,13 @@ function imprimirReporteGeneral() {
 
         // Vacunas — buscar en vacunas directas o en historial_embarazo
         const vac = p.vacunas || (p.historial_embarazo && p.historial_embarazo.vacunas) || {};
-        const vCheck = (d) => d ? '✅' : '❌';
+        const vFecha = (d) => {
+            if (!d) return '<span style="color:#c62828;">Pend.</span>';
+            try {
+                const f = crearFechaLocal(d);
+                return String(f.getDate()).padStart(2,'0') + '/' + String(f.getMonth()+1).padStart(2,'0') + '/' + f.getFullYear();
+            } catch(e) { return d; }
+        };
 
         doc.write(`
             <tr>
@@ -4537,10 +4529,10 @@ function imprimirReporteGeneral() {
                 <td style="text-align:center; font-size:9px;">${colTiempo}</td>
                 <td style="text-align:center; font-size:9px;">${colFecha}</td>
                 <td style="font-size:8px;${riesgoColor}">${riesgoTxt}</td>
-                <td style="text-align:center; font-size:9px;">${vCheck(vac.influenza)}</td>
-                <td style="text-align:center; font-size:9px;">${vCheck(vac.dtpa)}</td>
-                <td style="text-align:center; font-size:9px;">${vCheck(vac.dtadulto)}</td>
-                <td style="text-align:center; font-size:9px;">${vCheck(vac.vrs)}</td>
+                <td style="text-align:center; font-size:8px;">${vFecha(vac.influenza)}</td>
+                <td style="text-align:center; font-size:8px;">${vFecha(vac.dtpa)}</td>
+                <td style="text-align:center; font-size:8px;">${vFecha(vac.dtadulto)}</td>
+                <td style="text-align:center; font-size:8px;">${vFecha(vac.vrs)}</td>
                 <td style="font-size: 8px;">${p.registrado_por || '-'}</td>
             </tr>
         `);
@@ -4551,11 +4543,8 @@ function imprimirReporteGeneral() {
 
     // 5. Lanzar impresión
     setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        setTimeout(() => {
-            if(document.body.contains(iframe)) document.body.removeChild(iframe);
-        }, 2000);
+        ventana.focus();
+        ventana.print();
     }, 600);
 }
 
@@ -4563,4 +4552,3 @@ function imprimirReporteGeneral() {
 </script>
 </body>
 </html>
-
