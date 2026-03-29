@@ -4,7 +4,6 @@
   "description": "Portal de aplicaciones de salud comunitaria MINSAL El Salvador",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#f0f7fa",
   "theme_color": "#0d6e8a",
   "lang": "es",
