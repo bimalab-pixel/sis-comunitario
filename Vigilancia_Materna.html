@@ -3416,9 +3416,17 @@ async function guardarEnNube() {
             // --- ESCUDO 1: Verificación por cantidad (Protección contra borrado masivo) ---
             if (totalLocal < totalNube) {
                 const dif = totalNube - totalLocal;
-                alert(`⚠️ ¡ALERTA DE SEGURIDAD!\n\nEn la NUBE hay ${totalNube} registros y aquí solo tienes ${totalLocal}.\n\n🚨 Si subes ahora, BORRARÁS ${dif} expedientes.\n\n✅ SUGERENCIA: Presiona 'BAJAR DE NUBE' primero.`);
-                btn.innerText = '☁️ Guardar en Nube';
-                return;
+                const confirmarBorrado = confirm(
+                    `⚠️ ¡DIFERENCIA DETECTADA!\n\n` +
+                    `En la NUBE hay ${totalNube} registros.\n` +
+                    `En este dispositivo tienes ${totalLocal}.\n\n` +
+                    `🗑️ Si eliminaste ${dif} registro(s) a propósito, presiona ACEPTAR para subir.\n\n` +
+                    `❌ Si NO eliminaste nada, presiona CANCELAR y usa 'Bajar de Nube' primero.`
+                );
+                if (!confirmarBorrado) {
+                    btn.innerText = '☁️ Guardar en Nube';
+                    return;
+                }
             }
 
             // --- ESCUDO 2: DETECCIÓN POR VERSIÓN (Conflicto con otros equipos) ---
