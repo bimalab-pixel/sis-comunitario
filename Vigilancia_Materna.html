@@ -574,6 +574,50 @@
 .status-ok { color: #2e7d32; font-weight: bold; }
 .status-pending { color: #c62828; font-style: italic; }
 
+/* Inputs editables inline en ficha */
+.input-inline-fecha {
+    border: none;
+    border-bottom: 2px dashed #b0bec5;
+    background: transparent;
+    font-size: 0.95em;
+    color: #37474f;
+    font-weight: 500;
+    padding: 2px 4px;
+    width: 140px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: inherit;
+}
+.input-inline-fecha:focus {
+    outline: none;
+    border-bottom: 2px solid #00796b;
+    background: #e8f5e9;
+    border-radius: 4px 4px 0 0;
+}
+@keyframes flashOk {
+    0%   { background: #c8e6c9; }
+    100% { background: transparent; }
+}
+.vac-row-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    padding: 8px 5px;
+    gap: 8px;
+}
+.vac-row-inline strong { min-width: 85px; font-size: 0.9em; color: #37474f; }
+.vac-row-inline .vac-input-wrap { flex: 1; display: flex; align-items: center; gap: 6px; }
+.vac-guardado-lbl {
+    font-size: 0.72em;
+    color: #2e7d32;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+}
+.vac-guardado-lbl.visible { opacity: 1; }
+
 .seccion-titulo {
     color: #00796b;
     border-bottom: 2px solid #b2dfdb;
@@ -2103,7 +2147,10 @@ function importarDatos(event) {
                             <h3>${p.nombre}</h3>
                             <small style="opacity:0.9">Exp: ${p.expediente || (index + 1)}</small>
                         </div>
-                        <span class="ficha-badge">🤰 Embarazada</span>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            <span class="ficha-badge">🤰 Embarazada</span>
+                            <button onclick="iniciarEdicion(${index},'embarazada')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.6);color:white;border-radius:20px;padding:4px 12px;font-size:0.8em;font-weight:600;cursor:pointer;">✏️ Editar</button>
+                        </div>
                     </div>
 
                     <div class="ficha-body">
@@ -2140,7 +2187,10 @@ function importarDatos(event) {
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">${furLabel}</span>
-                                <span class="dato-valor">${formatDate(furDate)}</span>
+                                <input type="date" class="input-inline-fecha" id="fur-inline-${index}"
+                                    value="${p.fur || ''}"
+                                    onchange="guardarFurInline(${index}, this)"
+                                    title="Editar FUR directamente">
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Cálculo Basado en</span>
@@ -2148,29 +2198,62 @@ function importarDatos(event) {
                             </div>
                         </div>
 
-                        <h4 class="seccion-titulo">🤰 Antecedentes Obstétricos</h4>
-                        <div class="datos-grid" style="margin-bottom:10px;">
-                            <div class="dato-item" style="text-align:center; background:#f3e5f5; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Embarazos Anteriores</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#673ab7; display:block;">${p.embarazos_anteriores !== undefined ? p.embarazos_anteriores : '-'}</span>
+                        <h4 class="seccion-titulo">💉 Esquema de Vacunación</h4>
+                        <div style="font-size:0.78em;color:#78909c;margin-bottom:6px;">✏️ Toca la fecha para editarla directamente</div>
+                        <div style="border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
+                            <div class="vac-row-inline">
+                                <strong>Influenza</strong>
+                                <div class="vac-input-wrap">
+                                    <input type="date" class="input-inline-fecha" id="vac-inline-influenza-${index}"
+                                        value="${v.influenza || ''}"
+                                        onchange="guardarVacunaInline(${index}, 'embarazada', 'influenza', this)">
+                                    <span class="vac-guardado-lbl" id="lbl-influenza-${index}">✅ Guardado</span>
+                                </div>
                             </div>
-                            <div class="dato-item" style="text-align:center; background:#e8f5e9; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Partos</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#2e7d32; display:block;">${p.partos_anteriores !== undefined ? p.partos_anteriores : '-'}</span>
+                            <div class="vac-row-inline">
+                                <strong>DTPa</strong>
+                                <div class="vac-input-wrap">
+                                    <input type="date" class="input-inline-fecha" id="vac-inline-dtpa-${index}"
+                                        value="${v.dtpa || ''}"
+                                        onchange="guardarVacunaInline(${index}, 'embarazada', 'dtpa', this)">
+                                    <span class="vac-guardado-lbl" id="lbl-dtpa-${index}">✅ Guardado</span>
+                                </div>
                             </div>
-                            <div class="dato-item" style="text-align:center; background:#fff8e1; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Abortos</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#e65100; display:block;">${p.abortos_anteriores !== undefined ? p.abortos_anteriores : '-'}</span>
+                            <div class="vac-row-inline">
+                                <strong>DT Adulto</strong>
+                                <div class="vac-input-wrap">
+                                    <input type="date" class="input-inline-fecha" id="vac-inline-dtadulto-${index}"
+                                        value="${v.dtadulto || ''}"
+                                        onchange="guardarVacunaInline(${index}, 'embarazada', 'dtadulto', this)">
+                                    <span class="vac-guardado-lbl" id="lbl-dtadulto-${index}">✅ Guardado</span>
+                                </div>
+                            </div>
+                            <div class="vac-row-inline" style="border-bottom:none;">
+                                <strong>VRS</strong>
+                                <div class="vac-input-wrap">
+                                    <input type="date" class="input-inline-fecha" id="vac-inline-vrs-${index}"
+                                        value="${v.vrs || ''}"
+                                        onchange="guardarVacunaInline(${index}, 'embarazada', 'vrs', this)">
+                                    <span class="vac-guardado-lbl" id="lbl-vrs-${index}">✅ Guardado</span>
+                                </div>
                             </div>
                         </div>
 
-                        <h4 class="seccion-titulo">💉 Esquema de Vacunación</h4>
-                        <table class="tabla-vacunas">
-                            <tr><td width="30%"><strong>Influenza</strong></td><td>${checkVac(v.influenza)}</td></tr>
-                            <tr><td><strong>DTPa</strong></td><td>${checkVac(v.dtpa)}</td></tr>
-                            <tr><td><strong>DT Adulto</strong></td><td>${checkVac(v.dtadulto)}</td></tr>
-                            <tr><td><strong>VRS</strong></td><td>${checkVac(v.vrs)}</td></tr>
-                        </table>
+                        <h4 class="seccion-titulo">🤰 Antecedentes Obstétricos</h4>
+                        <div style="display:flex;gap:8px;margin-bottom:15px;">
+                            <div style="flex:1;text-align:center;background:#f3e5f5;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#673ab7;font-weight:600;display:block;">Embarazos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#673ab7;">${p.embarazos_anteriores !== undefined ? p.embarazos_anteriores : '-'}</span>
+                            </div>
+                            <div style="flex:1;text-align:center;background:#e8f5e9;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#2e7d32;font-weight:600;display:block;">Partos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#2e7d32;">${p.partos_anteriores !== undefined ? p.partos_anteriores : '-'}</span>
+                            </div>
+                            <div style="flex:1;text-align:center;background:#fff8e1;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#e65100;font-weight:600;display:block;">Abortos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#e65100;">${p.abortos_anteriores !== undefined ? p.abortos_anteriores : '-'}</span>
+                            </div>
+                        </div>
 
                         <h4 class="seccion-titulo">📝 Notas Clínicas (${p.notas ? p.notas.length : 0})</h4>
                         <div id="notas-list-emb-${index}">
@@ -2309,7 +2392,10 @@ function importarDatos(event) {
                             <h3>${p.nombre}</h3>
                             <small style="opacity:0.9">Exp: ${p.expediente || (index + 1)}</small>
                         </div>
-                        <span class="ficha-badge">🤱 Puérpera</span>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            <span class="ficha-badge">🤱 Puérpera</span>
+                            <button onclick="iniciarEdicion(${index},'puerpera')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.6);color:white;border-radius:20px;padding:4px 12px;font-size:0.8em;font-weight:600;cursor:pointer;">✏️ Editar</button>
+                        </div>
                     </div>
 
                     <div class="ficha-body">
@@ -2345,27 +2431,14 @@ function importarDatos(event) {
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Fecha de Parto</span>
-                                <span class="dato-valor">${formatDate(fpDate)}</span>
+                                <input type="date" class="input-inline-fecha" id="fp-inline-${index}"
+                                    value="${p.fp || ''}"
+                                    onchange="guardarFpInline(${index}, this)"
+                                    title="Editar Fecha de Parto directamente">
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Fin Puerperio (42 días)</span>
                                 <span class="dato-valor" style="color:#e91e63; font-weight:bold;">${formatDate(puerperio.finPuerperioDate)}</span>
-                            </div>
-                        </div>
-
-                        <h4 class="seccion-titulo">🤰 Antecedentes Obstétricos</h4>
-                        <div class="datos-grid" style="margin-bottom:10px;">
-                            <div class="dato-item" style="text-align:center; background:#f3e5f5; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Embarazos Anteriores</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#673ab7; display:block;">${p.embarazos_anteriores !== undefined ? p.embarazos_anteriores : (p.historial_embarazo && p.historial_embarazo.embarazos_anteriores !== undefined ? p.historial_embarazo.embarazos_anteriores : '-')}</span>
-                            </div>
-                            <div class="dato-item" style="text-align:center; background:#e8f5e9; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Partos</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#2e7d32; display:block;">${p.partos_anteriores !== undefined ? p.partos_anteriores : (p.historial_embarazo && p.historial_embarazo.partos_anteriores !== undefined ? p.historial_embarazo.partos_anteriores : '-')}</span>
-                            </div>
-                            <div class="dato-item" style="text-align:center; background:#fff8e1; border-radius:8px; padding:10px;">
-                                <span class="dato-label">Abortos</span>
-                                <span style="font-size:1.8em; font-weight:bold; color:#e65100; display:block;">${p.abortos_anteriores !== undefined ? p.abortos_anteriores : (p.historial_embarazo && p.historial_embarazo.abortos_anteriores !== undefined ? p.historial_embarazo.abortos_anteriores : '-')}</span>
                             </div>
                         </div>
 
@@ -2376,6 +2449,22 @@ function importarDatos(event) {
                             ${rowSeg('Control 7 Días', seg['7 días'])}
                             ${rowSeg('Control 15 Días', seg['15 días'])}
                             ${rowSeg('Control 28 Días', seg['28 días'])}
+                        </div>
+
+                        <h4 class="seccion-titulo">🤰 Antecedentes Obstétricos</h4>
+                        <div style="display:flex;gap:8px;margin-bottom:15px;">
+                            <div style="flex:1;text-align:center;background:#f3e5f5;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#673ab7;font-weight:600;display:block;">Embarazos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#673ab7;">${p.embarazos_anteriores !== undefined ? p.embarazos_anteriores : (p.historial_embarazo && p.historial_embarazo.embarazos_anteriores !== undefined ? p.historial_embarazo.embarazos_anteriores : '-')}</span>
+                            </div>
+                            <div style="flex:1;text-align:center;background:#e8f5e9;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#2e7d32;font-weight:600;display:block;">Partos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#2e7d32;">${p.partos_anteriores !== undefined ? p.partos_anteriores : (p.historial_embarazo && p.historial_embarazo.partos_anteriores !== undefined ? p.historial_embarazo.partos_anteriores : '-')}</span>
+                            </div>
+                            <div style="flex:1;text-align:center;background:#fff8e1;border-radius:8px;padding:8px 4px;">
+                                <span style="font-size:0.7em;text-transform:uppercase;color:#e65100;font-weight:600;display:block;">Abortos</span>
+                                <span style="font-size:1.3em;font-weight:bold;color:#e65100;">${p.abortos_anteriores !== undefined ? p.abortos_anteriores : (p.historial_embarazo && p.historial_embarazo.abortos_anteriores !== undefined ? p.historial_embarazo.abortos_anteriores : '-')}</span>
+                            </div>
                         </div>
 
                         <h4 class="seccion-titulo">📝 Notas Clínicas (${p.notas ? p.notas.length : 0})</h4>
@@ -2762,6 +2851,42 @@ function importarDatos(event) {
                 </div>
             </form>
         `;
+    }
+
+    function guardarVacunaInline(index, tipo, campo, inputEl) {
+        const fecha = inputEl.value;
+        if (tipo === 'embarazada') {
+            if (!embarazadas[index].vacunas) embarazadas[index].vacunas = {};
+            embarazadas[index].vacunas[campo] = fecha;
+            guardarDatos('embarazadas');
+        }
+        // Mostrar feedback visual
+        const lblId = 'lbl-' + campo + '-' + index;
+        const lbl = document.getElementById(lblId);
+        if (lbl) {
+            lbl.classList.add('visible');
+            setTimeout(() => lbl.classList.remove('visible'), 2000);
+        }
+        // Recalcular reporte general si está visible
+        if (typeof renderizarReporteGeneral === 'function') renderizarReporteGeneral();
+    }
+
+    function guardarFurInline(index, inputEl) {
+        const nuevaFur = inputEl.value;
+        if (!nuevaFur) return;
+        embarazadas[index].fur = nuevaFur;
+        guardarDatos('embarazadas');
+        // Refrescar ficha para actualizar EG y FPP
+        mostrarDetalle(index, 'embarazada');
+    }
+
+    function guardarFpInline(index, inputEl) {
+        const nuevaFp = inputEl.value;
+        if (!nuevaFp) return;
+        puerperas[index].fp = nuevaFp;
+        guardarDatos('puerperas');
+        // Refrescar ficha para actualizar días de puerperio
+        mostrarDetalle(index, 'puerpera');
     }
 
     function guardarEdicion(index, tipo) {
@@ -3970,7 +4095,7 @@ function generarReporteHTML() {
             const vacList = [
                 { key: 'influenza', label: 'Influenza' },
                 { key: 'dtpa', label: 'DTPa' },
-                { key: 'dt_adulto', label: 'DT Adulto' },
+                { key: 'dtadulto', label: 'DT Adulto' },
                 { key: 'vrs', label: 'VRS' }
             ];
             const vacLineas = vacList.map(vac => {
