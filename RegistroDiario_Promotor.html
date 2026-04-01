@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
     <title>Registro Diario — Promotor de Salud</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* ══════════════ VARIABLES ══════════════ */
         :root{
@@ -522,6 +523,262 @@
         .fullprev-topbar .fp-print svg{width:14px;height:14px}
         .fullprev-iframe{flex:1;border:none;width:100%;background:#f5f5f5}
 
+        /* Modal importar catálogo */
+        #modal-importar-cat{
+          display:none;position:fixed;inset:0;background:rgba(6,42,30,.55);
+          z-index:700;align-items:center;justify-content:center;padding:1rem;
+        }
+        #modal-importar-cat.show{display:flex}
+        #modal-importar-cat .mcat-box{animation:slideUp .25s ease}
+        #micat-dropzone:hover{border-color:var(--teal2)!important;background:#e8f8f4!important}
+        #micat-prev-tbody tr:nth-child(even){background:var(--light)}
+        #micat-prev-tbody tr:hover{background:var(--light2)}
+        #micat-prev-tbody td{padding:.32rem .6rem;border-bottom:1px solid var(--light2);color:var(--text)}
+        #micat-prev-tbody td.err{color:var(--danger);font-style:italic}
+
+        /* ══ BOTÓN SELECTOR PACIENTE (encabezado formulario) ══ */
+        .sel-pac-btn{
+          display:flex;align-items:center;gap:.75rem;
+          width:100%;padding:.85rem 1rem;margin-bottom:.9rem;
+          background:linear-gradient(135deg,var(--navy),var(--navy2));
+          border:none;border-radius:var(--radius);cursor:pointer;
+          color:#fff;font-family:inherit;transition:all .2s;
+          box-shadow:0 3px 16px rgba(10,60,46,.22);
+        }
+        .sel-pac-btn:hover{filter:brightness(1.12)}
+        .sel-pac-btn:active{transform:scale(.98)}
+        .sel-pac-ico{
+          width:40px;height:40px;background:rgba(255,255,255,.18);border-radius:9px;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .sel-pac-ico svg{width:20px;height:20px}
+        .sel-pac-txt{flex:1;text-align:left}
+        .sel-pac-txt strong{display:block;font-size:.92rem;font-weight:700}
+        .sel-pac-txt span{font-size:.73rem;opacity:.75}
+        .sel-pac-chip{
+          background:rgba(255,255,255,.18);border-radius:20px;
+          padding:.22rem .65rem;font-size:.7rem;font-weight:700;white-space:nowrap;flex-shrink:0;
+        }
+        /* Indicador de paciente seleccionado */
+        #pac-seleccionado-banner{
+          display:none;align-items:center;gap:.6rem;
+          background:linear-gradient(135deg,#0b8a7225,#00b89c18);
+          border:1.5px solid var(--teal2);border-radius:10px;
+          padding:.6rem .85rem;margin-bottom:.75rem;
+        }
+        #pac-seleccionado-banner.show{display:flex}
+        .psb-ico{font-size:1.2rem;flex-shrink:0}
+        .psb-txt{flex:1;min-width:0}
+        .psb-txt strong{display:block;font-size:.82rem;color:var(--navy2)}
+        .psb-txt span{font-size:.71rem;color:var(--muted)}
+        .psb-clear{background:none;border:1.5px solid var(--border);border-radius:6px;
+          padding:.25rem .55rem;font-size:.68rem;color:var(--muted);cursor:pointer;
+          font-family:inherit;white-space:nowrap;transition:all .2s;}
+        .psb-clear:hover{border-color:var(--danger2);color:var(--danger2)}
+
+        /* ══ MODAL SELECTOR DE PACIENTE ══ */
+        #modal-selector-pac{
+          display:none;position:fixed;inset:0;background:rgba(6,42,30,.6);
+          z-index:600;align-items:flex-end;justify-content:center;
+        }
+        #modal-selector-pac.show{display:flex}
+        .msp-box{
+          width:100%;max-width:520px;background:#fff;
+          border-radius:20px 20px 0 0;max-height:88vh;
+          display:flex;flex-direction:column;overflow:hidden;
+          animation:slideUp .28s ease;
+        }
+        @keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .msp-header{
+          flex-shrink:0;padding:1rem 1.1rem .7rem;
+          background:linear-gradient(135deg,var(--navy),var(--navy2));
+          color:#fff;display:flex;align-items:center;gap:.7rem;
+        }
+        .msp-header h3{flex:1;font-family:'DM Serif Display',serif;font-size:1.05rem;font-weight:normal}
+        .msp-close{
+          background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+          color:#fff;border-radius:7px;padding:.3rem .65rem;font-size:.75rem;
+          font-family:inherit;cursor:pointer;font-weight:700;
+        }
+        .msp-search{
+          flex-shrink:0;padding:.7rem 1rem;border-bottom:1px solid var(--border);
+          position:relative;
+        }
+        .msp-search svg{position:absolute;left:1.6rem;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted);pointer-events:none}
+        .msp-search input{
+          width:100%;padding:.45rem .75rem .45rem 2.1rem;border:1.5px solid var(--border);
+          border-radius:9px;font-family:inherit;font-size:.85rem;outline:none;
+          color:var(--text);background:var(--light);transition:all .2s;
+        }
+        .msp-search input:focus{border-color:var(--teal2);background:#fff}
+        .msp-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .msp-viv-group{border-bottom:1px solid var(--border)}
+        .msp-viv-header{
+          display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;
+          background:linear-gradient(135deg,var(--navy),var(--navy2));
+          color:#fff;position:sticky;top:0;z-index:2;
+        }
+        .msp-viv-header svg{width:14px;height:14px;flex-shrink:0}
+        .msp-viv-num{font-weight:700;font-size:.85rem}
+        .msp-viv-cnt{margin-left:auto;font-size:.7rem;opacity:.7}
+        .msp-persona-row{
+          display:flex;align-items:center;gap:.65rem;padding:.6rem 1rem .6rem 1.4rem;
+          cursor:pointer;border-bottom:1px solid var(--light2);transition:background .15s;
+        }
+        .msp-persona-row:hover{background:var(--light2)}
+        .msp-persona-row:last-child{border-bottom:none}
+        .msp-pico{
+          width:32px;height:32px;background:var(--light2);border-radius:50%;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+          font-size:.9rem;
+        }
+        .msp-pname{flex:1;min-width:0}
+        .msp-pname strong{display:block;font-size:.83rem;color:var(--navy);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .msp-pname span{font-size:.71rem;color:var(--muted)}
+        .msp-pcheck{color:var(--teal2)}
+        .msp-empty{padding:2rem 1rem;text-align:center;color:var(--muted);font-size:.85rem}
+        .msp-footer{
+          flex-shrink:0;padding:.75rem 1rem;border-top:1px solid var(--border);
+          display:flex;align-items:center;gap:.6rem;
+        }
+        .msp-footer-btn{
+          flex:1;padding:.5rem;border-radius:8px;font-family:inherit;
+          font-size:.78rem;font-weight:700;cursor:pointer;border:none;
+          display:flex;align-items:center;justify-content:center;gap:.35rem;
+          transition:all .2s;
+        }
+        .msp-footer-btn svg{width:14px;height:14px}
+        .msp-footer-btn.cat{background:var(--light2);color:var(--navy2);border:1.5px solid var(--border)}
+        .msp-footer-btn.cat:hover{background:var(--border)}
+        .msp-footer-btn.sin{background:var(--navy2);color:#fff}
+        .msp-footer-btn.sin:hover{background:var(--teal)}
+
+        /* ══ SCREEN CATÁLOGO DE FAMILIAS ══ */
+        /* Buscador catálogo */
+        .cat-search-wrap{
+          padding:.6rem 1rem .4rem;
+          position:relative;
+        }
+        .cat-search-wrap svg{
+          position:absolute;left:1.6rem;top:50%;transform:translateY(-50%);
+          width:15px;height:15px;color:var(--muted);pointer-events:none;
+        }
+        .cat-search-wrap input{
+          width:100%;box-sizing:border-box;
+          padding:.52rem .9rem .52rem 2.1rem;
+          border:1.5px solid var(--border);border-radius:8px;
+          font-size:.86rem;background:#f7faf9;outline:none;
+          transition:border-color .18s;
+        }
+        .cat-search-wrap input:focus{border-color:var(--teal2);background:#fff}
+        .cat-search-nores{
+          padding:1.8rem 1rem;text-align:center;
+          font-size:.84rem;color:var(--muted);font-style:italic;
+        }
+        .cat-persona-item.highlight-result{
+          cursor:pointer;
+          background:linear-gradient(90deg,#f0faf7 0%,#fff 100%);
+        }
+        .cat-persona-item.highlight-result:active{background:#e2f4ef}
+        .cat-persona-item.persona-seleccionada{
+          background:linear-gradient(90deg,#d4f0e7 0%,#edfaf4 100%);
+          border-left:3px solid var(--teal2);
+        }
+        .cat-ver-familia{
+          display:inline-flex;align-items:center;gap:.25rem;
+          font-size:.68rem;font-weight:700;color:var(--teal2);
+          background:#e8f6f2;border-radius:5px;padding:.14rem .45rem;
+          margin-top:.18rem;white-space:nowrap;
+        }
+        #screen-catalogo .cat-empty{
+          text-align:center;padding:3rem 1.5rem;color:var(--muted);
+        }
+        #screen-catalogo .cat-empty svg{
+          width:52px;height:52px;margin-bottom:.75rem;opacity:.35;display:block;margin:0 auto .75rem;
+        }
+        #screen-catalogo .cat-empty p{font-size:.88rem}
+        /* Tarjeta vivienda */
+        .cat-viv-card{
+          background:#fff;border-radius:12px;box-shadow:var(--shadow-sm);
+          margin-bottom:.85rem;overflow:hidden;border:1px solid var(--border);
+        }
+        .cat-viv-header{
+          display:flex;align-items:center;gap:.65rem;padding:.75rem 1rem;
+          background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;
+        }
+        .cat-viv-header svg{width:16px;height:16px;flex-shrink:0}
+        .cat-viv-num{font-weight:700;font-size:.95rem;flex:1}
+        .cat-viv-btns{display:flex;gap:.35rem}
+        .cat-ico-btn{
+          background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);
+          color:#fff;border-radius:6px;padding:.28rem .55rem;font-size:.7rem;
+          font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:.3rem;
+          font-weight:700;transition:all .2s;
+        }
+        .cat-ico-btn:hover{background:rgba(255,255,255,.32)}
+        .cat-ico-btn svg{width:12px;height:12px}
+        /* Integrante row */
+        .cat-persona-item{
+          display:flex;align-items:center;gap:.65rem;padding:.6rem 1rem;
+          border-bottom:1px solid var(--light2);
+        }
+        .cat-persona-item:last-child{border-bottom:none}
+        .cat-persona-ico{font-size:1.1rem;flex-shrink:0}
+        .cat-persona-info{flex:1;min-width:0}
+        .cat-persona-info strong{display:block;font-size:.83rem;color:var(--navy);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .cat-persona-info span{font-size:.71rem;color:var(--muted)}
+        .cat-per-del{
+          background:none;border:1.5px solid var(--border);border-radius:6px;
+          padding:.25rem .5rem;cursor:pointer;color:var(--muted);
+          font-family:inherit;font-size:.68rem;transition:all .2s;
+        }
+        .cat-per-del:hover{border-color:var(--danger2);color:var(--danger2);background:#fef2f2}
+        .cat-add-persona-btn{
+          display:flex;align-items:center;gap:.5rem;width:100%;
+          padding:.55rem 1rem;background:var(--light);border:none;
+          font-family:inherit;font-size:.78rem;color:var(--teal);
+          cursor:pointer;font-weight:600;transition:background .2s;
+        }
+        .cat-add-persona-btn:hover{background:var(--light2)}
+        .cat-add-persona-btn svg{width:14px;height:14px}
+
+        /* Modal agregar vivienda / persona */
+        #modal-cat{
+          display:none;position:fixed;inset:0;background:rgba(6,42,30,.55);
+          z-index:700;align-items:center;justify-content:center;padding:1rem;
+        }
+        #modal-cat.show{display:flex}
+        .mcat-box{
+          background:#fff;border-radius:14px;width:100%;max-width:400px;
+          box-shadow:0 8px 40px rgba(10,60,46,.22);overflow:hidden;
+          animation:slideUp .25s ease;
+        }
+        .mcat-header{
+          padding:.8rem 1rem;background:var(--navy2);color:#fff;
+          display:flex;align-items:center;justify-content:space-between;
+        }
+        .mcat-header h4{font-family:'DM Serif Display',serif;font-size:.97rem;font-weight:normal}
+        .mcat-close{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;line-height:1}
+        .mcat-body{padding:1rem}
+        .mcat-label{display:block;font-size:.75rem;font-weight:700;color:var(--navy2);
+          text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;}
+        .mcat-input{
+          width:100%;padding:.5rem .75rem;border:1.5px solid var(--border);
+          border-radius:8px;font-family:inherit;font-size:.88rem;color:var(--text);
+          outline:none;transition:border .2s;margin-bottom:.75rem;
+        }
+        .mcat-input:focus{border-color:var(--teal2)}
+        .mcat-btns{display:flex;gap:.6rem;margin-top:.25rem}
+        .mcat-btns button{
+          flex:1;padding:.48rem;border-radius:8px;font-family:inherit;
+          font-size:.82rem;font-weight:700;cursor:pointer;border:none;transition:all .2s;
+        }
+        .mcat-btns .ok{background:var(--navy2);color:#fff}
+        .mcat-btns .ok:hover{background:var(--teal)}
+        .mcat-btns .cancel{background:var(--light2);color:var(--navy2);border:1.5px solid var(--border)}
+
         /* ══ AUTOCOMPLETE VIVIENDA ══ */
         .viv-wrap{position:relative}
         .viv-dropdown{
@@ -659,6 +916,17 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
+        <button class="menu-btn" onclick="irA('screen-catalogo');if(document.getElementById('cat-buscador'))document.getElementById('cat-buscador').value='';renderCatalogo()">
+            <div class="menu-btn-icon" style="background:#5b4fcf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Catálogo de Familias</div>
+                <div class="mbs">Viviendas e integrantes</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <button class="menu-btn" onclick="irA('screen-list')">
             <div class="menu-btn-icon navy">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -789,6 +1057,28 @@
             <div class="form-body">
                 <input type="hidden" id="edit-id"/>
 
+                <!-- Selector de paciente desde catálogo -->
+                <button class="sel-pac-btn" onclick="abrirSelectorPac()" id="btn-sel-pac">
+                    <div class="sel-pac-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    </div>
+                    <div class="sel-pac-txt">
+                        <strong id="btn-sel-pac-titulo">Seleccionar paciente</strong>
+                        <span id="btn-sel-pac-sub">Buscar en catálogo de viviendas</span>
+                    </div>
+                    <div class="sel-pac-chip" id="btn-sel-pac-chip">Catálogo</div>
+                </button>
+
+                <!-- Banner: paciente seleccionado del catálogo -->
+                <div id="pac-seleccionado-banner">
+                    <div class="psb-ico">👤</div>
+                    <div class="psb-txt">
+                        <strong id="psb-nombre">—</strong>
+                        <span id="psb-detalle">—</span>
+                    </div>
+                    <button class="psb-clear" onclick="limpiarPacSeleccionado()">✕ Limpiar</button>
+                </div>
+
                 <div class="fs-title">Datos de la Visita</div>
                 <div class="fg c2">
                     <div class="f-group">
@@ -847,6 +1137,227 @@
     </div>
 </div><!-- /screen-nuevo -->
 
+
+<!-- ════════════════════════════
+     SCREEN: CATÁLOGO DE FAMILIAS
+════════════════════════════ -->
+<div class="screen" id="screen-catalogo">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Catálogo de Familias</span>
+        <button class="topbar-btn secondary" onclick="abrirModalImportarCat()" title="Importar desde Excel/CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Importar
+        </button>
+        <button class="topbar-btn primary" onclick="abrirModalNuevaVivienda()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nueva
+        </button>
+    </div>
+    <div class="cat-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="cat-buscador" placeholder="Buscar por n° de casa o nombre de persona…"
+               oninput="_catPersonaSeleccionada=null;renderCatalogo()" autocomplete="off"/>
+    </div>
+    <div class="scroller" id="catalogo-lista">
+        <!-- se renderiza por JS -->
+    </div>
+</div>
+
+<!-- Modal agregar vivienda / persona al catálogo -->
+<div id="modal-cat">
+    <div class="mcat-box">
+        <div class="mcat-header">
+            <h4 id="mcat-titulo">Nueva Vivienda</h4>
+            <button class="mcat-close" onclick="cerrarModalCat()">✕</button>
+        </div>
+        <div class="mcat-body">
+
+            <!-- Modo vivienda -->
+            <div id="mcat-fields-vivienda">
+                <label class="mcat-label">N° de Vivienda</label>
+                <input class="mcat-input" id="mcat-vivienda-num" placeholder="Ej: 15" autocomplete="off"/>
+            </div>
+
+            <!-- Modo persona -->
+            <div id="mcat-fields-persona" style="display:none">
+                <label class="mcat-label">Nombre completo</label>
+                <input class="mcat-input" id="mcat-nombre" placeholder="Nombre de la persona"/>
+
+                <label class="mcat-label">Fecha de nacimiento</label>
+                <input class="mcat-input" type="date" id="mcat-fnac"
+                       oninput="mcatCalcularEdad()" style="margin-bottom:.35rem"/>
+
+                <!-- Edad calculada (solo lectura) -->
+                <div id="mcat-edad-display" style="display:none;
+                     background:linear-gradient(135deg,#0b8a7218,#00b89c12);
+                     border:1.5px solid var(--teal2);border-radius:8px;
+                     padding:.45rem .75rem;margin-bottom:.75rem;
+                     display:none;align-items:center;gap:.5rem">
+                    <span style="font-size:1rem">🎂</span>
+                    <div>
+                        <span id="mcat-edad-txt" style="font-weight:700;font-size:.85rem;color:var(--navy2)">—</span>
+                        <span id="mcat-edad-sub" style="font-size:.7rem;color:var(--muted);display:block"></span>
+                    </div>
+                </div>
+
+                <label class="mcat-label" style="margin-top:.1rem">
+                    Edad (manual si no ingresa fecha)
+                </label>
+                <input class="mcat-input" id="mcat-edad-manual"
+                       placeholder="Ej: 32 años, 1 año 6 meses, 15 días…"
+                       style="margin-bottom:.25rem"/>
+                <div style="font-size:.7rem;color:var(--muted);margin-bottom:.65rem">
+                    Si ingresás la fecha de nacimiento, la edad se calcula sola.
+                </div>
+            </div>
+
+            <div class="mcat-btns">
+                <button class="cancel" onclick="cerrarModalCat()">Cancelar</button>
+                <button class="ok" onclick="guardarModalCat()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal importar catálogo desde Excel / CSV / Google Sheets -->
+<div id="modal-importar-cat">
+    <div class="mcat-box" style="max-width:480px">
+        <div class="mcat-header">
+            <h4 id="micat-titulo">Importar desde Excel / CSV</h4>
+            <button class="mcat-close" onclick="cerrarModalImportarCat()">✕</button>
+        </div>
+        <div class="mcat-body" style="padding:0">
+
+            <!-- Paso 1: instrucciones + zona de carga -->
+            <div id="micat-paso1" style="padding:1rem">
+                <div style="background:var(--light);border:1.5px solid var(--border);border-radius:9px;padding:.75rem .9rem;margin-bottom:.85rem;font-size:.78rem;color:var(--navy2)">
+                    <strong style="display:block;margin-bottom:.35rem">📋 Formato esperado</strong>
+                    El archivo debe tener <strong>3 columnas</strong> con estos encabezados
+                    (en cualquier idioma, el orden sí importa):
+                    <div style="margin:.5rem 0;display:flex;gap:.4rem;flex-wrap:wrap">
+                        <span style="background:var(--navy2);color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna A — N° Vivienda</span>
+                        <span style="background:var(--navy2);color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna B — Nombre</span>
+                        <span style="background:#0b8a72;color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna C — Fecha de Nacimiento</span>
+                    </div>
+                    La fecha de nacimiento puede estar en formato <strong>DD/MM/AAAA</strong>,
+                    <strong>AAAA-MM-DD</strong> o como fecha de Excel. La edad se calcula
+                    automáticamente en tiempo real (zona horaria El Salvador).<br/>
+                    Acepta <strong>.xlsx</strong> (Excel), <strong>.xls</strong>, <strong>.csv</strong> y archivos
+                    exportados de <strong>Google Sheets</strong> (.csv o .xlsx).
+                    La primera fila se trata como encabezado y se omite.
+                </div>
+
+                <label id="micat-dropzone" for="micat-file-input"
+                    style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                           gap:.5rem;border:2px dashed var(--border);border-radius:10px;padding:1.5rem 1rem;
+                           cursor:pointer;transition:all .2s;background:var(--light);text-align:center"
+                    ondragover="event.preventDefault();this.style.borderColor='var(--teal2)';this.style.background='#e8f8f4'"
+                    ondragleave="this.style.borderColor='';this.style.background='var(--light)'"
+                    ondrop="micatOnDrop(event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;color:var(--teal)">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span style="font-size:.85rem;font-weight:700;color:var(--navy2)">Toca para seleccionar archivo</span>
+                    <span style="font-size:.72rem;color:var(--muted)">o arrastra aquí · .xlsx · .xls · .csv</span>
+                    <input type="file" id="micat-file-input" accept=".xlsx,.xls,.csv"
+                           style="display:none" onchange="micatLeerArchivo(this.files[0])"/>
+                </label>
+                <div id="micat-error" style="display:none;margin-top:.6rem;padding:.5rem .75rem;
+                     background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;
+                     font-size:.78rem;color:var(--danger)"></div>
+            </div>
+
+            <!-- Paso 2: vista previa + confirmar -->
+            <div id="micat-paso2" style="display:none">
+                <div style="padding:.65rem 1rem;background:var(--light);border-bottom:1px solid var(--border);
+                     display:flex;align-items:center;gap:.5rem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--teal);flex-shrink:0"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    <span id="micat-resumen" style="font-size:.78rem;font-weight:600;color:var(--navy2)">—</span>
+                </div>
+                <div style="max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch">
+                    <table id="micat-prev-tabla" style="width:100%;border-collapse:collapse;font-size:.76rem">
+                        <thead>
+                            <tr style="background:var(--navy);color:#fff;position:sticky;top:0">
+                                <th style="padding:.38rem .6rem;text-align:left;font-weight:700">Vivienda</th>
+                                <th style="padding:.38rem .6rem;text-align:left;font-weight:700">Nombre</th>
+                                <th style="padding:.38rem .6rem;text-align:left;font-weight:700;background:#0b8a72">F. Nacimiento → Edad calculada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="micat-prev-tbody"></tbody>
+                    </table>
+                </div>
+                <div style="padding:.65rem 1rem;background:var(--light);border-top:1px solid var(--border)">
+                    <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--navy2);cursor:pointer">
+                        <input type="checkbox" id="micat-reemplazar" style="accent-color:var(--teal2)"/>
+                        <span><strong>Reemplazar</strong> catálogo existente (si no, se fusiona)</span>
+                    </label>
+                </div>
+                <div class="mcat-btns" style="padding:.65rem 1rem;gap:.55rem">
+                    <button class="cancel" onclick="micatVolverPaso1()">← Cambiar</button>
+                    <button class="ok" onclick="micatConfirmarImport()">
+                        ✅ Importar ahora
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal selector de paciente (se abre desde formulario nueva visita) -->
+<div id="modal-selector-pac">
+    <div class="msp-box">
+        <div class="msp-header" id="msp-header-normal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            <h3>Seleccionar Paciente</h3>
+            <button class="msp-close" onclick="cerrarSelectorPac()">✕ Cerrar</button>
+        </div>
+        <!-- Header modo vivienda fija -->
+        <div class="msp-header" id="msp-header-vivfija" style="display:none;background:linear-gradient(135deg,#0a5c3a,#0b8a72)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            <div style="flex:1">
+                <h3 id="msp-viv-fija-titulo" style="margin:0">Vivienda —</h3>
+                <div style="font-size:.7rem;opacity:.75;margin-top:1px">Elige otro integrante de esta vivienda</div>
+            </div>
+            <button class="msp-close" onclick="cerrarSelectorPac()">✕</button>
+        </div>
+        <!-- Buscador (solo modo normal) -->
+        <div class="msp-search" id="msp-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="msp-buscador" placeholder="Buscar nombre o vivienda…" oninput="renderSelectorPac()"/>
+        </div>
+        <div class="msp-list" id="msp-lista">
+            <!-- se renderiza por JS -->
+        </div>
+        <div class="msp-footer" id="msp-footer-normal">
+            <button class="msp-footer-btn cat" onclick="cerrarSelectorPac();irA('screen-catalogo');renderCatalogo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar catálogo
+            </button>
+            <button class="msp-footer-btn sin" onclick="seleccionarSinCatalogo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Sin catálogo
+            </button>
+        </div>
+        <!-- Footer modo vivienda fija -->
+        <div class="msp-footer" id="msp-footer-vivfija" style="display:none">
+            <button class="msp-footer-btn cat" style="flex:none;padding:.5rem .9rem" onclick="cerrarSelectorPac()">
+                ← Cancelar
+            </button>
+            <button class="msp-footer-btn sin" onclick="cerrarSelectorPac();irA('screen-catalogo');renderCatalogo()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar catálogo
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- ════════════════════════════
      SCREEN: LISTADO
@@ -958,7 +1469,7 @@
                     </div>
                     <div class="f-group">
                         <label>Año</label>
-                        <input type="number" id="rep-anio" value="2025" min="2020" max="2035"/>
+                        <input type="number" id="rep-anio" value="2025" min="2020" max="2235"/>
                     </div>
                 </div>
                 <div class="rep-actions">
@@ -1219,6 +1730,11 @@
         if (!esEdicion && !esModoOtra) {
           document.getElementById('r-fecha').value = hoy();
           document.getElementById('r-hora').value  = horaActual();
+          // Resetear selector de paciente al estado normal
+          document.getElementById('pac-seleccionado-banner').classList.remove('show');
+          document.getElementById('btn-sel-pac').style.display = '';
+          document.getElementById('btn-sel-pac-titulo').textContent = 'Seleccionar paciente';
+          document.getElementById('btn-sel-pac-sub').textContent    = 'Buscar en catálogo de viviendas';
         }
       }
     }
@@ -1429,6 +1945,12 @@
         document.getElementById('form-header-title').textContent = 'Agregar persona a la misma vivienda';
         document.getElementById('form-header-sub').textContent   = `Vivienda ${_modoOtraPersona.vivienda} · misma fecha y hora`;
         actualizarBannerVivienda(_modoOtraPersona.vivienda, _modoOtraPersona.fecha);
+        // Botón selector: modo vivienda fija
+        document.getElementById('pac-seleccionado-banner').classList.remove('show');
+        document.getElementById('btn-sel-pac').style.display = '';
+        document.getElementById('btn-sel-pac-titulo').textContent = `Elegir integrante — Viv. ${_modoOtraPersona.vivienda}`;
+        document.getElementById('btn-sel-pac-sub').textContent    = 'Seleccionar otra persona de esta vivienda';
+        document.getElementById('btn-sel-pac-chip').textContent   = 'Catálogo';
       } else {
         _modoOtraPersona = null;
         document.getElementById('r-fecha').value    = hoy();
@@ -1438,6 +1960,12 @@
         document.getElementById('form-header-title').textContent = 'Registro de Visita Domiciliaria';
         document.getElementById('form-header-sub').textContent   = 'Complete todos los campos requeridos';
         document.getElementById('banner-otra-persona').classList.remove('show');
+        // Resetear selector de paciente al estado normal
+        document.getElementById('pac-seleccionado-banner').classList.remove('show');
+        document.getElementById('btn-sel-pac').style.display = '';
+        document.getElementById('btn-sel-pac-titulo').textContent = 'Seleccionar paciente';
+        document.getElementById('btn-sel-pac-sub').textContent    = 'Buscar en catálogo de viviendas';
+        document.getElementById('btn-sel-pac-chip').textContent   = 'Catálogo';
       }
     }
 
@@ -1754,7 +2282,7 @@
       const lista = obtenerRegistrosDia(fecha);
       if (lista.length === 0) { toast('⚠️ Sin registros para esa fecha', 'error'); return; }
       const subtitulo = `REPORTE DIARIO — ${fmtFechaLarga(fecha).toUpperCase()}`;
-      imprimirHTML(htmlReporteOficial(`Reporte Diario ${fmtFecha(fecha)}`, lista, subtitulo));
+      imprimirHTML(htmlReporteDiario(lista, fecha, subtitulo));
     }
 
     function generarReporteMensual() {
@@ -1777,7 +2305,7 @@
         lista     = obtenerRegistrosDia(fecha);
         subtitulo = `REPORTE DIARIO — ${fmtFechaLarga(fecha).toUpperCase()}`;
         titulo    = `📅 Reporte Diario: ${fmtFechaLarga(fecha)}`;
-        _previewHTML = htmlReporteOficial(titulo, lista, subtitulo);
+        _previewHTML = htmlReporteDiario(lista, fecha, subtitulo);
       } else {
         const mes  = document.getElementById('rep-mes').value;
         const anio = document.getElementById('rep-anio').value;
@@ -1883,6 +2411,163 @@
       };
     }
 
+    // ── ESTADÍSTICAS POR GRUPOS DE EDAD ──
+    // Extrae número de años desde un texto de edad libre (ej: "25", "3 años", "6 meses", "2a 3m")
+    // Convierte texto de edad a MESES TOTALES para clasificación precisa
+    // Ejemplos: "3 días"→0m, "6 meses"→6m, "1 año"→12m, "4 años 11 meses"→59m, "25"→300m
+    function edadEnMeses(edadStr) {
+      if (!edadStr) return null;
+      const s = String(edadStr).trim().toLowerCase()
+                .replace(/\band\b|\by\b/g,' ')
+                .replace(/\s+/g,' ');
+
+      // ── Recién nacido: RN / "recién nacido" siempre ──
+      if (/\brn\b|reci[eé]n\s*nacido|neonato/.test(s)) return -2;
+
+      // ── Días / semanas → recién nacido SOLO si no hay años ni meses antes ──
+      // "3 meses 11 días" NO es RN; "15 días" SÍ es RN
+      const tieneMayorUnidad = /\d+\s*(?:años?|a\b|meses?|mes\b|m\b)/.test(s);
+      if (!tieneMayorUnidad && /\bd[ií]?as?\b|\bsemanas?\b|\bweeks?\b|\bdays?\b/.test(s)) return -2;
+
+      // ── Solo número puro ──
+      if (/^\d+$/.test(s)) {
+        const n = parseInt(s);
+        return n === 0 ? 1 : n * 12;
+      }
+
+      let totalMeses = 0;
+      let encontrado = false;
+
+      // ── Años: "3 años","3 año","3a","3yr" ──
+      // Capturar posición para no doble-contar
+      const mAnio = s.match(/(\d+)\s*(?:años?|a(?=\s|$|\d)|yrs?|years?)/);
+      if (mAnio) {
+        totalMeses += parseInt(mAnio[1]) * 12;
+        encontrado = true;
+      }
+
+      // ── Meses: "6 meses","6 mes","6m" ──
+      // "meses" o "mes" (con o sin s)
+      const mMesLargo = s.match(/(\d+)\s*mes(?:es)?(?!\w)/);
+      if (mMesLargo) {
+        totalMeses += parseInt(mMesLargo[1]);
+        encontrado = true;
+      } else {
+        // "m" sola: "6m", "2m" — pero no el número que ya capturó años
+        const mMesCorto = s.match(/(\d+)\s*m\b/);
+        if (mMesCorto) {
+          // Si ya hay años, asegurarse que este número sea diferente
+          const numM = parseInt(mMesCorto[1]);
+          const numA = mAnio ? parseInt(mAnio[1]) : null;
+          if (numA === null || numM !== numA) {
+            totalMeses += numM;
+            encontrado = true;
+          }
+        }
+      }
+
+      if (encontrado) return Math.max(totalMeses, 1);
+      return null;
+    }
+
+    function clasificarGrupoEdad(meses) {
+      if (meses === null) return null;
+      if (meses === -2)   return 0;   // días/semanas → Recién nacido
+      if (meses <   12)   return 1;   //  1 m –  11 m   (< 1 año)
+      if (meses <   60)   return 1;   // 12 m –  59 m   (1 año – 4a 11m)
+      if (meses <   96)   return 2;   // 60 m –  95 m   (5 años – 7a 11m)
+      if (meses <  120)   return 3;   // 96 m – 119 m   (8 años – 9a 11m)
+      if (meses <  132)   return 4;   //120 m – 131 m   (10 años – 10a 11m)
+      if (meses <  144)   return 5;   //132 m – 143 m   (11 años – 11a 11m)
+      if (meses <  216)   return 6;   //144 m – 215 m   (12 años – 17a 11m)
+      if (meses <  228)   return 7;   //216 m – 227 m   (18 años – 18a 11m)
+      if (meses <  240)   return 8;   //228 m – 239 m   (19 años – 19a 11m)
+      if (meses <  720)   return 9;   //240 m – 719 m   (20 años – 59a 11m)
+      return 10;                      //720 m+           (60 años en adelante)
+    }
+
+    const GRUPOS_EDAD = [
+      { id: 0,  label: 'Recién nacidos',          rango: '0 días – < 1 mes' },
+      { id: 1,  label: 'De 1 mes a 4 años',       rango: '1 mes – 4 años' },
+      { id: 2,  label: 'De 5 a 7 años',           rango: '5 – 7 años' },
+      { id: 3,  label: 'De 8 a 9 años',           rango: '8 – 9 años' },
+      { id: 4,  label: '10 años',                 rango: '10 años' },
+      { id: 5,  label: '11 años',                 rango: '11 años' },
+      { id: 6,  label: 'Adolescentes',            rango: '12 – 17 años' },
+      { id: 7,  label: '18 años',                 rango: '18 años' },
+      { id: 8,  label: '19 años',                 rango: '19 años' },
+      { id: 9,  label: 'Adultos',                 rango: '20 – 59 años' },
+      { id: 10, label: 'Adultos Mayores',         rango: '60 años en adelante' },
+    ];
+
+    function htmlEstadisticasEdad(lista) {
+      // Contar por grupo
+      const conteo = {}; // grupoId → count
+      let sinClasificar = 0;
+      const textosSinClas = [];
+      GRUPOS_EDAD.forEach(g => conteo[g.id] = 0);
+
+      lista.forEach(r => {
+        const meses = edadEnMeses(r.edad);
+        const gid   = clasificarGrupoEdad(meses);
+        if (gid !== null) conteo[gid]++;
+        else { sinClasificar++; textosSinClas.push(JSON.stringify(r.edad || '(vacío)')); }
+      });
+
+      const total = lista.length;
+      const maxVal = Math.max(...Object.values(conteo), 1);
+
+      const filas = GRUPOS_EDAD.map(g => {
+        const n   = conteo[g.id];
+        const pct = total > 0 ? ((n / total) * 100).toFixed(1) : '0.0';
+        const barW = Math.round((n / maxVal) * 100);
+        return `<tr>
+          <td class="col-grupo">${g.label}</td>
+          <td style="font-size:7pt;color:#666;text-align:center">${g.rango}</td>
+          <td class="col-num">${n}</td>
+          <td class="col-pct">${pct}%</td>
+          <td class="col-bar">
+            <div class="estad-bar-outer">
+              <div class="estad-bar-inner" style="width:${barW}%"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      const notaEdad = sinClasificar > 0
+        ? `<div style="font-size:6.5pt;color:#b45309;background:#fffbeb;border:0.4pt solid #fcd34d;padding:1.5mm 2.5mm;margin-top:1.5mm;border-radius:3pt">
+            ⚠ <b>${sinClasificar}</b> registro${sinClasificar>1?'s':''} sin clasificar (formato de edad no reconocido).<br>
+            Textos registrados: <b>${[...new Set(textosSinClas)].join(', ')}</b>
+           </div>`
+        : '';
+
+      return `
+      <div class="estad-box">
+        <div class="estad-titulo">📊 Estadísticas de Atenciones por Grupo de Edad</div>
+        <table class="estad-tabla">
+          <thead>
+            <tr>
+              <th class="col-grupo">Grupo de Edad</th>
+              <th>Rango</th>
+              <th class="col-num">N°</th>
+              <th class="col-pct">%</th>
+              <th class="col-bar">Proporción</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filas}
+            <tr class="estad-total">
+              <td colspan="2">TOTAL ATENCIONES</td>
+              <td class="col-num">${total}</td>
+              <td class="col-pct">100%</td>
+              <td class="col-bar"></td>
+            </tr>
+          </tbody>
+        </table>
+        ${notaEdad}
+      </div>`;
+    }
+
     // ── HTML DEL REPORTE OFICIAL ──
     function htmlReporteOficial(titulo, registrosFiltrados, subtitulo) {
       const p = perfil;
@@ -1916,8 +2601,9 @@
 
     .cab { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
     .cab td { padding: 1.5mm 2mm; vertical-align: middle; }
-    .logo-cell { width: 25mm; text-align: center; border: 0.5pt solid #555; font-size: 5.5pt; font-weight: bold; line-height: 1.3; }
+    .logo-cell { width: 38mm; text-align: center; border: 0.5pt solid #555; padding: 1.5mm; }
     .logo-escudo { font-size: 20pt; display: block; }
+    .logo-escudo-img { width: 34mm; height: auto; display: block; margin: 0 auto; }
     .titulo-cell { border: 0.5pt solid #555; border-left: none; vertical-align: middle; }
     .titulo-1 { font-size: 9pt; font-weight: bold; text-align: center; letter-spacing: 0.3pt; }
     .titulo-2 { font-size: 6.5pt; text-align: center; color: #333; margin-top: 1mm; }
@@ -1950,6 +2636,37 @@
     .firma-linea { border-top: 0.4pt solid #000; width: 55mm; margin: 0 auto 1mm; }
     .firmas-wrap { display: flex; justify-content: space-between; margin-top: 8mm; }
     .resumen-box { margin-top: 4mm; background: #f0faf5; border: 0.5pt solid #9fd4c5; padding: 2mm 3mm; font-size: 7pt; }
+    /* ══ TABLA ESTADÍSTICAS EDAD ══ */
+    .estad-box { margin-top: 5mm; page-break-inside: avoid; }
+    .estad-titulo {
+      background-color: #0a3d2e !important; color: #fff !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      font-size: 8pt; font-weight: bold; padding: 2mm 3mm;
+      text-transform: uppercase; letter-spacing: 0.3pt;
+    }
+    .estad-tabla { width: 100%; border-collapse: collapse; margin-top: 0; }
+    .estad-tabla th {
+      background-color: #1a5c48 !important; color: #fff !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      border: 0.4pt solid #0a3d2e; padding: 1.8mm 2mm;
+      font-size: 7pt; text-align: center; font-weight: bold;
+    }
+    .estad-tabla td { border: 0.4pt solid #aaa; padding: 1.8mm 2mm; font-size: 7pt; vertical-align: middle; }
+    .estad-tabla tr:nth-child(even) td { background-color: #f5faf8; }
+    .estad-tabla .col-grupo { width: auto; font-weight: 600; }
+    .estad-tabla .col-num   { width: 22mm; text-align: center; font-weight: 700; font-size: 8pt; }
+    .estad-tabla .col-pct   { width: 18mm; text-align: center; color: #3d7a69; }
+    .estad-tabla .col-bar   { width: auto; }
+    .estad-bar-outer { width: 100%; background: #e8f5f0; border-radius: 3pt; height: 5pt; }
+    .estad-bar-inner { height: 5pt; border-radius: 3pt;
+      background-color: #0b8a72 !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .estad-tabla tr.estad-total td {
+      background-color: #0e5c44 !important; color: #fff !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      font-weight: bold; font-size: 8pt;
+    }
     .screen-topbar { display: none !important; }
     .tabla-wrap { }
     .page-body { }
@@ -1981,8 +2698,9 @@
       .page-body { padding: 1rem; }
       .cab { font-size: 11px; margin-bottom: .75rem; }
       .cab td { padding: 6px 8px; }
-      .logo-cell { width: 70px; font-size: 9px; border: 1px solid #888; }
+      .logo-cell { width: 90px; text-align: center; border: 1px solid #888; padding: 3px; }
       .logo-escudo { font-size: 26px; }
+      .logo-escudo-img { width: 82px; height: auto; display: block; margin: 0 auto; }
       .titulo-cell { border: 1px solid #888; border-left: none; }
       .titulo-1 { font-size: 11px; }
       .titulo-2 { font-size: 9px; }
@@ -2012,6 +2730,14 @@
       .firma-box { font-size: 11px; }
       .firma-linea { width: 180px; border-top: 1px solid #000; margin-bottom: 4px; }
       .resumen-box { font-size: 11px; padding: 8px 12px; border-radius: 6px; margin-bottom: .75rem; }
+      /* Estadísticas pantalla */
+      .estad-box { margin-top: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid #9fd4c5; }
+      .estad-titulo { font-size: 11px; padding: 7px 12px; }
+      .estad-tabla th { font-size: 11px; padding: 7px 10px; border: 1px solid #0a7a5a; }
+      .estad-tabla td { font-size: 12px; border: 1px solid #c8e0d8; padding: 6px 10px; }
+      .estad-tabla .col-num { font-size: 13px; }
+      .col-grupo { min-width: 180px; }
+      .col-bar   { min-width: 100px; }
     }
 
     /* ══ MÓVIL (<=600px) — tarjetas ══ */
@@ -2029,6 +2755,7 @@
         text-align: left; width: 100%;
       }
       .logo-escudo { font-size: 22px; display: inline; }
+      .logo-escudo-img { width: 120px; height: auto; display: block; }
       .titulo-cell { border: 1px solid #888; border-radius: 6px; padding: 8px; margin-top: 4px; }
       .titulo-1 { font-size: 12px; }
       .titulo-2 { font-size: 9px; }
@@ -2126,7 +2853,8 @@
       .datos-promotor { display: table !important; }
       .datos-promotor tr { display: table-row !important; }
       .datos-promotor td { display: table-cell !important; border: 0.4pt solid #888; }
-      .logo-cell { width: 25mm; display: table-cell !important; }
+      .logo-cell { width: 38mm; display: table-cell !important; }
+      .logo-escudo-img { width: 34mm !important; }
       .firmas-wrap { display: flex !important; flex-direction: row !important; margin-top: 8mm; }
     }
     </style>
@@ -2144,9 +2872,7 @@
     <table class="cab">
     <tr>
       <td class="logo-cell">
-        <span class="logo-escudo">⚕️</span>
-        MINISTERIO<br>DE SALUD<br>
-        <span style="font-size:5pt;">GOBIERNO DE EL SALVADOR</span>
+        <img class="logo-escudo-img" src="data:image/png;base64,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" alt="MINSAL"/>
       </td>
       <td class="titulo-cell">
         <div class="titulo-1">MINISTERIO DE SALUD</div>
@@ -2197,6 +2923,8 @@
     </table>
     </div>
 
+    ${htmlEstadisticasEdad(registrosFiltrados)}
+
     <div class="pie">
       <span>Sistema de Registro Diario — Promotor de Salud MINSAL El Salvador</span>
       <span>Impreso: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span>
@@ -2216,6 +2944,18 @@
 
     </div>
     </body></html>`;
+    }
+
+    function htmlReporteDiario(lista, fecha, subtitulo) {
+      const titulo = `Reporte Diario ${fmtFecha(fecha)}`;
+      const html   = htmlReporteOficial(titulo, lista, subtitulo);
+      const resumen = `
+      <div class="resumen-box">
+        <b>RESUMEN DEL DÍA: ${fmtFechaLarga(fecha).toUpperCase()}</b><br>
+        Visitas realizadas: <b>${contarViviendas(lista)}</b> &nbsp;|&nbsp;
+        Personas atendidas: <b>${lista.length}</b>
+      </div>`;
+      return html.replace('</body>', resumen + '</body>');
     }
 
     function htmlReporteMensual(lista, mes, anio, subtitulo) {
@@ -2248,7 +2988,7 @@
         if (lista.length === 0) { toast('⚠️ Sin registros para esa fecha', 'error'); return; }
         subtitulo = `REPORTE DIARIO — ${fmtFechaLarga(fecha).toUpperCase()}`;
         titulo    = `Reporte Diario: ${fmtFechaLarga(fecha)}`;
-        _fullPreviewHTML = htmlReporteOficial(titulo, lista, subtitulo);
+        _fullPreviewHTML = htmlReporteDiario(lista, fecha, subtitulo);
       } else {
         const mes  = document.getElementById('rep-mes').value;
         const anio = document.getElementById('rep-anio').value;
@@ -2328,10 +3068,12 @@
           version: '1.0',
           actualizadoEn: new Date().toISOString(),
           perfil,
-          registros
+          registros,
+          catalogo: getCatalogo()
         };
         await setDoc(doc(db, 'rdps', docId), payload);
-        setFirebaseStatus(`✅ Subido: ${registros.length} registros`, 'ok');
+        const nCat = getCatalogo().reduce((acc,v) => acc + (v.personas?.length||0), 0);
+        setFirebaseStatus(`✅ Subido: ${registros.length} registros · ${nCat} personas en catálogo`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
       } catch(e) {
         setFirebaseStatus('❌ Error al subir: ' + e.message, 'err');
@@ -2364,18 +3106,715 @@
         }
         registros = data.registros;
         if (data.perfil) perfil = data.perfil;
+        if (Array.isArray(data.catalogo)) {
+          saveCatalogo(data.catalogo);
+          renderCatalogo();
+        }
         localStorage.setItem('rdps_registros', JSON.stringify(registros));
         localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
         actualizarHome();
         renderListado();
+        const nCat = Array.isArray(data.catalogo)
+          ? data.catalogo.reduce((acc,v) => acc + (v.personas?.length||0), 0) : 0;
         const fecha = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
-        setFirebaseStatus(`✅ Bajado: ${registros.length} registros (${fecha})`, 'ok');
-        toast(`✅ ${registros.length} registros restaurados desde la nube`, 'success');
+        setFirebaseStatus(`✅ Bajado: ${registros.length} registros · ${nCat} personas en catálogo (${fecha})`, 'ok');
+        toast(`✅ ${registros.length} registros y catálogo restaurados desde la nube`, 'success');
       } catch(e) {
         setFirebaseStatus('❌ Error al bajar: ' + e.message, 'err');
         toast('❌ Error al bajar de Firebase', 'error');
         console.error(e);
       }
+    }
+
+    // ══════════════════════════════════════════
+    // CATÁLOGO DE FAMILIAS
+    // ══════════════════════════════════════════
+    function getCatalogo() {
+      return JSON.parse(localStorage.getItem('rdps_catalogo') || '[]');
+      // estructura: [{id, vivienda, personas:[{id, nombre, edad}]}]
+    }
+    function saveCatalogo(cat) {
+      localStorage.setItem('rdps_catalogo', JSON.stringify(cat));
+    }
+
+    function renderCatalogo() {
+      const cat = getCatalogo();
+      const cont = document.getElementById('catalogo-lista');
+      const q = (document.getElementById('cat-buscador')?.value || '').trim().toLowerCase();
+
+      if (!cat.length) {
+        cont.innerHTML = `<div class="cat-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p>No hay viviendas en el catálogo.<br>Toca <strong>Nueva vivienda</strong> para comenzar.</p>
+        </div>`;
+        return;
+      }
+
+      // Filtrar si hay término de búsqueda
+      let catFiltrado = cat;
+      if (q) {
+        catFiltrado = cat.reduce((acc, viv) => {
+          const numViv = String(viv.vivienda || '').toLowerCase();
+          const matchViv = numViv.includes(q);
+          const personasFiltradas = (viv.personas || []).filter(p =>
+            (p.nombre || '').toLowerCase().includes(q)
+          );
+          if (matchViv) {
+            // Si coincide el número de casa, mostrar toda la vivienda
+            acc.push(viv);
+          } else if (personasFiltradas.length) {
+            // Si coinciden personas, mostrar la vivienda solo con esas personas
+            acc.push({ ...viv, personas: personasFiltradas });
+          }
+          return acc;
+        }, []);
+      }
+
+      if (!catFiltrado.length) {
+        cont.innerHTML = `<div class="cat-search-nores">
+          No se encontraron resultados para "<strong>${q}</strong>"
+        </div>`;
+        return;
+      }
+
+      cont.innerHTML = catFiltrado.map(viv => `
+        <div class="cat-viv-card" data-viv-id="${viv.id}">
+          <div class="cat-viv-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            <span class="cat-viv-num">Vivienda ${viv.vivienda}</span>
+            <div class="cat-viv-btns">
+              <button class="cat-ico-btn" onclick="abrirModalNuevaPersona('${viv.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar
+              </button>
+              <button class="cat-ico-btn" onclick="eliminarVivienda('${viv.id}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+              </button>
+            </div>
+          </div>
+          ${viv.personas && viv.personas.length ? viv.personas.map(p => {
+            // Normalizar fnac a ISO por si viene en otro formato (legado)
+            const fnacISO = p.fnac ? (() => {
+              const s = p.fnac.trim();
+              if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+              const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+              if (m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+              return s;
+            })() : '';
+            const edadViva = fnacISO ? calcularEdadTexto(fnacISO) : (p.edad || '');
+            const subtxt   = fnacISO ? (() => { const [y,m,d]=fnacISO.split('-'); return `Nac. ${d}/${m}/${y}`; })() : '';
+            const esResultadoFiltrado = q && !String(viv.vivienda||'').toLowerCase().includes(q);
+            const esSeleccionada = _catPersonaSeleccionada &&
+              _catPersonaSeleccionada.vivId === viv.id &&
+              _catPersonaSeleccionada.perId === p.id;
+            return `
+            <div class="cat-persona-item${esResultadoFiltrado ? ' highlight-result' : ''}${esSeleccionada ? ' persona-seleccionada' : ''}"
+              ${esResultadoFiltrado ? `onclick="verFamiliaCompleta('${viv.id}','${p.id}')" title="Ver familia completa"` : ''}>
+              <span class="cat-persona-ico">👤</span>
+              <div class="cat-persona-info">
+                <strong>${p.nombre}</strong>
+                <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}</span>
+                ${esResultadoFiltrado ? `<span class="cat-ver-familia">🏠 Ver familia completa</span>` : ''}
+              </div>
+              ${!esResultadoFiltrado ? `<button class="cat-per-del" onclick="eliminarPersonaCat('${viv.id}','${p.id}')">✕</button>` : ''}
+            </div>`;
+          }).join('') : `<div style="padding:.6rem 1rem;font-size:.78rem;color:var(--muted);font-style:italic">Sin integrantes registrados</div>`}
+        </div>
+      `).join('');
+    }
+
+    // Variables modal catálogo
+    let _mcatMode = null; // 'vivienda' | 'persona'
+    let _mcatVivId = null;
+
+    let _catPersonaSeleccionada = null; // { vivId, perId }
+
+    function verFamiliaCompleta(vivId, perId) {
+      _catPersonaSeleccionada = { vivId, perId };
+      const inp = document.getElementById('cat-buscador');
+      if (inp) inp.value = '';
+      renderCatalogo();
+      setTimeout(() => {
+        const card = document.querySelector(`[data-viv-id="${vivId}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+
+    // ── Calcular edad a partir de fecha de nacimiento ──
+    function calcularEdadTexto(fnacISO) {
+      if (!fnacISO) return '';
+      const hoy  = new Date();
+      const fnac = new Date(fnacISO + 'T00:00:00');
+      if (isNaN(fnac) || fnac > hoy) return '';
+
+      let anios  = hoy.getFullYear() - fnac.getFullYear();
+      let meses  = hoy.getMonth()    - fnac.getMonth();
+      let dias   = hoy.getDate()     - fnac.getDate();
+
+      if (dias < 0) {
+        meses--;
+        const diasUltimoMes = new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate();
+        dias += diasUltimoMes;
+      }
+      if (meses < 0) { anios--; meses += 12; }
+
+      // Recién nacido / menor de 1 mes
+      if (anios === 0 && meses === 0) {
+        return `${dias} día${dias !== 1 ? 's' : ''}`;
+      }
+      // Menor de 1 año
+      if (anios === 0) {
+        let txt = `${meses} mes${meses !== 1 ? 'es' : ''}`;
+        if (dias > 0) txt += ` ${dias} día${dias !== 1 ? 's' : ''}`;
+        return txt;
+      }
+      // 1 año o más
+      let txt = `${anios} año${anios !== 1 ? 's' : ''}`;
+      if (meses > 0) txt += ` ${meses} mes${meses !== 1 ? 'es' : ''}`;
+      return txt;
+    }
+
+    function mcatCalcularEdad() {
+      const fnac   = document.getElementById('mcat-fnac').value;
+      const edadTxt = calcularEdadTexto(fnac);
+      const display = document.getElementById('mcat-edad-display');
+      if (edadTxt) {
+        document.getElementById('mcat-edad-txt').textContent = edadTxt;
+        // Subtexto: fecha formateada
+        const [y,m,d] = fnac.split('-');
+        document.getElementById('mcat-edad-sub').textContent = `Nacido/a el ${d}/${m}/${y}`;
+        display.style.display = 'flex';
+        // Limpiar campo manual si la fecha calcula bien
+        document.getElementById('mcat-edad-manual').value = '';
+        document.getElementById('mcat-edad-manual').placeholder = edadTxt + ' (calculado)';
+      } else {
+        display.style.display = 'none';
+        document.getElementById('mcat-edad-manual').placeholder = 'Ej: 32 años, 1 año 6 meses, 15 días…';
+      }
+    }
+
+    function abrirModalNuevaVivienda() {
+      _mcatMode = 'vivienda'; _mcatVivId = null;
+      document.getElementById('mcat-titulo').textContent = 'Nueva Vivienda';
+      document.getElementById('mcat-vivienda-num').value = '';
+      document.getElementById('mcat-fields-vivienda').style.display = 'block';
+      document.getElementById('mcat-fields-persona').style.display  = 'none';
+      document.getElementById('modal-cat').classList.add('show');
+      setTimeout(() => document.getElementById('mcat-vivienda-num').focus(), 80);
+    }
+
+    function abrirModalNuevaPersona(vivId) {
+      _mcatMode = 'persona'; _mcatVivId = vivId;
+      const cat = getCatalogo();
+      const viv = cat.find(v => v.id === vivId);
+      document.getElementById('mcat-titulo').textContent    = `Agregar — Vivienda ${viv ? viv.vivienda : ''}`;
+      document.getElementById('mcat-nombre').value          = '';
+      document.getElementById('mcat-fnac').value            = '';
+      document.getElementById('mcat-edad-manual').value     = '';
+      document.getElementById('mcat-edad-manual').placeholder = 'Ej: 32 años, 1 año 6 meses, 15 días…';
+      document.getElementById('mcat-edad-display').style.display = 'none';
+      document.getElementById('mcat-fields-vivienda').style.display = 'none';
+      document.getElementById('mcat-fields-persona').style.display  = 'block';
+      document.getElementById('modal-cat').classList.add('show');
+      setTimeout(() => document.getElementById('mcat-nombre').focus(), 80);
+    }
+
+    function cerrarModalCat() {
+      document.getElementById('modal-cat').classList.remove('show');
+    }
+
+    function guardarModalCat() {
+      const cat = getCatalogo();
+      if (_mcatMode === 'vivienda') {
+        const num = document.getElementById('mcat-vivienda-num').value.trim();
+        if (!num) { toast('Ingresa el número de vivienda', 'error'); return; }
+        if (cat.find(v => v.vivienda === num)) { toast('Esa vivienda ya existe', 'error'); return; }
+        cat.push({ id: 'viv_' + Date.now(), vivienda: num, personas: [] });
+        saveCatalogo(cat);
+        renderCatalogo();
+        cerrarModalCat();
+        toast('🏠 Vivienda ' + num + ' agregada', 'success');
+      } else {
+        const nombre = document.getElementById('mcat-nombre').value.trim();
+        if (!nombre) { toast('Ingresa el nombre', 'error'); return; }
+        const fnac  = document.getElementById('mcat-fnac').value;
+        // Edad: preferir la calculada desde fnac, si no la manual
+        const edadCalc   = calcularEdadTexto(fnac);
+        const edadManual = document.getElementById('mcat-edad-manual').value.trim();
+        const edad = edadCalc || edadManual;
+        const viv = cat.find(v => v.id === _mcatVivId);
+        if (!viv) return;
+        if (!viv.personas) viv.personas = [];
+        viv.personas.push({ id: 'per_' + Date.now(), nombre, fnac: fnac || '', edad });
+        saveCatalogo(cat);
+        renderCatalogo();
+        cerrarModalCat();
+        toast('👤 ' + nombre + ' agregado/a', 'success');
+      }
+    }
+
+    function eliminarVivienda(vivId) {
+      if (!confirm('¿Eliminar esta vivienda y todos sus integrantes del catálogo?')) return;
+      let cat = getCatalogo().filter(v => v.id !== vivId);
+      saveCatalogo(cat);
+      renderCatalogo();
+      toast('Vivienda eliminada', 'success');
+    }
+
+    function eliminarPersonaCat(vivId, perId) {
+      const cat = getCatalogo();
+      const viv = cat.find(v => v.id === vivId);
+      if (!viv) return;
+      viv.personas = viv.personas.filter(p => p.id !== perId);
+      saveCatalogo(cat);
+      renderCatalogo();
+      toast('Integrante eliminado', 'success');
+    }
+
+    // ══════════════════════════════════════════
+    // SELECTOR DE PACIENTE (formulario visita)
+    // ══════════════════════════════════════════
+    function abrirSelectorPac() {
+      const modoVivFija = !!_modoOtraPersona;
+      document.getElementById('msp-buscador').value = '';
+
+      // Alternar header/footer/buscador según modo
+      document.getElementById('msp-header-normal').style.display  = modoVivFija ? 'none' : '';
+      document.getElementById('msp-header-vivfija').style.display = modoVivFija ? '' : 'none';
+      document.getElementById('msp-search-wrap').style.display    = modoVivFija ? 'none' : '';
+      document.getElementById('msp-footer-normal').style.display  = modoVivFija ? 'none' : '';
+      document.getElementById('msp-footer-vivfija').style.display = modoVivFija ? '' : 'none';
+
+      if (modoVivFija) {
+        document.getElementById('msp-viv-fija-titulo').textContent =
+          `Vivienda ${_modoOtraPersona.vivienda}`;
+      }
+
+      renderSelectorPac();
+      document.getElementById('modal-selector-pac').classList.add('show');
+    }
+
+    function cerrarSelectorPac() {
+      document.getElementById('modal-selector-pac').classList.remove('show');
+    }
+
+    function renderSelectorPac() {
+      const modoVivFija = !!_modoOtraPersona;
+      const q   = modoVivFija ? '' : (document.getElementById('msp-buscador').value || '').toLowerCase().trim();
+      const cat = getCatalogo();
+      const cont = document.getElementById('msp-lista');
+
+      // En modo vivienda fija: mostrar SOLO esa vivienda
+      let viviendas;
+      if (modoVivFija) {
+        const vivNum = _modoOtraPersona.vivienda;
+        const viv = cat.find(v => v.vivienda === vivNum);
+        if (!viv || !viv.personas || !viv.personas.length) {
+          cont.innerHTML = `<div class="msp-empty">
+            😕 No hay integrantes registrados para la Vivienda ${vivNum}.<br><br>
+            Agregálos desde <strong>Editar catálogo</strong>.
+          </div>`;
+          return;
+        }
+        viviendas = [viv];
+      } else {
+        // Modo normal: mostrar todo, filtrar por búsqueda
+        viviendas = cat.map(viv => {
+          const personas = (viv.personas || []).filter(p =>
+            !q || p.nombre.toLowerCase().includes(q) || viv.vivienda.toLowerCase().includes(q)
+          );
+          return personas.length ? { ...viv, personas } : null;
+        }).filter(Boolean);
+      }
+
+      if (!viviendas.length) {
+        cont.innerHTML = `<div class="msp-empty">
+          ${q ? '😕 Sin resultados para "' + q + '"' : '📭 El catálogo está vacío.<br>Agrégalo desde <strong>Editar catálogo</strong>.'}
+        </div>`;
+        return;
+      }
+
+      cont.innerHTML = viviendas.map(viv => `
+        <div class="msp-viv-group">
+          ${!modoVivFija ? `<div class="msp-viv-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            <span class="msp-viv-num">Vivienda ${viv.vivienda}</span>
+            <span class="msp-viv-cnt">${viv.personas.length} persona${viv.personas.length>1?'s':''}</span>
+          </div>` : ''}
+          ${viv.personas.map(p => {
+            const edadTxt = p.fnac ? calcularEdadTexto(p.fnac) : (p.edad || '');
+            const edadEsc = edadTxt.replace(/'/g,"\\'");
+            const nomEsc  = p.nombre.replace(/'/g,"\\'");
+            const vivEsc  = modoVivFija ? _modoOtraPersona.vivienda : viv.vivienda;
+            return `
+            <div class="msp-persona-row" onclick="seleccionarPaciente('${vivEsc}','${nomEsc}','${edadEsc}',${modoVivFija})">
+              <div class="msp-pico">👤</div>
+              <div class="msp-pname">
+                <strong>${p.nombre}</strong>
+                <span>${edadTxt ? '🎂 ' + edadTxt : 'Sin edad'}${!modoVivFija ? ' · Viv. ' + viv.vivienda : ''}</span>
+              </div>
+              <svg class="msp-pcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
+            </div>`;
+          }).join('')}
+        </div>
+      `).join('');
+    }
+
+    function seleccionarPaciente(vivienda, nombre, edad, modoVivFija) {
+      // En modo vivienda fija no sobreescribir vivienda (ya está fijada)
+      if (!modoVivFija) {
+        document.getElementById('r-vivienda').value = vivienda;
+      }
+      document.getElementById('r-nombre').value = nombre;
+      document.getElementById('r-edad').value   = edad;
+
+      // Mostrar banner de confirmación
+      document.getElementById('psb-nombre').textContent  = nombre;
+      document.getElementById('psb-detalle').textContent =
+        `Vivienda ${vivienda}${edad ? ' · ' + edad : ''}`;
+      document.getElementById('pac-seleccionado-banner').classList.add('show');
+      document.getElementById('btn-sel-pac').style.display = 'none';
+
+      // Actualizar banner de vivienda si existe
+      actualizarBannerVivienda(vivienda, document.getElementById('r-fecha').value);
+
+      cerrarSelectorPac();
+      toast('👤 ' + nombre + ' seleccionado/a', 'success');
+    }
+
+    function seleccionarSinCatalogo() {
+      cerrarSelectorPac();
+      limpiarPacSeleccionado();
+      toast('Completa los datos manualmente', 'success');
+    }
+
+    function limpiarPacSeleccionado() {
+      document.getElementById('pac-seleccionado-banner').classList.remove('show');
+      document.getElementById('btn-sel-pac').style.display = '';
+      document.getElementById('r-vivienda').value = '';
+      document.getElementById('r-nombre').value   = '';
+      document.getElementById('r-edad').value      = '';
+    }
+
+    // ══════════════════════════════════════════
+    // IMPORTAR CATÁLOGO DESDE EXCEL / CSV
+    // ══════════════════════════════════════════
+    let _micatFilas = []; // filas parseadas pendientes de confirmar
+
+    function abrirModalImportarCat() {
+      _micatFilas = [];
+      micatVolverPaso1();
+      document.getElementById('micat-file-input').value = '';
+      document.getElementById('micat-error').style.display = 'none';
+      document.getElementById('modal-importar-cat').classList.add('show');
+    }
+
+    function cerrarModalImportarCat() {
+      if (_micatTick) { clearInterval(_micatTick); _micatTick = null; }
+      document.getElementById('modal-importar-cat').classList.remove('show');
+    }
+
+    function micatVolverPaso1() {
+      document.getElementById('micat-paso1').style.display = 'block';
+      document.getElementById('micat-paso2').style.display = 'none';
+      document.getElementById('micat-error').style.display = 'none';
+      document.getElementById('micat-file-input').value   = '';
+      _micatFilas = [];
+    }
+
+    function micatOnDrop(e) {
+      e.preventDefault();
+      const lbl = document.getElementById('micat-dropzone');
+      lbl.style.borderColor = '';
+      lbl.style.background  = 'var(--light)';
+      const file = e.dataTransfer.files[0];
+      if (file) micatLeerArchivo(file);
+    }
+
+    function micatMostrarError(msg) {
+      const el = document.getElementById('micat-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function micatLeerArchivo(file) {
+      if (!file) return;
+      document.getElementById('micat-error').style.display = 'none';
+
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      // ── CSV: lectura directa como texto ──
+      if (ext === 'csv') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const texto = e.target.result;
+            // Detectar separador: punto y coma o coma
+            const sep = texto.indexOf(';') !== -1 ? ';' : ',';
+            const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            if (lineas.length < 2) { micatMostrarError('El archivo parece estar vacío o solo tiene encabezado.'); return; }
+            // Saltar encabezado (fila 0)
+            const filas = lineas.slice(1).map(l => {
+              // Manejar campos entre comillas con separadores internos
+              const cols = [];
+              let dentro = false, campo = '';
+              for (let i = 0; i < l.length; i++) {
+                const c = l[i];
+                if (c === '"') { dentro = !dentro; }
+                else if (c === sep && !dentro) { cols.push(campo.trim()); campo = ''; }
+                else { campo += c; }
+              }
+              cols.push(campo.trim());
+              return cols;
+            });
+            micatProcesarFilas(filas);
+          } catch(err) { micatMostrarError('Error al leer el CSV: ' + err.message); }
+        };
+        reader.readAsText(file, 'UTF-8');
+        return;
+      }
+
+      // ── XLSX / XLS: usar SheetJS ──
+      if (ext === 'xlsx' || ext === 'xls') {
+        if (typeof XLSX === 'undefined') {
+          micatMostrarError('La librería de Excel aún no cargó. Intenta de nuevo en un momento.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const wb = XLSX.read(e.target.result, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            // Obtener como array de arrays, saltando encabezado
+            const datos = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            if (datos.length < 2) { micatMostrarError('El archivo parece estar vacío o solo tiene encabezado.'); return; }
+            const filas = datos.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+            micatProcesarFilas(filas);
+          } catch(err) { micatMostrarError('Error al leer el archivo Excel: ' + err.message); }
+        };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+
+      micatMostrarError('Formato no compatible. Usa .xlsx, .xls o .csv');
+    }
+
+    // Calcula edad exacta usando hora de sistema en zona El Salvador (America/El_Salvador)
+    function micatCalcEdadSV(fnacStr) {
+      if (!fnacStr) return null;
+      // Intentar parsear DD/MM/AAAA o AAAA-MM-DD (o con slashes AAAA/MM/DD)
+      let y, m, d;
+      const s = String(fnacStr).trim();
+      // Detectar si la celda Excel es número serial (fecha de Excel)
+      if (/^\d{4,6}$/.test(s)) {
+        // Serial Excel: días desde 1900-01-00 (con bug leap year 1900)
+        const serial = parseInt(s);
+        const base   = new Date(Date.UTC(1899, 11, 30));
+        const ms     = base.getTime() + serial * 86400000;
+        const dt     = new Date(ms);
+        y = dt.getUTCFullYear(); m = dt.getUTCMonth() + 1; d = dt.getUTCDate();
+      } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s)) {
+        // DD/MM/AAAA  o  DD-MM-AAAA
+        const p = s.split(/[\/\-]/);
+        d = parseInt(p[0]); m = parseInt(p[1]); y = parseInt(p[2]);
+      } else if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(s)) {
+        // AAAA-MM-DD  o  AAAA/MM/DD
+        const p = s.split(/[\/\-]/);
+        y = parseInt(p[0]); m = parseInt(p[1]); d = parseInt(p[2]);
+      } else {
+        return null; // formato no reconocido
+      }
+      if (!y || !m || !d || y < 1900 || y > 2100) return null;
+
+      // Fecha actual en zona America/El_Salvador (UTC-6, sin horario de verano)
+      const ahoraUTC = Date.now();
+      const svOffset = -6 * 60 * 60 * 1000; // UTC-6 fijo
+      const ahoraSV  = new Date(ahoraUTC + svOffset);
+      const hoyY = ahoraSV.getUTCFullYear();
+      const hoyM = ahoraSV.getUTCMonth() + 1;
+      const hoyD = ahoraSV.getUTCDate();
+
+      let anos = hoyY - y;
+      const cumpleEsteAnio = (hoyM > m) || (hoyM === m && hoyD >= d);
+      if (!cumpleEsteAnio) anos--;
+
+      if (anos < 0) return null;
+      if (anos === 0) {
+        // Calcular meses
+        let meses = hoyM - m;
+        if (hoyD < d) meses--;
+        if (meses < 0) meses += 12;
+        if (meses === 0) {
+          const dias = Math.floor((new Date(hoyY, hoyM-1, hoyD) - new Date(y, m-1, d)) / 86400000);
+          return `${dias} día${dias!==1?'s':''}`;
+        }
+        return `${meses} mes${meses!==1?'es':''}`;
+      }
+      return `${anos} año${anos!==1?'s':''}`;
+    }
+
+    // Inicia tick de tiempo real para recalcular edades en la vista previa
+    let _micatTick = null;
+    function micatIniciarTick() {
+      if (_micatTick) return;
+      _micatTick = setInterval(() => {
+        if (!_micatFilas || !_micatFilas.length) { clearInterval(_micatTick); _micatTick = null; return; }
+        // Recalcular solo las celdas de edad calculada (no reescribir el tbody entero)
+        _micatFilas.forEach((f, i) => {
+          if (!f.fnac) return;
+          const edadCalc = micatCalcEdadSV(f.fnac);
+          const cell = document.querySelector(`#micat-prev-tbody tr:nth-child(${i+1}) td.edad-calc`);
+          if (cell && edadCalc) {
+            cell.innerHTML = `<span style="color:#0a3d2e;font-weight:700">${edadCalc}</span>
+              <span style="display:block;font-size:.65rem;color:#3d7a69">${f.fnac}</span>`;
+          }
+        });
+      }, 60000); // cada minuto (más que suficiente; la edad no cambia en segundos)
+    }
+
+    // Convierte cualquier formato de fecha a AAAA-MM-DD para almacenamiento uniforme
+    function micatNormalizarISO(s) {
+      if (!s) return '';
+      s = s.trim();
+      // Ya es ISO AAAA-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      // DD/MM/AAAA o DD-MM-AAAA
+      const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m1) {
+        const [,d,mo,y] = m1;
+        return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+      }
+      // AAAA/MM/DD
+      const m2 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+      if (m2) {
+        const [,y,mo,d] = m2;
+        return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`;
+      }
+      return s; // devolver tal cual si no reconoce
+    }
+
+    function micatProcesarFilas(filas) {
+      // Columnas: 0=vivienda, 1=nombre, 2=fecha nacimiento
+      const procesadas = [];
+      let errores = 0;
+      let ultimaVivienda = ''; // propagar vivienda hacia abajo si la celda está vacía
+
+      filas.forEach((cols, i) => {
+        let   vivienda = String(cols[0] ?? '').trim();
+        const nombre   = String(cols[1] ?? '').trim();
+        let   fnacRaw  = String(cols[2] ?? '').trim();
+
+        if (!vivienda && !nombre) return; // fila vacía → ignorar
+
+        // Si no tiene vivienda pero hay nombre, heredar la última vivienda vista
+        if (!vivienda && nombre) vivienda = ultimaVivienda;
+        // Si tiene vivienda, actualizarla como referencia
+        if (vivienda) ultimaVivienda = vivienda;
+
+        if (!vivienda || !nombre) { errores++; }
+
+        // Convertir serial numérico de Excel a DD/MM/AAAA
+        if (/^\d{4,6}$/.test(fnacRaw)) {
+          const serial = parseInt(fnacRaw);
+          const base   = new Date(Date.UTC(1899, 11, 30));
+          const dt     = new Date(base.getTime() + serial * 86400000);
+          const d = String(dt.getUTCDate()).padStart(2,'0');
+          const m = String(dt.getUTCMonth()+1).padStart(2,'0');
+          const y = dt.getUTCFullYear();
+          fnacRaw = `${d}/${m}/${y}`;
+        }
+
+        // Normalizar fecha a ISO AAAA-MM-DD para almacenamiento uniforme
+        fnacRaw = micatNormalizarISO(fnacRaw);
+
+        procesadas.push({ vivienda, nombre, fnac: fnacRaw, _err: !vivienda || !nombre });
+      });
+
+      if (!procesadas.length) {
+        micatMostrarError('No se encontraron filas de datos válidas después del encabezado.');
+        return;
+      }
+
+      _micatFilas = procesadas;
+
+      // Renderizar vista previa
+      const tbody = document.getElementById('micat-prev-tbody');
+      tbody.innerHTML = procesadas.map(f => {
+        const edadCalc = f.fnac ? micatCalcEdadSV(f.fnac) : null;
+        let celdaFnac;
+        if (f.fnac && edadCalc) {
+          const partes = f.fnac.split('-'); // AAAA-MM-DD
+          const fnacDisplay = partes.length===3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : f.fnac;
+          celdaFnac = `<td class="edad-calc" style="min-width:130px">
+            <span style="color:#0a3d2e;font-weight:700">${edadCalc}</span>
+            <span style="display:block;font-size:.65rem;color:#3d7a69">${fnacDisplay}</span>
+          </td>`;
+        } else if (f.fnac) {
+          celdaFnac = `<td class="edad-calc" style="color:#c0392b;font-size:.72rem">⚠ formato inválido<br/><span style="color:#999">${f.fnac}</span></td>`;
+        } else {
+          celdaFnac = `<td class="edad-calc" style="color:#9ca3af;font-size:.72rem">— sin fecha</td>`;
+        }
+        return `<tr>
+          <td class="${f._err && !f.vivienda ? 'err' : ''}">${f.vivienda || '⚠ vacío'}</td>
+          <td class="${f._err && !f.nombre   ? 'err' : ''}">${f.nombre   || '⚠ vacío'}</td>
+          ${celdaFnac}
+        </tr>`;
+      }).join('');
+
+      micatIniciarTick();
+
+      const vivUnicas = new Set(procesadas.filter(f => !f._err).map(f => f.vivienda)).size;
+      const validas   = procesadas.filter(f => !f._err).length;
+      document.getElementById('micat-resumen').textContent =
+        `${validas} personas en ${vivUnicas} vivienda${vivUnicas!==1?'s':''}` +
+        (errores ? ` · ⚠ ${errores} fila${errores>1?'s':''} con datos incompletos (se omitirán)` : ' ✓');
+
+      document.getElementById('micat-reemplazar').checked = false;
+      document.getElementById('micat-paso1').style.display = 'none';
+      document.getElementById('micat-paso2').style.display = 'block';
+    }
+
+    function micatConfirmarImport() {
+      const reemplazar = document.getElementById('micat-reemplazar').checked;
+      const filas      = _micatFilas.filter(f => !f._err);
+
+      if (!filas.length) {
+        toast('No hay filas válidas para importar', 'error');
+        return;
+      }
+
+      let cat = reemplazar ? [] : getCatalogo();
+
+      // Agrupar filas por vivienda y fusionar
+      filas.forEach(f => {
+        let viv = cat.find(v => v.vivienda === f.vivienda);
+        if (!viv) {
+          viv = { id: 'viv_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+                  vivienda: f.vivienda, personas: [] };
+          cat.push(viv);
+        }
+        // Evitar duplicar por nombre exacto
+        const yaExiste = viv.personas.some(
+          p => p.nombre.toLowerCase() === f.nombre.toLowerCase()
+        );
+        if (!yaExiste) {
+          const edadFinal = f.fnac ? (micatCalcEdadSV(f.fnac) || '') : '';
+          viv.personas.push({
+            id:     'per_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+            nombre: f.nombre,
+            edad:   edadFinal,
+            fnac:   f.fnac || ''
+          });
+        }
+      });
+
+      saveCatalogo(cat);
+      renderCatalogo();
+      cerrarModalImportarCat();
+
+      const vivCount = new Set(filas.map(f => f.vivienda)).size;
+      toast(`✅ ${filas.length} personas importadas en ${vivCount} viviendas`, 'success');
     }
 
     // ── Exponer funciones globalmente (necesario con type=module) ──
@@ -2391,7 +3830,17 @@
       previsualizarReporte, verCompletoReporte,
       cerrarFullPreview, imprimirDesdeFullPreview,
       copiarTabla, copiarCSV, imprimirDesdePreview,
-      subirNube, bajarNube
+      subirNube, bajarNube,
+      // Catálogo de familias
+      abrirModalNuevaVivienda, abrirModalNuevaPersona, cerrarModalCat, guardarModalCat,
+      mcatCalcularEdad, calcularEdadTexto,
+      eliminarVivienda, eliminarPersonaCat, renderCatalogo, verFamiliaCompleta,
+      // Importar catálogo
+      abrirModalImportarCat, cerrarModalImportarCat, micatVolverPaso1,
+      micatOnDrop, micatLeerArchivo, micatConfirmarImport,
+      // Selector de paciente
+      abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
+      seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado
     });
 </script>
 </body>
