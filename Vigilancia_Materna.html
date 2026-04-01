@@ -1461,11 +1461,13 @@
     });
 </script>
 
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-
+<!-- ============================================================
+     CARGA LAZY DE DEPENDENCIAS EXTERNAS
+     Firebase y SheetJS se cargan SOLO cuando el usuario
+     necesita sincronizar o exportar. La app abre sin internet.
+     ============================================================ -->
 <script>
-    // Tu configuración de Firebase proporcionada
+    // --- Configuración Firebase (solo datos, no carga scripts aún) ---
     const firebaseConfig = {
       apiKey: "AIzaSyD91mG4x4Av8SEESi8HR0F0-1U5ujXP5hg",
       authDomain: "vigilancia-materna-2.firebaseapp.com",
@@ -1476,16 +1478,53 @@
       measurementId: "G-ERZ72YE3JZ"
     };
 
-    // Inicializar Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+    let database = null; // Se inicializa solo al sincronizar
+    let _firebaseLoadPromise = null;
+
+    // Carga Firebase bajo demanda y devuelve la instancia de database
+    function cargarFirebase() {
+        if (database) return Promise.resolve(database);
+        if (_firebaseLoadPromise) return _firebaseLoadPromise;
+
+        _firebaseLoadPromise = new Promise((resolve, reject) => {
+            function cargarScript(src) {
+                return new Promise((res, rej) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = res;
+                    s.onerror = () => rej(new Error('No se pudo cargar: ' + src));
+                    document.head.appendChild(s);
+                });
+            }
+            cargarScript('https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js')
+                .then(() => cargarScript('https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js'))
+                .then(() => {
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    database = firebase.database();
+                    resolve(database);
+                })
+                .catch(reject);
+        });
+        return _firebaseLoadPromise;
     }
-    const database = firebase.database();
+
+    // Carga SheetJS bajo demanda
+    let _xlsxLoadPromise = null;
+    function cargarSheetJS() {
+        if (typeof XLSX !== 'undefined') return Promise.resolve();
+        if (_xlsxLoadPromise) return _xlsxLoadPromise;
+        _xlsxLoadPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.mini.min.js';
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('No se pudo cargar SheetJS'));
+            document.head.appendChild(s);
+        });
+        return _xlsxLoadPromise;
+    }
 </script>
 
-
 <script src="html2pdf.bundle.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.mini.min.js"></script>
 
 <script>
     let BLOQUEO_SUBIDA_GLOBAL = false; // Nueva variable de seguridad
@@ -1771,14 +1810,53 @@ function importarDatos(event) {
         return null;
     }
 
+    // Convierte "DD/MM/YYYY, HH:MM" o fechaFull a Date para ordenar notas
+    function parsearFechaNota(nota) {
+        if (nota.fechaFull) return new Date(nota.fechaFull);
+        if (!nota.fecha) return new Date(0);
+        const m = nota.fecha.match(/(\d{2})\/(\d{2})\/(\d{4})(?:,?\s*(\d{2}):(\d{2}))?/);
+        if (m) return new Date(m[3], m[2]-1, m[1], m[4]||0, m[5]||0);
+        return new Date(0);
+    }
+
+    // Estado de orden por paciente: clave "tipo-index" -> 'asc' | 'desc'
+    const _ordenNotas = {};
+
+    function toggleOrdenNotas(pacienteIndex, tipo) {
+        const clave = `${tipo}-${pacienteIndex}`;
+        _ordenNotas[clave] = (_ordenNotas[clave] === 'asc') ? 'desc' : 'asc';
+        mostrarDetalle(pacienteIndex, tipo);
+    }
+
    function renderizarNotas(paciente, pacienteIndex, tipo) {
         if (!paciente.notas || paciente.notas.length === 0) {
             return '<p>No hay notas registradas para esta paciente.</p>';
         }
 
-        let html = '<ul style="list-style: none; padding-left: 0; max-height: 250px; overflow-y: auto; padding-right: 15px;">';
+        // Ordenar según preferencia (por defecto: cronológico ascendente = antigua primero)
+        const clave = `${tipo}-${pacienteIndex}`;
+        const orden = _ordenNotas[clave] || 'asc';
+        const notasOrdenadas = [...paciente.notas].map((n, i) => ({...n, _realIndex: i}))
+            .sort((a, b) => {
+                const diff = parsearFechaNota(a) - parsearFechaNota(b);
+                return orden === 'asc' ? diff : -diff;
+            });
 
-        paciente.notas.forEach((nota, notaIndex) => {
+        const btnLabel = orden === 'asc' ? '↑ Antigua → Reciente' : '↓ Reciente → Antigua';
+
+        let html = `
+            <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+                <button onclick="toggleOrdenNotas(${pacienteIndex}, '${tipo}')"
+                    style="font-size:0.78em; padding:4px 10px; border-radius:12px;
+                           background:#e8f5e9; border:1px solid #a5d6a7; color:#2e7d32;
+                           cursor:pointer; font-weight:600;">
+                    🗂️ ${btnLabel}
+                </button>
+            </div>
+            <ul style="list-style: none; padding-left: 0; max-height: 250px; overflow-y: auto; padding-right: 15px;">`;
+
+        notasOrdenadas.forEach((nota) => {
+            const notaIndex = nota._realIndex;
             const isArchived = tipo === 'archivada';
             const notaId = `nota-item-${tipo}-${pacienteIndex}-${notaIndex}`;
 
@@ -1813,7 +1891,6 @@ function importarDatos(event) {
         html += '</ul>';
         return html;
     }
-
 
    function añadirNota(index, tipo) {
         const notaTextoId = `nueva-nota-${tipo}`;
@@ -1864,7 +1941,7 @@ function importarDatos(event) {
             data.paciente.notas = [];
         }
 
-        data.paciente.notas.unshift(nuevaNota);
+        data.paciente.notas.push(nuevaNota);
         guardarDatos(data.clave);
 
         document.getElementById(notaTextoId).value = '';
@@ -3404,6 +3481,8 @@ async function guardarEnNube() {
     btn.innerText = '⏳ Verificando integridad...';
 
     try {
+        btn.innerText = '⏳ Conectando con Firebase...';
+        database = await cargarFirebase();
         const nodoUsuario = MI_USUARIO.trim().replace(/[.#$\[\]]/g, "_");
         const snapshot = await database.ref('respaldos/' + nodoUsuario).once('value');
         const datosNube = snapshot.val();
@@ -3504,6 +3583,8 @@ async function cargarDeNube(esDescargaTotal = false) {
     const ruta = esDescargaTotal ? 'respaldos' : 'respaldos/' + nodoUsuario;
 
     try {
+        if(btn) btn.innerText = '⏳ Conectando con Firebase...';
+        database = await cargarFirebase();
         // 1. PRIMERA CONSULTA: Vamos a ver qué hay en la nube antes de bajarlo
         const snapshot = await database.ref(ruta).once('value');
         const datosNube = snapshot.val();
@@ -3799,11 +3880,16 @@ function salirSupervisor() {
     document.querySelectorAll('.btn-nuevo-registro').forEach(b => b.style.display = 'block');
 }
 
-function generarReporteGlobal() {
-    // Verificar si la librería cargó
+async function generarReporteGlobal() {
+    // Cargar SheetJS bajo demanda si aún no está disponible
     if (typeof XLSX === 'undefined') {
-        alert("❌ Error: La librería de Excel no ha cargado. Revisa tu conexión.");
-        return;
+        try {
+            alert("⏳ Cargando librería de Excel, espera un momento...");
+            await cargarSheetJS();
+        } catch(e) {
+            alert("❌ Error: No se pudo cargar la librería de Excel. Revisa tu conexión.");
+            return;
+        }
     }
 
     alert("⏳ Creando Excel limpio...");
@@ -4008,9 +4094,9 @@ function generarReporteHTML() {
     let arcOrdenadas = [...archivadas];
 
     if (filtroOrden === 'fpp-asc') {
-        embOrdenadas.sort((a,b) => (b.fur?crearFechaLocal(b.fur).getTime():0) - (a.fur?crearFechaLocal(a.fur).getTime():0));
-    } else if (filtroOrden === 'fpp-desc') {
         embOrdenadas.sort((a,b) => (a.fur?crearFechaLocal(a.fur).getTime():0) - (b.fur?crearFechaLocal(b.fur).getTime():0));
+    } else if (filtroOrden === 'fpp-desc') {
+        embOrdenadas.sort((a,b) => (b.fur?crearFechaLocal(b.fur).getTime():0) - (a.fur?crearFechaLocal(a.fur).getTime():0));
     } else if (filtroOrden === 'puerp-asc') {
         pueOrdenadas.sort((a,b) => (b.fp?crearFechaLocal(b.fp).getTime():0) - (a.fp?crearFechaLocal(a.fp).getTime():0));
     } else if (filtroOrden === 'puerp-desc') {
@@ -4473,7 +4559,16 @@ function descargarPDF(index, tipo) {
     doc.write(`<div class="seccion-head">NOTAS Y EVOLUCIÓN COMPLETA</div>`);
 
     if (paciente.notas && paciente.notas.length > 0) {
-        paciente.notas.forEach(nota => {
+        const notasImpresion = [...paciente.notas].sort((a, b) => {
+            const parsear = (n) => {
+                if (n.fechaFull) return new Date(n.fechaFull);
+                if (!n.fecha) return new Date(0);
+                const m = n.fecha.match(/(\d{2})\/(\d{2})\/(\d{4})(?:,?\s*(\d{2}):(\d{2}))?/);
+                return m ? new Date(m[3], m[2]-1, m[1], m[4]||0, m[5]||0) : new Date(0);
+            };
+            return parsear(a) - parsear(b);
+        });
+        notasImpresion.forEach(nota => {
             doc.write(`
                 <div class="nota-final">
                     <div class="nota-fecha">📅 ${nota.fecha} ${nota.etapa ? '['+nota.etapa+']' : ''}</div>
@@ -4502,8 +4597,8 @@ function imprimirReporteGeneral() {
     let pueOrdenadas = [...puerperas];
     let arcOrdenadas = [...archivadas];
 
-    if (filtroOrden === 'fpp-asc') embOrdenadas.sort((a,b)=>(b.fur?crearFechaLocal(b.fur).getTime():0)-(a.fur?crearFechaLocal(a.fur).getTime():0));
-    else if (filtroOrden === 'fpp-desc') embOrdenadas.sort((a,b)=>(a.fur?crearFechaLocal(a.fur).getTime():0)-(b.fur?crearFechaLocal(b.fur).getTime():0));
+    if (filtroOrden === 'fpp-asc') embOrdenadas.sort((a,b)=>(a.fur?crearFechaLocal(a.fur).getTime():0)-(b.fur?crearFechaLocal(b.fur).getTime():0));
+    else if (filtroOrden === 'fpp-desc') embOrdenadas.sort((a,b)=>(b.fur?crearFechaLocal(b.fur).getTime():0)-(a.fur?crearFechaLocal(a.fur).getTime():0));
     else if (filtroOrden === 'puerp-asc') pueOrdenadas.sort((a,b)=>(b.fp?crearFechaLocal(b.fp).getTime():0)-(a.fp?crearFechaLocal(a.fp).getTime():0));
     else if (filtroOrden === 'puerp-desc') pueOrdenadas.sort((a,b)=>(a.fp?crearFechaLocal(a.fp).getTime():0)-(b.fp?crearFechaLocal(b.fp).getTime():0));
     else if (filtroOrden === 'arch-asc') arcOrdenadas.sort((a,b)=>(b.fecha_archivo?crearFechaLocal(b.fecha_archivo).getTime():0)-(a.fecha_archivo?crearFechaLocal(a.fecha_archivo).getTime():0));
