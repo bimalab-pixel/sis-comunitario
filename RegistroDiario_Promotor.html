@@ -1881,7 +1881,8 @@
         comunidad: perfil.comunidad || '',
         establecimiento: perfil.establecimiento || '',
         municipio: perfil.municipio || '',
-        creado:    new Date().toISOString()
+        creado:    new Date().toISOString(),
+        actualizadoEn: new Date().toISOString()
       };
 
       if (id) {
@@ -2082,6 +2083,7 @@
       r.edad      = document.getElementById('e-edad').value;
       r.hallazgos = document.getElementById('e-hallazgos').value.trim();
       r.acciones  = document.getElementById('e-acciones').value.trim();
+      r.actualizadoEn = new Date().toISOString();
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       cerrarModal('modal-editar');
       actualizarHome();
@@ -2093,6 +2095,11 @@
       if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
       registros = registros.filter(r => r.id !== id);
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      try {
+        const del = JSON.parse(localStorage.getItem('rdps_deleted_reg') || '{}');
+        del[String(id)] = new Date().toISOString();
+        localStorage.setItem('rdps_deleted_reg', JSON.stringify(del));
+      } catch(e) {}
       actualizarHome();
       renderListado();
       toast('🗑️ Registro eliminado');
@@ -3074,6 +3081,47 @@
         const db = initFirebase();
         const BATCH_SIZE = 400;
 
+        // ── Leer estado actual de la nube ─────────────────────────
+        const [regSnapInit, famSnapInit] = await Promise.all([
+          getDocs(collection(db, 'rdps', docId, 'registros')),
+          getDocs(collection(db, 'rdps', docId, 'familias'))
+        ]);
+        const regMetaCloud = {}, famMetaCloud = {};
+        regSnapInit.forEach(d => { regMetaCloud[String(d.id)] = d.data().actualizadoEn || d.data().savedAt || ''; });
+        famSnapInit.forEach(d => { famMetaCloud[String(d.id)] = d.data().actualizadoEn || ''; });
+
+        // ── Procesar lápidas de registros eliminados ──────────────
+        let deletedReg = {};
+        try { deletedReg = JSON.parse(localStorage.getItem('rdps_deleted_reg') || '{}'); } catch(e) {}
+        const confirmedDelReg = [];
+        const delBatchReg = writeBatch(db);
+        let delRegCount = 0;
+        for (const id of Object.keys(deletedReg)) {
+          if (regMetaCloud[id] !== undefined) { delBatchReg.delete(doc(db, 'rdps', docId, 'registros', id)); delRegCount++; }
+          confirmedDelReg.push(id);
+        }
+        if (delRegCount > 0) await delBatchReg.commit();
+        if (confirmedDelReg.length > 0) {
+          confirmedDelReg.forEach(id => delete deletedReg[id]);
+          localStorage.setItem('rdps_deleted_reg', JSON.stringify(deletedReg));
+        }
+
+        // ── Procesar lápidas de familias eliminadas ───────────────
+        let deletedFam = {};
+        try { deletedFam = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}'); } catch(e) {}
+        const confirmedDelFam = [];
+        const delBatchFam = writeBatch(db);
+        let delFamCount = 0;
+        for (const id of Object.keys(deletedFam)) {
+          if (famMetaCloud[id] !== undefined) { delBatchFam.delete(doc(db, 'rdps', docId, 'familias', id)); delFamCount++; }
+          confirmedDelFam.push(id);
+        }
+        if (delFamCount > 0) await delBatchFam.commit();
+        if (confirmedDelFam.length > 0) {
+          confirmedDelFam.forEach(id => delete deletedFam[id]);
+          localStorage.setItem('rdps_deleted_fam', JSON.stringify(deletedFam));
+        }
+
         // ── Registros diarios ──────────────────────────────────────
         const regCol   = collection(db, 'rdps', docId, 'registros');
         const regSnap  = await getDocs(regCol);
@@ -3129,6 +3177,8 @@
         const partes = [];
         if (toUploadReg.length > 0) partes.push(`${toUploadReg.length} registros subidos`);
         if (toUploadFam.length > 0) partes.push(`${toUploadFam.length} familias subidas`);
+        if (delRegCount > 0)        partes.push(`${delRegCount} registros borrados`);
+        if (delFamCount > 0)        partes.push(`${delFamCount} familias borradas`);
         if (partes.length === 0)    partes.push('Sin cambios nuevos');
         setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
@@ -3510,6 +3560,11 @@
       if (!confirm('¿Eliminar esta vivienda y todos sus integrantes del catálogo?')) return;
       let cat = getCatalogo().filter(v => v.id !== vivId);
       saveCatalogo(cat);
+      try {
+        const del = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}');
+        del[String(vivId)] = new Date().toISOString();
+        localStorage.setItem('rdps_deleted_fam', JSON.stringify(del));
+      } catch(e) {}
       renderCatalogo();
       toast('Vivienda eliminada', 'success');
     }
@@ -3519,6 +3574,7 @@
       const viv = cat.find(v => v.id === vivId);
       if (!viv) return;
       viv.personas = viv.personas.filter(p => p.id !== perId);
+      viv.actualizadoEn = new Date().toISOString();
       saveCatalogo(cat);
       renderCatalogo();
       toast('Integrante eliminado', 'success');
