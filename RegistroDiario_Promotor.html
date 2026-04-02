@@ -1691,7 +1691,7 @@
 ════════════════════════════════════════════ -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     let registros = JSON.parse(localStorage.getItem('rdps_registros') || '[]');
     let perfil    = JSON.parse(localStorage.getItem('rdps_perfil')    || '{}');
@@ -3054,6 +3054,14 @@
         .replace(/^_|_$/g, '');
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       SUBIR A LA NUBE — subcolecciones sin límite de 1 MB
+       Estructura:
+         rdps/{docId}                    → metadata + perfil (liviano)
+         rdps/{docId}/registros/{id}     → un doc por registro diario
+         rdps/{docId}/familias/{vivId}   → un doc por vivienda del catálogo
+       Solo sube lo que cambió (nuevo o más reciente que la nube).
+    ══════════════════════════════════════════════════════════════ */
     async function subirNube() {
       try {
         const docId = _docIdPromotor();
@@ -3064,16 +3072,65 @@
         }
         setFirebaseStatus('☁️ Subiendo datos…');
         const db = initFirebase();
-        const payload = {
-          version: '1.0',
+        const BATCH_SIZE = 400;
+
+        // ── Registros diarios ──────────────────────────────────────
+        const regCol   = collection(db, 'rdps', docId, 'registros');
+        const regSnap  = await getDocs(regCol);
+        const regMeta  = {};
+        regSnap.forEach(d => {
+          const dd = d.data();
+          regMeta[String(d.id)] = dd.actualizadoEn || dd.savedAt || '';
+        });
+        const toUploadReg = registros.filter(r => {
+          const cTS = regMeta[String(r.id)];
+          return !cTS || (r.actualizadoEn || r.savedAt || '') > cTS;
+        });
+        for (let i = 0; i < toUploadReg.length; i += BATCH_SIZE) {
+          const batch = writeBatch(db);
+          toUploadReg.slice(i, i + BATCH_SIZE).forEach(r => {
+            batch.set(doc(db, 'rdps', docId, 'registros', String(r.id)), r);
+          });
+          await batch.commit();
+        }
+
+        // ── Catálogo de familias ───────────────────────────────────
+        const catalogo    = getCatalogo();
+        const famCol      = collection(db, 'rdps', docId, 'familias');
+        const famSnap     = await getDocs(famCol);
+        const famMeta     = {};
+        famSnap.forEach(d => {
+          const dd = d.data();
+          famMeta[String(d.id)] = dd.actualizadoEn || '';
+        });
+        const toUploadFam = catalogo.filter(v => {
+          const cTS = famMeta[String(v.id)];
+          return !cTS || (v.actualizadoEn || '') > cTS;
+        });
+        for (let i = 0; i < toUploadFam.length; i += BATCH_SIZE) {
+          const batch = writeBatch(db);
+          toUploadFam.slice(i, i + BATCH_SIZE).forEach(v => {
+            batch.set(doc(db, 'rdps', docId, 'familias', String(v.id)), v);
+          });
+          await batch.commit();
+        }
+
+        // ── Doc principal: solo metadata liviana ──────────────────
+        const nCat = catalogo.reduce((acc, v) => acc + (v.personas?.length || 0), 0);
+        await setDoc(doc(db, 'rdps', docId), {
+          version: '3.0',
           actualizadoEn: new Date().toISOString(),
           perfil,
-          registros,
-          catalogo: getCatalogo()
-        };
-        await setDoc(doc(db, 'rdps', docId), payload);
-        const nCat = getCatalogo().reduce((acc,v) => acc + (v.personas?.length||0), 0);
-        setFirebaseStatus(`✅ Subido: ${registros.length} registros · ${nCat} personas en catálogo`, 'ok');
+          countRegistros: registros.length,
+          countFamilias:  catalogo.length,
+          countPersonas:  nCat
+        });
+
+        const partes = [];
+        if (toUploadReg.length > 0) partes.push(`${toUploadReg.length} registros subidos`);
+        if (toUploadFam.length > 0) partes.push(`${toUploadFam.length} familias subidas`);
+        if (partes.length === 0)    partes.push('Sin cambios nuevos');
+        setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
       } catch(e) {
         setFirebaseStatus('❌ Error al subir: ' + e.message, 'err');
@@ -3082,6 +3139,11 @@
       }
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       BAJAR DE LA NUBE — merge inteligente (registros + familias)
+       Gana el más reciente por actualizadoEn/savedAt.
+       Incluye compatibilidad con formato v1 (doc único antiguo).
+    ══════════════════════════════════════════════════════════════ */
     async function bajarNube() {
       try {
         const docId = _docIdPromotor();
@@ -3092,6 +3154,8 @@
         }
         setFirebaseStatus('☁️ Descargando datos…');
         const db = initFirebase();
+
+        // Leer doc principal (metadata)
         const snap = await getDoc(doc(db, 'rdps', docId));
         if (!snap.exists()) {
           setFirebaseStatus('⚠️ No hay datos en la nube para este promotor', 'err');
@@ -3099,26 +3163,112 @@
           return;
         }
         const data = snap.data();
-        if (!Array.isArray(data.registros)) throw new Error('Formato inválido');
-        if (!confirm(`¿Bajar ${data.registros.length} registros desde la nube?\n\nEsto REEMPLAZARÁ los datos locales actuales.`)) {
-          setFirebaseStatus('Descarga cancelada');
+
+        // ── Merge registros diarios ───────────────────────────────
+        const regSnap = await getDocs(collection(db, 'rdps', docId, 'registros'));
+        const mergedReg = {};
+        registros.forEach(r => { mergedReg[String(r.id)] = r; });
+        let regNuevos = 0, regActualizados = 0;
+
+        regSnap.forEach(d => {
+          const r  = d.data();
+          const id = String(r.id || d.id);
+          const local = mergedReg[id];
+          if (!local) {
+            mergedReg[id] = r; regNuevos++;
+          } else {
+            const tsN = new Date(r.actualizadoEn || r.savedAt || 0).getTime();
+            const tsL = new Date(local.actualizadoEn || local.savedAt || 0).getTime();
+            if (tsN > tsL) { mergedReg[id] = r; regActualizados++; }
+          }
+        });
+
+        // Compatibilidad v1: registros embebidos en doc principal
+        if (data.registros && Array.isArray(data.registros) && regSnap.empty) {
+          data.registros.forEach(r => {
+            const id = String(r.id);
+            const local = mergedReg[id];
+            if (!local) {
+              mergedReg[id] = r; regNuevos++;
+            } else {
+              const tsN = new Date(r.actualizadoEn||r.savedAt||0).getTime();
+              const tsL = new Date(local.actualizadoEn||local.savedAt||0).getTime();
+              if (tsN > tsL) { mergedReg[id] = r; regActualizados++; }
+            }
+          });
+        }
+
+        // ── Merge catálogo de familias ────────────────────────────
+        const famSnap  = await getDocs(collection(db, 'rdps', docId, 'familias'));
+        const localCat = getCatalogo();
+        const mergedFam = {};
+        localCat.forEach(v => { mergedFam[String(v.id)] = v; });
+        let famNuevas = 0, famActualizadas = 0;
+
+        famSnap.forEach(d => {
+          const v  = d.data();
+          const id = String(v.id || d.id);
+          const local = mergedFam[id];
+          if (!local) {
+            mergedFam[id] = v; famNuevas++;
+          } else {
+            const tsN = new Date(v.actualizadoEn || 0).getTime();
+            const tsL = new Date(local.actualizadoEn || 0).getTime();
+            if (tsN > tsL) { mergedFam[id] = v; famActualizadas++; }
+          }
+        });
+
+        // Compatibilidad v1/v2: catálogo embebido en doc principal
+        if (data.catalogo && Array.isArray(data.catalogo) && famSnap.empty) {
+          data.catalogo.forEach(v => {
+            const id = String(v.id);
+            const local = mergedFam[id];
+            if (!local) {
+              mergedFam[id] = v; famNuevas++;
+            } else {
+              const tsN = new Date(v.actualizadoEn||0).getTime();
+              const tsL = new Date(local.actualizadoEn||0).getTime();
+              if (tsN > tsL) { mergedFam[id] = v; famActualizadas++; }
+            }
+          });
+        }
+
+        const sinCambios = regNuevos === 0 && regActualizados === 0
+                        && famNuevas === 0 && famActualizadas === 0;
+        if (sinCambios) {
+          const ts = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
+          setFirebaseStatus(`✅ Todo al día · ${registros.length} registros · Nube: ${ts}`, 'ok');
+          toast('✅ Ya tienes todo actualizado', 'success');
           return;
         }
-        registros = data.registros;
-        if (data.perfil) perfil = data.perfil;
-        if (Array.isArray(data.catalogo)) {
-          saveCatalogo(data.catalogo);
-          renderCatalogo();
-        }
+
+        // Aplicar registros
+        registros = Object.values(mergedReg).sort((a,b) =>
+          (b.fecha||'').localeCompare(a.fecha||''));
         localStorage.setItem('rdps_registros', JSON.stringify(registros));
-        localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
+
+        // Aplicar catálogo
+        const catalogoFinal = Object.values(mergedFam);
+        saveCatalogo(catalogoFinal);
+        renderCatalogo();
+
+        if (data.perfil) {
+          perfil = data.perfil;
+          localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
+        }
+
         actualizarHome();
         renderListado();
-        const nCat = Array.isArray(data.catalogo)
-          ? data.catalogo.reduce((acc,v) => acc + (v.personas?.length||0), 0) : 0;
+
+        const nCat  = catalogoFinal.reduce((acc,v) => acc + (v.personas?.length||0), 0);
         const fecha = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
-        setFirebaseStatus(`✅ Bajado: ${registros.length} registros · ${nCat} personas en catálogo (${fecha})`, 'ok');
-        toast(`✅ ${registros.length} registros y catálogo restaurados desde la nube`, 'success');
+        const parts = [];
+        if (regNuevos > 0)      parts.push(`+${regNuevos} registros nuevos`);
+        if (regActualizados > 0) parts.push(`${regActualizados} registros actualizados`);
+        if (famNuevas > 0)      parts.push(`+${famNuevas} familias nuevas`);
+        if (famActualizadas > 0) parts.push(`${famActualizadas} familias actualizadas`);
+        setFirebaseStatus(`✅ ${registros.length} registros · ${nCat} personas · ${parts.join(' · ')} (${fecha})`, 'ok');
+        toast(`✅ ${parts.join(', ')}`, 'success');
       } catch(e) {
         setFirebaseStatus('❌ Error al bajar: ' + e.message, 'err');
         toast('❌ Error al bajar de Firebase', 'error');
