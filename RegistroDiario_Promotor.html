@@ -3480,7 +3480,8 @@
         const num = document.getElementById('mcat-vivienda-num').value.trim();
         if (!num) { toast('Ingresa el número de vivienda', 'error'); return; }
         if (cat.find(v => v.vivienda === num)) { toast('Esa vivienda ya existe', 'error'); return; }
-        cat.push({ id: 'viv_' + Date.now(), vivienda: num, personas: [] });
+        const ts = new Date().toISOString();
+        cat.push({ id: 'viv_' + Date.now(), vivienda: num, personas: [], actualizadoEn: ts });
         saveCatalogo(cat);
         renderCatalogo();
         cerrarModalCat();
@@ -3497,6 +3498,7 @@
         if (!viv) return;
         if (!viv.personas) viv.personas = [];
         viv.personas.push({ id: 'per_' + Date.now(), nombre, fnac: fnac || '', edad });
+        viv.actualizadoEn = new Date().toISOString(); // marca cambio para sync
         saveCatalogo(cat);
         renderCatalogo();
         cerrarModalCat();
@@ -3934,14 +3936,28 @@
         return;
       }
 
+      // Si reemplaza, registrar lápidas de las viviendas anteriores
+      if (reemplazar) {
+        try {
+          const anterior = getCatalogo();
+          if (anterior.length > 0) {
+            const del = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}');
+            const ts  = new Date().toISOString();
+            anterior.forEach(v => { del[String(v.id)] = ts; });
+            localStorage.setItem('rdps_deleted_fam', JSON.stringify(del));
+          }
+        } catch(e) {}
+      }
+
       let cat = reemplazar ? [] : getCatalogo();
 
       // Agrupar filas por vivienda y fusionar
+      const tsImport = new Date().toISOString();
       filas.forEach(f => {
         let viv = cat.find(v => v.vivienda === f.vivienda);
         if (!viv) {
           viv = { id: 'viv_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-                  vivienda: f.vivienda, personas: [] };
+                  vivienda: f.vivienda, personas: [], actualizadoEn: tsImport };
           cat.push(viv);
         }
         // Evitar duplicar por nombre exacto
@@ -3956,6 +3972,7 @@
             edad:   edadFinal,
             fnac:   f.fnac || ''
           });
+          viv.actualizadoEn = tsImport; // marca vivienda como modificada
         }
       });
 
