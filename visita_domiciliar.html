@@ -769,6 +769,9 @@
 
           /* Textareas → usar mirror div para mostrar todo el contenido */
           .f-group textarea{display:none!important}
+          /* Inputs de texto/fecha/hora y firma → ocultar, mostrar mirror */
+          #f-ucsf,#f-expediente,#f-nombre,#f-fecha,#f-hora-inicio,#f-hora-fin,
+          #f-firma-usuario,#f-firma-personal,#f-seguimiento{display:none!important}
           .print-mirror{
             display:block!important;
             font-size:.88rem!important;
@@ -793,7 +796,7 @@
           /* Firmas */
           .sig-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
           .sig-box label{font-size:.68rem!important}
-          .sig-box input{font-size:.88rem!important}
+          .sig-box input{font-size:.88rem!important;display:none!important}
           .sig-line{height:44px!important}
 
           /* ── Ocultar banner PWA en impresión ── */
@@ -1344,12 +1347,12 @@
                 <!-- Datos generales -->
                 <div class="fs-title">Datos generales</div>
                 <div class="fg c3">
-                    <div class="f-group"><label>UCSF</label><input type="text" id="f-ucsf" placeholder="Unidad de salud"/></div>
-                    <div class="f-group"><label>Fecha</label><input type="date" id="f-fecha"/></div>
-                    <div class="f-group"><label>Expediente Clínico N°</label><input type="text" id="f-expediente" placeholder="Número"/></div>
-                    <div class="f-group sp"><label>Nombre de la persona o familia</label><input type="text" id="f-nombre" placeholder="Nombre completo"/></div>
-                    <div class="f-group"><label>Hora de inicio</label><input type="time" id="f-hora-inicio"/></div>
-                    <div class="f-group"><label>Hora de finalización</label><input type="time" id="f-hora-fin"/></div>
+                    <div class="f-group"><label>Unidad de Salud</label><input type="text" id="f-ucsf" placeholder="Unidad de salud"/><div class="print-mirror" id="pm-ucsf"></div></div>
+                    <div class="f-group"><label>Fecha</label><input type="date" id="f-fecha"/><div class="print-mirror" id="pm-fecha"></div></div>
+                    <div class="f-group"><label>Expediente Clínico N°</label><input type="text" id="f-expediente" placeholder="Número"/><div class="print-mirror" id="pm-expediente"></div></div>
+                    <div class="f-group sp"><label>Nombre de la persona o familia</label><input type="text" id="f-nombre" placeholder="Nombre completo"/><div class="print-mirror" id="pm-nombre"></div></div>
+                    <div class="f-group"><label>Hora de inicio</label><input type="time" id="f-hora-inicio"/><div class="print-mirror" id="pm-hora-inicio"></div></div>
+                    <div class="f-group"><label>Hora de finalización</label><input type="time" id="f-hora-fin"/><div class="print-mirror" id="pm-hora-fin"></div></div>
                 </div>
 
                 <!-- 1. Objetivo -->
@@ -1400,6 +1403,7 @@
                     <div class="f-group">
                         <label>6. Fecha de seguimiento</label>
                         <input type="date" id="f-seguimiento"/>
+                        <div class="print-mirror" id="pm-seguimiento"></div>
                         <div style="margin-top:.45rem;display:flex;align-items:center;gap:.45rem">
                             <input type="checkbox" id="f-seguimiento-realizado" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer"/>
                             <label for="f-seguimiento-realizado" style="font-size:.78rem;color:var(--teal);font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0">
@@ -1425,6 +1429,7 @@
                     <div class="sig-box">
                         <label>Nombre del usuario / paciente</label>
                         <input type="text" id="f-firma-usuario" placeholder="Nombre completo"/>
+                        <div class="print-mirror" id="pm-firma-usuario"></div>
                         <!-- Recuadro tappable — al tocar abre el pad de firma -->
                         <div class="sig-btn" id="sig-btn-pac" onclick="sigPadAbrir('pac')" title="Toca para firmar">
                             <div class="sig-btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
@@ -1436,6 +1441,7 @@
                     <div class="sig-box">
                         <label>Nombre y cargo del personal de salud</label>
                         <input type="text" id="f-firma-personal" placeholder="Nombre y cargo"/>
+                        <div class="print-mirror" id="pm-firma-personal"></div>
                         <div class="sig-btn" id="sig-btn-per" onclick="sigPadAbrir('per')" title="Toca para firmar">
                             <div class="sig-btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
                             <span class="sig-btn-lbl">Toca para firmar</span>
@@ -1491,8 +1497,8 @@
                 <input type="text" id="profile-cargo" placeholder="Ej: Enfermera, Médico general…" maxlength="60"/>
             </div>
             <div class="profile-field">
-                <label>UCSF / Unidad de salud</label>
-                <input type="text" id="profile-ucsf" placeholder="Ej: UCSF San Marcos" maxlength="60"/>
+                <label>UDS / Unidad de salud</label>
+                <input type="text" id="profile-ucsf" placeholder="Ej: UDS San Marcos" maxlength="60"/>
             </div>
             <div class="profile-field">
                 <label>Tu firma digital <span style="font-size:.6rem;color:var(--muted);font-weight:400">(se guarda en este dispositivo)</span></label>
@@ -1703,11 +1709,40 @@
       if(mirror) mirror.textContent = el.value;
     }
     function syncAllMirrors(){
+      // Textareas
       [['f-objetivo','pm-objetivo'],['f-hallazgos','pm-hallazgos'],['f-acciones','pm-acciones'],['f-acuerdos','pm-acuerdos']].forEach(([tid,mid])=>{
         const t = document.getElementById(tid);
         const m = document.getElementById(mid);
         if(t && m){ m.textContent = t.value; autoGrow(t); }
       });
+      // Inputs de texto — Datos generales y firmas
+      [['f-ucsf','pm-ucsf'],['f-expediente','pm-expediente'],['f-nombre','pm-nombre'],
+       ['f-hora-inicio','pm-hora-inicio'],['f-hora-fin','pm-hora-fin'],
+       ['f-firma-usuario','pm-firma-usuario'],['f-firma-personal','pm-firma-personal']].forEach(([iid,mid])=>{
+        const inp = document.getElementById(iid);
+        const m   = document.getElementById(mid);
+        if(inp && m) m.textContent = inp.value || '';
+      });
+      // Fecha — formatear como dd/mm/yyyy
+      (function(){
+        const inp = document.getElementById('f-fecha');
+        const m   = document.getElementById('pm-fecha');
+        if(inp && m){
+          const v = inp.value;
+          if(v){ const p=v.split('-'); m.textContent = p[2]+'/'+p[1]+'/'+p[0]; }
+          else m.textContent = '';
+        }
+      })();
+      // Fecha de seguimiento — formatear como dd/mm/yyyy
+      (function(){
+        const inp = document.getElementById('f-seguimiento');
+        const m   = document.getElementById('pm-seguimiento');
+        if(inp && m){
+          const v = inp.value;
+          if(v){ const p=v.split('-'); m.textContent = p[2]+'/'+p[1]+'/'+p[0]; }
+          else m.textContent = '';
+        }
+      })();
     }
 
     /* ════════════════ CATEGORÍA DROPDOWN ════════════════ */
@@ -2312,7 +2347,16 @@
         doDelete(editingId); goHome();
       });
     }
-    function doDelete(id){ records=records.filter(r=>r.id!==id); saveRecords(); updateHomeStats(); showToast('Ficha eliminada.','error'); }
+    function doDelete(id){
+      // Guardar lápida de eliminación para sincronización futura
+      try{
+        const deleted = JSON.parse(localStorage.getItem('minsal_deleted_v1'))||{};
+        deleted[String(id)] = new Date().toISOString();
+        localStorage.setItem('minsal_deleted_v1', JSON.stringify(deleted));
+      }catch(e){}
+      records = records.filter(r=>r.id!==id);
+      saveRecords(); updateHomeStats(); showToast('Ficha eliminada.','error');
+    }
     function confirmDelete(id){ const rec=records.find(r=>r.id===id); showModal('Eliminar ficha',`¿Eliminar la ficha de "<strong>${rec?.nombre||'?'}</strong>"?`,()=>{ doDelete(id); renderList(); renderMonths(); }); }
 
     function openRecord(id){
@@ -2548,7 +2592,7 @@
 <script type="module">
     import { initializeApp }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs }
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, writeBatch, deleteDoc }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -2688,44 +2732,79 @@
         ],
         async () => {
           setBtns(true);
-          setCloudStatus('<span class="spin">↻</span> Combinando y subiendo…','loading');
+          setCloudStatus('<span class="spin">↻</span> Sincronizando cambios…','loading');
           try{
-            // Paso 1: leer estado actual de la nube
-            let cloudRecords = [];
-            const snap = await getDoc(doc(db, 'usuarios', key));
-            if(snap.exists()){
-              cloudRecords = snap.data().records || [];
+            // Leer lápidas de eliminación locales
+            let deletedMap = {};
+            try{ deletedMap = JSON.parse(localStorage.getItem('minsal_deleted_v1'))||{}; }catch(e){}
+
+            // Paso 1: leer solo IDs y savedAt de la nube (metadatos ligeros)
+            const visitasCol = collection(db, 'usuarios', key, 'visitas');
+            const cloudSnap  = await getDocs(visitasCol);
+            const cloudMeta  = {}; // id → savedAt
+            cloudSnap.forEach(d => {
+              const data = d.data();
+              cloudMeta[String(d.id)] = data.savedAt || '';
+            });
+
+            // Paso 2: calcular qué fichas locales subir (nuevas o más recientes)
+            const toUpload = localRecords.filter(r => {
+              const cSavedAt = cloudMeta[String(r.id)];
+              if(!cSavedAt) return true; // nueva en local
+              return (r.savedAt||'') > cSavedAt; // local más reciente
+            });
+
+            // Paso 3: procesar eliminaciones — borrar de la nube y limpiar lápidas confirmadas
+            const confirmedDeleted = [];
+            const delBatch = writeBatch(db);
+            let delCount = 0;
+            for(const id of Object.keys(deletedMap)){
+              if(cloudMeta[id] !== undefined){
+                delBatch.delete(doc(db, 'usuarios', key, 'visitas', id));
+                confirmedDeleted.push(id);
+                delCount++;
+              } else {
+                // Ya no existe en la nube — también confirmar
+                confirmedDeleted.push(id);
+              }
+            }
+            if(delCount > 0) await delBatch.commit();
+
+            // Limpiar lápidas confirmadas del localStorage
+            if(confirmedDeleted.length > 0){
+              confirmedDeleted.forEach(id => delete deletedMap[id]);
+              localStorage.setItem('minsal_deleted_v1', JSON.stringify(deletedMap));
             }
 
-            // Paso 2: merge — gana el savedAt más reciente
-            const merged = mergeRecords(localRecords, cloudRecords);
-            const newCount    = merged.length - cloudRecords.length;
-            const updCount    = merged.filter(m => {
-              const c = cloudRecords.find(r => r.id === m.id);
-              return c && c.savedAt !== m.savedAt;
-            }).length;
+            // Paso 4: subir solo las fichas que cambiaron (batch de 400)
+            const BATCH_SIZE = 400;
+            for(let i = 0; i < toUpload.length; i += BATCH_SIZE){
+              const batch = writeBatch(db);
+              toUpload.slice(i, i + BATCH_SIZE).forEach(r => {
+                batch.set(doc(db, 'usuarios', key, 'visitas', String(r.id)), r);
+              });
+              await batch.commit();
+            }
 
-            // Paso 3: subir resultado combinado a Firestore
+            // Paso 5: actualizar doc principal con metadata
+            const totalCloud = Object.keys(cloudMeta).length - delCount + toUpload.filter(r=>!cloudMeta[String(r.id)]).length;
             const sigPersonalUrl = localStorage.getItem('sig_personal_v1') || null;
             await setDoc(doc(db, 'usuarios', key), {
-              records:     merged,
               nombre:      profile.nombre,
               cargo:       profile.cargo  || '',
               ucsf:        profile.ucsf   || '',
               updatedAt:   new Date().toISOString(),
-              count:       merged.length,
+              count:       localRecords.length,
               sigPersonal: sigPersonalUrl
             });
 
-            // Paso 4: actualizar localStorage con el resultado combinado
-            localStorage.setItem('minsal_visitas_v5', JSON.stringify(merged));
-            window.dispatchEvent(new CustomEvent('cloud-data-loaded', { detail: merged }));
-
-            const msg = newCount > 0 || updCount > 0
-              ? `✓ ${merged.length} fichas en la nube · +${newCount} nuevas · ${updCount} actualizadas`
-              : `✓ ${merged.length} fichas sincronizadas · Sin cambios nuevos`;
+            const parts = [];
+            if(toUpload.length > 0) parts.push(`+${toUpload.length} subidas`);
+            if(delCount > 0) parts.push(`${delCount} eliminadas`);
+            if(parts.length === 0) parts.push('Sin cambios nuevos');
+            const msg = `✓ ${localRecords.length} fichas locales · ${parts.join(' · ')}`;
             setCloudStatus(`${msg} · ${new Date().toLocaleTimeString('es-SV')}`, 'ok');
-            showToast(`✓ Subida completada: ${merged.length} fichas combinadas`, 'success');
+            showToast(`✓ Sincronización completada`, 'success');
 
           } catch(err){
             console.error(err);
@@ -2776,8 +2855,9 @@
         ],
         async () => {
           setBtns(true);
-          setCloudStatus('<span class="spin">↻</span> Descargando y combinando…','loading');
+          setCloudStatus('<span class="spin">↻</span> Verificando cambios en la nube…','loading');
           try{
+            // Leer documento principal (metadata + sigPersonal)
             const snap = await getDoc(doc(db, 'usuarios', key));
             if(!snap.exists()){
               setCloudStatus('⚠ No encontré tu espacio en la nube. ¿Ya subiste datos antes?','err');
@@ -2786,36 +2866,84 @@
               return;
             }
             const data = snap.data();
-            const cloudRecords = data.records || [];
-            if(cloudRecords.length === 0 && localRecords.length === 0){
+
+            // Construir mapa local: id → savedAt
+            const localMap = {};
+            localRecords.forEach(r => { localMap[String(r.id)] = r.savedAt || ''; });
+
+            // Leer subcolección completa de la nube
+            const visitasSnap = await getDocs(collection(db, 'usuarios', key, 'visitas'));
+            if(visitasSnap.empty && localRecords.length === 0){
               setCloudStatus('⚠ Tu espacio en la nube está vacío.','err');
               showToast('⚠ Tu nube está vacía','error');
               setBtns(false);
               return;
             }
 
-            // Merge — gana el savedAt más reciente
-            const merged = mergeRecords(localRecords, cloudRecords);
-            const newCount = merged.length - localRecords.length;
-            const updCount = merged.filter(m => {
-              const l = localRecords.find(r => r.id === m.id);
-              return l && l.savedAt !== m.savedAt;
-            }).length;
+            // Solo bajar fichas que no existen localmente o que son más recientes en la nube
+            let deletedMap = {};
+            try{ deletedMap = JSON.parse(localStorage.getItem('minsal_deleted_v1'))||{}; }catch(e){}
 
-            // Guardar resultado combinado en el dispositivo
+            const toAdd    = []; // fichas nuevas de la nube
+            const toUpdate = []; // fichas más recientes en la nube
+            visitasSnap.forEach(d => {
+              const r = d.data();
+              const id = String(r.id || d.id);
+              // Ignorar fichas que el usuario eliminó localmente
+              if(deletedMap[id]) return;
+              const localSavedAt = localMap[id];
+              if(!localSavedAt){
+                toAdd.push(r);
+              } else if((r.savedAt||'') > localSavedAt){
+                toUpdate.push(r);
+              }
+            });
+
+            // Detectar fichas eliminadas en la nube (existían antes localmente pero ya no están)
+            // Solo aplica si ya hubo al menos una sync previa (data.count existe)
+            const cloudIds = new Set();
+            visitasSnap.forEach(d => cloudIds.add(String(d.id)));
+            const deletedInCloud = localRecords.filter(r =>
+              !cloudIds.has(String(r.id)) &&
+              !deletedMap[String(r.id)] &&
+              data.count !== undefined  // ya hubo sync previa
+            );
+
+            if(toAdd.length === 0 && toUpdate.length === 0 && deletedInCloud.length === 0){
+              const ts = data.updatedAt ? new Date(data.updatedAt).toLocaleString('es-SV') : '—';
+              setCloudStatus(`✓ Todo al día · ${localRecords.length} fichas · Nube: ${ts}`, 'ok');
+              showToast('✓ Ya tienes todo actualizado', 'success');
+              setBtns(false);
+              return;
+            }
+
+            // Aplicar cambios al arreglo local
+            let merged = [...localRecords];
+            // Agregar nuevas
+            toAdd.forEach(r => merged.push(r));
+            // Actualizar existentes
+            toUpdate.forEach(r => {
+              const idx = merged.findIndex(m => String(m.id) === String(r.id));
+              if(idx >= 0) merged[idx] = r; else merged.push(r);
+            });
+            // Eliminar las que ya no están en la nube
+            const delIds = new Set(deletedInCloud.map(r => String(r.id)));
+            merged = merged.filter(r => !delIds.has(String(r.id)));
+            // Ordenar por fecha descendente
+            merged.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+
+            // Guardar en localStorage
             localStorage.setItem('minsal_visitas_v5', JSON.stringify(merged));
+
             // Restaurar firma del personal si viene de la nube y no hay una local
             if(data.sigPersonal){
               const localSig = localStorage.getItem('sig_personal_v1');
               if(!localSig){
-                // Dispositivo nuevo: instalar la firma de la nube
                 localStorage.setItem('sig_personal_v1', data.sigPersonal);
               }
-              // Mostrar en el recuadro del perfil si está abierto
               if(typeof profileSigMostrarPreview === 'function'){
                 profileSigMostrarPreview(data.sigPersonal);
               }
-              // Pre-cargar en formulario activo si no hay firma del personal aún
               if(window._sigData && !window._sigData.per){
                 window._sigData.per = data.sigPersonal;
                 if(typeof sigMostrarPreview === 'function') sigMostrarPreview('per', data.sigPersonal);
@@ -2823,14 +2951,13 @@
             }
             window.dispatchEvent(new CustomEvent('cloud-data-loaded', { detail: merged }));
 
-            const ts = data.updatedAt
-              ? new Date(data.updatedAt).toLocaleString('es-SV')
-              : '—';
-            const msg = newCount > 0 || updCount > 0
-              ? `✓ ${merged.length} fichas · +${newCount} nuevas · ${updCount} actualizadas · Nube: ${ts}`
-              : `✓ ${merged.length} fichas · Sin cambios nuevos · Nube: ${ts}`;
-            setCloudStatus(msg, 'ok');
-            showToast(`✓ Descarga completada: ${merged.length} fichas combinadas`, 'success');
+            const parts = [];
+            if(toAdd.length > 0)          parts.push(`+${toAdd.length} nuevas`);
+            if(toUpdate.length > 0)        parts.push(`${toUpdate.length} actualizadas`);
+            if(deletedInCloud.length > 0)  parts.push(`${deletedInCloud.length} eliminadas`);
+            const ts = data.updatedAt ? new Date(data.updatedAt).toLocaleString('es-SV') : '—';
+            setCloudStatus(`✓ ${merged.length} fichas · ${parts.join(' · ')} · Nube: ${ts}`, 'ok');
+            showToast(`✓ Descarga: ${parts.join(', ')}`, 'success');
 
           } catch(err){
             console.error(err);
@@ -2899,9 +3026,8 @@
             nombre:    d.nombre    || docSnap.id,
             cargo:     d.cargo     || '',
             ucsf:      d.ucsf      || '',
-            count:     d.count     || (d.records||[]).length,
+            count:     d.count     || 0,
             updatedAt: d.updatedAt || null,
-            records:   d.records   || []
           });
         });
 
@@ -2947,10 +3073,9 @@
       }
     };
 
-    window.openTeamUser = function(userJsonStr){
+    window.openTeamUser = async function(userJsonStr){
       const u = JSON.parse(userJsonStr);
-      _viewerRecords = u.records || [];
-      _viewerUser    = u;
+      _viewerUser = u;
 
       // Build header
       const parts    = (u.nombre||'').trim().split(' ').filter(Boolean);
@@ -2961,8 +3086,36 @@
       // Set topbar title
       document.getElementById('viewer-topbar-title').textContent = u.nombre;
 
-      // Build scroller content with sticky profile header
+      // Navegar primero, mostrar spinner mientras carga
+      const cur  = document.getElementById(currentScreen);
+      const next = document.getElementById('screen-viewer');
+      _navHistory.push(currentScreen);
+      cur.classList.remove('active'); cur.classList.add('slide-out');
+      setTimeout(()=>cur.classList.remove('slide-out'),300);
+      next.classList.add('active');
+      currentScreen = 'screen-viewer';
+      next.querySelector('.scroller').scrollTop = 0;
+
+      // Mostrar spinner en el contenedor mientras se cargan las fichas
       const container = document.getElementById('viewer-container');
+      container.innerHTML = `<div class="team-loading" style="padding:2rem;text-align:center">
+        <span class="spin" style="font-size:1.4rem;display:block;margin-bottom:.5rem">↻</span>
+        Cargando fichas de ${escHtml(u.nombre)}…
+      </div>`;
+
+      try {
+        // Cargar fichas desde la subcolección
+        const visitasSnap = await getDocs(collection(db, 'usuarios', u.key, 'visitas'));
+        _viewerRecords = [];
+        visitasSnap.forEach(d => _viewerRecords.push(d.data()));
+        // Ordenar por fecha descendente
+        _viewerRecords.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+      } catch(e) {
+        console.error('[openTeamUser]', e);
+        _viewerRecords = [];
+      }
+
+      // Build scroller content with sticky profile header
       container.innerHTML = '';
 
       // Profile header div (inside scroller)
@@ -2983,16 +3136,6 @@
       document.getElementById('viewer-search').value = '';
       _vwSort = 'newest'; _setSortBtns('vw-sort-btn-','newest');
       renderViewerList('');
-
-      // Navigate
-      const cur  = document.getElementById(currentScreen);
-      const next = document.getElementById('screen-viewer');
-      _navHistory.push(currentScreen);
-      cur.classList.remove('active'); cur.classList.add('slide-out');
-      setTimeout(()=>cur.classList.remove('slide-out'),300);
-      next.classList.add('active');
-      currentScreen = 'screen-viewer';
-      next.querySelector('.scroller').scrollTop = 0;
     };
 
     window.onViewerSearch = function(){
