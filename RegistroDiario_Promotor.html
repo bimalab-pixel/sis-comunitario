@@ -1226,6 +1226,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar
         </button>
+        <button class="topbar-btn secondary" onclick="exportarCatalogoExcel()" title="Exportar catálogo a Excel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+        </button>
 
         <button class="topbar-btn primary" onclick="abrirModalNuevaVivienda()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1856,6 +1860,11 @@
     let _editId   = null;
     let _previewHTML = '';
 
+    // ── PAGINACIÓN LISTADO ──
+    let _paginaActual = 0;
+    const PAGINA_SIZE = 20;
+    let _listaActual  = [];
+
     // ── INIT ──
     window.addEventListener('DOMContentLoaded', () => {
       // NO prompt — el usuario configura su perfil desde la barra de inicio
@@ -2263,8 +2272,8 @@
       toast('🗑️ Registro eliminado');
     }
 
-    // ── RENDER LISTADO ──
-    function renderListado() {
+    // ── RENDER LISTADO (con paginación por lotes) ──
+    function renderListado(reset = true) {
       const hoyStr  = hoy();
       const mes     = hoyStr.slice(0,7);
       const regHoyL = registros.filter(r => r.fecha === hoyStr);
@@ -2282,22 +2291,28 @@
       const q  = (document.getElementById('buscador')?.value || '').toLowerCase();
       const fd = document.getElementById('filtro-fecha')?.value || '';
 
-      let lista = [...registros];
-      if (fd) lista = lista.filter(r => r.fecha === fd);
-      if (q)  lista = lista.filter(r =>
-        (r.nombre||'').toLowerCase().includes(q) ||
-        (r.hallazgos||'').toLowerCase().includes(q) ||
-        (r.acciones||'').toLowerCase().includes(q) ||
-        (r.vivienda||'').toLowerCase().includes(q)
-      );
-
-      lista.sort((a,b) => ((b.fecha||'')+(b.hora||'')).localeCompare((a.fecha||'')+(a.hora||'')));
+      // En reset: recalcular lista completa filtrada
+      if (reset) {
+        let lista = [...registros];
+        if (fd) lista = lista.filter(r => r.fecha === fd);
+        if (q)  lista = lista.filter(r =>
+          (r.nombre||'').toLowerCase().includes(q) ||
+          (r.hallazgos||'').toLowerCase().includes(q) ||
+          (r.acciones||'').toLowerCase().includes(q) ||
+          (r.vivienda||'').toLowerCase().includes(q)
+        );
+        lista.sort((a,b) => ((b.fecha||'')+(b.hora||'')).localeCompare((a.fecha||'')+(a.hora||'')));
+        _listaActual  = lista;
+        _paginaActual = 0;
+        document.getElementById('lista-registros').innerHTML = '';
+      }
 
       document.getElementById('contador-listado').textContent =
-        `${contarViviendas(lista)} visita${contarViviendas(lista)!==1?'s':''} · ${lista.length} persona${lista.length!==1?'s':''} (de ${contarViviendas(registros)} totales)`;
+        `${contarViviendas(_listaActual)} visita${contarViviendas(_listaActual)!==1?'s':''} · ${_listaActual.length} persona${_listaActual.length!==1?'s':''} (de ${contarViviendas(registros)} totales)`;
 
       const cont = document.getElementById('lista-registros');
-      if (lista.length === 0) {
+
+      if (_listaActual.length === 0) {
         cont.innerHTML = `
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -2307,10 +2322,15 @@
         return;
       }
 
+      // Lote a mostrar
+      const inicio = _paginaActual * PAGINA_SIZE;
+      const fin    = inicio + PAGINA_SIZE;
+      const lote   = _listaActual.slice(inicio, fin);
+
       // Agrupar por vivienda+fecha; registros sin vivienda van solos
       const grupos = [];
       const claveVista = {};
-      lista.forEach(r => {
+      lote.forEach(r => {
         if (!r.vivienda) {
           grupos.push({ tipo:'individual', r });
         } else {
@@ -2323,7 +2343,13 @@
         }
       });
 
-      cont.innerHTML = grupos.map(g => {
+      // Quitar botón anterior si existe
+      const btnAnterior = document.getElementById('btn-cargar-mas');
+      if (btnAnterior) btnAnterior.remove();
+
+      // Insertar tarjetas sin reemplazar las ya renderizadas
+      const temp = document.createElement('div');
+      temp.innerHTML = grupos.map(g => {
         if (g.tipo === 'individual') return tarjetaRegistro(g.r, true);
         return `
           <div class="viv-group-header">
@@ -2336,12 +2362,29 @@
             ${g.items.map(r => tarjetaRegistro(r, false)).join('')}
           </div>`;
       }).join('');
+      const frag = document.createDocumentFragment();
+      while (temp.firstChild) frag.appendChild(temp.firstChild);
+      cont.appendChild(frag);
+
+      _paginaActual++;
+
+      // Botón "Cargar más" si quedan registros
+      if (fin < _listaActual.length) {
+        const restantes = _listaActual.length - fin;
+        const btnMas = document.createElement('button');
+        btnMas.id = 'btn-cargar-mas';
+        btnMas.className = 'btn secondary';
+        btnMas.style.cssText = 'width:100%;justify-content:center;margin-top:.5rem;margin-bottom:1.2rem;';
+        btnMas.innerHTML = `⬇️ Cargar ${Math.min(PAGINA_SIZE, restantes)} más <span style="opacity:.6;font-weight:400">(${restantes} pendientes)</span>`;
+        btnMas.onclick = () => renderListado(false);
+        cont.appendChild(btnMas);
+      }
     }
 
     function limpiarFiltros() {
       document.getElementById('buscador').value     = '';
       document.getElementById('filtro-fecha').value = '';
-      renderListado();
+      renderListado(true);
     }
 
     function tarjetaRegistro(r, sinViv) {
@@ -3609,7 +3652,7 @@
         </div>`;
       }
 
-      const LOTE = 30; // viviendas visibles al inicio
+      const LOTE = 10; // viviendas visibles al inicio
       cont.innerHTML = catFiltrado.slice(0, LOTE).map(_htmlVivienda).join('');
 
       // Desconectar observer anterior si existía
@@ -4464,6 +4507,97 @@
       setTimeout(() => _mefRender(), 80);
     }
 
+    // ══════════════════════════════════════════
+    // EXPORTAR CATÁLOGO A EXCEL
+    // ══════════════════════════════════════════
+    function exportarCatalogoExcel() {
+      if (typeof XLSX === 'undefined') {
+        toast('La librería Excel aún no cargó. Intenta de nuevo.', 'error');
+        return;
+      }
+      const cat = getCatalogo();
+      if (!cat.length) {
+        toast('El catálogo está vacío. No hay datos para exportar.', 'error');
+        return;
+      }
+
+      // Ordenar por número de vivienda (igual que renderCatalogo)
+      const catOrd = [...cat].sort((a, b) => {
+        const na = parseFloat(a.vivienda) || 0;
+        const nb = parseFloat(b.vivienda) || 0;
+        if (na !== nb) return na - nb;
+        return String(a.vivienda).localeCompare(String(b.vivienda));
+      });
+
+      // Encabezado — misma estructura que espera el importador + columna Edad
+      const filas = [
+        ['N° Vivienda', 'Nombre', 'Fecha de Nacimiento', 'Edad']
+      ];
+
+      catOrd.forEach(viv => {
+        const personas = viv.personas && viv.personas.length ? viv.personas : [];
+        if (!personas.length) {
+          // Vivienda sin integrantes: fila con vivienda pero sin datos
+          filas.push([viv.vivienda, '', '', '']);
+        } else {
+          personas.forEach(p => {
+            // Convertir AAAA-MM-DD → DD/MM/AAAA (compatible con importador)
+            let fnacDisplay = '';
+            if (p.fnac) {
+              const mf = p.fnac.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (mf) fnacDisplay = `${mf[3]}/${mf[2]}/${mf[1]}`;
+              else fnacDisplay = p.fnac;
+            }
+            // Edad calculada al momento de exportar; fallback a edad guardada
+            const edadExport = (p.fnac ? calcularEdadTexto(p.fnac) : '') || p.edad || '';
+            filas.push([viv.vivienda, p.nombre || '', fnacDisplay, edadExport]);
+          });
+        }
+      });
+
+      // Crear libro y hoja
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(filas);
+
+      // Ancho de columnas
+      ws['!cols'] = [
+        { wch: 14 }, // A — N° Vivienda
+        { wch: 32 }, // B — Nombre
+        { wch: 22 }, // C — Fecha de Nacimiento
+        { wch: 18 }, // D — Edad
+      ];
+
+      // Estilo de encabezado (solo disponible en versión Pro de SheetJS;
+      // en la CDN gratuita se ignora silenciosamente)
+      ['A1','B1','C1','D1'].forEach(ref => {
+        if (ws[ref]) ws[ref].s = { font: { bold: true } };
+      });
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Catálogo Familias');
+
+      // Nombre de archivo con fecha
+      const hoy = new Date();
+      const dd = String(hoy.getDate()).padStart(2,'0');
+      const mm = String(hoy.getMonth()+1).padStart(2,'0');
+      const aaaa = hoy.getFullYear();
+      const nombreArchivo = `Catalogo_Familias_${aaaa}${mm}${dd}.xlsx`;
+
+      // Intentar guardar vía puente Android, si no, descarga normal
+      if (typeof Android !== 'undefined' && typeof Android.guardarArchivo === 'function') {
+        try {
+          const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+          Android.guardarArchivo(nombreArchivo, wbout, 'xlsx');
+          toast('📥 Exportado: ' + nombreArchivo, 'success');
+        } catch(e) {
+          toast('Error al guardar: ' + e.message, 'error');
+        }
+      } else {
+        XLSX.writeFile(wb, nombreArchivo);
+        const total = filas.length - 1; // sin encabezado
+        toast(`📥 ${total} registro${total!==1?'s':''} exportado${total!==1?'s':''}`, 'success');
+      }
+    }
+
     // ── Exponer funciones globalmente (necesario con type=module) ──
     Object.assign(window, {
       irA, abrirConfig, cerrarModal,
@@ -4479,6 +4613,7 @@
       copiarTabla, copiarCSV, imprimirDesdePreview,
       subirNube, bajarNube,
       // Catálogo de familias - expuesto más abajo
+      exportarCatalogoExcel,
       abrirModalNuevaVivienda, abrirModalNuevaPersona, cerrarModalCat, guardarModalCat,
       mcatCalcularEdad, calcularEdadTexto,
       eliminarVivienda, eliminarPersonaCat, renderCatalogo, verFamiliaCompleta,
