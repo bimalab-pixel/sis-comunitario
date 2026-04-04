@@ -65,6 +65,22 @@
         .topbar-btn svg{width:14px;height:14px}
         .topbar-btn.primary{background:var(--navy2);color:#fff}.topbar-btn.primary:hover{background:var(--teal)}
         .topbar-btn.secondary{background:var(--white);border:1.5px solid var(--border);color:var(--navy2)}.topbar-btn.secondary:hover{background:var(--light2)}
+        .topbar-btn.success{background:var(--success);color:#fff;border-color:var(--success)}
+
+        /* ── Topbar catálogo: flex-wrap para móvil ── */
+        .cat-topbar{
+          height:auto !important;
+          flex-wrap:wrap;
+          padding:.45rem .7rem !important;
+          gap:.4rem !important;
+          row-gap:.4rem;
+        }
+        .cat-topbar .back-btn{flex-shrink:0}
+        .cat-topbar .topbar-btn{flex:1;min-width:0;justify-content:center;font-size:.75rem;padding:.38rem .5rem}
+        @media(min-width:480px){
+          .cat-topbar{flex-wrap:nowrap;height:56px !important;padding:0 1rem !important}
+          .cat-topbar .topbar-btn{flex:none;font-size:.78rem;padding:.38rem .85rem}
+        }
 
         /* Scrollable content area */
         .scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1.1rem}
@@ -1216,12 +1232,11 @@
      SCREEN: CATÁLOGO DE FAMILIAS
 ════════════════════════════ -->
 <div class="screen" id="screen-catalogo">
-    <div class="topbar">
+    <div class="topbar cat-topbar">
         <button class="back-btn" onclick="irA('screen-home')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
             Inicio
         </button>
-        <span class="topbar-title">Catálogo de Familias</span>
         <button class="topbar-btn secondary" onclick="abrirModalImportarCat()" title="Importar desde Excel/CSV">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Importar
@@ -1230,10 +1245,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar
         </button>
-
         <button class="topbar-btn primary" onclick="abrirModalNuevaVivienda()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nueva
+            + Nueva
         </button>
     </div>
     <div class="cat-search-wrap">
@@ -3552,7 +3566,9 @@
       localStorage.setItem('rdps_catalogo', JSON.stringify(cat));
     }
 
-    function renderCatalogo() {
+    function renderCatalogo(opcs) {
+      // opcs.renderCompleto: true → deshabilita carga por lotes (necesario para scrollIntoView)
+      const _renderCompleto = opcs && opcs.renderCompleto;
       const cat = getCatalogo();
       const cont = document.getElementById('catalogo-lista');
       const q = (document.getElementById('cat-buscador')?.value || '').trim().toLowerCase();
@@ -3653,10 +3669,18 @@
       }
 
       const LOTE = 10; // viviendas visibles al inicio
-      cont.innerHTML = catFiltrado.slice(0, LOTE).map(_htmlVivienda).join('');
 
       // Desconectar observer anterior si existía
       if (cont._catObserver) cont._catObserver.disconnect();
+
+      // Si se requiere render completo (ej. después de verFamiliaCompleta para scrollIntoView),
+      // renderizar todas las viviendas de una vez sin lazy loading
+      if (_renderCompleto) {
+        cont.innerHTML = catFiltrado.map(_htmlVivienda).join('');
+        return;
+      }
+
+      cont.innerHTML = catFiltrado.slice(0, LOTE).map(_htmlVivienda).join('');
 
       if (catFiltrado.length > LOTE) {
         // Centinela al final para cargar más al hacer scroll
@@ -3691,7 +3715,9 @@
       _catPersonaSeleccionada = { vivId, perId };
       const inp = document.getElementById('cat-buscador');
       if (inp) inp.value = '';
-      renderCatalogo();
+      // renderCompleto:true asegura que TODAS las viviendas estén en el DOM
+      // antes de intentar scrollIntoView (evita el bug de lazy loading)
+      renderCatalogo({ renderCompleto: true });
       setTimeout(() => {
         const card = document.querySelector(`[data-viv-id="${vivId}"]`);
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3787,12 +3813,14 @@
         const num = document.getElementById('mcat-vivienda-num').value.trim();
         if (!num) { toast('Ingresa el número de vivienda', 'error'); return; }
         if (cat.find(v => v.vivienda === num)) { toast('Esa vivienda ya existe', 'error'); return; }
+        const nuevaId = 'viv_' + Date.now();
         const ts = new Date().toISOString();
-        cat.push({ id: 'viv_' + Date.now(), vivienda: num, personas: [], actualizadoEn: ts });
+        cat.push({ id: nuevaId, vivienda: num, personas: [], actualizadoEn: ts });
         saveCatalogo(cat);
         renderCatalogo();
-        cerrarModalCat();
         toast('🏠 Vivienda ' + num + ' agregada', 'success');
+        // Abrir inmediatamente el modal para agregar el primer integrante
+        abrirModalNuevaPersona(nuevaId);
       } else {
         const nombre = document.getElementById('mcat-nombre').value.trim();
         if (!nombre) { toast('Ingresa el nombre', 'error'); return; }
@@ -4510,79 +4538,66 @@
     // ══════════════════════════════════════════
     // EXPORTAR CATÁLOGO A EXCEL
     // ══════════════════════════════════════════
-    function exportarCatalogoExcel() {
-      if (typeof XLSX === 'undefined') {
-        toast('La librería Excel aún no cargó. Intenta de nuevo.', 'error');
-        return;
-      }
-      const cat = getCatalogo();
-      if (!cat.length) {
-        toast('El catálogo está vacío. No hay datos para exportar.', 'error');
-        return;
-      }
+    // ══════════════════════════════════════════
+    // COPIAR CATÁLOGO DE FAMILIAS (TSV / CSV)
+    // Mismo mecanismo que copiarTabla() del registro diario
+    // ══════════════════════════════════════════
 
-      // Ordenar por número de vivienda (igual que renderCatalogo)
+    // Construye las filas del catálogo ordenadas
+    function _catFilas() {
+      const cat = getCatalogo();
+      if (!cat.length) return null;
       const catOrd = [...cat].sort((a, b) => {
         const na = parseFloat(a.vivienda) || 0;
         const nb = parseFloat(b.vivienda) || 0;
         if (na !== nb) return na - nb;
         return String(a.vivienda).localeCompare(String(b.vivienda));
       });
-
-      // Encabezado — misma estructura que espera el importador + columna Edad
-      const filas = [
-        ['N° Vivienda', 'Nombre', 'Fecha de Nacimiento', 'Edad']
-      ];
-
+      const filas = [];
       catOrd.forEach(viv => {
-        const personas = viv.personas && viv.personas.length ? viv.personas : [];
-        if (!personas.length) {
-          // Vivienda sin integrantes: fila con vivienda pero sin datos
-          filas.push([viv.vivienda, '', '', '']);
-        } else {
-          personas.forEach(p => {
-            // Convertir AAAA-MM-DD → DD/MM/AAAA (compatible con importador)
-            let fnacDisplay = '';
-            if (p.fnac) {
-              const mf = p.fnac.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-              if (mf) fnacDisplay = `${mf[3]}/${mf[2]}/${mf[1]}`;
-              else fnacDisplay = p.fnac;
-            }
-            // Edad calculada al momento de exportar; fallback a edad guardada
-            const edadExport = (p.fnac ? calcularEdadTexto(p.fnac) : '') || p.edad || '';
-            filas.push([viv.vivienda, p.nombre || '', fnacDisplay, edadExport]);
-          });
-        }
+        const personas = viv.personas && viv.personas.length ? viv.personas : [null];
+        personas.forEach(p => {
+          let fnacDisplay = '';
+          if (p && p.fnac) {
+            const mf = p.fnac.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (mf) fnacDisplay = mf[3] + '/' + mf[2] + '/' + mf[1];
+            else fnacDisplay = p.fnac;
+          }
+          const edad = p ? ((p.fnac ? calcularEdadTexto(p.fnac) : '') || p.edad || '') : '';
+          filas.push([viv.vivienda, p ? (p.nombre || '') : '', fnacDisplay, edad]);
+        });
       });
+      return filas;
+    }
 
-      // Crear libro y hoja
+    function exportarCatalogoExcel() {
+      if (typeof XLSX === 'undefined') {
+        toast('La librería Excel aún no cargó. Intenta de nuevo.', 'error');
+        return;
+      }
+      const filas = _catFilas();
+      if (!filas) { toast('El catálogo está vacío. No hay datos para exportar.', 'error'); return; }
+
+      const cabecera = ['N° Vivienda', 'Nombre', 'Fecha de Nacimiento', 'Edad'];
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(filas);
-
-      // Ancho de columnas
+      const ws = XLSX.utils.aoa_to_sheet([cabecera, ...filas]);
       ws['!cols'] = [
-        { wch: 14 }, // A — N° Vivienda
-        { wch: 32 }, // B — Nombre
-        { wch: 22 }, // C — Fecha de Nacimiento
-        { wch: 18 }, // D — Edad
+        { wch: 14 }, // N° Vivienda
+        { wch: 32 }, // Nombre
+        { wch: 22 }, // Fecha de Nacimiento
+        { wch: 18 }, // Edad
       ];
-
-      // Estilo de encabezado (solo disponible en versión Pro de SheetJS;
-      // en la CDN gratuita se ignora silenciosamente)
       ['A1','B1','C1','D1'].forEach(ref => {
         if (ws[ref]) ws[ref].s = { font: { bold: true } };
       });
-
       XLSX.utils.book_append_sheet(wb, ws, 'Catálogo Familias');
 
-      // Nombre de archivo con fecha
       const hoy = new Date();
-      const dd = String(hoy.getDate()).padStart(2,'0');
-      const mm = String(hoy.getMonth()+1).padStart(2,'0');
+      const dd   = String(hoy.getDate()).padStart(2,'0');
+      const mm   = String(hoy.getMonth()+1).padStart(2,'0');
       const aaaa = hoy.getFullYear();
       const nombreArchivo = `Catalogo_Familias_${aaaa}${mm}${dd}.xlsx`;
 
-      // Intentar guardar vía puente Android, si no, descarga normal
       if (typeof Android !== 'undefined' && typeof Android.guardarArchivo === 'function') {
         try {
           const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
@@ -4593,10 +4608,11 @@
         }
       } else {
         XLSX.writeFile(wb, nombreArchivo);
-        const total = filas.length - 1; // sin encabezado
+        const total = filas.length;
         toast(`📥 ${total} registro${total!==1?'s':''} exportado${total!==1?'s':''}`, 'success');
       }
     }
+
 
     // ── Exponer funciones globalmente (necesario con type=module) ──
     Object.assign(window, {
@@ -4612,7 +4628,7 @@
       cerrarFullPreview, imprimirDesdeFullPreview,
       copiarTabla, copiarCSV, imprimirDesdePreview,
       subirNube, bajarNube,
-      // Catálogo de familias - expuesto más abajo
+      // Catálogo de familias
       exportarCatalogoExcel,
       abrirModalNuevaVivienda, abrirModalNuevaPersona, cerrarModalCat, guardarModalCat,
       mcatCalcularEdad, calcularEdadTexto,
