@@ -3715,13 +3715,20 @@
       _catPersonaSeleccionada = { vivId, perId };
       const inp = document.getElementById('cat-buscador');
       if (inp) inp.value = '';
-      // renderCompleto:true asegura que TODAS las viviendas estén en el DOM
-      // antes de intentar scrollIntoView (evita el bug de lazy loading)
+      // Renderizar SOLO esa vivienda: instantáneo sin importar el tamaño del catálogo
+      const cat = getCatalogo();
+      const viv = cat.find(v => v.id === vivId);
+      if (inp && viv) inp.value = String(viv.vivienda);
       renderCatalogo({ renderCompleto: true });
-      setTimeout(() => {
-        const card = document.querySelector(`[data-viv-id="${vivId}"]`);
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
+      // Banner informativo + botón para volver a ver todas
+      const cont = document.getElementById('catalogo-lista');
+      if (cont) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:.5rem .8rem;background:#e8f5e9;border-radius:8px;margin-bottom:.4rem;font-size:.82rem;color:#2e7d32';
+        banner.innerHTML = '<span>📍 Mostrando solo esta vivienda</span>'
+          + '<button onclick="if(document.getElementById(\'cat-buscador\'))document.getElementById(\'cat-buscador\').value=\'\';renderCatalogo()" style="background:none;border:none;color:#1b5e20;font-weight:700;font-size:.82rem;cursor:pointer;text-decoration:underline">Ver todas</button>';
+        cont.insertBefore(banner, cont.firstChild);
+      }
     }
 
     // ── Calcular edad a partir de fecha de nacimiento ──
@@ -3835,9 +3842,28 @@
         viv.personas.push({ id: 'per_' + Date.now(), nombre, fnac: fnac || '', edad });
         viv.actualizadoEn = new Date().toISOString(); // marca cambio para sync
         saveCatalogo(cat);
-        renderCatalogo();
         cerrarModalCat();
+        renderCatalogoYVolver(_mcatVivId);
         toast('👤 ' + nombre + ' agregado/a', 'success');
+      }
+    }
+
+    // Helper: re-renderiza manteniendo modo vista única si corresponde
+    function renderCatalogoYVolver(vivId) {
+      const cat = getCatalogo();
+      const viv = cat.find(v => v.id === vivId);
+      const inp = document.getElementById('cat-buscador');
+      const enModoUnico = inp && viv && inp.value.trim() === String(viv.vivienda);
+      if (enModoUnico) {
+        renderCatalogo({ renderCompleto: true });
+        return;
+      }
+      renderCatalogo({ renderCompleto: true });
+      if (vivId) {
+        setTimeout(() => {
+          const card = document.querySelector('[data-viv-id="' + vivId + '"]');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
       }
     }
 
@@ -3861,7 +3887,7 @@
       viv.personas = viv.personas.filter(p => p.id !== perId);
       viv.actualizadoEn = new Date().toISOString();
       saveCatalogo(cat);
-      renderCatalogo();
+      renderCatalogoYVolver(vivId);
       toast('Integrante eliminado', 'success');
     }
 
