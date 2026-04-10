@@ -823,6 +823,166 @@
             margin-bottom: 15px;
             z-index: 1;
         }
+        #mapa-zona-leaflet-wrapper {
+            position: relative;
+        }
+        #btn-fullscreen-mapa {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 6px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+            padding: 0;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            pointer-events: all;
+        }
+        #mapa-zona-leaflet-wrapper:-webkit-full-screen #mapa-zona-leaflet,
+        #mapa-zona-leaflet-wrapper:fullscreen #mapa-zona-leaflet,
+        #mapa-zona-leaflet-wrapper[data-simulated-fs] #mapa-zona-leaflet {
+            height: 100vh !important;
+            border-radius: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        /* Barra de filtros flotante — solo visible en fullscreen */
+        #mapa-filtros-fs {
+            display: none;
+            position: absolute;
+            bottom: 12px;
+            left: 8px;
+            right: 8px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.95);
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+            padding: 6px 8px;
+            gap: 5px;
+            align-items: center;
+            justify-content: space-around;
+        }
+        #mapa-zona-leaflet-wrapper:-webkit-full-screen #mapa-filtros-fs,
+        #mapa-zona-leaflet-wrapper:fullscreen #mapa-filtros-fs,
+        #mapa-zona-leaflet-wrapper[data-simulated-fs] #mapa-filtros-fs {
+            display: flex;
+        }
+        .btn-filtro-fs {
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 18px;
+            padding: 5px 8px;
+            font-size: 0.72em;
+            cursor: pointer;
+            font-weight: 600;
+            color: #37474f;
+            transition: all 0.15s;
+            flex: 1;
+            text-align: center;
+            min-width: 0;
+        }
+        .btn-filtro-fs.activo-todos   { background: #00796b; color: white; border-color: #00796b; }
+        .btn-filtro-fs.activo-emb     { background: #673ab7; color: white; border-color: #673ab7; }
+        .btn-filtro-fs.activo-pue     { background: #f9a825; color: white; border-color: #f9a825; }
+        .btn-filtro-fs.activo-riesgo  { background: #d32f2f; color: white; border-color: #d32f2f; }
+        /* Marcador GPS parpadeante */
+        .gps-dot-outer {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: rgba(26,115,232,0.25);
+            display: flex; align-items: center; justify-content: center;
+            animation: gps-pulso 1.4s ease-out infinite;
+        }
+        .gps-dot-inner {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #1a73e8;
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(26,115,232,0.8);
+        }
+        @keyframes gps-pulso {
+            0%   { box-shadow: 0 0 0 0 rgba(26,115,232,0.5); }
+            70%  { box-shadow: 0 0 0 12px rgba(26,115,232,0); }
+            100% { box-shadow: 0 0 0 0 rgba(26,115,232,0); }
+        }
+        /* Selector de capas del mapa */
+        #mapa-capas-btn {
+            position: absolute;
+            top: 52px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+            padding: 0;
+        }
+        /* Ícono capas estilo Google Maps — SVG inline */
+        #mapa-capas-btn svg { width: 22px; height: 22px; }
+        /* Botón GPS */
+        #mapa-gps-btn {
+            position: absolute;
+            bottom: 60px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            padding: 0;
+            transition: background 0.2s;
+        }
+        #mapa-gps-btn svg { width: 22px; height: 22px; }
+        #mapa-gps-btn.buscando { background: #e3f2fd; }
+        #mapa-gps-btn.encontrado { background: #e8f5e9; }
+        #mapa-capas-panel {
+            display: none;
+            position: absolute;
+            top: 52px;
+            right: 52px;
+            z-index: 1001;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+            padding: 6px;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 160px;
+        }
+        #mapa-capas-panel.visible { display: flex; }
+        .btn-capa {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            padding: 7px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            text-align: left;
+            color: #37474f;
+            font-weight: 500;
+        }
+        .btn-capa:hover { background: #f5f5f5; }
+        .btn-capa.activa { background: #e0f2f1; border-color: #00796b; color: #00796b; font-weight: 700; }
         .mapa-filtros {
             display: flex;
             gap: 8px;
@@ -1208,16 +1368,50 @@
         <!-- Filtros -->
         <div class="mapa-filtros">
             <button class="btn-filtro-mapa activo-todos" id="filtro-todos" onclick="filtrarMapa('todos')">🗺️ Todas</button>
-            <button class="btn-filtro-mapa" id="filtro-emb" onclick="filtrarMapa('embarazada')">🤰 Embarazadas</button>
-            <button class="btn-filtro-mapa" id="filtro-pue" onclick="filtrarMapa('puerpera')">🤱 Puérperas</button>
-            <button class="btn-filtro-mapa" id="filtro-riesgo" onclick="filtrarMapa('riesgo')">⚠️ Con Riesgo</button>
+            <button class="btn-filtro-mapa" id="filtro-emb" onclick="filtrarMapa('embarazada')">🤰 Emb.</button>
+            <button class="btn-filtro-mapa" id="filtro-pue" onclick="filtrarMapa('puerpera')">🤱 Pué.</button>
+            <button class="btn-filtro-mapa" id="filtro-riesgo" onclick="filtrarMapa('riesgo')">⚠️ Riesgo</button>
         </div>
 
         <!-- Contador -->
         <div id="mapa-contador" style="font-size:0.82em; color:#546e7a; margin-bottom:8px; text-align:right;"></div>
 
         <!-- Mapa Leaflet -->
-        <div id="mapa-zona-leaflet"></div>
+        <div id="mapa-zona-leaflet-wrapper">
+            <div id="mapa-zona-leaflet"></div>
+            <button id="btn-fullscreen-mapa" onclick="toggleFullscreenMapa()" title="Pantalla completa">⛶</button>
+            <button id="mapa-capas-btn" onclick="toggleCapasPanel()" title="Capas del mapa">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="12,2 22,8 12,14 2,8" fill="#5f6368" opacity="0.5"/>
+                    <polygon points="12,6 22,12 12,18 2,12" fill="#5f6368" opacity="0.75"/>
+                    <polygon points="12,10 22,16 12,22 2,16" fill="#5f6368"/>
+                </svg>
+            </button>
+            <div id="mapa-capas-panel">
+                <button class="btn-capa activa" onclick="cambiarCapa('osm')">🗺️ Calles (OSM)</button>
+                <button class="btn-capa" onclick="cambiarCapa('topo')">🏔️ Topografía</button>
+                <button class="btn-capa" onclick="cambiarCapa('satelite')">🛰️ Satélite</button>
+                <button class="btn-capa" onclick="cambiarCapa('carto')">📋 Minimalista</button>
+            </div>
+            <!-- Botón GPS -->
+            <button id="mapa-gps-btn" onclick="centrarEnGPS()" title="Mi ubicación">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="3.5" fill="#1a73e8"/>
+                    <circle cx="12" cy="12" r="6.5" stroke="#1a73e8" stroke-width="1.5" fill="none"/>
+                    <line x1="12" y1="2" x2="12" y2="5.5" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="12" y1="18.5" x2="12" y2="22" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="2" y1="12" x2="5.5" y2="12" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="18.5" y1="12" x2="22" y2="12" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <!-- Filtros flotantes visibles solo en pantalla completa -->
+            <div id="mapa-filtros-fs">
+                <button class="btn-filtro-fs activo-todos" id="filtro-fs-todos"  onclick="filtrarMapaFs('todos')">🗺️ Todas</button>
+                <button class="btn-filtro-fs"              id="filtro-fs-emb"    onclick="filtrarMapaFs('embarazada')">🤰 Emb.</button>
+                <button class="btn-filtro-fs"              id="filtro-fs-pue"    onclick="filtrarMapaFs('puerpera')">🤱 Pué.</button>
+                <button class="btn-filtro-fs"              id="filtro-fs-riesgo" onclick="filtrarMapaFs('riesgo')">⚠️ Riesgo</button>
+            </div>
+        </div>
 
         <!-- Aviso pacientes sin ubicación -->
         <div id="mapa-sin-ubicacion" style="display:none; background:#fff8e1; border:1px solid #ffe082; border-radius:8px; padding:10px; font-size:0.85em; color:#795548; margin-top:8px;">
@@ -2447,6 +2641,10 @@ function importarDatos(event) {
                                 <span class="dato-valor">${edadDisplay}</span>
                             </div>
                             <div class="dato-item">
+                                <span class="dato-label">Fecha de Nacimiento</span>
+                                <span class="dato-valor">${p.fecha_nacimiento ? formatDate(crearFechaLocal(p.fecha_nacimiento)) : 'No registrada'}</span>
+                            </div>
+                            <div class="dato-item">
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
                             </div>
@@ -2575,6 +2773,10 @@ function importarDatos(event) {
                         <button class="btn-pro pro-delete full-width" onclick="eliminarPaciente(${index}, 'embarazada')">
                             <span>🗑️</span> Eliminar
                         </button>
+                        ${p.lat ? `<button class="btn-pro full-width" onclick="irAlMapaYcentrar(${index},'embarazada')"
+                            style="background:linear-gradient(135deg,#00897b,#00695c);">
+                            <span>🗺️</span> Ver en Mapa
+                        </button>` : ''}
                         <button class="btn-pro pro-back" onclick="regresarAListado('embarazada')">
                             ← Volver al Listado
                         </button>
@@ -2700,6 +2902,10 @@ function importarDatos(event) {
                                 <span class="dato-valor">${edadDisplay}</span>
                             </div>
                             <div class="dato-item">
+                                <span class="dato-label">Fecha de Nacimiento</span>
+                                <span class="dato-valor">${p.fecha_nacimiento ? formatDate(crearFechaLocal(p.fecha_nacimiento)) : 'No registrada'}</span>
+                            </div>
+                            <div class="dato-item">
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
                             </div>
@@ -2794,6 +3000,10 @@ function importarDatos(event) {
                             <span>🗑️</span> Eliminar Paciente
                         </button>
 
+                        ${p.lat ? `<button class="btn-pro full-width" onclick="irAlMapaYcentrar(${index},'puerpera')"
+                            style="background:linear-gradient(135deg,#00897b,#00695c);">
+                            <span>🗺️</span> Ver en Mapa
+                        </button>` : ''}
                         <button class="btn-pro pro-back full-width" onclick="regresarAListado('puerpera')">
                             ← Volver al Listado
                         </button>
@@ -4498,6 +4708,276 @@ chequearBloqueoVisual();
    MÓDULO MAPA DE ZONA — Leaflet + GPS/Manual
    ==================================================== */
 
+// --- GPS: centrar mapa en ubicación actual ---
+// Marcador GPS de posición actual (parpadeante)
+let _marcadorGPS = null;
+let _circuloGPS = null;
+
+function centrarEnGPS() {
+    const btn = document.getElementById('mapa-gps-btn');
+    if (!_mapaZona) { alert('Espera a que el mapa cargue.'); return; }
+    if (!navigator.geolocation) { alert('GPS no disponible en este dispositivo.'); return; }
+    if (btn) { btn.classList.add('buscando'); btn.classList.remove('encontrado'); }
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const { latitude: lat, longitude: lng, accuracy: acc } = pos.coords;
+            _mapaZona.setView([lat, lng], 16);
+            // Eliminar marcador anterior si existe
+            if (_marcadorGPS) { _mapaZona.removeLayer(_marcadorGPS); _marcadorGPS = null; }
+            if (_circuloGPS)  { _mapaZona.removeLayer(_circuloGPS);  _circuloGPS  = null; }
+            // Círculo de precisión
+            _circuloGPS = L.circle([lat, lng], {
+                radius: acc, color: '#1a73e8', fillColor: '#1a73e8',
+                fillOpacity: 0.08, weight: 1
+            }).addTo(_mapaZona);
+            // Marcador parpadeante usando DivIcon
+            const iconGPS = L.divIcon({
+                className: '',
+                html: '<div class="gps-dot-outer"><div class="gps-dot-inner"></div></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            _marcadorGPS = L.marker([lat, lng], { icon: iconGPS })
+                .addTo(_mapaZona)
+                .bindPopup(`📍 Tu ubicación<br><small>Precisión: ±${Math.round(acc)} m</small>`)
+                .openPopup();
+            if (btn) { btn.classList.remove('buscando'); btn.classList.add('encontrado'); }
+            setTimeout(() => { if (btn) btn.classList.remove('encontrado'); }, 2500);
+        },
+        err => {
+            if (btn) btn.classList.remove('buscando');
+            const msgs = {
+                1: 'Permiso de ubicación denegado. Revisa los permisos de la app.',
+                2: 'Sin señal GPS. Intenta al aire libre.',
+                3: 'Tiempo agotado. Intenta de nuevo.'
+            };
+            alert('📍 ' + (msgs[err.code] || err.message));
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+}
+
+// --- Variables de capas del mapa ---
+let _capasDisponibles = {};
+let _capaActual = 'osm';
+
+function toggleCapasPanel() {
+    const panel = document.getElementById('mapa-capas-panel');
+    if (!panel) return;
+    if (panel.classList.contains('visible')) {
+        panel.classList.remove('visible');
+        return;
+    }
+    // Abrir: registrar listener de cierre DESPUÉS del tick actual
+    panel.classList.add('visible');
+    setTimeout(() => {
+        function cerrarFuera(e) {
+            const p = document.getElementById('mapa-capas-panel');
+            const b = document.getElementById('mapa-capas-btn');
+            if (!p || !b) return;
+            if (!p.contains(e.target) && !b.contains(e.target)) {
+                p.classList.remove('visible');
+                document.removeEventListener('click', cerrarFuera);
+            }
+        }
+        document.addEventListener('click', cerrarFuera);
+    }, 0);
+}
+function cambiarCapa(id) {
+    if (!_mapaZona || !_capasDisponibles[id]) return;
+    // Quitar capa actual si existe
+    if (_capasDisponibles[_capaActual] && _mapaZona.hasLayer(_capasDisponibles[_capaActual])) {
+        _mapaZona.removeLayer(_capasDisponibles[_capaActual]);
+    }
+    _capasDisponibles[id].addTo(_mapaZona);
+    _capaActual = id;
+    // Actualizar estilos botones
+    document.querySelectorAll('.btn-capa').forEach(b => b.classList.remove('activa'));
+    const idx = { osm: 0, topo: 1, satelite: 2, carto: 3 };
+    const btns = document.querySelectorAll('.btn-capa');
+    if (btns[idx[id]]) btns[idx[id]].classList.add('activa');
+    // Cerrar panel
+    const panel = document.getElementById('mapa-capas-panel');
+    if (panel) panel.classList.remove('visible');
+}
+
+// --- Ir al mapa y centrar en el marcador de la paciente ---
+function irAlMapaYcentrar(index, tipo) {
+    mostrarSeccion('mapa-zona');
+    // Esperar a que el mapa se inicialice/renderice
+    setTimeout(() => {
+        if (!_mapaZona) return;
+        const lista = tipo === 'embarazada' ? embarazadas : puerperas;
+        const p = lista[index];
+        if (p && p.lat && p.lng) {
+            _mapaZona.setView([p.lat, p.lng], 16, { animate: true });
+            // Abrir el popup del marcador correspondiente
+            const marker = _marcadoresMapa.find(m => {
+                const ll = m.getLatLng();
+                return Math.abs(ll.lat - p.lat) < 0.00001 && Math.abs(ll.lng - p.lng) < 0.00001;
+            });
+            if (marker) marker.openPopup();
+        }
+    }, 400);
+}
+
+// --- Navegar a ficha saliendo limpiamente de fullscreen primero ---
+function irAFichaDesdeMapaT(btn, seccion, index, tipo) {
+    const wrapper = document.getElementById('mapa-zona-leaflet-wrapper');
+    const fsBtn   = document.getElementById('btn-fullscreen-mapa');
+
+    const doNav = () => {
+        mostrarSeccion(seccion);
+        mostrarDetalle(index, tipo);
+    };
+
+    if (wrapper && wrapper.dataset.simulatedFs) {
+        // Modo simulado (Android WebView): desactivar primero, luego navegar
+        _desactivarFsSimulado(wrapper, fsBtn);
+        requestAnimationFrame(doNav);
+    } else if (document.fullscreenElement || document.webkitFullscreenElement) {
+        // Fullscreen nativo (Chrome/PC): salir y esperar el evento antes de navegar
+        const salir = document.exitFullscreen || document.webkitExitFullscreen;
+        if (salir) {
+            salir.call(document).then(doNav).catch(doNav);
+        } else {
+            doNav();
+        }
+    } else {
+        doNav();
+    }
+}
+
+// --- Pantalla completa del mapa (compatible Chrome + Android WebView) ---
+function toggleFullscreenMapa() {
+    const wrapper = document.getElementById('mapa-zona-leaflet-wrapper');
+    const btn = document.getElementById('btn-fullscreen-mapa');
+    const isNativeFs = document.fullscreenElement || document.webkitFullscreenElement;
+
+    if (wrapper.dataset.simulatedFs) {
+        // Salir del fullscreen simulado (WebView)
+        _desactivarFsSimulado(wrapper, btn);
+    } else if (isNativeFs) {
+        // Salir del fullscreen nativo (Chrome)
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document);
+    } else {
+        // Intentar API nativa primero
+        const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
+        if (req) {
+            const promise = req.call(wrapper);
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(() => {
+                    // API rechazada (WebView) → simular con CSS
+                    _activarFsSimulado(wrapper, btn);
+                });
+            }
+            // Si no devuelve Promise (webkit antiguo), verificar con pequeño delay
+            else {
+                setTimeout(() => {
+                    const entro = document.fullscreenElement || document.webkitFullscreenElement;
+                    if (!entro) _activarFsSimulado(wrapper, btn);
+                }, 150);
+            }
+        } else {
+            // No hay API disponible → simular directamente
+            _activarFsSimulado(wrapper, btn);
+        }
+    }
+}
+
+function _activarFsSimulado(wrapper, btn) {
+    wrapper.dataset.simulatedFs = '1';
+    // Usar setProperty con 'important' en cada propiedad — así removeProperty las limpia después
+    wrapper.style.setProperty('position', 'fixed', 'important');
+    wrapper.style.setProperty('top', '0', 'important');
+    wrapper.style.setProperty('left', '0', 'important');
+    wrapper.style.setProperty('width', '100vw', 'important');
+    wrapper.style.setProperty('height', '100vh', 'important');
+    wrapper.style.setProperty('z-index', '9999', 'important');
+    wrapper.style.setProperty('border-radius', '0', 'important');
+    wrapper.style.setProperty('margin', '0', 'important');
+
+    const mapaEl = document.getElementById('mapa-zona-leaflet');
+    if (mapaEl) {
+        mapaEl.style.setProperty('height', '100vh', 'important');
+        mapaEl.style.setProperty('border-radius', '0', 'important');
+        mapaEl.style.setProperty('margin-bottom', '0', 'important');
+    }
+
+    const filtros = document.getElementById('mapa-filtros-fs');
+    if (filtros) filtros.style.setProperty('display', 'flex', 'important');
+
+    if (btn) {
+        btn.textContent = '\u2715';
+        btn.style.setProperty('z-index', '10000', 'important');
+        btn.style.setProperty('pointer-events', 'all', 'important');
+        btn.style.setProperty('min-width', '44px', 'important');
+        btn.style.setProperty('min-height', '44px', 'important');
+    }
+    setTimeout(() => { if (_mapaZona) _mapaZona.invalidateSize(); }, 300);
+}
+
+function _desactivarFsSimulado(wrapper, btn) {
+    delete wrapper.dataset.simulatedFs;
+
+    // removeProperty elimina correctamente incluso propiedades con !important
+    ['position','top','left','width','height','z-index','border-radius','margin'].forEach(p => {
+        wrapper.style.removeProperty(p);
+    });
+
+    const mapaEl = document.getElementById('mapa-zona-leaflet');
+    if (mapaEl) {
+        ['height','border-radius','margin-bottom'].forEach(p => mapaEl.style.removeProperty(p));
+    }
+
+    const filtros = document.getElementById('mapa-filtros-fs');
+    if (filtros) filtros.style.removeProperty('display');
+
+    if (btn) {
+        btn.textContent = '\u26f6';
+        ['z-index','pointer-events','min-width','min-height'].forEach(p => btn.style.removeProperty(p));
+    }
+
+    // Esperar al repintado antes de que Leaflet mida el contenedor
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if (_mapaZona) _mapaZona.invalidateSize({ animate: false });
+        });
+    });
+}
+
+document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen-mapa');
+    const wrapper = document.getElementById('mapa-zona-leaflet-wrapper');
+    // Solo actualizar ícono si NO estamos en modo simulado (para no pisarnos)
+    if (wrapper && !wrapper.dataset.simulatedFs) {
+        if (btn) btn.textContent = document.fullscreenElement ? '✕' : '⛶';
+        setTimeout(() => { if (_mapaZona) _mapaZona.invalidateSize(); }, 300);
+    }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen-mapa');
+    const wrapper = document.getElementById('mapa-zona-leaflet-wrapper');
+    if (wrapper && !wrapper.dataset.simulatedFs) {
+        if (btn) btn.textContent = document.webkitFullscreenElement ? '✕' : '⛶';
+        setTimeout(() => { if (_mapaZona) _mapaZona.invalidateSize(); }, 300);
+    }
+});
+
+// --- Filtros en pantalla completa (sincronizados con los botones principales) ---
+function filtrarMapaFs(tipo) {
+    // Llama al mismo filtrarMapa original
+    filtrarMapa(tipo);
+    // Sincroniza clases activas en los botones del fullscreen
+    const mapa = { todos: 'activo-todos', embarazada: 'activo-emb', puerpera: 'activo-pue', riesgo: 'activo-riesgo' };
+    ['todos', 'embarazada', 'puerpera', 'riesgo'].forEach(t => {
+        const id = { todos: 'filtro-fs-todos', embarazada: 'filtro-fs-emb', puerpera: 'filtro-fs-pue', riesgo: 'filtro-fs-riesgo' }[t];
+        const btn = document.getElementById(id);
+        if (btn) { btn.className = 'btn-filtro-fs' + (t === tipo ? ' ' + mapa[t] : ''); }
+    });
+}
+
 // Centro por defecto: Cantón Las Piletas, Coatepeque, Santa Ana
 const MAPA_LAT_DEFAULT = 13.8800;
 const MAPA_LNG_DEFAULT = -89.5000;
@@ -4563,10 +5043,14 @@ async function abrirMapaZona() {
             _mapaZona = L.map('mapa-zona-leaflet').setView(
                 [MAPA_LAT_DEFAULT, MAPA_LNG_DEFAULT], MAPA_ZOOM_DEFAULT
             );
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 19
-            }).addTo(_mapaZona);
+            _capasDisponibles = {
+                osm:      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',        { attribution: '© OpenStreetMap', maxZoom: 19 }),
+                topo:     L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',           { attribution: '© OpenTopoMap', maxZoom: 17 }),
+                satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+                carto:    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB', maxZoom: 19 })
+            };
+            _capaActual = 'osm';
+            _capasDisponibles.osm.addTo(_mapaZona);
         } else {
             _mapaZona.invalidateSize();
         }
@@ -4658,7 +5142,7 @@ function renderizarMarcadores(filtro) {
                     ${riesgoTag}
                     <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
                     <div style="margin-bottom:8px;">${origenTag}</div>
-                    <button onclick="mostrarSeccion('${seccion}'); mostrarDetalle(${index},'${tipo}');"
+                    <button onclick="irAFichaDesdeMapaT(this,'${seccion}',${index},'${tipo}');"
                         style="background:#00796b;color:white;border:none;padding:7px 0;
                                border-radius:7px;font-size:0.85em;font-weight:bold;cursor:pointer;width:100%;">
                         📋 Ver Ficha
@@ -4708,6 +5192,13 @@ function filtrarMapa(filtro) {
     document.getElementById('filtro-pue').className = 'btn-filtro-mapa' + (filtro === 'puerpera' ? ' activo-pue' : '');
     document.getElementById('filtro-riesgo').className = 'btn-filtro-mapa' + (filtro === 'riesgo' ? ' activo-riesgo' : '');
     renderizarMarcadores(filtro);
+    // Sincronizar botones del panel fullscreen
+    const _fsMap = { todos: 'activo-todos', embarazada: 'activo-emb', puerpera: 'activo-pue', riesgo: 'activo-riesgo' };
+    ['todos', 'embarazada', 'puerpera', 'riesgo'].forEach(t => {
+        const _fsId = { todos: 'filtro-fs-todos', embarazada: 'filtro-fs-emb', puerpera: 'filtro-fs-pue', riesgo: 'filtro-fs-riesgo' }[t];
+        const _fsBtn = document.getElementById(_fsId);
+        if (_fsBtn) _fsBtn.className = 'btn-filtro-fs' + (t === filtro ? ' ' + _fsMap[t] : '');
+    });
 }
 
 /* --- GPS directo en vivienda --- */
@@ -5119,6 +5610,7 @@ function descargarPDF(index, tipo) {
         <div class="fila"><span class="label">N° EXPEDIENTE:</span><span class="valor">${paciente.expediente || 'No registrado'}</span></div>
         <div class="fila"><span class="label">DIRECCIÓN:</span><span class="valor">${paciente.direccion || 'No registrada'}</span></div>
         <div class="fila"><span class="label">EDAD:</span><span class="valor">${edadDoc}</span></div>
+        <div class="fila"><span class="label">FECHA DE NACIMIENTO:</span><span class="valor">${paciente.fecha_nacimiento ? formatearConPlecas(paciente.fecha_nacimiento) : 'No registrada'}</span></div>
         <div class="fila" style="background:#fce4ec;">
             <span class="label">🩸 GRUPO SANGUÍNEO:</span>
             <span class="valor" style="font-weight:bold; color:#c62828; font-size:15px;">${paciente.grupo_sanguineo || 'No registrado'}</span>
