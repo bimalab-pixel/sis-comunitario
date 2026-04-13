@@ -5141,6 +5141,7 @@ function renderizarMarcadores(filtro) {
                     <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
                     ${riesgoTag}
                     <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
+                    <div style="font-size:0.75em;color:#888;margin-bottom:2px;">👤 <em>Registrada por:</em> ${p.registrado_por || 'Desconocido'}</div>
                     <div style="margin-bottom:8px;">${origenTag}</div>
                     <button onclick="irAFichaDesdeMapaT(this,'${seccion}',${index},'${tipo}');"
                         style="background:#00796b;color:white;border:none;padding:7px 0;
