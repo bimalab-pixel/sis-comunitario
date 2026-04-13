@@ -1,905 +1,1589 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Parto y Seguimiento de Puerperio</title>
+    <title>Calculadora Materna — Salud Comunitaria El Salvador</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
     <style>
+        /* ══════════════════════════════════════════════
+           TOKENS — MODO CLARO (blanco limpio · legible)
+        ══════════════════════════════════════════════ */
+        :root,
+        [data-theme="light"] {
+            --bg:           #f0f4f8;
+            --surface:      #ffffff;
+            --surface2:     rgba(0,150,200,0.06);
+            --border:       rgba(0,120,180,0.18);
+            --border-strong:rgba(0,120,180,0.40);
+
+            --ink:          #0d1f35;
+            --ink2:         rgba(13,31,53,0.85);
+            --muted:        rgba(13,31,53,0.60);
+
+            --rose:         #d4005a;
+            --rose-soft:    rgba(212,0,90,0.10);
+            --rose-border:  rgba(212,0,90,0.28);
+
+            --teal:         #006fa8;
+            --teal-soft:    rgba(0,111,168,0.10);
+            --teal-border:  rgba(0,111,168,0.28);
+
+            --amber:        #b06000;
+            --amber-soft:   rgba(176,96,0,0.10);
+            --amber-border: rgba(176,96,0,0.28);
+
+            --green:        #007a50;
+            --green-soft:   rgba(0,122,80,0.10);
+            --green-border: rgba(0,122,80,0.26);
+
+            --date-color:   #7c3aed;
+            --date-bg:      rgba(124,58,237,0.08);
+
+            --grid-color:   rgba(0,120,180,0.07);
+            --glow1:        rgba(0,111,168,0.06);
+            --glow2:        rgba(212,0,90,0.04);
+            --glow3:        rgba(0,122,80,0.03);
+
+            --shadow-lg:    0 0 0 1px rgba(0,120,180,0.10), 0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9);
+            --toggle-bg:    rgba(255,255,255,0.95);
+
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm:  7px;
+        }
+
+        /* ══════════════════════════════════════════════
+           TOKENS — MODO OSCURO (negro profundo · más contraste)
+        ══════════════════════════════════════════════ */
+        [data-theme="dark"] {
+            --bg:           #000509;
+            --surface:      rgba(2,8,20,0.98);
+            --surface2:     rgba(0,230,255,0.035);
+            --border:       rgba(0,230,255,0.14);
+            --border-strong:rgba(0,230,255,0.30);
+
+            --ink:          #c8e8ff;
+            --ink2:         rgba(200,232,255,0.82);
+            --muted:        rgba(200,232,255,0.45);
+
+            --rose:         #ff5c96;
+            --rose-soft:    rgba(255,92,150,0.15);
+            --rose-border:  rgba(255,92,150,0.32);
+
+            --teal:         #00f0ff;
+            --teal-soft:    rgba(0,240,255,0.13);
+            --teal-border:  rgba(0,240,255,0.32);
+
+            --amber:        #ffe566;
+            --amber-soft:   rgba(255,229,102,0.11);
+            --amber-border: rgba(255,229,102,0.30);
+
+            --green:        #00ffb8;
+            --green-soft:   rgba(0,255,184,0.11);
+            --green-border: rgba(0,255,184,0.28);
+
+            --date-color:   #c084fc;
+            --date-bg:      rgba(192,132,252,0.12);
+
+            --grid-color:   rgba(0,240,255,0.07);
+            --glow1:        rgba(0,240,255,0.13);
+            --glow2:        rgba(255,92,150,0.10);
+            --glow3:        rgba(0,255,184,0.05);
+
+            --shadow-lg:    0 0 0 1px rgba(0,230,255,0.10), 0 28px 80px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04);
+            --toggle-bg:    rgba(2,8,20,0.95);
+
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm:  7px;
+        }
+
+        /* ══════════════════════════════════════════════
+           RESET & BASE
+        ══════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
 
         body {
-            background-color: rgb(243, 248, 248) ;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 16px;
+            font-family: 'Exo 2', sans-serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            padding: 16px 12px 32px;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.2s;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 5px;
-            background-color: White;
-            border: 2px solid blue;
-            border-radius: 10px;
-            box-shadow: 0 0 5px blue;
-        }
-        h1, h2 {
-            color: blue;
 
+        /* Grid animado — usa variable de color */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
         }
-        label {
-            font-size: 16px;
-            color: blue;
-            display: block;
-            margin-top: 4px;
+        /* Radiales de ambiente */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 10% 15%, var(--glow1) 0%, transparent 60%),
+                radial-gradient(ellipse 55% 38% at 90% 80%, var(--glow2) 0%, transparent 60%),
+                radial-gradient(ellipse 35% 25% at 50% 50%, var(--glow3) 0%, transparent 55%);
         }
-        input {
-            padding: 7px;
-            font-size: 18px;
-            text-align: center;
-            border: 3px solid blue;
-            border-radius: 6px;
-            margin-top: 3px;
-            width: 250px;
+        @keyframes gp { from { opacity: .5 } to { opacity: 1 } }
 
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: blue;
-            color: white;
-            border: none;
-            border-radius: 5px;
+        .page-header, .container, .theme-toggle { position: relative; z-index: 1; }
+
+        /* ══════════════════════════════════════════════
+           THEME TOGGLE
+        ══════════════════════════════════════════════ */
+        .theme-toggle {
+            position: fixed;
+            top: 14px; right: 14px;
+            z-index: 999;
+            background: var(--toggle-bg);
+            border: 1px solid var(--border-strong);
+            border-radius: 50px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
-            margin-top: 10px;
-            width: 220px;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--teal);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
-        button:hover {
-            background-color: red;
+        .theme-toggle:hover { border-color: var(--teal); box-shadow: 0 0 16px rgba(0,210,255,0.18); }
+        .theme-toggle .toggle-icon { font-size: 0.9rem; }
+        .theme-auto-badge {
+            background: var(--amber-soft);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+            border-radius: 50px;
+            padding: 2px 7px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            font-family: 'Orbitron', monospace;
         }
+
+        /* ══════════════════════════════════════════════
+           PAGE HEADER
+        ══════════════════════════════════════════════ */
+        .page-header {
+            max-width: 580px;
+            margin: 0 auto 18px;
+            padding: 28px 20px 24px;
+            text-align: center;
+            animation: fdn .6s ease both;
+        }
+        .header-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--teal-soft);
+            border: 1px solid var(--teal-border);
+            border-radius: 50px;
+            padding: 4px 14px;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 16px;
+            font-family: 'Orbitron', monospace;
+        }
+        .page-header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.6rem, 6vw, 2.2rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, #fff 0%, var(--teal) 45%, var(--rose) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .page-header .subtitle {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-style: italic;
+            letter-spacing: 0.04em;
+            line-height: 1.5;
+        }
+        .header-rule {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .header-rule span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+        .header-rule i { color: var(--teal); font-size: 0.7rem; }
+
+        /* ══════════════════════════════════════════════
+           MAIN CONTAINER
+        ══════════════════════════════════════════════ */
+        .container {
+            max-width: 580px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            animation: fdup .4s ease both;
+        }
+        @keyframes fdn  { from { opacity:0; transform:translateY(8px)  } to { opacity:1; transform:translateY(0) } }
+        @keyframes fdup { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:translateY(0) } }
+
+        /* ══════════════════════════════════════════════
+           BACK BUTTON
+        ══════════════════════════════════════════════ */
+        .btn-back {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 20px;
+            background: linear-gradient(90deg, var(--rose-soft), rgba(255,45,122,0.04));
+            color: var(--rose);
+            border: none;
+            border-bottom: 1px solid var(--rose-border);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-back:hover { background: var(--rose-soft); }
+
+        /* ══════════════════════════════════════════════
+           MENU HEADER
+        ══════════════════════════════════════════════ */
+        .menu-header {
+            padding: 18px 20px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2px;
+        }
+        .menu-header h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--teal);
+            text-transform: uppercase;
+        }
+        .menu-header p {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        /* ══════════════════════════════════════════════
+           MENU GRID — dash-grid estilo imagen
+        ══════════════════════════════════════════════ */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 12px 12px 18px;
+        }
+        .menu-card {
+            min-height: 140px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 0;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Fondo tintado por color de módulo */
+        .menu-card.card-rose   { background: linear-gradient(160deg, rgba(255,45,122,0.13) 0%, var(--surface2) 60%); }
+        .menu-card.card-indigo { background: linear-gradient(160deg, rgba(0,210,255,0.11) 0%, var(--surface2) 60%); }
+        .menu-card.card-teal   { background: linear-gradient(160deg, rgba(0,210,255,0.11) 0%, var(--surface2) 60%); }
+        .menu-card.card-green  { background: linear-gradient(160deg, rgba(0,229,160,0.12) 0%, var(--surface2) 60%); }
+
+        /* Modo claro — tintes más visibles */
+        [data-theme="light"] .menu-card.card-rose   { background: linear-gradient(160deg, rgba(212,0,90,0.08) 0%, #fff 70%); }
+        [data-theme="light"] .menu-card.card-indigo { background: linear-gradient(160deg, rgba(0,111,168,0.08) 0%, #fff 70%); }
+        [data-theme="light"] .menu-card.card-teal   { background: linear-gradient(160deg, rgba(0,111,168,0.08) 0%, #fff 70%); }
+        [data-theme="light"] .menu-card.card-green  { background: linear-gradient(160deg, rgba(0,122,80,0.08) 0%, #fff 70%); }
+
+        .menu-card:active { transform: scale(0.96); }
+        .menu-card.card-rose:hover   { border-color: var(--rose);  box-shadow: 0 6px 22px rgba(255,45,122,0.18); }
+        .menu-card.card-indigo:hover { border-color: var(--teal);  box-shadow: 0 6px 22px rgba(0,210,255,0.16); }
+        .menu-card.card-teal:hover   { border-color: var(--teal);  box-shadow: 0 6px 22px rgba(0,210,255,0.16); }
+        .menu-card.card-green:hover  { border-color: var(--green); box-shadow: 0 6px 22px rgba(0,229,160,0.16); }
+
+        /* Línea de acento inferior */
+        .menu-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            opacity: 0.7;
+        }
+        .menu-card.card-rose::after   { background: var(--rose); }
+        .menu-card.card-indigo::after { background: var(--teal); }
+        .menu-card.card-teal::after   { background: var(--teal); }
+        .menu-card.card-green::after  { background: var(--green); }
+
+        .card-icon {
+            font-size: 2.6rem;
+            display: block;
+            line-height: 1;
+        }
+        .card-label {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--muted);
+            line-height: 1.45;
+            display: block;
+            padding: 0 8px;
+        }
+        .card-label b {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 800;
+            margin-bottom: 2px;
+            font-family: 'Exo 2', sans-serif;
+            letter-spacing: 0.01em;
+        }
+        .menu-card.card-rose   .card-label b { color: var(--rose); }
+        .menu-card.card-indigo .card-label b { color: var(--teal); }
+        .menu-card.card-teal   .card-label b { color: var(--teal); }
+        .menu-card.card-green  .card-label b { color: var(--green); }
+
+        /* ══════════════════════════════════════════════
+           TAB CONTENT
+        ══════════════════════════════════════════════ */
         .tabcontent {
             display: none;
-            padding: 1px;
+            padding: 20px 15px 16px;
+            animation: fdn 0.3s ease;
         }
-        .footer-text {
+
+        /* ══════════════════════════════════════════════
+           TAB TITLE
+        ══════════════════════════════════════════════ */
+        .tab-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: var(--teal);
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tab-title::before { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--teal)); }
+        .tab-title::after  { content: ''; flex: 1; height: 1px; background: linear-gradient(270deg, transparent, var(--teal)); }
+        .tab-title-icon {
+            width: 34px; height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            border: 1px solid;
+        }
+        .tab-title-icon.rose   { background: var(--rose-soft);  color: var(--rose);  border-color: var(--rose-border); }
+        .tab-title-icon.teal   { background: var(--teal-soft);  color: var(--teal);  border-color: var(--teal-border); }
+        .tab-title-icon.indigo { background: var(--teal-soft);  color: var(--teal);  border-color: var(--teal-border); }
+        .tab-title-icon.green  { background: var(--green-soft); color: var(--green); border-color: var(--green-border); }
+
+        /* ══════════════════════════════════════════════
+           FORM ELEMENTS
+        ══════════════════════════════════════════════ */
+        .field { margin-bottom: 13px; }
+        .field label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 5px;
+            font-family: 'Exo 2', sans-serif;
+        }
+        input[type="date"] {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1.0rem;
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 600;
+            color: var(--ink);
+            background: var(--teal-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+        }
+        [data-theme="dark"] input[type="date"] { color-scheme: dark; }
+        [data-theme="light"] input[type="date"] { color-scheme: light; }
+        input[type="date"]:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(0,210,255,0.10), 0 0 20px rgba(0,210,255,0.08);
+        }
+
+        /* ══════════════════════════════════════════════
+           BUTTONS
+        ══════════════════════════════════════════════ */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #005f7a, var(--teal), #00b8d4);
+            color: #020c18;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            box-shadow: 0 4px 22px rgba(0,210,255,0.28);
+            margin-bottom: 4px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 34px rgba(0,210,255,0.42); }
+        .btn-outline {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
             margin-top: 8px;
-            font-size: 14px;
-            color: #555;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .btn-outline:hover   { border-color: var(--teal); color: var(--teal); }
+        .btn-outline.rose    { border-color: var(--rose-border); color: var(--rose); }
+        .btn-outline.rose:hover  { background: var(--rose-soft); border-color: var(--rose); }
+        .btn-outline.purple  { border-color: var(--border); color: var(--muted); }
+        .btn-outline.purple:hover { border-color: var(--teal); color: var(--teal); }
+
+        /* ══════════════════════════════════════════════
+           RESULT GRID (Gestograma)
+        ══════════════════════════════════════════════ */
+        .result-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 13px 0 4px;
+            animation: fdn 0.4s ease;
+        }
+        .result-card {
+            border-radius: var(--radius-md);
+            padding: 13px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
         }
-        .hidden {
-            background-color: hsla(60, 100%, 48%, 0);           display: none;
-            text-align: center;
-            margin-top: 19px;
-            color: black;
-            border-radius: 16px;
-            border: 3px solid orange
+        .result-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 1px; opacity: 0.3;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
         }
-
-        /* Estilos para resultados */
-        #resultado {
-            background-color: #FFF0F5; /* Rosa tierno */
-            color: red; /* Rojo brillante */
-            padding: 3px;
-            font-size: 18px;
-            border: 2px solid red ;
-            border-radius: 16px;
-            margin: 7px 0;
-            box-shadow: 0 4px red;
+        .result-card.rose {
+            background: linear-gradient(135deg, rgba(255,45,122,0.13), rgba(255,45,122,0.05));
+            border: 1px solid var(--rose-border); color: var(--rose);
         }
-        #controlesPrenatales {
-            background-color: rgba(223, 236, 255, 0.37); /* Celeste tierno */
-            color: #0000ff; /* Azul brillante */
-            padding: 11px;
-            font-size: 17px;
-            border: 2px solid blue;
-            border-radius: 14px;
-            margin: 2px 0;
-            box-shadow: 0 5px blue;
+        .result-card.indigo {
+            background: linear-gradient(135deg, rgba(0,210,255,0.13), rgba(0,210,255,0.05));
+            border: 1px solid var(--teal-border); color: var(--teal);
         }
-        #seguimientosPromotor {
-            background-color: rgba(223, 245, 244, 0.56); /* Celeste tierno */
-            color: #0000ff; /* Azul brillante */
-            padding: 10px;
-            font-size: 17px;
-            border: 2px solid blue;
-            border-radius: 10px;
-            margin: 8px 0;
-            box-shadow: 0 4px blue;
-
+        .result-card-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em;
+            text-transform: uppercase; opacity: 0.75;
         }
-        #fechasSeguimiento {
-            background-color: rgba(223, 245, 244, 0.35); /* Celeste tierno */
-            color: #0000ff; /* Azul brillante */
-            padding: 10px;
-            border: 2px solid blue;
-            border-radius: 10px;
-            margin: 10px 0;
-            box-shadow: 0 4px blue;
-        }
-        #infoPuerperio {
-            background-color: #FFFFE0;
-            color: #ff0000;
-            padding: 4px;
-            font-size: 17px;
-            border: 2px solid red;
-            border-radius: 18px;
-            margin: 8px 0;
-            box-shadow: 0 4px red;
-       }
-        #fechaFinPuerperio {
-            background-color: #FFE4E1 ;
-            color: #FFFFE0; /* Rojo brillante */
-            padding: 4px;
-            font-size: 17px;
-            border: 2px solid red;
-            border-radius: 18px;
-            margin: 8px 0;
-            box-shadow: 0 4px red;
-        }
-        #fechasIVU,
-        #fechasVaginosis {
-            background-color: #fff9c4; /* Amarillo tierno */
-            color: #0000ff; /* Azul brillante */
-            padding: 10px;
-            border: 2px solid red;
-            border-radius: 10px;
-            margin: 10px 0;
-            box-shadow: 0 0 6px blue;
-        }
-        .btn-limpiar {
-            background-color: blueviolet; /* Rojo brillante */
-        }
-        .btn-protocolos,
-        .btn-lineamientos {
-            background-color: green; /* Azul brillante */
-
+        .result-card-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.08rem; font-weight: 700; line-height: 1.3; margin-top: 2px;
         }
 
+        /* ══════════════════════════════════════════════
+           PUERPERIO STATUS CARDS
+        ══════════════════════════════════════════════ */
+        .status-cards {
+            display: flex; flex-direction: column; gap: 8px;
+            margin: 11px 0 5px; animation: fdn 0.3s ease;
+        }
+        .status-card { border-radius: var(--radius-md); padding: 13px 15px; }
+        .status-card.rose {
+            background: linear-gradient(135deg, rgba(255,45,122,0.12), rgba(255,45,122,0.04));
+            border: 1px solid var(--rose-border);
+        }
+        .status-card.teal {
+            background: linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,229,160,0.04));
+            border: 1px solid var(--green-border);
+        }
+        .status-card-eyebrow {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.57rem; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; margin-bottom: 7px;
+        }
+        .status-card.rose .status-card-eyebrow { color: var(--rose); }
+        .status-card.teal .status-card-eyebrow { color: var(--green); }
+        .status-card-main { font-size: 0.96rem; font-weight: 700; line-height: 1.5; }
+        .status-card.rose .status-card-main { color: #ff7aaa; }
+        .status-card.teal .status-card-main { font-family: 'Orbitron', monospace; font-size: 0.9rem; color: var(--green); }
+        .status-card-sub { font-size: 0.84rem; font-weight: 600; margin-top: 3px; color: rgba(255,45,122,0.7); }
+        .num-highlight { font-family: 'Orbitron', monospace; font-size: 1.2rem; font-weight: 700; color: var(--rose); }
+        .status-card.teal .num-highlight { color: var(--green); }
+
+        /* ══════════════════════════════════════════════
+           TIMELINE LIST
+        ══════════════════════════════════════════════ */
+        .timeline { list-style: none; padding: 0; margin: 6px 0 0; }
+        .timeline-header {
+            background: linear-gradient(135deg, var(--teal-soft), rgba(0,210,255,0.04));
+            border: 1px solid var(--teal-border);
+            border-radius: var(--radius-sm);
+            padding: 8px 13px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--teal);
+            margin-bottom: 6px; text-align: center;
+        }
+        .timeline li {
+            background: var(--surface2);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-left: 3px solid var(--teal);
+            border-radius: var(--radius-sm);
+            padding: 9px 13px; margin-bottom: 6px;
+            font-size: 0.82rem; color: var(--muted);
+            display: flex; align-items: flex-start; gap: 7px; line-height: 1.45;
+        }
+        .timeline li::before { content: '▸'; font-size: 0.72rem; color: var(--teal); margin-top: 1px; flex-shrink: 0; }
+        .timeline li strong { color: var(--teal); font-weight: 700; }
+        .timeline li .date-val {
+            color: var(--date-color);
+            font-weight: 700;
+            background: var(--date-bg);
+            padding: 1px 7px;
+            border-radius: 5px;
+            font-size: 0.83rem;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        .timeline.indigo li              { border-left-color: var(--teal); }
+        .timeline.indigo li::before      { color: var(--teal); }
+        .timeline.indigo li strong       { color: var(--teal); }
+        .timeline.indigo li .date-val    { color: var(--date-color); background: var(--date-bg); }
+        .timeline.green li               { border-left-color: var(--green); }
+        .timeline.green li::before       { color: var(--green); }
+        .timeline.green li strong        { color: var(--green); }
+        .timeline.green li .date-val     { color: var(--date-color); background: var(--date-bg); }
+        .timeline.rose li                { border-left-color: var(--rose); }
+        .timeline.rose li::before        { color: var(--rose); }
+        .timeline.rose li strong         { color: var(--rose); }
+        .timeline.rose li .date-val      { color: var(--date-color); background: var(--date-bg); }
+
+        /* ══════════════════════════════════════════════
+           ACCORDION
+        ══════════════════════════════════════════════ */
+        .accordion-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; padding: 12px 15px; margin-top: 9px;
+            border-radius: var(--radius-md);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em;
+            cursor: pointer; transition: all 0.22s ease; border: 1px solid;
+        }
+        .accordion-btn .ac-left { display: flex; align-items: center; gap: 8px; }
+        .accordion-btn .ac-arrow { font-size: 0.68rem; transition: transform 0.25s ease; }
+        .accordion-btn.open .ac-arrow { transform: rotate(180deg); }
+
+        .accordion-btn.indigo-acc {
+            background: linear-gradient(135deg, rgba(0,210,255,0.10), rgba(0,210,255,0.04));
+            border-color: var(--teal-border); color: var(--teal);
+        }
+        .accordion-btn.indigo-acc:hover { background: rgba(0,210,255,0.15); box-shadow: 0 4px 16px rgba(0,210,255,0.12); }
+        .accordion-btn.green-acc {
+            background: linear-gradient(135deg, rgba(0,229,160,0.10), rgba(0,229,160,0.04));
+            border-color: var(--green-border); color: var(--green);
+        }
+        .accordion-btn.green-acc:hover { background: rgba(0,229,160,0.15); box-shadow: 0 4px 16px rgba(0,229,160,0.12); }
+        .accordion-btn:not(.indigo-acc):not(.green-acc) {
+            background: var(--surface2); border-color: var(--border); color: var(--muted);
+        }
+        .accordion-btn:not(.indigo-acc):not(.green-acc):hover { border-color: var(--teal); color: var(--teal); }
+
+        .accordion-panel { overflow: hidden; max-height: 0; transition: max-height 0.4s ease; }
+        .accordion-panel.open { max-height: 5000px; }
+
+        /* ══════════════════════════════════════════════
+           NOTE BOX
+        ══════════════════════════════════════════════ */
+        .note-box {
+            background: linear-gradient(135deg, var(--amber-soft), rgba(255,213,79,0.03));
+            border: 1px dashed var(--amber-border);
+            border-radius: var(--radius-md);
+            padding: 11px 13px;
+            font-size: 0.78rem; color: var(--amber); font-weight: 600; line-height: 1.6;
+            margin: 11px 0; display: flex; gap: 8px; align-items: flex-start;
+        }
+        .note-box i { margin-top: 2px; flex-shrink: 0; }
+
+        /* ══════════════════════════════════════════════
+           INFO PANEL
+        ══════════════════════════════════════════════ */
+        .info-panel {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px; margin-top: 9px;
+            font-size: 0.82rem; line-height: 1.7;
+            color: var(--ink2); text-align: left;
+        }
+        .info-panel h1 {
+            font-family: 'Orbitron', monospace; font-size: 1.0rem; font-weight: 700;
+            color: var(--rose); margin: 10px 0 5px; letter-spacing: 0.04em;
+        }
+        .info-panel h2 {
+            font-family: 'Orbitron', monospace; font-size: 0.7rem; font-weight: 700;
+            color: var(--teal); margin: 12px 0 5px; letter-spacing: 0.1em;
+            text-transform: uppercase; border-bottom: 1px solid var(--teal-border); padding-bottom: 3px;
+        }
+        .info-panel h3 {
+            font-size: 0.78rem; font-weight: 700; color: var(--amber);
+            margin: 8px 0 3px; text-transform: uppercase; letter-spacing: 0.07em;
+        }
+        .info-panel h4 {
+            font-size: 0.78rem; font-weight: 700; color: var(--green); margin: 7px 0 3px;
+        }
+        .info-panel p { margin-bottom: 5px; }
+        .info-panel ul { padding-left: 16px; margin-bottom: 7px; }
+        .info-panel ul li { margin-bottom: 3px; }
+        .info-panel .danger-list { color: #ff7090; font-weight: 600; }
+        .info-panel .safe-list   { color: #5ee8b4; font-weight: 600; }
+        .info-panel .divider {
+            text-align: center; color: rgba(0,210,255,0.3);
+            letter-spacing: 8px; margin: 12px 0; font-size: 0.68rem;
+        }
+
+        /* ══════════════════════════════════════════════
+           SEPARATOR
+        ══════════════════════════════════════════════ */
+        .sep { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 13px 0; }
+        .sep:not(:empty) {
+            height: auto;
+            display: flex; align-items: center; gap: 10px; margin: 13px 0;
+            color: rgba(0,210,255,0.35); font-size: 0.65rem; letter-spacing: 0.1em;
+            text-transform: uppercase; font-family: 'Orbitron', monospace;
+        }
+        .sep:not(:empty)::before, .sep:not(:empty)::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        /* ══════════════════════════════════════════════
+           ACTION ROW
+        ══════════════════════════════════════════════ */
+        .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 9px; }
+
+        /* ══════════════════════════════════════════════
+           FOOTER
+        ══════════════════════════════════════════════ */
+        .card-footer {
+            background: linear-gradient(135deg, rgba(0,210,255,0.07), rgba(255,45,122,0.05));
+            border-top: 1px solid var(--border);
+            padding: 14px 18px; text-align: center;
+        }
+        .card-footer p { font-size: 0.72rem; color: var(--muted); line-height: 1.7; }
+        .card-footer strong {
+            font-family: 'Orbitron', monospace; font-size: 0.68rem;
+            font-weight: 700; letter-spacing: 0.1em; color: var(--teal);
+        }
+
+        /* ══════════════════════════════════════════════
+           UTILITIES
+        ══════════════════════════════════════════════ */
+        .hidden { display: none !important; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 2px; }
+
+        @media (max-width: 380px) {
+            .menu-grid   { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: 1fr; }
+            .action-row  { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
-<div class="header-text">
-    <h2>Salud Comunitaria El Salvador</h2>
-    <h3>"Herramienta de Apoyo para una salud Materna Integral"</h3>
-</div>
-<div class="container">
-    <button onclick="window.location.href='index.html'" style="background: red; color: white; padding: 10px; border-radius: 5px; margin: 10px; border: none; cursor: pointer;">
-    <i class="fas fa-arrow-left"></i> Volver a Vigilancia Materna
-</button>
+<body>
 
-    
-    <h2 id="menuTitle">Componente Materno</h2>
-    <div id="menuButtons">
-        <button onclick="openTab('Calculadora')"><strong>Gestograma Digital- Controles Prenatales</strong></button>
+    <!-- THEME TOGGLE -->
+    <button class="theme-toggle" onclick="cycleTheme()" id="themeToggle" aria-label="Cambiar tema">
+        <span class="toggle-icon" id="themeIcon">☀️</span>
+        <span id="themeLabel">Claro</span>
+        <span class="theme-auto-badge" id="autoBadge">AUTO</span>
+    </button>
 
-        <button onclick="openTab('IVU')"><strong>Seguimiento a IVU Embarazadas</strong></button>
-        <button onclick="openTab('Vaginosis')"><strong>Seguimiento a Vaginosis</strong></button>
-        <button onclick="openTab('Seguimiento')"><strong>Seguimiento de Puerperio</strong></button>
-    </div>
-    <div id="Calculadora" class="tabcontent">
-        <h3>Gestograma Digital</h3>
-        <label for="fechaUltimaRegla"><strong>Fecha de Última Regla:</strong></label>
-        <input type="date" id="fechaUltimaRegla" required>
-        <label for="fechaActual"><strong>Fecha Actual:</strong></label>
-        <input type="date" id="fechaActual" required>
-        <button onclick="calcularFecha()">Calcular</button>
-        <div id="resultado"></div>
-
-        <p id="controlesLabel" class="hidden"><strong>Controles Prenatales en Unidad de Salud</strong></p>
-        <div id="controlesPrenatales" class="hidden"></div>
-
-        <p id="seguimientosLabel" class="hidden"><strong>Seguimientos por Promotor de Salud</strong></p>
-        <div id="seguimientosPromotor" class="hidden"></div>
-
-        <strong id="nota" class="hidden" style="color: blue;">Nota: Estos Cálculos son solo referencia, tomar en cuenta que apartir de la fecha de detección Comunitaria hay que darle seguimientos a la embarazada cada mes hasta las 36 semanas y luego deben ser cada semana hasta el parto</strong>
-
-        <button class="btn-protocolos" onclick="mostrarProtocolos()">Protocolos de Asistencia</button>
-        <div id="protocolos" class="hidden" style="text-align: center;">
-            <h4>Protocolos de asistencia para los periodos preconcepcional, prenatal, parto, puerperio, a la persona recién nacida y lactancia materna en situación de bajo riesgo en Primer Nivel de Atención (Año 2022)(Fragmento) </h4>
-            <h4>2.3 ATENCIONES PRENATALES Y SEMANAS DE GESTACIÓN</h4>
-            <p>1. *Inscripción antes de las primeras doce semanas de gestación.</p>
-            <p>2. *Primer control a las 20 semanas de gestación.</p>
-            <p>3. *Segundo control a las 26 semanas de gestación.</p>
-            <p>4. *Tercer control a las 30 semanas de gestación.</p>
-            <p>5. *Cuarto control a las 34 semanas de gestación.</p>
-            <p>6. *Quinto control a las 36 semanas de gestación.</p>
-            <p>7. *Sexto control a las 38 semanas de gestación.</p>
-            <p>8. *Al cumplir 40 semanas de gestación, la mujer en etapa de embarazo debe ser referida al hospital que corresponda, en el cual un especialista en Ginecología y Obstetricia realizará pruebas de bienestar fetal y evaluación completa.</p>
-            <p>9. *Al cumplir las 41 semanas de gestación, la mujer en etapa de embarazo debe ser referida al hospital para ingreso.</p>
-            <h3>Ultrasonografías durante el Embarazo</h3>
-            <p>*Debe indicarse en la primera consulta para fechar el embarazo, es fundamental recalcar la importancia de la ultrasonografía antes de las 12 semanas, ya que con esa se puede obtener una edad gestacional confiable.</p>
-            <p><u>Primera Ultrasonografía:</u> Entre las 11-14 semanas para obtener una edad gestacional confiable.</p>
-            <p><u>Segunda Ultrasonografía:</u> Entre las 20-24 semanas.</p>
-            <p><u>Tercera Ultrasonografía:</u> Entre las 32-34 semanas.</p>
-            <h3>Exámenes de Laboratorio</h3>
-            <p><u>-Primer Perfil:</u> Se indica en la Inscripción Prenatal antes de las 12 semanas (Indicar exámenes de laboratorio, Hemograma completo: VIH, PRS, EGO, EGH, glicemia en ayunas, tipeo sanguíneo y citar a la mujer embarazada en consulta de seguimiento para reporte y análisis de exámenes una semana después del primer control prenatal)</p>
-            <p><u>-Segundo Perfil:</u> Segundo Control Prenatal a las 26 semanas de gestación (Hemograma completo: EGO, VIH, PRS, Glicemia en ayunas, Test de O'Sullivan)</p>
-            <p><u>-Tercer Perfil:</u> Quinto Control Prenatal a las 36 semanas de gestación (Hemograma completo, EGO, VIH, PRS, Glicemia en ayunas)</p>
-            <p>**Indicar Tipeo Rh a la pareja de aquella mujer embarazada con tipeo Rh negativo. Indicar profilaxis con gammaglobulina hiperinmune anti-O a mujeres si el tipeo Rh de la pareja es positivo, a las 28 semanas de gestación.**</p>
-            <h2>*****************</h2>
-            <h2>Detección de signos de Alarma de la Emabarazada</h2>
-            <h3>Preguntar:</h3>
-            <ul>
-                <li>¿Presenta pérdida momentánea de la visión, ve luces o borroso?</li>
-                <li>¿Tiene o ha tenido dolor de cabeza fuerte e intenso?</li>
-                <li>¿Presenta sangramiento o secreción vaginal?</li>
-                <li>¿Presenta dolor en la «boca» del estómago?</li>
-                <li>¿Tiene fiebre o escalofrío?</li>
-                <li>¿Ha notado que el bebé se mueve menos de lo usual?</li>
-            </ul>
-
-            <h3>Preguntar y observar:</h3>
-            <ul>
-                <li>¿Presenta inflamación en cara o manos (o ambas)?</li>
-                <li>¿Presenta alguna situación de violencia?</li>
-            </ul>
-
-            <h3>Observar:</h3>
-            <ul>
-                <li>¿Presenta convulsiones o ataques?</li>
-                <li>¿Se encuentra letárgica o inconsciente?</li>
-            </ul>
-
-            <h2>Embarazada con signo de peligro grave</h2>
-            <ul style="color:red">
-                <li>Convulsiones o ataques.</li>
-                <li>Está inconsciente.</li>
-                <li>Pérdida momentánea de la visión, ve luces o borroso.</li>
-                <li>Dolor de cabeza fuerte e intenso.</li>
-                <li>Tiene salida de sangre o agua por la vagina.</li>
-                <li>Dolor en la boca del estómago.</li>
-                <li>Fiebre o escalofrío.</li>
-                <li>Movimientos fetales disminuidos.</li>
-                <li>Dolores o inicio de trabajo de parto antes de la fecha esperada.</li>
-                <li>Si tiene 40 o más semanas de embarazo.</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul style="color:red">
-                <li>Referir urgentemente al hospital, acompañarla para garantizar la atención durante el traslado hasta ser recibida en el hospital.</li>
-                <li>Explicar a la paciente y sus familiares la necesidad de referirla urgentemente al hospital.</li>
-                <li>Buscar ayuda comunitaria o de familiares.</li>
-                <li>Entregar la referencia que presentará en el hospital.</li>
-                <li>Informar a la UCSF sobre la situación de la embarazada que ha sido referida.</li>
-                <li>Realizar visita domiciliar de seguimiento 24 horas posteriores a la referencia.</li>
-            </ul>
-
-            <h2>Embarazada con factor de riesgo</h2>
-            <ul>
-                <li>Signos de depresión.</li>
-                <li>Hallazgos de situación de violencia.</li>
-                <li>Sin control prenatal o faltista.</li>
-                <li>Aumento brusco de peso (más de 2 kg en el mes).</li>
-                <li>Presencia de infecciones vaginales o de la cavidad oral.</li>
-                <li>Ardor y dolor al orinar.</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Referir a la UCSF correspondiente.</li>
-                <li>Dar seguimiento a la referencia a las 72 horas para verificar cumplimiento.</li>
-                <li>Dar seguimiento a la situación de salud según sea el caso.</li>
-            </ul>
-
-            <h2>Sin signos Aparentes de Peligro</h2>
-            <ul>
-                <li style="color:green">No presenta signos de peligro o factor de riesgo evidente.</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul style="color:green">
-                <li>Brindar consejería en:</li>
-                <li>Identificación de signos y síntomas de complicación del embarazo.</li>
-                <li>Importancia de control prenatal y parto hospitalario.</li>
-                <li>Importancia de cuidados básicos, alimentación y micronutrientes, lactancia materna exclusiva, salud bucal.</li>
-                <li>Verificar suministro y consumo de los suplementos: hierro, ácido fólico y multivitaminas según norma.</li>
-                <li>Dar seguimiento al plan de parto.</li>
-            </ul>
-
-            <h2>Conclusión</h2>
-            <p style="color:red">Es fundamental que las mujeres embarazadas estén atentas a estos signos de alarma y busquen atención médica si experimentan alguno de ellos. La salud de la madre y el bebé es lo más importante.</p>
-            <p><strong>Ministerio de Salud El Salvador</strong></p>
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="header-eyebrow">
+            🇸🇻 &nbsp;MINSAL · Promotor de Salud
         </div>
-        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
-        <button onclick="goBack()">Volver al Menú Principal</button>
+        <h1>SALUD<br>MATERNA</h1>
+        <p class="subtitle">"Herramienta de Apoyo para una Salud Materna Integral"</p>
+        <div class="header-rule"><span></span><i class="fas fa-heartbeat"></i><span></span></div>
     </div>
 
-    <div id="Seguimiento" class="tabcontent">
-        <h3>Seguimiento de Puerperio</h3>
-        <label for="fechaParto"><strong>Fecha de Parto:</strong></label>
-        <input type="date" id="fechaParto" required>
-        <button onclick="calcularFechasPuerperio()">Calcular Fechas de Seguimiento</button>
+    <!-- MAIN CARD -->
+    <div class="container">
 
-        <ul id="fechasSeguimiento"></ul>
+        <!-- VOLVER -->
+        <button class="btn-back" onclick="window.location.href='index.html'">
+            <i class="fas fa-arrow-left"></i> Volver a Vigilancia Materna
+        </button>
 
-        <div id="infoPuerperio"></div>
-        <div id="fechaFinPuerperio"></div> <!-- Aquí se mostrará la fecha de finalización -->
-        <button class="btn-lineamientos" onclick="mostrarLineamientos()">Lineamientos Técnicos</button>
-        <div id="lineamientos" class="hidden" style="text-align: center;">
-            <h3>Lineamientos técnicos para promotores y supervisores de salud comunitaria en las Redes Integrales e Integradas de Salud</h3>
-            <p></p><strong>Línea de acción 2: Atención integral en salud a la persona en el curso de vida.</strong>
-            <p><strong>2.2: Atención a grupos priorizados: mujeres en edad fértil, a la madre durante el embarazo, parto y post parto.</strong>
-            <h4>Atención a la madre durante el periodo post parto:</h4>
-            <p>* Realizar visita de detección de puérperas, en las <u>primeras 24 horas del parto,</u> si éste ha ocurrido en la comunidad, o en las <u>primeras 24 horas de su regreso del hospital,</u> evaluar su condición de salud, a través de la búsqueda de signos de peligro, y su referencia a la UCSF.(Anexo 12 y Anexo No.16)</p>
-            <p>* Verificar la condición de salud y búsqueda de signos de peligro en la madre y referirla oportunamente si el caso lo amerita; brindar consejería sobre cuidados básicos de ambos, de acuerdo a la normativa vigente, en las <u>primeras 24 horas si el parto</u> ha sido comunitario o en las <u>24 horas después del regreso del hospital.</u></p>
-            <p>* Realizar cuatro seguimientos a las madres puérperas; <u>a los tres, siete, quince, veintiocho días,</u> para verificar la condición de salud y buscar signos de peligro, su referencia y su seguimiento en forma oportuna, brindar consejería en métodos de anticocepción y la importancia de realizar la toma de citología cérvico vaginal a los cuarenta días a la madre para prevenir cáncer de cérvix.</p>
-            <p>* Referir a toda puérpera detectada a la UCSF en los <u>primeros siete días,</u> para el control médico y la inscripción del recién nacido.(anexo 16)</p>
-            <p>* Referir a la puérpera a los <u>cuarenta días</u> para realizar el examen de citología cérvico vaginal e inscripción para uso de métodos de anticoncepción y dar seguimiento a la referencia, para verificar su cumplimiento.(anexo 16)</p>
-            <p>* Desarrollar acciones educativas que fortalezcan los conocimientos sobre derechos sexuales y derechos reproductivos, prevención de violencia de género, así como dar seguimiento al ejercicio de los mismos.</p>
-            <p>* Educar a la comunidad sobre la importancia de espacios educativos orientados a reforzar el vínculo madre-hija(o), como herramientas para prevenir trastornos mentales y del comportamiento.</p>
-            <h2>****************</h2>
-            <h2>Signos de Alarma de la Madre Puérpera y el Recién Nacido</h2>
-            <h3>Evaluar</h3>
-            <h3>Preguntar:</h3>
-            <ul>
-                <li>¿Presenta o ha presentado sangramiento vaginal mayor que una regla?</li>
-                <li>¿Presenta fiebre o escalofrío?</li>
-                <li>¿Presenta dolor continuo del vientre?</li>
-                <li>¿Presenta flujo vaginal con mal olor?</li>
-                <li>¿Presenta ardor y dolor para orinar?</li>
-                <li>¿Presenta salida de cualquier líquido por la herida después de una cesárea o episiotomía?</li>
-                <li>Presencia de algún signo o síntoma de enfermedad en mamas: inflamación, dolor, enrojecimiento, sensibilidad, induración, acompañadas o no de sangre o pus por los pezones.</li>
-            </ul>
-
-            <h3>Observe</h3>
-            <p>Presenta convulsiones o ataques</p>
-            <p>Pregunte y observe:</p>
-            <ul>
-                <li>Estado de tristeza, quiere solo llorar, sentimientos de decepción, ansiedad</li>
-                <li>Indague situación de violencia.</li>
-            </ul>
-
-            <h2>Madre puérpera con signos de peligro Grave</h2>
-            <h3>Con la presencia de uno de los siguientes signos y síntomas de complicación:</h3>
-            <ul style="color:red">
-                <li>Convulsiones o está inconsciente.</li>
-                <li>Sangramiento vaginal mayor que una regla.</li>
-                <li>Fiebre o escalofríos</li>
-                <li>Pérdida momentánea de la visión, ve luces o borroso</li>
-                <li>Flujo vaginal con mal olor.</li>
-                <li>Salida de cualquier líquido por la herida después de una cesárea o episiotomía.</li>
-                <li>Herida abierta (dehiscencia) de la episiotomía o de la cesárea</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul style="color:red">
-                <li>Referir urgentemente al hospital, acompañarla para garantizar la atención durante el traslado hasta ser recibida en el hospital.</li>
-                <li>Explique a ella y a sus familiares la necesidad de referirla urgentemente al hospital.</li>
-                <li>Buscar ayuda comunitaria o de familiares.</li>
-                <li>Entregue la referencia que presentará en el hospital.</li>
-                <li>Informar a la UCSF sobre la situación de la puérpera que ha sido referida.</li>
-                <li>Realizar visita domiciliar de seguimiento a las 24 horas posterior a la referencia.</li>
-            </ul>
-
-            <h2>Madre puérpera con factor de riesgo</h2>
-            <ul>
-                <li>Ardor o dolor al orinar.</li>
-                <li>Algún signo de depresión: tristeza, ansiedad, insomnio</li>
-                <li>Mamas con inflamación, dolor, salida de secreción purulenta</li>
-                <li>Situación de violencia</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Referir a la UCSF correspondiente.</li>
-                <li>Informar a la UCSF sobre la situación de la puérpera que ha sido referida.</li>
-                <li>Verificar cumplimiento de la referencia a las 24 horas.</li>
-                <li>Dar seguimiento y reforzar el cumplimiento de las indicaciones proporcionadas en la UCSF.</li>
-            </ul>
-
-            <h2>Sin aparente Signo de Peligro</h2>
-            <p>No presenta signo de peligro o factor de riesgo evidente.</p>
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Brindar consejería en: la aparición de signos y síntomas de complicación en el puerperio y consulta oportuna.</li>
-                <li>Cuidados básicos de salud y nutrición.</li>
-                <li>Asistir al control puerperal en la UCSF antes de los 7 días y a los 40 días después del parto.</li>
-                <li>Importancia de uso de métodos anticonceptivos y dar seguimiento hasta la adopción de un método, priorizando los temporales de larga duración.</li>
-                <li>Importancia del consumo de micronutrientes.</li>
-                <li>Reforzar la técnica correcta de amamantamiento.</li>
-            </ul>
-
-            <h2>Signos de Alarma del Recién Nacido</h2>
-            <h3>Preguntar:</h3>
-            <ul>
-                <li>¿Presenta quejidos o llanto continuo (más de lo normal)?</li>
-                <li>¿Ha presentado ataques (convulsiones)?</li>
-                <li>¿Presenta abombamiento de las fontanelas (mollera)?</li>
-                <li>¿Presenta las fontanelas hundidas?</li>
-                <li>¿Ha presentado fiebre o ha estado muy frío?</li>
-                <li>¿Ha presentado alguna dificultad para alimentarse (toma bien el pecho)?</li>
-                <li>¿Ha orinado en las últimas 24 horas?</li>
-                <li>¿Ha presentado diarrea?</li>
-                <li>¿Presenta heces con sangre?</li>
-                <li>¿Lo nota menos activo (letárgico)?</li>
-                <li>¿Ha presentado secreción con pus en los ojos?</li>
-                <li>¿Ha presentado vómitos?</li>
-                <li>Verificar si la temperatura es menor de 36.5°C o arriba de 37.5°C.</li>
-                <li>Número de respiraciones en un minuto.</li>
-                <li>¿Está amarillo más abajo del ombligo (ictérico)?</li>
-                <li>Presenta cianosis (morado).</li>
-                <li>Si se observa pálido.</li>
-                <li>Si el ombligo está rojo, supura, está sangrando o tiene mal olor.</li>
-                <li>¿Si tiene ronchas con pus en la piel?</li>
-                <li>¿Se le ha aplicado la vacuna BCG?</li>
-                <li>¿Pesa menos de 2,500 gramos?</li>
-            </ul>
-
-            <h2>Enfermedad muy grave</h2>
-            <h3>Si el niño o niña presenta cualquiera de los siguientes signos o condiciones:</h3>
-            <ul>
-                <li>Quejumbroso, llanto continuo.</li>
-                <li>Convulsiones o ataques.</li>
-                <li>Fontanelas abombadas o hundidas.</li>
-                <li>Fiebre (temperatura por arriba de 37.5 °C).</li>
-                <li>Hipotermia (temperatura por debajo de 36.5°C).</li>
-                <li>Poco activo o sin respuesta a los estímulos.</li>
-                <li>Presenta cianosis (cambio de coloración en piel o se torna morado).</li>
-                <li>Palidez.</li>
-                <li>Dificultad para realizar la succión.</li>
-                <li>Diarrea.</li>
-                <li>Heces con sangre.</li>
-                <li>Vómitos.</li>
-                <li>Respiración rápida (60 o más por minuto).</li>
-                <li>Está amarillo por abajo del nivel del ombligo.</li>
-                <li>Ombligo con pus, sangra o tiene mal olor.</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Referir urgentemente al hospital y acompañar para garantizar la atención durante el traslado hasta ser recibido en el hospital.</li>
-                <li>Solicite ayuda al coordinador de la UCSF para la incorporación al traslado de un recurso con mayor experticia, y además que notifique al hospital de su llegada.</li>
-                <li>Explicar a la madre la importancia de llevar al hospital y el riesgo grave de morir de la niña o niño, si no lo lleva al hospital. Calme sus temores.</li>
-                <li>Explicar a la madre que mantenga al recién nacido abrigado en el trayecto al hospital, por ejemplo, colocándolo en contacto piel a piel, contra su cuerpo, debe ponerle cuturina, gorro y calcetines, cubriéndolo con una frazada si no está febril.</li>
-                <li>En caso que tenga fiebre, no sobre abrigarlo. No utilizar medios físicos, paños húmedos o bañarlo para disminuir la fiebre.</li>
-                <li>Si el estado del niño o niña lo permite, aconseje a la madre que continúe dándole lactancia materna en el camino mientras llega al hospital.</li>
-                <li>Realizar visita de seguimiento 2 días posteriores a la referencia para indagar sobre la evolución del niño/a en el hospital y estar pendiente de su regreso a casa para seguimiento al retorno.</li>
-            </ul>
-
-            <h2>Recién nacido con riesgo</h2>
-            <ul>
-                <li>No ha sido inscrito en control de crecimiento y desarrollo en la UCSF.</li>
-                <li>No tiene vacuna BCG.</li>
-                <li>Si está amarillo (ictérico) hasta el ombligo.</li>
-                <li>Ojos con secreción purulenta y sin edema (hinchazón) en los párpados.</li>
-                <li>Ombligo enrojecido.</li>
-                <li>Ronchas en la piel.</li>
-                <li>Pesa menos de 2,500 gramos.</li>
-            </ul>
-
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Referirlo a la UCSF para inscribirlo en control de crecimiento y desarrollo si no ha sido inscrito, o para la atención por morbilidad según corresponda.</li>
-                <li>Referirlo a la UCSF para administrar vacuna BCG.</li>
-                <li>Orientar a la madre sobre signos de peligro y cuidados básicos del recién nacido.</li>
-                <li>Dar seguimiento dos días después al cumplimiento de la referencia.</li>
-                <li>Informar sobre la referencia al coordinador/a del equipo comunitario que le corresponde.</li>
-                <li>No olvidar los registros correspondientes a las acciones realizadas y el llenado completo y correcto de la referencia.</li>
-                <li>Revisar indicaciones dadas en el hospital o en la UCSF y si aún no ha sido inscrito, referirlo a la UCSF para su inscripción de crecimiento y desarrollo.</li>
-                <li>Orientar a la madre sobre la importancia de alimentación con seno materno por lo menos cada 2 o 3 horas (de día y de noche).</li>
-                <li>Visitar cada semana para control de peso y verificar ganancia hasta que alcance un peso superior a los 2,500 gramos.</li>
-                <li>En cada visita verificar que no haya signos de peligro y reforzar los cuidados básicos del recién nacido.</li>
-            </ul>
-
-            <h2>Recién nacido sin signos de peligro</h2>
-            <h3>Niña o niño sin la presencia de signos de peligro ni de riesgo.</h3>
-            <h3>¿Qué hacer?</h3>
-            <ul>
-                <li>Orientar y recomendar a la madre o responsable de los siguientes cuidados básicos del recién nacido:</li>
-                <li>Lavarse las manos con agua y jabón, antes de tocar al niño o niña.</li>
-                <li>Dar lactancia materna exclusiva.</li>
-                <li>Curar el ombligo 2 veces al día con alcohol al 70% hasta que se le “caiga” el ombligo.</li>
-                <li>No utilizar fajero y mantener el ombligo fuera del pañal para evitar que se moje.</li>
-                <li>Aseo diario.</li>
-                <li>Baños de sol durante 10 minutos (antes de las 9:00 a.m.).</li>
-                <li>Mantener abrigado al niño o niña de acuerdo al clima.</li>
-                <li>No darle ningún medicamento si no es indicado por el médico.</li>
-                <li>Referir a la UCSF correspondiente para inscripción en el control de crecimiento y desarrollo en los primeros 7 días.</li>
-                <li>Dar consejería sobre la identificación de signos de peligro y cuando buscar ayuda médica.</li>
-                <li>Orientar para que cumpla las indicaciones dadas al alta del hospital.</li>
-            </ul>
-
-            <p><strong>Ministerio de Salud El Salvador</strong></p>
+        <!-- MENÚ PRINCIPAL -->
+        <div id="menuSection">
+            <div class="menu-header">
+                <h2>Componente Materno</h2>
+                <p>Selecciona un módulo de cálculo</p>
+            </div>
+            <div class="menu-grid">
+                <button class="menu-card card-rose" onclick="openTab('Calculadora')">
+                    <span class="card-icon">🤰</span>
+                    <span class="card-label"><b>Gestograma</b><br>Controles Prenatales</span>
+                </button>
+                <button class="menu-card card-indigo" onclick="openTab('IVU')">
+                    <span class="card-icon">🔬</span>
+                    <span class="card-label"><b>IVU</b><br>Seguimiento Embarazadas</span>
+                </button>
+                <button class="menu-card card-teal" onclick="openTab('Vaginosis')">
+                    <span class="card-icon">🧬</span>
+                    <span class="card-label"><b>Vaginosis</b><br>Seguimiento</span>
+                </button>
+                <button class="menu-card card-green" onclick="openTab('Seguimiento')">
+                    <span class="card-icon">👶</span>
+                    <span class="card-label"><b>Puerperio</b><br>Seguimiento</span>
+                </button>
+            </div>
         </div>
-        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
-        <button onclick="goBack()">Volver al Menú Principal</button>
-    </div>
 
-    <div id="IVU" class="tabcontent">
-        <h3>Seguimiento a IVU (Infecciones de Vías Urinarias en Embarazadas)</h3>
-        <label for="fechaIVU"><strong>Fecha de Inicio de Tratamiento:</strong></label>
-        <input type="date" id="fechaIVU" required>
-        <button onclick="calcularFechasIVU()">Calcular Fechas de Seguimiento</button>
+        <!-- ══════════════════════════════════════════ -->
+        <!-- TAB: GESTOGRAMA                           -->
+        <!-- ══════════════════════════════════════════ -->
+        <div id="Calculadora" class="tabcontent">
+            <div class="tab-title">
+                <div class="tab-title-icon rose">🤰</div>
+                Gestograma Digital
+            </div>
 
-        <ul id="fechasIVU"></ul>
+            <div class="field">
+                <label for="fechaUltimaRegla"><i class="fas fa-calendar-alt"></i> Fecha de Última Regla (FUR)</label>
+                <input type="date" id="fechaUltimaRegla" required>
+            </div>
+            <div class="field">
+                <label for="fechaActual"><i class="fas fa-calendar-day"></i> Fecha Actual</label>
+                <input type="date" id="fechaActual" required>
+            </div>
 
-        <button class="btn-info-IVU" onclick="mostrarinfoIVU()">Información sobre IVU</button>
-        <div id="infoIVU" class="hidden" style="text-align: center;">
-            <h4>Informacion sobre IVU en periodo de gestacion o embarazo</h4>
-            <h1>Infecciones de Vías Urinarias (IVU)</h1>
-            <p>Las infecciones de vías urinarias son infecciones que pueden afectar cualquier parte del sistema urinario, incluyendo los riñones, uréteres, vejiga y uretra.</p>
+            <button class="btn btn-primary" onclick="calcularFecha()">
+                <i class="fas fa-calculator"></i> Calcular Gestograma
+            </button>
 
-            <h2>Tipos de IVU</h2>
-            <ul>
-                <li><strong>Cistitis:</strong> Infección de la vejiga.</li>
-                <li><strong>Pielonefritis:</strong> Infección de los riñones.</li>
-                <li><strong>Uretritis:</strong> Infección de la uretra.</li>
-            </ul>
+            <!-- Resultados -->
+            <div id="resultadoGrid" class="result-grid hidden">
+                <div class="result-card rose">
+                    <div class="result-card-label">📅 Fecha est. de parto</div>
+                    <div class="result-card-value" id="valorFechaParto">—</div>
+                </div>
+                <div class="result-card indigo">
+                    <div class="result-card-label">🤰 Semanas de embarazo</div>
+                    <div class="result-card-value" id="valorSemanas">—</div>
+                </div>
+            </div>
 
-            <h2>Factores de Riesgo en Mujeres Embarazadas</h2>
-            <p>Durante el embarazo, las mujeres son más susceptibles a las IVU debido a varios factores:</p>
-            <ul>
-                <li>Cambios hormonales que afectan el tracto urinario.</li>
-                <li>Presión del útero en crecimiento sobre la vejiga.</li>
-                <li>Alteraciones en el flujo urinario.</li>
-            </ul>
+            <!-- Acordeón: Controles Prenatales -->
+            <button id="btnControles" class="accordion-btn indigo-acc hidden" onclick="toggleAcordeon('panelControles','btnControles')">
+                <span class="ac-left"><i class="fas fa-clinic-medical"></i> Controles Prenatales — Unidad de Salud</span>
+                <span class="ac-arrow">▼</span>
+            </button>
+            <div id="panelControles" class="accordion-panel">
+                <div id="controlesPrenatales" style="padding-top:6px;"></div>
+            </div>
 
-            <h2>Síntomas</h2>
-            <p>Los síntomas de una IVU pueden incluir:</p>
-            <ul>
-                <li>Urgencia y frecuencia urinaria.</li>
-                <li>Dolor o ardor al orinar.</li>
-                <li>Orina turbia o con mal olor.</li>
-                <li>Dolor en la parte baja del abdomen.</li>
-            </ul>
+            <!-- Acordeón: Seguimientos Promotor -->
+            <button id="btnSeguimientos" class="accordion-btn green-acc hidden" onclick="toggleAcordeon('panelSeguimientos','btnSeguimientos')">
+                <span class="ac-left"><i class="fas fa-walking"></i> Seguimientos por Promotor de Salud</span>
+                <span class="ac-arrow">▼</span>
+            </button>
+            <div id="panelSeguimientos" class="accordion-panel">
+                <div id="seguimientosPromotor" style="padding-top:6px;"></div>
+            </div>
 
-            <h2>Consecuencias para la Mujer Embarazada</h2>
-            <p>Si no se tratan adecuadamente, las IVU pueden llevar a complicaciones serias, como:</p>
-            <ul>
-                <li>Infección renal (pielonefritis).</li>
-                <li>Parto prematuro.</li>
-                <li>Bajo peso al nacer.</li>
-            </ul>
+            <div id="nota" class="note-box hidden">
+                <i class="fas fa-info-circle"></i>
+                <span><strong>Nota:</strong> Estos cálculos son solo referencia. A partir de la detección comunitaria dar seguimiento mensual hasta las 36 semanas, luego semanal hasta el parto.</span>
+            </div>
 
-            <h2>Prevención</h2>
-            <p>Para prevenir las IVU durante el embarazo, se recomienda:</p>
-            <ul>
-                <li>Beber suficiente agua.</li>
-                <li>Orinar con frecuencia y no retener la orina.</li>
-                <li>Practicar buena higiene personal.</li>
-                <li>Evitar productos irritantes como duchas vaginales.</li>
-            </ul>
+            <div class="sep">Protocolos</div>
 
-            <h2>Conclusión</h2>
-            <p>Las infecciones de vías urinarias son comunes durante el embarazo, pero con la atención adecuada y medidas preventivas, se pueden manejar efectivamente.</p>
+            <button class="btn btn-outline" onclick="mostrarProtocolos()">
+                <i class="fas fa-book-medical"></i> Protocolos de Asistencia
+            </button>
+            <div id="protocolos" class="info-panel hidden">
+                <h4>Protocolos de asistencia — Primer Nivel de Atención (2022)</h4>
+                <h2>2.3 Atenciones Prenatales y Semanas de Gestación</h2>
+                <p>1. Inscripción antes de las primeras doce semanas de gestación.</p>
+                <p>2. Primer control a las 20 semanas de gestación.</p>
+                <p>3. Segundo control a las 26 semanas de gestación.</p>
+                <p>4. Tercer control a las 30 semanas de gestación.</p>
+                <p>5. Cuarto control a las 34 semanas de gestación.</p>
+                <p>6. Quinto control a las 36 semanas de gestación.</p>
+                <p>7. Sexto control a las 38 semanas de gestación.</p>
+                <p>8. Al cumplir 40 semanas, referir al hospital para pruebas de bienestar fetal.</p>
+                <p>9. A las 41 semanas, referir al hospital para ingreso.</p>
+
+                <h2>Ultrasonografías durante el Embarazo</h2>
+                <p><strong>Primera:</strong> Entre las 11–14 semanas.</p>
+                <p><strong>Segunda:</strong> Entre las 20–24 semanas.</p>
+                <p><strong>Tercera:</strong> Entre las 32–34 semanas.</p>
+
+                <h2>Exámenes de Laboratorio</h2>
+                <p><strong>Primer Perfil</strong> (&lt;12 sem.): Hemograma, VIH, PRS, EGO, EGH, glicemia, tipeo sanguíneo.</p>
+                <p><strong>Segundo Perfil</strong> (26 sem.): Hemograma, EGO, VIH, PRS, glicemia, Test de O'Sullivan.</p>
+                <p><strong>Tercer Perfil</strong> (36 sem.): Hemograma, EGO, VIH, PRS, glicemia.</p>
+
+                <div class="divider">✦ ✦ ✦</div>
+
+                <h2>Signos de Alarma de la Embarazada</h2>
+                <h3>Preguntar:</h3>
+                <ul>
+                    <li>¿Pérdida momentánea de visión, ve luces o borroso?</li>
+                    <li>¿Dolor de cabeza fuerte e intenso?</li>
+                    <li>¿Sangramiento o secreción vaginal?</li>
+                    <li>¿Dolor en la «boca» del estómago?</li>
+                    <li>¿Fiebre o escalofrío?</li>
+                    <li>¿El bebé se mueve menos de lo usual?</li>
+                </ul>
+                <h3>Preguntar y Observar:</h3>
+                <ul>
+                    <li>¿Inflamación en cara o manos?</li>
+                    <li>¿Situación de violencia?</li>
+                </ul>
+                <h3>Observar:</h3>
+                <ul>
+                    <li>¿Convulsiones o ataques?</li>
+                    <li>¿Se encuentra letárgica o inconsciente?</li>
+                </ul>
+
+                <h2>Embarazada con Signo de Peligro Grave</h2>
+                <ul class="danger-list">
+                    <li>Convulsiones o ataques.</li>
+                    <li>Está inconsciente.</li>
+                    <li>Pérdida momentánea de visión, ve luces o borroso.</li>
+                    <li>Dolor de cabeza fuerte e intenso.</li>
+                    <li>Salida de sangre o agua por la vagina.</li>
+                    <li>Dolor en la boca del estómago.</li>
+                    <li>Fiebre o escalofrío.</li>
+                    <li>Movimientos fetales disminuidos.</li>
+                    <li>Dolores de parto antes de la fecha esperada.</li>
+                    <li>40 o más semanas de embarazo.</li>
+                </ul>
+                <h3>¿Qué Hacer?</h3>
+                <ul class="danger-list">
+                    <li>Referir urgentemente al hospital.</li>
+                    <li>Explicar la necesidad de referencia urgente.</li>
+                    <li>Buscar ayuda comunitaria o familiar.</li>
+                    <li>Entregar la referencia.</li>
+                    <li>Informar a la UCSF.</li>
+                    <li>Visita domiciliar 24 horas posteriores.</li>
+                </ul>
+
+                <h2>Embarazada con Factor de Riesgo</h2>
+                <ul>
+                    <li>Signos de depresión o violencia.</li>
+                    <li>Sin control prenatal o faltista.</li>
+                    <li>Aumento brusco de peso (&gt;2 kg al mes).</li>
+                    <li>Infecciones vaginales o cavidad oral.</li>
+                    <li>Ardor y dolor al orinar.</li>
+                </ul>
+                <h3>¿Qué Hacer?</h3>
+                <ul>
+                    <li>Referir a la UCSF.</li>
+                    <li>Dar seguimiento a las 72 horas.</li>
+                </ul>
+
+                <h2>Sin Signos Aparentes de Peligro</h2>
+                <ul class="safe-list">
+                    <li>Brindar consejería sobre signos de complicación.</li>
+                    <li>Importancia del control prenatal y parto hospitalario.</li>
+                    <li>Cuidados básicos, alimentación, micronutrientes, lactancia.</li>
+                    <li>Verificar suplementos: hierro, ácido fólico, multivitaminas.</li>
+                    <li>Dar seguimiento al plan de parto.</li>
+                </ul>
+                <p><strong>Ministerio de Salud El Salvador</strong></p>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-outline rose" onclick="reiniciar()">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+                <button class="btn btn-outline purple" onclick="goBack()">
+                    <i class="fas fa-home"></i> Menú Principal
+                </button>
+            </div>
         </div>
-        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
 
-        <button onclick="goBack()">Volver al Menú Principal</button>
-    </div>
+        <!-- ══════════════════════════════════════════ -->
+        <!-- TAB: PUERPERIO                            -->
+        <!-- ══════════════════════════════════════════ -->
+        <div id="Seguimiento" class="tabcontent">
+            <div class="tab-title">
+                <div class="tab-title-icon green">👶</div>
+                Seguimiento de Puerperio
+            </div>
 
+            <div class="field">
+                <label for="fechaParto"><i class="fas fa-baby"></i> Fecha de Parto</label>
+                <input type="date" id="fechaParto" required>
+            </div>
 
-    <div id="Vaginosis" class="tabcontent">
-        <h3>Seguimiento a Vaginosis en Embarazadas</h3>
-        <label for="fechaVaginosis"><strong>Fecha de Inicio de Tratamiento:</strong></label>
-        <input type="date" id="fechaVaginosis" required>
-        <button onclick="calcularFechasVaginosis()">Calcular Fechas de Seguimiento</button>
+            <button class="btn btn-primary" onclick="calcularFechasPuerperio()">
+                <i class="fas fa-calendar-check"></i> Calcular Fechas de Seguimiento
+            </button>
 
-        <ul id="fechasVaginosis"></ul>
+            <div id="puerperioStatus" class="status-cards hidden"></div>
+            <ul id="fechasSeguimiento" class="timeline"></ul>
 
-        <button class="btn-info-vaginosis" onclick="mostrarinfoVaginosis()">Información sobre Vaginosis</button>
-        <div id="infoVaginosis" class="hidden" style="text-align: center;">
-            <h4>Informacion sobre Vaginosis en periodo Gestacional o embarazo</h4>
-            <h1>Vaginosis Bacteriana</h1>
-            <p>La vaginosis bacteriana es una condición común que afecta a muchas mujeres, caracterizada por un desequilibrio en las bacterias que normalmente están presentes en la vagina.</p>
+            <div class="sep">Lineamientos</div>
 
-            <h2>Causas</h2>
-            <p>La vaginosis bacteriana ocurre cuando hay un crecimiento excesivo de ciertas bacterias en la vagina, desplazando a las bacterias "buenas" (lactobacilos). Algunos factores que pueden contribuir a este desequilibrio incluyen:</p>
-            <ul>
-                <li>Cambios hormonales.</li>
-                <li>Uso de duchas vaginales.</li>
-                <li>Nuevos o múltiples compañeros sexuales.</li>
-                <li>Uso de antibióticos que alteran la flora vaginal.</li>
-            </ul>
+            <button class="btn btn-outline" onclick="mostrarLineamientos()">
+                <i class="fas fa-file-medical-alt"></i> Lineamientos Técnicos
+            </button>
+            <div id="lineamientos" class="info-panel hidden">
+                <h4>Lineamientos técnicos para promotores de salud comunitaria</h4>
+                <h2>Atención a la Madre durante el Post Parto</h2>
+                <ul>
+                    <li>Visita de detección en las primeras 24 horas del parto o del regreso del hospital; evaluar signos de peligro y referir a la UCSF.</li>
+                    <li>Visita a los 3 días del parto: evaluar condición de salud de la madre e hijo/a.</li>
+                    <li>Visita a los 7 días del parto.</li>
+                    <li>Visita a los 15 días del parto.</li>
+                    <li>Visita a los 28 días del parto.</li>
+                </ul>
 
-            <h2>Síntomas</h2>
-            <p>Los síntomas de la vaginosis bacteriana pueden incluir:</p>
-            <ul>
-                <li>Flujo vaginal anormal que puede ser gris o blanco.</li>
-                <li>Mal olor vaginal, especialmente después de relaciones sexuales.</li>
-                <li>Picazón o irritación vaginal (menos común).</li>
-            </ul>
+                <h2>Signos de Peligro en la Puérpera</h2>
+                <ul class="danger-list">
+                    <li>Sangrado vaginal abundante (más de una toalla higiénica por hora).</li>
+                    <li>Fiebre (&gt;38°C) o escalofríos.</li>
+                    <li>Dolor intenso en el abdomen.</li>
+                    <li>Secreción vaginal con mal olor.</li>
+                    <li>Dificultad para respirar o dolor en el pecho.</li>
+                    <li>Convulsiones.</li>
+                    <li>Pérdida de conciencia.</li>
+                    <li>Dolor, enrojecimiento o hinchazón en una pierna.</li>
+                </ul>
+                <h3>¿Qué Hacer?</h3>
+                <ul class="danger-list">
+                    <li>Referir urgentemente al hospital.</li>
+                    <li>Informar a la UCSF sobre la situación.</li>
+                    <li>Visita de seguimiento 24 horas después.</li>
+                </ul>
 
-            <h2>Diagnóstico</h2>
-            <p>El diagnóstico de vaginosis se realiza generalmente a través de:</p>
-            <ul>
-                <li>Examen físico y revisión de síntomas.</li>
-                <li>Pruebas de pH vaginal.</li>
-                <li>Análisis del flujo vaginal bajo un microscopio.</li>
-            </ul>
+                <h2>Señales de Peligro del Recién Nacido</h2>
+                <ul class="danger-list">
+                    <li>No puede mamar o succionar.</li>
+                    <li>Vomita todo.</li>
+                    <li>Ha tenido convulsiones.</li>
+                    <li>Está letárgico o inconsciente.</li>
+                    <li>Dificultad para respirar.</li>
+                    <li>Fiebre (&gt;37.5°C) o está muy frío (&lt;35.5°C).</li>
+                    <li>Ombligo con pus, enrojecido o con mal olor.</li>
+                    <li>Ictericia hasta la planta de los pies.</li>
+                    <li>Ojos con secreción y edema en párpados.</li>
+                </ul>
+                <h3>¿Qué Hacer?</h3>
+                <ul class="danger-list">
+                    <li>Referir urgentemente al hospital.</li>
+                    <li>Si está frío, abrigar y mantener pegado al cuerpo de la madre.</li>
+                    <li>Continuar lactancia en el camino si es posible.</li>
+                    <li>Visita de seguimiento 2 días posteriores.</li>
+                </ul>
 
-            <h2>Tratamiento</h2>
-            <p>El tratamiento para la vaginosis bacteriana puede incluir:</p>
-            <ul>
-                <li>Antibióticos orales o tópicos (como metronidazol o clindamicina).</li>
-                <li>Evitar duchas vaginales y productos irritantes.</li>
-            </ul>
+                <h2>Recién Nacido con Riesgo</h2>
+                <ul>
+                    <li>No inscrito en control de crecimiento y desarrollo.</li>
+                    <li>Sin vacuna BCG.</li>
+                    <li>Ictericia hasta el ombligo.</li>
+                    <li>Ojos con secreción sin edema.</li>
+                    <li>Ombligo enrojecido.</li>
+                    <li>Ronchas en la piel.</li>
+                    <li>Pesa menos de 2,500 gramos.</li>
+                </ul>
 
-            <h2>Complicaciones</h2>
-            <p>Si no se trata, la vaginosis puede llevar a:</p>
-            <ul>
-                <li>Aumento del riesgo de infecciones de transmisión sexual (ITS).</li>
-                <li>Complicaciones durante el embarazo, como parto prematuro o bajo peso al nacer.</li>
-            </ul>
+                <h2>Recién Nacido sin Signos de Peligro</h2>
+                <ul class="safe-list">
+                    <li>Lavarse manos antes de tocar al niño/a.</li>
+                    <li>Lactancia materna exclusiva.</li>
+                    <li>Curar ombligo 2×/día con alcohol 70% hasta que se caiga.</li>
+                    <li>No usar fajero; ombligo fuera del pañal.</li>
+                    <li>Aseo diario. Baños de sol 10 min antes de las 9 a.m.</li>
+                    <li>Inscribir en control CyD en los primeros 7 días.</li>
+                </ul>
+                <p><strong>Ministerio de Salud El Salvador</strong></p>
+            </div>
 
-            <h2>Prevención</h2>
-            <p>Para prevenir la vaginosis bacteriana, se recomienda:</p>
-            <ul>
-                <li>Mantener una buena higiene vaginal.</li>
-                <li>Usar preservativos para reducir el riesgo de ITS.</li>
-                <li>Evitar duchas vaginales y productos perfumados.</li>
-            </ul>
-
-            <h2>Conclusión</h2>
-            <p>La vaginosis bacteriana es una condición tratable y común. Si experimentas síntomas o tienes preocupaciones, es importante consultar a un profesional de la salud para un diagnóstico y tratamiento adecuados.</p>
+            <div class="action-row">
+                <button class="btn btn-outline rose" onclick="reiniciar()">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+                <button class="btn btn-outline purple" onclick="goBack()">
+                    <i class="fas fa-home"></i> Menú Principal
+                </button>
+            </div>
         </div>
-        <button class="btn-limpiar" onclick="reiniciar()"><i class="fas fa-trash"></i> Limpiar</button>
 
-        <button onclick="goBack()">Volver al Menú Principal</button>
-    </div>
+        <!-- ══════════════════════════════════════════ -->
+        <!-- TAB: IVU                                  -->
+        <!-- ══════════════════════════════════════════ -->
+        <div id="IVU" class="tabcontent">
+            <div class="tab-title">
+                <div class="tab-title-icon indigo">🔬</div>
+                Seguimiento IVU en Embarazadas
+            </div>
 
-    <div class="footer-text">
-        <p>Creada por: Moisés Labor</p>
-        <p>Salud Comunitaria, Cantón Las Piletas, Distrito de Coatepeque, Santa Ana Este</p>
-    </div>
+            <div class="field">
+                <label for="fechaIVU"><i class="fas fa-calendar-plus"></i> Fecha de Inicio de Tratamiento</label>
+                <input type="date" id="fechaIVU" required>
+            </div>
+
+            <button class="btn btn-primary" onclick="calcularFechasIVU()">
+                <i class="fas fa-calendar-check"></i> Calcular Fechas de Seguimiento
+            </button>
+
+            <ul id="fechasIVU" class="timeline indigo"></ul>
+
+            <div class="sep">Información</div>
+
+            <button class="btn btn-outline" onclick="mostrarinfoIVU()">
+                <i class="fas fa-info-circle"></i> Información sobre IVU
+            </button>
+            <div id="infoIVU" class="info-panel hidden">
+                <h4>IVU en periodo de gestación o embarazo</h4>
+                <h1>Infecciones de Vías Urinarias</h1>
+                <p>Las IVU pueden afectar cualquier parte del sistema urinario: riñones, uréteres, vejiga y uretra.</p>
+
+                <h2>Tipos de IVU</h2>
+                <ul>
+                    <li><strong>Cistitis:</strong> Infección de la vejiga.</li>
+                    <li><strong>Pielonefritis:</strong> Infección de los riñones.</li>
+                    <li><strong>Uretritis:</strong> Infección de la uretra.</li>
+                </ul>
+
+                <h2>Factores de Riesgo en el Embarazo</h2>
+                <ul>
+                    <li>Cambios hormonales que afectan el tracto urinario.</li>
+                    <li>Presión del útero en crecimiento sobre la vejiga.</li>
+                    <li>Alteraciones en el flujo urinario.</li>
+                </ul>
+
+                <h2>Síntomas</h2>
+                <ul>
+                    <li>Urgencia y frecuencia urinaria.</li>
+                    <li>Dolor o ardor al orinar.</li>
+                    <li>Orina turbia o con mal olor.</li>
+                    <li>Dolor en la parte baja del abdomen.</li>
+                </ul>
+
+                <h2>Consecuencias para la Embarazada</h2>
+                <ul class="danger-list">
+                    <li>Pielonefritis (infección renal).</li>
+                    <li>Parto prematuro.</li>
+                    <li>Bajo peso al nacer.</li>
+                </ul>
+
+                <h2>Prevención</h2>
+                <ul class="safe-list">
+                    <li>Beber suficiente agua.</li>
+                    <li>Orinar con frecuencia; no retener la orina.</li>
+                    <li>Buena higiene personal.</li>
+                    <li>Evitar duchas vaginales y productos irritantes.</li>
+                </ul>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-outline rose" onclick="reiniciar()">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+                <button class="btn btn-outline purple" onclick="goBack()">
+                    <i class="fas fa-home"></i> Menú Principal
+                </button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- TAB: VAGINOSIS                            -->
+        <!-- ══════════════════════════════════════════ -->
+        <div id="Vaginosis" class="tabcontent">
+            <div class="tab-title">
+                <div class="tab-title-icon teal">🧬</div>
+                Seguimiento Vaginosis en Embarazadas
+            </div>
+
+            <div class="field">
+                <label for="fechaVaginosis"><i class="fas fa-calendar-plus"></i> Fecha de Inicio de Tratamiento</label>
+                <input type="date" id="fechaVaginosis" required>
+            </div>
+
+            <button class="btn btn-primary" onclick="calcularFechasVaginosis()">
+                <i class="fas fa-calendar-check"></i> Calcular Fechas de Seguimiento
+            </button>
+
+            <ul id="fechasVaginosis" class="timeline"></ul>
+
+            <div class="sep">Información</div>
+
+            <button class="btn btn-outline" onclick="mostrarinfoVaginosis()">
+                <i class="fas fa-info-circle"></i> Información sobre Vaginosis
+            </button>
+            <div id="infoVaginosis" class="info-panel hidden">
+                <h4>Vaginosis en periodo gestacional o embarazo</h4>
+                <h1>Vaginosis Bacteriana</h1>
+                <p>Condición común por desequilibrio en las bacterias vaginales (crecimiento excesivo desplaza lactobacilos).</p>
+
+                <h2>Factores Contribuyentes</h2>
+                <ul>
+                    <li>Cambios hormonales.</li>
+                    <li>Uso de duchas vaginales.</li>
+                    <li>Nuevos o múltiples compañeros sexuales.</li>
+                    <li>Antibióticos que alteran la flora vaginal.</li>
+                </ul>
+
+                <h2>Síntomas</h2>
+                <ul>
+                    <li>Flujo vaginal anormal (gris o blanco).</li>
+                    <li>Mal olor vaginal, especialmente post-relaciones.</li>
+                    <li>Picazón o irritación (menos común).</li>
+                </ul>
+
+                <h2>Diagnóstico</h2>
+                <ul>
+                    <li>Examen físico y síntomas.</li>
+                    <li>Pruebas de pH vaginal.</li>
+                    <li>Análisis de flujo bajo microscopio.</li>
+                </ul>
+
+                <h2>Tratamiento</h2>
+                <ul>
+                    <li>Antibióticos orales o tópicos (metronidazol o clindamicina).</li>
+                    <li>Evitar duchas vaginales y productos irritantes.</li>
+                </ul>
+
+                <h2>Complicaciones</h2>
+                <ul class="danger-list">
+                    <li>Mayor riesgo de ITS.</li>
+                    <li>Parto prematuro o bajo peso al nacer.</li>
+                </ul>
+
+                <h2>Prevención</h2>
+                <ul class="safe-list">
+                    <li>Buena higiene vaginal.</li>
+                    <li>Usar preservativos.</li>
+                    <li>Evitar duchas vaginales y productos perfumados.</li>
+                </ul>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-outline rose" onclick="reiniciar()">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+                <button class="btn btn-outline purple" onclick="goBack()">
+                    <i class="fas fa-home"></i> Menú Principal
+                </button>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="card-footer">
+            <p><strong>MOISÉS LABOR · PROMOTOR DE SALUD</strong></p>
+            <p>Salud Comunitaria · Cantón Las Piletas · Distrito de Coatepeque · Santa Ana</p>
+        </div>
+
+    </div><!-- /container -->
 
     <script>
-        function openTab(tabName) {
-            document.getElementById('menuButtons').style.display = 'none'; // Ocultar menú principal
-            document.getElementById('menuTitle').style.display = 'none'; // Ocultar título del menú
-            var tabcontent = document.getElementsByClassName("tabcontent");
-            for (var i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
+        /* ══════════════════════════════
+           TEMA: AUTO / CLARO / OSCURO
+        ══════════════════════════════ */
+        const THEMES = ['auto', 'light', 'dark'];
+        let themeIndex = 0;
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function applyTheme(index) {
+            const t = THEMES[index];
+            const root = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            const badge = document.getElementById('autoBadge');
+
+            if (t === 'auto') {
+                root.setAttribute('data-theme', getSystemTheme());
+                icon.textContent = '🌗';
+                label.textContent = 'Auto';
+                badge.style.display = 'inline';
+            } else if (t === 'light') {
+                root.setAttribute('data-theme', 'light');
+                icon.textContent = '☀️';
+                label.textContent = 'Claro';
+                badge.style.display = 'none';
+            } else {
+                root.setAttribute('data-theme', 'dark');
+                icon.textContent = '🌙';
+                label.textContent = 'Oscuro';
+                badge.style.display = 'none';
             }
-            document.getElementById(tabName).style.display = "block";
+        }
+
+        function cycleTheme() {
+            themeIndex = (themeIndex + 1) % THEMES.length;
+            applyTheme(themeIndex);
+            localStorage.setItem('cm_theme_idx', themeIndex);
+        }
+
+        // Init theme
+        (function() {
+            const saved = localStorage.getItem('cm_theme_idx');
+            themeIndex = saved !== null ? parseInt(saved) : 0;
+            applyTheme(themeIndex);
+            // Watch system changes when auto
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (THEMES[themeIndex] === 'auto') applyTheme(themeIndex);
+            });
+        })();
+
+        /* ══════════════════════════════
+           NAVEGACIÓN
+        ══════════════════════════════ */
+        function openTab(tabName) {
+            document.getElementById('menuSection').classList.add('hidden');
+            document.querySelectorAll('.tabcontent').forEach(t => t.style.display = 'none');
+            document.getElementById(tabName).style.display = 'block';
         }
 
         function goBack() {
-            var tabcontent = document.getElementsByClassName("tabcontent");
-            for (var i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-            document.getElementById('menuButtons').style.display = 'block'; // Mostrar menú principal
-            document.getElementById('menuTitle').style.display = 'block'; // Mostrar título del menú
+            document.querySelectorAll('.tabcontent').forEach(t => t.style.display = 'none');
+            document.getElementById('menuSection').classList.remove('hidden');
         }
 
+        /* ══════════════════════════════
+           GESTOGRAMA DIGITAL (FUR)
+        ══════════════════════════════ */
         function calcularFecha() {
-        const fechaInput = document.getElementById('fechaUltimaRegla').value;
-        const fechaActualInput = document.getElementById('fechaActual').value;
+            const fechaInput       = document.getElementById('fechaUltimaRegla').value;
+            const fechaActualInput = document.getElementById('fechaActual').value;
 
-        if (!fechaInput || !fechaActualInput) {
-            document.getElementById('resultado').innerText = 'Por favor, selecciona ambas fechas.';
-            return;
+            if (!fechaInput || !fechaActualInput) {
+                alert('Por favor, selecciona ambas fechas.');
+                return;
+            }
+
+            const fechaUltimaRegla = new Date(fechaInput + 'T00:00:00-06:00');
+            const fechaActual      = new Date(fechaActualInput + 'T00:00:00-06:00');
+
+            const fechaParto280 = new Date(fechaUltimaRegla);
+            fechaParto280.setDate(fechaParto280.getDate() + 280);
+
+            const diferenciaDias = Math.floor((fechaActual - fechaUltimaRegla) / (1000 * 60 * 60 * 24));
+            const semanas = Math.floor(diferenciaDias / 7);
+            const dias    = diferenciaDias % 7;
+
+            document.getElementById('valorFechaParto').textContent =
+                fechaParto280.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
+            document.getElementById('valorSemanas').textContent =
+                semanas + ' sem. y ' + dias + ' días';
+            document.getElementById('resultadoGrid').classList.remove('hidden');
+
+            calcularControlesPrenatales(fechaUltimaRegla);
+            calcularSeguimientosPromotorReal(fechaUltimaRegla);
+
+            document.getElementById('btnControles').classList.remove('hidden');
+            document.getElementById('btnSeguimientos').classList.remove('hidden');
+            document.getElementById('nota').classList.remove('hidden');
         }
-
-        const fechaUltimaRegla = new Date(fechaInput + 'T00:00:00-06:00');
-        const fechaParto280 = new Date(fechaUltimaRegla);
-        fechaParto280.setDate(fechaParto280.getDate() + 280);
-        const fechaActual = new Date(fechaActualInput + 'T00:00:00-06:00');
-        const diferenciaDias = Math.floor((fechaActual - fechaUltimaRegla) / (1000 * 60 * 60 * 24));
-        const semanas = Math.floor(diferenciaDias / 7);
-        const dias = diferenciaDias % 7;
-
-        // Mostrar resultados
-        document.getElementById('resultado').innerHTML = `
-            <p class="fechaParto"><strong>Fecha estimada de parto:</strong> ${fechaParto280.toLocaleDateString()}</p>
-            <p><strong>Semanas de embarazo:</strong> ${semanas} semanas y ${dias} días.</p>
-        `;
-
-        // Calcular y mostrar controles prenatales
-        calcularControlesPrenatales(fechaUltimaRegla);
-        calcularSeguimientosPromotor(fechaUltimaRegla);
-
-        // Mostrar las secciones ocultas en orden
-        document.getElementById('controlesLabel').classList.remove('hidden');
-        document.getElementById('controlesPrenatales').classList.remove('hidden');
-        document.getElementById('seguimientosLabel').classList.remove('hidden');
-        document.getElementById('seguimientosPromotor').classList.remove('hidden');
-        document.getElementById('nota').classList.remove('hidden');
-    }
-
-
-
-    function calcularSeguimientosPromotor(fechaUltimaRegla) {
-        // Lógica para calcular y mostrar seguimientos por promotor
-        const seguimientos = "Ejemplo de seguimientos por promotor"; // Reemplaza con lógica real
-        document.getElementById('seguimientosPromotor').innerText = seguimientos;
-    }
-
 
         function calcularControlesPrenatales(fechaUltimaRegla) {
             const controles = [
-                { nombre: "Inscripción antes de las primeras doce semanas de gestación (fecha sugerida para efectos de cálculo).", semanas: 8 },
-                { nombre: "<p>Primer control a las 20 semanas de gestación.", semanas: 20 },
-                { nombre: "<p>Segundo control a las 26 semanas de gestación.", semanas: 26 },
-                { nombre: "<p>Tercer control a las 30 semanas de gestación.", semanas: 30 },
-                { nombre: "<p>Cuarto control a las 34 semanas de gestación.", semanas: 34 },
-                { nombre: "<p>Quinto control a las 36 semanas de gestación.", semanas: 36 },
-                { nombre: "<p>Sexto control a las 38 semanas de gestación.", semanas: 38 },
-                { nombre: "<p>Séptimo control a las 40 semanas de gestación.", semanas: 40 },
-                { nombre: "<p>Referido al hospital a las 41 semanas de gestación.", semanas: 41 }
+                { nombre: "Inscripción (sugerida semana 8)", semanas: 8 },
+                { nombre: "Primer control", semanas: 20 },
+                { nombre: "Segundo control", semanas: 26 },
+                { nombre: "Tercer control", semanas: 30 },
+                { nombre: "Cuarto control", semanas: 34 },
+                { nombre: "Quinto control", semanas: 36 },
+                { nombre: "Sexto control", semanas: 38 },
+                { nombre: "Séptimo control", semanas: 40 },
+                { nombre: "Referido al hospital", semanas: 41 }
             ];
-            let controlesHtml = '';
-            controles.forEach(control => {
-                const fechaControl = new Date(fechaUltimaRegla);
-                fechaControl.setDate(fechaControl.getDate() + (control.semanas * 7));
-
-                controlesHtml += `<div class="control-item">${control.nombre} - Fecha: ${fechaControl.toLocaleDateString()}</div>`;
+            const semanas_labels = [8,20,26,30,34,36,38,40,41];
+            let html = '<ul class="timeline indigo">';
+            controles.forEach((c, i) => {
+                const fecha = new Date(fechaUltimaRegla);
+                fecha.setDate(fecha.getDate() + (c.semanas * 7));
+                html += `<li><div><strong>${c.nombre}</strong> — sem. ${semanas_labels[i]}<br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div></li>`;
             });
-            document.getElementById('controlesPrenatales').innerHTML = controlesHtml;
+            html += '</ul>';
+            document.getElementById('controlesPrenatales').innerHTML = html;
         }
-        function calcularSeguimientosPromotor(fechaUltimaRegla) {
-            const seguimientosHtml = [];
-            const fechaControl = new Date(fechaUltimaRegla);
 
-            // Seguimientos cada 4 semanas hasta la semana 32
+        function calcularSeguimientosPromotorReal(fechaUltimaRegla) {
+            const fechaBase = new Date(fechaUltimaRegla);
+            let html = '<ul class="timeline green">';
+
             for (let semanas = 8; semanas <= 32; semanas += 4) {
-                const fechaSeguimiento = new Date(fechaControl);
-                fechaSeguimiento.setDate(fechaControl.getDate() + (semanas * 7));
-                seguimientosHtml.push(`<p>Seguimiento por Promotor de Salud a las ${semanas} semanas: ${fechaSeguimiento.toLocaleDateString()}</p>`);
+                const fecha = new Date(fechaBase);
+                fecha.setDate(fechaBase.getDate() + (semanas * 7));
+                html += `<li><div><strong>Visita por Promotor de Salud</strong> — sem. ${semanas}<br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div></li>`;
             }
-
-            // Seguimientos cada semana desde la semana 36 hasta la semana 40
             for (let semanas = 36; semanas <= 40; semanas++) {
-                const fechaSeguimiento = new Date(fechaControl);
-                fechaSeguimiento.setDate(fechaControl.getDate() + (semanas * 7));
-                seguimientosHtml.push(`<p>Seguimiento por Promotor de Salud a las ${semanas} semanas: ${fechaSeguimiento.toLocaleDateString()}</p>`) ;
+                const fecha = new Date(fechaBase);
+                fecha.setDate(fechaBase.getDate() + (semanas * 7));
+                html += `<li><div><strong>Visita por Promotor de Salud</strong> — sem. ${semanas}<br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div></li>`;
+            }
+            html += '</ul>';
+            document.getElementById('seguimientosPromotor').innerHTML = html;
+        }
+
+        /* ══════════════════════════════
+           PUERPERIO
+        ══════════════════════════════ */
+        function calcularFechasPuerperio() {
+            const fechaInput = document.getElementById('fechaParto').value;
+            if (!fechaInput) {
+                alert('Por favor, selecciona una fecha de parto.');
+                return;
             }
 
-            document.getElementById('seguimientosPromotor').innerHTML = seguimientosHtml.join('');
+            const fechaParto   = new Date(fechaInput + 'T00:00:00-06:00');
+            const hoy          = new Date();
+            const diasPostparto = Math.floor((hoy - fechaParto) / (1000 * 60 * 60 * 24));
+            const diasRestantes = 42 - diasPostparto;
+
+            const fechaFin = new Date(fechaParto);
+            fechaFin.setDate(fechaFin.getDate() + 42);
+
+            let statusHTML = '';
+            if (diasPostparto < 42) {
+                statusHTML = `
+                <div class="status-card rose">
+                    <div class="status-card-eyebrow">📋 Estado del Puerperio</div>
+                    <div class="status-card-main">
+                        📆 Días Postparto: <span class="num-highlight">${diasPostparto}</span> días
+                    </div>
+                    <div class="status-card-sub">
+                        ⏳ Días restantes: <span class="num-highlight">${diasRestantes}</span> días para finalizar
+                    </div>
+                </div>
+                <div class="status-card teal">
+                    <div class="status-card-eyebrow">🏁 Fin del Puerperio</div>
+                    <div class="status-card-main">
+                        ${fechaFin.toLocaleDateString('es-SV', {weekday:'long', day:'2-digit', month:'long', year:'numeric'})}
+                    </div>
+                </div>`;
+            } else {
+                statusHTML = `
+                <div class="status-card teal">
+                    <div class="status-card-eyebrow">✅ Estado del Puerperio</div>
+                    <div class="status-card-main">
+                        Puerperio finalizado hace <span class="num-highlight">${diasPostparto - 42}</span> días
+                    </div>
+                </div>`;
+            }
+
+            const statusDiv = document.getElementById('puerperioStatus');
+            statusDiv.innerHTML = statusHTML;
+            statusDiv.classList.remove('hidden');
+
+            // Lista de seguimientos
+            const lista = document.getElementById('fechasSeguimiento');
+            lista.innerHTML = '<li class="timeline-header">📅 Visitas de Seguimiento</li>';
+
+            const intervalos = [1, 3, 7, 15, 28];
+            const nombres = [
+                "Visita de detección — primeras 24 horas",
+                "Seguimiento a los 3 días",
+                "Seguimiento a los 7 días",
+                "Seguimiento a los 15 días",
+                "Seguimiento a los 28 días"
+            ];
+            intervalos.forEach((dias, i) => {
+                const fecha = new Date(fechaParto);
+                fecha.setDate(fechaParto.getDate() + dias);
+                const li = document.createElement('li');
+                li.innerHTML = `<div><strong>${nombres[i]}</strong><br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div>`;
+                lista.appendChild(li);
+            });
         }
 
-        function calcularFechasPuerperio() {
-        const fechaInput = document.getElementById('fechaParto').value;
-        if (!fechaInput) {
-            document.getElementById('fechasSeguimiento').innerHTML = '<li>Por favor, selecciona una fecha de parto.</li>';
-            return;
-        }
-        const fechaParto = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
-        const hoy = new Date();
-        const diasPostparto = Math.floor((hoy - fechaParto) / (1000 * 60 * 60 * 24));
-        const diasRestantesPuerperio = 42 - diasPostparto;
-
-        // Mostrar información del puerperio
-        const infoPuerperio = document.getElementById('infoPuerperio');
-        let infoHtml = '';
-
-        if (diasPostparto < 42) {
-            infoHtml += `<p style="color:red"><strong>Días Postparto:</strong> ${diasPostparto} días</p>`;
-            infoHtml += `<p style="color:red"><strong>Días restantes para finalizar el puerperio:</strong> ${diasRestantesPuerperio} días</p>`;
-        } else {
-            infoHtml += `<p style="color:red"><strong>Puerperio finalizado hace ${diasPostparto - 42} días</strong></p>`;
-        }
-        infoPuerperio.innerHTML = infoHtml;
-
-        // Calcular y mostrar fechas de seguimiento
-        const listaFechas = document.getElementById('fechasSeguimiento');
-        listaFechas.innerHTML = '';
-
-        const intervalos = [1, 3, 7, 15, 28];
-        const nombresSeguimiento = [
-            "<p>Visita de detección en las primeras 24 horas del parto",
-            "<p>Seguimiento a los 3 días",
-            "<p>Seguimiento a los 7 días",
-            "<p>Seguimiento a los 15 días",
-            "<p>Seguimiento a los 28 días"
-        ];
-
-        intervalos.forEach((dias, index) => {
-            const fechaSeguimiento = new Date(fechaParto);
-            fechaSeguimiento.setDate(fechaParto.getDate() + dias);
-            const li = document.createElement('li');
-            li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
-            listaFechas.appendChild(li);
-        });
-
-        // Calcular fecha de finalización del puerperio
-        const fechaFinPuerperio = new Date(fechaParto);
-        fechaFinPuerperio.setDate(fechaFinPuerperio.getDate() + 42); // 42 días de puerperio
-
-        // Mostrar fecha de finalización del puerperio
-        document.getElementById('fechaFinPuerperio').innerHTML = `<p style="color:black"><strong>Fecha de finalización del puerperio:</strong> ${fechaFinPuerperio.toLocaleDateString()}</p>`;
-
-        }
-
+        /* ══════════════════════════════
+           IVU
+        ══════════════════════════════ */
         function calcularFechasIVU() {
             const fechaInput = document.getElementById('fechaIVU').value;
             if (!fechaInput) {
-                document.getElementById('fechasIVU').innerHTML = '<li>Por favor, selecciona una fecha de inicio de tratamiento.</li>';
+                alert('Por favor, selecciona una fecha de inicio de tratamiento.');
                 return;
             }
-            const fechaIVU = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
-            const listaFechas = document.getElementById('fechasIVU');
-            listaFechas.innerHTML = '';
+            const fechaIVU = new Date(fechaInput + 'T00:00:00-06:00');
+            const lista    = document.getElementById('fechasIVU');
+            lista.innerHTML = '<li class="timeline-header">📅 Seguimiento IVU</li>';
 
-            const intervalos = [5, 10, 14]; // Intervalos de seguimiento
-            const nombresSeguimiento = [
-
-                "<p>Seguimiento en la comunidad por Promotor de Salud a los 5 días",
-                "<p>Consulta con Medico de Unidad de Salud a los 10 días",
-
-                "<p>Cita en Laboratorio de Unidad de Salud para Urocultivo a los 14 días si la infección persiste"
+            const intervalos = [5, 10, 14];
+            const nombres = [
+                "Seguimiento en comunidad por Promotor de Salud — 5 días",
+                "Consulta con Médico de Unidad de Salud — 10 días",
+                "Urocultivo en Laboratorio (si persiste infección) — 14 días"
             ];
-            intervalos.forEach((dias, index) => {
-                const fechaSeguimiento = new Date(fechaIVU);
-                fechaSeguimiento.setDate(fechaIVU.getDate() + dias);
+            intervalos.forEach((dias, i) => {
+                const fecha = new Date(fechaIVU);
+                fecha.setDate(fechaIVU.getDate() + dias);
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
-                listaFechas.appendChild(li);
+                li.innerHTML = `<div><strong>${nombres[i]}</strong><br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div>`;
+                lista.appendChild(li);
             });
         }
 
+        /* ══════════════════════════════
+           VAGINOSIS
+        ══════════════════════════════ */
         function calcularFechasVaginosis() {
             const fechaInput = document.getElementById('fechaVaginosis').value;
             if (!fechaInput) {
-                document.getElementById('fechasVaginosis').innerHTML = '<li>Por favor, selecciona una fecha de inicio de tratamiento.</li>';
+                alert('Por favor, selecciona una fecha de inicio de tratamiento.');
                 return;
             }
-            const fechaVaginosis = new Date(fechaInput + 'T00:00:00-06:00'); // Ajuste a UTC-6
-            const listaFechas = document.getElementById('fechasVaginosis');
-            listaFechas.innerHTML = '';
+            const fechaVaginosis = new Date(fechaInput + 'T00:00:00-06:00');
+            const lista          = document.getElementById('fechasVaginosis');
+            lista.innerHTML = '<li class="timeline-header">📅 Seguimiento Vaginosis</li>';
 
-            const intervalos = [4, 7]; // Intervalos de seguimiento
-            const nombresSeguimiento = [
-
-                "<p>Seguimiento en la comunidad por Promotor de Salud a los 4 días",
-                "<p>Consulta con médico de Unidad de Salud a los 7 días"
+            const intervalos = [4, 7];
+            const nombres = [
+                "Seguimiento en comunidad por Promotor de Salud — 4 días",
+                "Consulta con Médico de Unidad de Salud — 7 días"
             ];
-            intervalos.forEach((dias, index) => {
-                const fechaSeguimiento = new Date(fechaVaginosis);
-                fechaSeguimiento.setDate(fechaVaginosis.getDate() + dias);
+            intervalos.forEach((dias, i) => {
+                const fecha = new Date(fechaVaginosis);
+                fecha.setDate(fechaVaginosis.getDate() + dias);
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${nombresSeguimiento[index]}:</strong> <strong>${fechaSeguimiento.toLocaleDateString()}</strong>`;
-                listaFechas.appendChild(li);
-
+                li.innerHTML = `<div><strong>${nombres[i]}</strong><br><span class="date-val">${fecha.toLocaleDateString('es-SV', {day:'2-digit', month:'long', year:'numeric'})}</span></div>`;
+                lista.appendChild(li);
             });
         }
 
+        /* ══════════════════════════════
+           ACORDEÓN
+        ══════════════════════════════ */
+        function toggleAcordeon(panelId, btnId) {
+            const panel = document.getElementById(panelId);
+            const btn   = document.getElementById(btnId);
+            panel.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
+
+        /* ══════════════════════════════
+           LIMPIAR
+        ══════════════════════════════ */
         function reiniciar() {
+            // Gestograma
             document.getElementById('fechaUltimaRegla').value = '';
             document.getElementById('fechaActual').value = '';
-            document.getElementById('resultado').innerHTML = '';
-
-    document.getElementById('controlesLabel').classList.add('hidden');
-        document.getElementById('controlesPrenatales').classList.add('hidden');
-        document.getElementById('seguimientosLabel').classList.add('hidden');
-        document.getElementById('seguimientosPromotor').classList.add('hidden');
-        document.getElementById('nota').classList.add('hidden');
+            document.getElementById('resultadoGrid').classList.add('hidden');
+            document.getElementById('valorFechaParto').textContent = '—';
+            document.getElementById('valorSemanas').textContent = '—';
+            document.getElementById('btnControles').classList.add('hidden');
+            document.getElementById('btnSeguimientos').classList.add('hidden');
+            ['panelControles','panelSeguimientos'].forEach(id => {
+                document.getElementById(id).classList.remove('open');
+            });
+            ['btnControles','btnSeguimientos'].forEach(id => {
+                document.getElementById(id).classList.remove('open');
+            });
+            document.getElementById('nota').classList.add('hidden');
             document.getElementById('controlesPrenatales').innerHTML = '';
             document.getElementById('seguimientosPromotor').innerHTML = '';
+            // Puerperio
             document.getElementById('fechaParto').value = '';
             document.getElementById('fechasSeguimiento').innerHTML = '';
-            document.getElementById('infoPuerperio').innerHTML = '';
-            document.getElementById('fechaFinPuerperio').innerHTML = ''; // Limpiar la fecha de finalización
+            document.getElementById('puerperioStatus').innerHTML = '';
+            document.getElementById('puerperioStatus').classList.add('hidden');
+            // IVU
             document.getElementById('fechaIVU').value = '';
             document.getElementById('fechasIVU').innerHTML = '';
+            // Vaginosis
             document.getElementById('fechaVaginosis').value = '';
             document.getElementById('fechasVaginosis').innerHTML = '';
-            document.getElementById('protocolos').style.display = 'none';
-            document.getElementById('lineamientos').style.display = 'none';
-            document.getElementById('infoIVU').style.display = 'none';
-            document.getElementById('infoVaginosis').style.display = 'none';
-        }
-        function mostrarProtocolos() {
-            const protocolosDiv = document.getElementById('protocolos');
-            protocolosDiv.style.display = protocolosDiv.style.display === 'block' ? 'none' : 'block';
+            // Info panels
+            ['protocolos','lineamientos','infoIVU','infoVaginosis'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
         }
 
-        function mostrarLineamientos() {
-            const lineamientosDiv = document.getElementById('lineamientos');
-            lineamientosDiv.style.display = lineamientosDiv.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function mostrarinfoIVU() {
-            const infoIVUDiv = document.getElementById('infoIVU');
-            infoIVUDiv.style.display = infoIVUDiv.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function mostrarinfoVaginosis() {
-            const infoVaginosisDiv = document.getElementById('infoVaginosis');
-            infoVaginosisDiv.style.display = infoVaginosisDiv.style.display === 'block' ? 'none' : 'block';
-        }
-
+        /* ══════════════════════════════
+           TOGGLE PANELES INFO
+        ══════════════════════════════ */
+        function mostrarProtocolos()  { document.getElementById('protocolos').classList.toggle('hidden'); }
+        function mostrarLineamientos(){ document.getElementById('lineamientos').classList.toggle('hidden'); }
+        function mostrarinfoIVU()     { document.getElementById('infoIVU').classList.toggle('hidden'); }
+        function mostrarinfoVaginosis(){ document.getElementById('infoVaginosis').classList.toggle('hidden'); }
     </script>
-</div>
+</body>
 </html>
