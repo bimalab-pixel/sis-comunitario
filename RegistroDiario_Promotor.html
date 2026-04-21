@@ -537,6 +537,12 @@
         }
         .fullprev-topbar .fp-print:hover{filter:brightness(1.1)}
         .fullprev-topbar .fp-print svg{width:14px;height:14px}
+        .fullprev-topbar .fp-copy{
+          padding:.38rem .85rem;border-radius:7px;background:var(--navy2);
+          border:none;color:#fff;font-family:inherit;font-size:.78rem;
+          font-weight:700;cursor:pointer;transition:all .2s;
+        }
+        .fullprev-topbar .fp-copy:hover{filter:brightness(1.2)}
         .fullprev-iframe{flex:1;border:none;width:100%;background:#f5f5f5}
 
         /* Modal importar catálogo */
@@ -1853,6 +1859,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                 Imprimir
             </button>
+            <button class="fp-copy" onclick="copiarTabla()">📋 Copiar tabla</button>
             <button class="fp-close" onclick="cerrarFullPreview()">✕ Cerrar</button>
         </div>
         <iframe class="fullprev-iframe" id="fullprev-iframe"></iframe>
@@ -2572,26 +2579,49 @@
 
     // ── COPIAR TABLA (para pegar en Excel / Sheets) ──
     function copiarTabla() {
-      if (_previewLista.length === 0) { toast('Sin datos para copiar', 'error'); return; }
+      if (_previewLista.length === 0) { toast('⚠️ Sin datos para copiar', 'error'); return; }
       const cabecera = ['Fecha','Hora','No. Vivienda','Nombre','Edad','Hallazgos','Acciones Ejecutadas'];
       const filas = _previewLista.map(r => [
         fmtFecha(r.fecha), r.hora||'', r.vivienda||'', r.nombre||'',
         r.edad||'', (r.hallazgos||'').replace(/\n/g,' '), (r.acciones||'').replace(/\n/g,' ')
       ]);
-      // TSV = separado por tabs → pega directo en Excel/Sheets
       const tsv = [cabecera, ...filas].map(row => row.join('\t')).join('\n');
-      navigator.clipboard.writeText(tsv).then(() => {
+
+      function _doCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      }
+
+      function _onSuccess() {
+        toast('✅ Tabla copiada — pegá en Excel o Sheets con Ctrl+V', 'success');
         const btn = document.getElementById('btn-copy-tabla');
-        btn.className = 'copy-btn success';
-        btn.textContent = '✓ ¡Copiado!';
-        document.getElementById('copy-hint').textContent = 'Pega directamente en Excel o Google Sheets con Ctrl+V';
-        setTimeout(() => {
-          btn.className = 'copy-btn';
-          btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar tabla';
-        }, 3000);
-      }).catch(() => {
-        toast('⚠️ No se pudo copiar automáticamente', 'error');
-      });
+        if (btn) {
+          btn.className = 'copy-btn success';
+          btn.textContent = '✓ ¡Copiado!';
+          const hint = document.getElementById('copy-hint');
+          if (hint) hint.textContent = 'Pegá directamente en Excel o Google Sheets con Ctrl+V';
+          setTimeout(() => {
+            btn.className = 'copy-btn';
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar tabla';
+          }, 3000);
+        }
+      }
+
+      function _onFail() { toast('⚠️ No se pudo copiar', 'error'); }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tsv)
+          .then(_onSuccess)
+          .catch(() => { if (_doCopy(tsv)) _onSuccess(); else _onFail(); });
+      } else {
+        if (_doCopy(tsv)) _onSuccess(); else _onFail();
+      }
     }
 
     // ── COPIAR CSV ──
@@ -3224,6 +3254,7 @@
         titulo    = `Reporte Mensual: ${mesNombre(mes)} ${anio}`;
         _fullPreviewHTML = htmlReporteMensual(lista, mes, anio, subtitulo);
       }
+      _previewLista = lista;
       document.getElementById('fullprev-titulo').textContent = titulo;
       const iframe = document.getElementById('fullprev-iframe');
       iframe.srcdoc = _fullPreviewHTML;
