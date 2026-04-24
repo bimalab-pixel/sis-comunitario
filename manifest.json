@@ -1,6 +1,6 @@
 {
-  "name": "SIS Comunitario – Salud Integral Familiar",
-  "short_name": "SIS Comunitario",
+  "name": "WPA SIS Comunitario – Salud Integral Familiar",
+  "short_name": "WPA SIS Comunitario",
   "description": "Portal de aplicaciones de salud comunitaria MINSAL El Salvador",
   "start_url": "./index.html",
   "display": "standalone",
