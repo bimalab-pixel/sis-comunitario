@@ -1,0 +1,3186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Mapa Sanitario — Promotor de Salud</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════
+   VARIABLES & RESET
+═══════════════════════════════════════ */
+:root{
+  --ink:#0c1f18; --ink2:#1a3a2d; --forest:#0a5c3c; --teal:#0b8f6e;
+  --emerald:#00c48c; --sage:#6db89a; --mist:#e8f5ef; --mist2:#d0ead8;
+  --border:#b8d9c8; --white:#fff; --text:#0c1f18; --muted:#4a7c64;
+  --red:#c62828; --red-lt:#fff0f0; --red-bd:#f5a0a0;
+  --amber:#ca8a04; --amber-lt:#fefce8; --amber-bd:#fde68a;
+  --green:#16a34a; --green-lt:#f0fdf4; --green-bd:#86efac;
+  --shadow:0 4px 32px rgba(10,60,46,.13); --shadow-sm:0 2px 12px rgba(10,60,46,.09);
+  --radius:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--ink)}
+body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
+
+/* ═══════════════════════════════════════
+   SCREEN SYSTEM
+═══════════════════════════════════════ */
+.screen{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  background:var(--mist);overflow:hidden;
+  opacity:0;pointer-events:none;transform:translateY(18px);
+  transition:opacity .3s ease,transform .3s ease;z-index:10;
+}
+.screen.active{opacity:1;pointer-events:all;transform:translateY(0)}
+
+/* ═══════════════════════════════════════
+   HOME SCREEN
+═══════════════════════════════════════ */
+#screen-home{
+  background:linear-gradient(155deg,#071a10 0%,#0a3d2e 45%,#0b6e50 100%);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+
+.home-hero{
+  padding:3rem 1.5rem 2rem;text-align:center;position:relative;
+}
+.home-hero::after{
+  content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:60px;height:3px;background:var(--emerald);border-radius:2px;
+}
+.home-emblem{
+  width:80px;height:80px;border-radius:20px;margin:0 auto 1.25rem;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.06));
+  border:1.5px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+.home-emblem svg{width:42px;height:42px}
+.home-title{
+  font-family:'Instrument Serif',serif;font-size:2rem;color:#fff;
+  line-height:1.15;letter-spacing:-.01em;margin-bottom:.4rem;
+}
+.home-title em{font-style:italic;color:var(--emerald)}
+.home-sub{font-size:.78rem;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase}
+
+/* Stats row */
+.home-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;
+  padding:1.25rem 1.25rem 0;
+}
+.hstat{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:.85rem .6rem;text-align:center;
+}
+.hstat-n{font-family:'Instrument Serif',serif;font-size:1.8rem;color:#fff;line-height:1}
+.hstat-l{font-size:.6rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;margin-top:.25rem;line-height:1.3}
+.hstat-n.red{color:#ff8a8a}
+.hstat-n.amber{color:#fbbf24}
+.hstat-n.emerald{color:var(--emerald)}
+
+/* Risk chips */
+.risk-chips{
+  display:flex;gap:.55rem;padding:1rem 1.25rem;flex-wrap:wrap;
+}
+.rchip{
+  flex:1;min-width:80px;padding:.55rem .5rem;border-radius:10px;
+  text-align:center;font-size:.72rem;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;gap:.2rem;
+}
+.rchip-n{font-size:1.3rem;font-weight:800;line-height:1}
+.rchip.sin{background:rgba(22,163,74,.18);color:#86efac;border:1px solid rgba(22,163,74,.3)}
+.rchip.med{background:rgba(202,138,4,.18);color:#fde68a;border:1px solid rgba(202,138,4,.3)}
+.rchip.alt{background:rgba(198,40,40,.22);color:#ff8a8a;border:1px solid rgba(198,40,40,.35)}
+
+/* Menu buttons */
+.menu-wrap{padding:.5rem 1.25rem 2rem}
+.msec-label{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:rgba(255,255,255,.3);margin-bottom:.55rem;margin-top:.6rem;
+}
+.mbtn{
+  display:flex;align-items:center;gap:.85rem;width:100%;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  border-radius:13px;padding:.85rem 1rem;margin-bottom:.55rem;
+  cursor:pointer;font-family:inherit;color:#fff;text-align:left;
+  transition:all .22s;
+}
+.mbtn:hover,.mbtn:active{background:rgba(255,255,255,.14);transform:translateX(3px)}
+.mbtn-ico{
+  width:44px;height:44px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.mbtn-ico svg{width:22px;height:22px}
+.mbtn-ico.teal{background:rgba(11,143,110,.32)}
+.mbtn-ico.blue{background:rgba(21,101,192,.35)}
+.mbtn-ico.amber{background:rgba(217,119,6,.28)}
+.mbtn-ico.purple{background:rgba(91,79,207,.3)}
+.mbtn-ico.red{background:rgba(198,40,40,.28)}
+.mbtn-text{flex:1;min-width:0}
+.mbtn-text .mbt{font-weight:700;font-size:.93rem;line-height:1.2}
+.mbtn-text .mbs{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:2px}
+.mbtn-arr{opacity:.4;flex-shrink:0}
+.mbtn-arr svg{width:17px;height:17px}
+
+/* Danger zone */
+.danger-zone{
+  margin:0 1.25rem 2rem;padding:.9rem 1rem;border-radius:12px;
+  background:rgba(192,57,43,.14);border:1px solid rgba(192,57,43,.28);
+}
+.danger-zone p{font-size:.73rem;color:rgba(255,255,255,.45);margin-bottom:.6rem}
+.danger-zone-btns{display:flex;flex-direction:column;gap:.4rem}
+.clear-btn{
+  width:100%;padding:.5rem;background:rgba(192,57,43,.22);
+  border:1px solid rgba(192,57,43,.45);color:#e07b72;border-radius:8px;
+  font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:.4rem;transition:all .2s;
+}
+.clear-btn:hover{background:rgba(192,57,43,.4);color:#fff}
+.clear-btn.amber{background:rgba(192,120,0,.22);border-color:rgba(192,120,0,.45);color:#fbbf24}
+.clear-btn.amber:hover{background:rgba(192,120,0,.4);color:#fff}
+.clear-btn.full{background:rgba(120,0,0,.35);border-color:rgba(192,57,43,.7);color:#ff8a8a}
+.clear-btn.full:hover{background:rgba(160,0,0,.55);color:#fff}
+.danger-sep{height:1px;background:rgba(192,57,43,.25);margin:.2rem 0}
+
+/* ═══════════════════════════════════════
+   TOPBAR (pantallas internas)
+═══════════════════════════════════════ */
+.topbar{
+  flex-shrink:0;height:56px;background:var(--white);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 1rem;gap:.7rem;box-shadow:var(--shadow-sm);z-index:5;
+}
+.back-btn{
+  display:flex;align-items:center;gap:.38rem;padding:.38rem .7rem;
+  border-radius:8px;border:1.5px solid var(--border);background:var(--white);
+  color:var(--forest);font-family:inherit;font-size:.78rem;font-weight:700;
+  cursor:pointer;transition:all .2s;flex-shrink:0;letter-spacing:.03em;
+}
+.back-btn:hover{background:var(--mist2);border-color:var(--forest)}
+.back-btn svg{width:13px;height:13px}
+.topbar-title{
+  font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem}
+.scroller::-webkit-scrollbar{width:4px}
+.scroller::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ═══════════════════════════════════════
+   CATÁLOGO DE VIVIENDAS
+═══════════════════════════════════════ */
+.cat-topbar{
+  height:auto!important;flex-wrap:wrap;padding:.45rem .7rem!important;gap:.4rem!important;
+}
+.cat-topbar .back-btn{flex-shrink:0}
+.cat-topbar .tbtn{flex:1;min-width:0;justify-content:center;font-size:.73rem;padding:.38rem .45rem}
+@media(min-width:480px){
+  .cat-topbar{flex-wrap:nowrap!important;height:56px!important;padding:0 1rem!important}
+  .cat-topbar .tbtn{flex:none;font-size:.78rem;padding:.38rem .8rem}
+}
+.tbtn{
+  padding:.38rem .8rem;border-radius:8px;font-family:inherit;font-size:.78rem;
+  font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;
+  gap:.35rem;transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+.tbtn svg{width:13px;height:13px}
+.tbtn.primary{background:var(--forest);color:#fff}.tbtn.primary:hover{background:var(--teal)}
+.tbtn.secondary{background:var(--white);border:1.5px solid var(--border);color:var(--forest)}
+.tbtn.secondary:hover{background:var(--mist2)}
+.tbtn.success{background:var(--green);color:#fff}
+.tbtn.amber{background:var(--amber);color:#fff}
+.tbtn.danger{background:var(--red);color:#fff}
+
+/* Buscador */
+.cat-search-wrap{
+  padding:.6rem 1rem .35rem;display:flex;gap:.5rem;align-items:center;
+  background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.cat-search-inner{position:relative;flex:1}
+.cat-search-inner svg{
+  position:absolute;left:.6rem;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;color:var(--muted);pointer-events:none;
+}
+.cat-search-inner input{
+  width:100%;padding:.38rem .6rem .38rem 2rem;
+  border:1.5px solid var(--border);border-radius:20px;
+  font-family:inherit;font-size:.8rem;background:var(--mist);
+  outline:none;color:var(--text);transition:all .2s;
+}
+.cat-search-inner input:focus{border-color:var(--emerald);background:#fff}
+
+/* Tarjeta vivienda */
+.cat-viv-card{
+  background:#fff;border-radius:13px;box-shadow:var(--shadow-sm);
+  margin-bottom:.8rem;overflow:hidden;border:1px solid var(--border);
+  transition:box-shadow .2s;
+}
+.cat-viv-card:hover{box-shadow:var(--shadow)}
+.cat-viv-header{
+  display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;
+  background:linear-gradient(135deg,var(--ink),var(--ink2));color:#fff;
+}
+.cat-viv-header svg{width:15px;height:15px;flex-shrink:0}
+.cat-viv-num{font-weight:700;font-size:.93rem;flex:1}
+.risk-badge{
+  font-size:.66rem;padding:2px 9px;border-radius:9px;font-weight:800;
+  cursor:pointer;transition:all .15s;letter-spacing:.03em;
+  flex-shrink:0;
+}
+.risk-badge.sin{background:#16a34a;color:#fff}
+.risk-badge.med{background:#ca8a04;color:#fff}
+.risk-badge.alt{background:#c62828;color:#fff}
+.risk-badge:hover{filter:brightness(1.15);transform:scale(1.05)}
+.cat-viv-btns{display:flex;gap:.3rem;flex-shrink:0}
+.cat-ico-btn{
+  background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.23);
+  color:#fff;border-radius:6px;padding:.28rem .52rem;font-size:.68rem;
+  font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:.28rem;
+  font-weight:700;transition:all .2s;
+}
+.cat-ico-btn:hover{background:rgba(255,255,255,.3)}
+.cat-ico-btn svg{width:11px;height:11px}
+
+/* Ubicación */
+.ubic-bloque{
+  padding:.6rem 1rem;background:var(--mist);border-bottom:1px solid var(--mist2);
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.ubic-btns{display:flex;gap:.4rem;flex:1;min-width:120px}
+.btn-gps-viv,.btn-map-viv{
+  flex:1;padding:.4rem .5rem;border:none;border-radius:8px;
+  font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:.3rem;transition:all .2s;
+}
+.btn-gps-viv{background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff}
+.btn-gps-viv:hover{filter:brightness(1.1)}
+.btn-map-viv{background:linear-gradient(135deg,#1976d2,#0d47a1);color:#fff}
+.btn-map-viv:hover{filter:brightness(1.1)}
+.ubic-status{
+  width:100%;font-size:.7rem;padding:.28rem .55rem;background:#fff;
+  border-radius:6px;border:1px solid var(--mist2);color:var(--muted);
+  line-height:1.4;
+}
+
+/* Personas */
+.cat-persona-item.highlight-result{background:#fefce8;border-left:3px solid #ca8a04}
+.cat-persona-item{
+  display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;
+  border-bottom:1px solid var(--mist2);transition:background .15s;
+}
+.cat-persona-item:last-child{border-bottom:none}
+.cat-persona-item:hover{background:var(--mist)}
+.cat-per-ico{font-size:1.05rem;flex-shrink:0}
+.cat-per-info{flex:1;min-width:0}
+.cat-per-info strong{display:block;font-size:.82rem;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-per-info span{font-size:.7rem;color:var(--muted)}
+.cat-per-del,.cat-per-edit{
+  background:none;border-radius:6px;padding:.25rem .48rem;cursor:pointer;
+  font-family:inherit;font-size:.68rem;transition:all .2s;
+}
+.cat-per-del{border:1.5px solid var(--border);color:var(--muted)}
+.cat-per-del:hover{border-color:var(--red);color:var(--red);background:#fef2f2}
+.cat-per-edit{border:1.5px solid var(--emerald);color:var(--teal)}
+.cat-per-edit:hover{background:var(--mist2)}
+.cat-per-edit svg,.cat-per-del svg{width:12px;height:12px}
+.cat-add-per-btn{
+  display:flex;align-items:center;gap:.45rem;width:100%;
+  padding:.52rem 1rem;background:var(--mist);border:none;
+  font-family:inherit;font-size:.76rem;color:var(--teal);
+  cursor:pointer;font-weight:600;transition:background .2s;
+}
+.cat-add-per-btn:hover{background:var(--mist2)}
+.cat-add-per-btn svg{width:13px;height:13px}
+.cat-empty{text-align:center;padding:3rem 1.5rem;color:var(--muted)}
+.cat-empty svg{width:50px;height:50px;margin:0 auto .75rem;opacity:.3;display:block}
+.cat-empty p{font-size:.88rem;line-height:1.6}
+
+/* ═══════════════════════════════════════
+   MAPA PRINCIPAL
+═══════════════════════════════════════ */
+#mapa-leaflet{
+  width:100%;height:62vh;min-height:300px;
+  border-radius:13px;box-shadow:0 4px 18px rgba(0,0,0,.15);
+  margin-bottom:12px;z-index:1;
+}
+#mapa-wrapper{position:relative}
+
+#btn-fs{
+  position:absolute;top:10px;right:10px;z-index:1000;
+  background:#fff;border:2px solid rgba(0,0,0,.2);border-radius:6px;
+  width:34px;height:34px;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 5px rgba(0,0,0,.3);padding:0;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+#btn-capas-mapa{
+  position:absolute;top:52px;right:10px;z-index:1000;
+  background:#fff;border:2px solid rgba(0,0,0,.2);border-radius:8px;
+  width:40px;height:40px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 5px rgba(0,0,0,.3);
+}
+#btn-capas-mapa svg{width:21px;height:21px}
+#btn-gps-mapa{
+  position:absolute;bottom:60px;right:10px;z-index:1000;
+  background:#fff;border:2px solid rgba(0,0,0,.2);border-radius:50%;
+  width:44px;height:44px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);transition:background .2s;
+}
+#btn-gps-mapa svg{width:21px;height:21px}
+#btn-gps-mapa.buscando{background:#e3f2fd}
+#btn-gps-mapa.encontrado{background:#e8f5e9}
+
+#panel-capas{
+  display:none;position:absolute;top:52px;right:52px;z-index:1001;
+  background:#fff;border-radius:10px;box-shadow:0 2px 14px rgba(0,0,0,.22);
+  padding:6px;flex-direction:column;gap:4px;min-width:155px;
+}
+#panel-capas.visible{display:flex}
+.btn-capa{
+  background:#fff;border:1px solid #ddd;border-radius:7px;
+  padding:7px 11px;font-size:.78em;cursor:pointer;
+  text-align:left;color:#37474f;font-weight:500;transition:background .15s;
+}
+.btn-capa:hover{background:#f5f5f5}
+.btn-capa.activa{background:#e0f5ee;border-color:var(--teal);color:var(--forest);font-weight:700}
+
+/* Filtros mapa */
+.mapa-filtros{
+  display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;
+}
+.btn-filtro-mapa{
+  flex:1;min-width:80px;padding:8px 6px;
+  border:2px solid #ccc;background:#fff;border-radius:20px;
+  font-size:.77em;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;
+}
+.btn-filtro-mapa.f-todos  {background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-filtro-mapa.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
+.btn-filtro-mapa.f-amarillo{background:#ca8a04;color:#fff;border-color:#ca8a04}
+.btn-filtro-mapa.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
+
+/* Leyenda */
+.mapa-leyenda{
+  display:flex;gap:10px;flex-wrap:wrap;font-size:.77em;
+  color:var(--muted);margin-bottom:10px;background:#fff;
+  padding:7px 12px;border-radius:9px;border:1px solid var(--border);
+}
+.leyenda-item{display:flex;align-items:center;gap:5px}
+.leyenda-dot{
+  width:13px;height:13px;border-radius:50%;
+  border:2px solid rgba(0,0,0,.15);flex-shrink:0;
+}
+
+/* Fullscreen */
+#mapa-wrapper:-webkit-full-screen #mapa-leaflet,
+#mapa-wrapper:fullscreen #mapa-leaflet,
+#mapa-wrapper[data-sim-fs] #mapa-leaflet{
+  height:100vh!important;border-radius:0!important;margin-bottom:0!important;
+}
+#filtros-fs{
+  display:none;
+  position:absolute;bottom:12px;left:8px;right:8px;z-index:1000;
+  background:rgba(255,255,255,.95);border-radius:24px;
+  box-shadow:0 2px 14px rgba(0,0,0,.22);
+  padding:6px 8px;gap:5px;align-items:center;justify-content:space-around;
+}
+#mapa-wrapper:-webkit-full-screen #filtros-fs,
+#mapa-wrapper:fullscreen #filtros-fs,
+#mapa-wrapper[data-sim-fs] #filtros-fs{display:flex}
+.btn-filtro-fs{
+  background:#fff;border:2px solid #ccc;border-radius:18px;
+  padding:5px 7px;font-size:.72em;cursor:pointer;font-weight:600;
+  color:#37474f;transition:all .15s;flex:1;text-align:center;min-width:0;
+}
+.btn-filtro-fs.f-todos  {background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-filtro-fs.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
+.btn-filtro-fs.f-amarillo{background:#ca8a04;color:#fff;border-color:#ca8a04}
+.btn-filtro-fs.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
+
+/* Banner modo georref */
+#banner-georref{
+  display:none;position:absolute;bottom:58px;left:8px;right:8px;z-index:1002;
+  background:rgba(13,71,161,.88);color:#fff;
+  padding:.38rem .65rem;align-items:center;gap:.45rem;
+  border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,.35);
+  backdrop-filter:blur(4px);
+}
+#banner-georref.visible{display:flex}
+.bng-ico{font-size:.95rem;flex-shrink:0}
+.bng-txt{flex:1;min-width:0;overflow:hidden}
+.bng-txt strong{display:block;font-size:.75rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bng-txt small{font-size:.65rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.bng-cancel{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:12px;padding:.25rem .55rem;font-family:inherit;
+  font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.bng-cancel:hover{background:rgba(255,255,255,.3)}
+.bng-confirm{background:#fff;border:none;color:#0d47a1;
+  border-radius:12px;padding:.25rem .65rem;font-family:inherit;
+  font-size:.7rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  display:none;}
+.bng-confirm.visible{display:block}
+#mapa-leaflet.modo-georref{cursor:crosshair!important}
+#mapa-leaflet.modo-georref .leaflet-interactive{cursor:crosshair!important}
+
+/* Indicador de riesgo automático en modal vivienda */
+.riesgo-auto-chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  font-size:.67rem;font-weight:700;padding:.18rem .52rem;border-radius:10px;
+  margin-left:.4rem;letter-spacing:.02em;
+}
+.riesgo-auto-chip.auto{background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc}
+.riesgo-auto-chip.manual{background:#fef9c3;color:#854d0e;border:1px solid #fde047}
+.mviv-riesgo-label{display:flex;align-items:center;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--forest);margin-bottom:3px}
+#btn-georref-mapa{
+  position:absolute;bottom:46px;left:10px;z-index:1000;
+  background:#0d47a1;color:#fff;border:none;border-radius:24px;
+  padding:.5rem .9rem;font-family:inherit;font-size:.78rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:.4rem;
+  box-shadow:0 3px 10px rgba(13,71,161,.45);transition:all .2s;
+  touch-action:manipulation;
+}
+#btn-georref-mapa:hover{background:#1565c0;transform:scale(1.04)}
+#btn-georref-mapa svg{width:15px;height:15px}
+
+/* En fullscreen: subir botones para que no queden bajo la barra de filtros (~58px) */
+#mapa-wrapper:-webkit-full-screen #btn-georref-mapa,
+#mapa-wrapper:fullscreen #btn-georref-mapa,
+#mapa-wrapper[data-sim-fs] #btn-georref-mapa{bottom:108px}
+
+#mapa-wrapper:-webkit-full-screen #banner-georref,
+#mapa-wrapper:fullscreen #banner-georref,
+#mapa-wrapper[data-sim-fs] #banner-georref{bottom:118px}
+
+/* Sheet selector de vivienda */
+#sheet-georref{
+  display:none;position:absolute;bottom:0;left:0;right:0;z-index:1003;
+  background:#fff;border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,.22);
+  max-height:60vh;overflow:hidden;flex-direction:column;
+}
+#sheet-georref.visible{display:flex}
+.sgh-head{
+  padding:.75rem 1rem .5rem;display:flex;align-items:center;gap:.6rem;
+  border-bottom:1px solid #e8f0eb;flex-shrink:0;
+}
+.sgh-head strong{flex:1;font-size:.9rem;color:#0c1f18}
+.sgh-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#777;padding:.2rem .4rem;line-height:1}
+.sgh-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.sgh-item{
+  display:flex;align-items:center;gap:.7rem;padding:.62rem 1rem;
+  border-bottom:1px solid #f0f5f2;cursor:pointer;transition:background .15s;
+}
+.sgh-item:hover{background:#f0fdf4}
+.sgh-item-ico{font-size:1.05rem;flex-shrink:0}
+.sgh-item-txt{flex:1;min-width:0}
+.sgh-item-txt strong{display:block;font-size:.84rem;color:#0c1f18}
+.sgh-item-txt small{font-size:.7rem;color:#4a7c64}
+.sgh-badge{font-size:.65rem;padding:2px 7px;border-radius:7px;font-weight:700;flex-shrink:0}
+.sgh-badge.sin{background:#16a34a;color:#fff}
+.sgh-badge.med{background:#ca8a04;color:#fff}
+.sgh-badge.alt{background:#c62828;color:#fff}
+.sgh-empty{padding:1.5rem;text-align:center;color:#888;font-size:.82rem}
+.sgh-search{
+  padding:.5rem .75rem;border-bottom:1px solid #e8f0eb;
+  display:flex;align-items:center;gap:.45rem;flex-shrink:0;
+  background:#f8fdfb;
+}
+.sgh-search svg{width:14px;height:14px;color:#4a7c64;flex-shrink:0}
+.sgh-search input{
+  flex:1;border:1.5px solid #b8d9c8;border-radius:18px;
+  padding:.32rem .65rem;font-family:inherit;font-size:.8rem;
+  background:#fff;outline:none;color:#0c1f18;transition:border-color .2s;
+}
+.sgh-search input:focus{border-color:#00c48c}
+.gps-dot-outer{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(26,115,232,.25);
+  display:flex;align-items:center;justify-content:center;
+  animation:gps-pulse 1.4s ease-out infinite;
+}
+.gps-dot-inner{
+  width:10px;height:10px;border-radius:50%;
+  background:#1a73e8;border:2px solid #fff;
+  box-shadow:0 0 4px rgba(26,115,232,.8);
+}
+@keyframes gps-pulse{
+  0%{box-shadow:0 0 0 0 rgba(26,115,232,.5)}
+  70%{box-shadow:0 0 0 12px rgba(26,115,232,0)}
+  100%{box-shadow:0 0 0 0 rgba(26,115,232,0)}
+}
+
+/* Panel estadísticas */
+.stats-panel{
+  background:#fff;border-radius:13px;box-shadow:var(--shadow-sm);
+  border:1px solid var(--border);overflow:hidden;margin-top:12px;
+}
+.stats-header{
+  background:linear-gradient(135deg,var(--ink),var(--ink2));
+  color:#fff;padding:.65rem 1rem;font-size:.82rem;font-weight:700;
+  display:flex;align-items:center;gap:.5rem;
+}
+.stats-body{padding:.85rem 1rem}
+.edad-row{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.38rem 0;border-bottom:1px solid #f0f0f0;font-size:.77rem;
+}
+.edad-row:last-child{border-bottom:none}
+.edad-label{flex:1;color:var(--text);font-weight:600;font-size:.8rem}
+.edad-n{min-width:28px;text-align:right;font-weight:800;font-size:.85rem;color:var(--ink)}
+.edad-bar-wrap{flex:2;background:var(--mist2);border-radius:20px;height:7px;overflow:hidden}
+.edad-bar-inner{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--teal),var(--emerald));transition:width .5s ease}
+.edad-pct{min-width:38px;text-align:right;color:var(--muted);font-size:.72rem}
+
+/* ═══════════════════════════════════════
+   MODALES
+═══════════════════════════════════════ */
+.modal-bg{
+  display:none;position:fixed;inset:0;background:rgba(10,20,15,.52);
+  z-index:10002;align-items:center;justify-content:center;padding:1rem;
+}
+.modal-bg.show{display:flex}
+.modal-box{
+  background:#fff;border-radius:var(--radius);padding:1.5rem;
+  max-width:400px;width:100%;box-shadow:0 20px 60px rgba(10,20,15,.28);
+  animation:mbox-in .24s ease;max-height:90vh;overflow-y:auto;position:relative;
+}
+@keyframes mbox-in{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-close-x{
+  position:absolute;top:.8rem;right:.85rem;width:28px;height:28px;
+  border-radius:50%;border:none;background:var(--mist2);color:var(--muted);
+  cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;
+}
+.modal-close-x:hover{background:var(--border)}
+.modal-box h3{
+  font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);
+  margin-bottom:.35rem;padding-right:1.5rem;
+}
+.modal-box p{font-size:.82rem;color:var(--muted);margin-bottom:.9rem;line-height:1.55}
+.modal-btns{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+.f-group{margin-bottom:.75rem}
+.f-group label{display:block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--forest);margin-bottom:3px}
+.f-group input,.f-group select{
+  width:100%;border:1.5px solid var(--border);border-radius:8px;
+  padding:.44rem .65rem;font-family:inherit;font-size:.88rem;
+  color:var(--text);background:var(--mist);outline:none;transition:all .2s;
+}
+.f-group input:focus,.f-group select:focus{border-color:var(--emerald);background:#fff}
+.f-group select{cursor:pointer}
+.edad-display{
+  display:none;background:linear-gradient(135deg,#0b8f6e18,#00c48c10);
+  border:1.5px solid var(--emerald);border-radius:8px;
+  padding:.42rem .72rem;margin-bottom:.7rem;align-items:center;gap:.5rem;
+}
+.edad-display.show{display:flex}
+.edad-display span{font-size:.83rem;font-weight:700;color:var(--forest)}
+.edad-display small{font-size:.7rem;color:var(--muted);display:block}
+
+/* Botones del modal */
+.btn{
+  padding:.42rem .95rem;border-radius:8px;font-family:inherit;
+  font-size:.82rem;font-weight:700;cursor:pointer;border:none;
+  display:inline-flex;align-items:center;gap:.35rem;transition:all .2s;
+}
+.btn.save{background:var(--teal);color:#fff}.btn.save:hover{background:var(--forest)}
+.btn.cancel{background:#fff;border:1.5px solid var(--border);color:var(--forest)}
+.btn.cancel:hover{background:var(--mist2)}
+.btn.danger{background:var(--red);color:#fff}
+
+/* ═══════════════════════════════════════
+   MODAL DE IMPORTAR EXCEL
+═══════════════════════════════════════ */
+.import-modal .modal-box{max-width:480px}
+.dropzone-lbl{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2.5px dashed var(--border);border-radius:12px;padding:2rem 1.5rem;
+  cursor:pointer;transition:all .2s;background:var(--mist);text-align:center;
+  gap:.5rem;
+}
+.dropzone-lbl:hover,.dropzone-lbl:focus-within{border-color:var(--emerald);background:#fff}
+.dropzone-lbl svg{width:38px;height:38px;color:var(--teal);opacity:.7}
+.dropzone-lbl strong{font-size:.88rem;color:var(--ink);font-weight:700}
+.dropzone-lbl small{font-size:.73rem;color:var(--muted)}
+.import-error{
+  display:none;margin-top:.6rem;padding:.45rem .7rem;
+  background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;
+  font-size:.77rem;color:var(--red);
+}
+.preview-wrap{max-height:240px;overflow-y:auto;border-radius:9px;border:1px solid var(--border);margin-top:.6rem}
+.prev-table{width:100%;border-collapse:collapse;font-size:.75rem}
+.prev-table th{
+  background:var(--ink);color:#fff;padding:.38rem .6rem;font-size:.65rem;
+  font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:left;
+  position:sticky;top:0;
+}
+.prev-table td{padding:.36rem .6rem;border-bottom:1px solid var(--mist2);color:var(--text)}
+.prev-table tr:last-child td{border-bottom:none}
+.prev-table tr:nth-child(even) td{background:var(--mist)}
+td.err{color:var(--red);font-weight:700}
+.import-resumen{
+  padding:.55rem .8rem;background:var(--mist);border-bottom:1px solid var(--border);
+  font-size:.78rem;font-weight:600;color:var(--forest);
+  display:flex;align-items:center;gap:.45rem;
+}
+.import-resumen svg{width:14px;height:14px;flex-shrink:0;color:var(--teal)}
+.import-checkbox{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--ink);cursor:pointer;padding:.55rem .8rem;background:var(--mist);border-bottom:1px solid var(--border)}
+.import-checkbox input{accent-color:var(--teal)}
+.import-footer{padding:.6rem .8rem;display:flex;gap:.5rem;justify-content:flex-end}
+
+/* ═══════════════════════════════════════
+   MODAL FAMILIA COMPLETA
+═══════════════════════════════════════ */
+#modal-familia{
+  display:none;position:fixed;inset:0;background:rgba(10,20,15,.58);
+  z-index:10003;align-items:flex-end;justify-content:center;
+}
+#modal-familia.show{display:flex}
+#modal-familia.detras{
+  pointer-events:none;
+}
+#modal-familia.detras .mfam-box{
+  pointer-events:none;
+  opacity:.45;
+  filter:blur(1px);
+  transition:opacity .2s,filter .2s;
+}
+.mfam-box{
+  background:#fff;border-radius:16px 16px 0 0;
+  width:100%;max-width:520px;max-height:88vh;
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:mfam-in .26s ease;
+}
+@keyframes mfam-in{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.mfam-header{
+  flex-shrink:0;padding:.85rem 1rem .7rem;
+  background:linear-gradient(135deg,var(--ink),var(--ink2));color:#fff;
+  display:flex;align-items:center;gap:.7rem;
+}
+.mfam-header svg{width:17px;height:17px;flex-shrink:0}
+.mfam-titulo{font-family:'Instrument Serif',serif;font-size:1.05rem;flex:1}
+.mfam-riesgo{font-size:.68rem;padding:3px 9px;border-radius:9px;font-weight:800;flex-shrink:0}
+.mfam-riesgo.sin{background:#16a34a;color:#fff}
+.mfam-riesgo.med{background:#ca8a04;color:#fff}
+.mfam-riesgo.alt{background:#c62828;color:#fff}
+.mfam-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:8px;padding:.28rem .6rem;font-size:.8rem;
+  cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;flex-shrink:0;}
+.mfam-close:hover{background:rgba(255,255,255,.28)}
+.mfam-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mfam-persona-row{
+  display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;
+  border-bottom:1px solid var(--mist2);transition:background .15s;
+}
+.mfam-persona-row.resaltada{
+  background:linear-gradient(135deg,#d4f5e9,#eafaf3);
+  outline:2px solid var(--emerald);outline-offset:-2px;border-radius:4px;
+}
+.mfam-persona-row:last-child{border-bottom:none}
+.mfam-per-ico{font-size:1rem;flex-shrink:0}
+.mfam-per-info{flex:1;min-width:0}
+.mfam-per-info strong{display:block;font-size:.83rem;color:var(--ink)}
+.mfam-per-info span{font-size:.7rem;color:var(--muted)}
+.mfam-per-btns{display:flex;gap:.3rem;flex-shrink:0}
+.mfam-btn-edit,.mfam-btn-del{
+  background:none;border-radius:6px;padding:.28rem .5rem;cursor:pointer;
+  font-family:inherit;font-size:.68rem;transition:all .2s;
+}
+.mfam-btn-edit{border:1.5px solid var(--emerald);color:var(--teal)}
+.mfam-btn-edit:hover{background:var(--mist2)}
+.mfam-btn-del{border:1.5px solid var(--border);color:var(--muted)}
+.mfam-btn-del:hover{border-color:var(--red);color:var(--red);background:#fef2f2}
+.mfam-btn-edit svg{width:13px;height:13px}
+.mfam-empty{padding:1.2rem;text-align:center;color:var(--muted);font-size:.8rem;font-style:italic}
+.mfam-footer{
+  flex-shrink:0;padding:.65rem 1rem;
+  background:var(--mist);border-top:1px solid var(--border);
+  display:flex;gap:.45rem;
+}
+.mfam-footer .tbtn{flex:1;justify-content:center;font-size:.77rem}
+
+/* Persona filtrada: cursor pointer y label visible */
+.cat-persona-item.highlight-result{cursor:pointer}
+.cat-ver-familia{
+  display:inline-block;margin-top:2px;font-size:.68rem;
+  color:var(--teal);font-weight:700;text-decoration:underline;
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:1.2rem;right:1.2rem;z-index:9999;
+  background:var(--ink);color:#fff;padding:.55rem 1rem;border-radius:9px;
+  font-size:.8rem;font-weight:600;box-shadow:var(--shadow);
+  animation:toast-in .28s ease;pointer-events:none;display:none;
+}
+.toast.success{background:var(--forest)}
+.toast.error{background:var(--red)}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════
+   FIREBASE SYNC
+═══════════════════════════════════════ */
+.sync-bar{
+  display:flex;align-items:center;gap:.5rem;
+  background:rgba(255,255,255,.08);border-radius:10px;
+  padding:.45rem .75rem;margin:.5rem 1rem 0;font-size:.73rem;color:rgba(255,255,255,.75);
+  border:1px solid rgba(255,255,255,.12);
+}
+.sync-bar svg{width:14px;height:14px;flex-shrink:0}
+.sync-bar-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-bar-btns{display:flex;gap:.35rem;flex-shrink:0}
+.sync-bar-btn{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:8px;padding:.25rem .6rem;font-family:inherit;
+  font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  display:flex;align-items:center;gap:.28rem;
+}
+.sync-bar-btn:hover{background:rgba(255,255,255,.25)}
+.sync-bar-btn:disabled{opacity:.5;cursor:not-allowed}
+.sync-bar-btn.spin svg{animation:girando .8s linear infinite}
+.sync-bar-btn.up{background:rgba(0,196,140,.22);border-color:rgba(0,196,140,.5)}
+.sync-bar-btn.up:hover{background:rgba(0,196,140,.38)}
+.sync-bar-btn.down{background:rgba(21,101,192,.28);border-color:rgba(21,101,192,.55)}
+.sync-bar-btn:hover{background:rgba(255,255,255,.25)}
+.sync-bar-btn:disabled{opacity:.5;cursor:not-allowed}
+.sync-bar-btn.spin svg{animation:girando .8s linear infinite}
+@keyframes girando{to{transform:rotate(360deg)}}
+/* Modal UID */
+#modal-uid .modal-box{max-width:360px}
+.uid-input{
+  width:100%;padding:.65rem .85rem;border:2px solid var(--border);border-radius:9px;
+  font-family:inherit;font-size:.9rem;margin:.5rem 0 .3rem;outline:none;
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.uid-input:focus{border-color:var(--emerald)}
+.uid-hint{font-size:.72rem;color:var(--muted);margin-bottom:.8rem;line-height:1.4}
+.export-bar{
+  padding:.5rem 1rem;background:#fff;border-bottom:1px solid var(--border);
+  display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;font-size:.73rem;
+  color:var(--muted);flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════
+   PUNTOS DE INTERÉS (PDI)
+═══════════════════════════════════════ */
+/* Banner PDI */
+#banner-pdi{
+  display:none;position:absolute;bottom:58px;left:8px;right:8px;z-index:1002;
+  background:rgba(106,27,154,.88);color:#fff;
+  padding:.38rem .65rem;align-items:center;gap:.45rem;
+  border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,.35);
+  backdrop-filter:blur(4px);
+}
+#banner-pdi.visible{display:flex}
+.bpdi-txt{flex:1;min-width:0;overflow:hidden}
+.bpdi-txt strong{display:block;font-size:.75rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bpdi-txt small{font-size:.65rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.bpdi-cancel{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:12px;padding:.25rem .55rem;font-family:inherit;
+  font-size:.7rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+#mapa-leaflet.modo-pdi{cursor:crosshair!important}
+
+/* Botón PDI flotante */
+#btn-pdi-mapa{
+  position:absolute;bottom:12px;left:10px;z-index:1000;
+  background:#7b1fa2;color:#fff;border:none;border-radius:24px;
+  padding:.5rem .9rem;font-family:inherit;font-size:.78rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:.4rem;
+  box-shadow:0 3px 10px rgba(123,31,162,.45);transition:all .2s;
+  touch-action:manipulation;
+}
+#btn-pdi-mapa:hover{background:#9c27b0;transform:scale(1.04)}
+#btn-pdi-mapa svg{width:15px;height:15px}
+
+#mapa-wrapper:-webkit-full-screen #btn-pdi-mapa,
+#mapa-wrapper:fullscreen #btn-pdi-mapa,
+#mapa-wrapper[data-sim-fs] #btn-pdi-mapa{bottom:70px}
+
+/* Sheet tipo PDI */
+#sheet-pdi{
+  display:none;position:absolute;bottom:0;left:0;right:0;z-index:1003;
+  background:#fff;border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,.22);
+  max-height:55vh;overflow:hidden;flex-direction:column;
+}
+#sheet-pdi.visible{display:flex}
+.spdi-head{
+  padding:.75rem 1rem .5rem;display:flex;align-items:center;gap:.6rem;
+  border-bottom:1px solid #e8f0eb;flex-shrink:0;
+}
+.spdi-head strong{flex:1;font-size:.9rem;color:#0c1f18}
+.spdi-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#777;padding:.2rem .4rem}
+.spdi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;padding:.75rem;overflow-y:auto}
+.spdi-tipo{
+  background:#f9f4ff;border:2px solid #e1bee7;border-radius:10px;
+  padding:.6rem .3rem;cursor:pointer;text-align:center;
+  font-family:inherit;font-size:.7rem;font-weight:700;color:#6a1b9a;
+  display:flex;flex-direction:column;align-items:center;gap:.25rem;
+  transition:all .18s;
+}
+.spdi-tipo:hover,.spdi-tipo.sel{background:#e1bee7;border-color:#8e24aa}
+.spdi-tipo span{font-size:1.4rem;line-height:1}
+
+/* Pantalla PDI lista */
+#screen-pdi .scroller{padding:1rem}
+.pdi-card{
+  background:#fff;border-radius:11px;box-shadow:var(--shadow-sm);
+  border:1px solid var(--border);margin-bottom:.65rem;overflow:hidden;
+}
+.pdi-card-head{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.6rem .85rem;background:linear-gradient(135deg,#4a148c,#6a1b9a);color:#fff;
+}
+.pdi-card-head .pdi-ico{font-size:1.2rem;flex-shrink:0}
+.pdi-card-head strong{flex:1;font-size:.85rem}
+.pdi-card-body{padding:.5rem .85rem .65rem;font-size:.78rem;color:var(--muted)}
+.pdi-card-body .pdi-coords{font-size:.7rem;color:#888;margin-top:.2rem}
+.pdi-del-btn{background:none;border:1.5px solid rgba(255,255,255,.4);color:#fff;
+  border-radius:6px;padding:.22rem .55rem;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:700}
+.pdi-del-btn:hover{background:rgba(255,255,255,.2)}
+.pdi-empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.pdi-empty span{font-size:2.5rem;display:block;margin-bottom:.6rem;opacity:.4}
+.pdi-empty p{font-size:.83rem}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     HOME
+════════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="home-hero">
+    <div class="home-emblem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </div>
+    <h1 class="home-title">Mapa <em>Sanitario</em></h1>
+    <div class="home-sub">MINSAL · Promotor de Salud · El Salvador</div>
+  </div>
+
+  <!-- Sync bar Firebase -->
+  <div class="sync-bar" id="sync-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sync-ico" width="14" height="14"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .86h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+    <span class="sync-bar-txt" id="sync-txt">Sin conectar — toca Configurar</span>
+    <div class="sync-bar-btns">
+      <button class="sync-bar-btn" id="sync-cfg-btn" onclick="abrirModalUID()">⚙️ Configurar</button>
+      <button class="sync-bar-btn up" id="sync-up-btn" onclick="subirNube()" style="display:none" title="Subir datos locales a la nube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M5 20h14"/></svg>
+        Subir
+      </button>
+      <button class="sync-bar-btn down" id="sync-dn-btn" onclick="bajarNube()" style="display:none" title="Descargar datos de la nube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/><path d="M5 4h14"/></svg>
+        Bajar
+      </button>
+    </div>
+  </div>
+
+  <!-- Chips de riesgo -->
+  <div class="risk-chips" id="home-chips">
+    <div class="rchip sin"><span class="rchip-n" id="hc-sin">0</span>Sin Riesgo</div>
+    <div class="rchip med"><span class="rchip-n" id="hc-med">0</span>Riesgo Medio</div>
+    <div class="rchip alt"><span class="rchip-n" id="hc-alt">0</span>Alto Riesgo</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="home-stats">
+    <div class="hstat">
+      <div class="hstat-n emerald" id="hs-viv">0</div>
+      <div class="hstat-l">Viviendas</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-n" id="hs-per">0</div>
+      <div class="hstat-l">Personas</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-n amber" id="hs-geo">0</div>
+      <div class="hstat-l">Georreferenciadas</div>
+    </div>
+  </div>
+
+  <div class="menu-wrap">
+    <div class="msec-label">Acciones</div>
+
+    <button class="mbtn" onclick="irA('screen-mapa')">
+      <div class="mbtn-ico teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Ver Mapa Sanitario</div><div class="mbs">Georreferenciación por vivienda</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="irA('screen-catalogo')">
+      <div class="mbtn-ico purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Catálogo de Viviendas</div><div class="mbs">Familias, riesgo y ubicación</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="irA('screen-pdi')">
+      <div class="mbtn-ico" style="background:rgba(123,31,162,.32)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Puntos de Interés</div><div class="mbs">Escuelas, clínicas, fuentes de agua…</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <div class="msec-label" style="margin-top:.6rem">Datos</div>
+
+    <button class="mbtn" onclick="sincronizarDesdeRD()">
+      <div class="mbtn-ico" style="background:rgba(0,150,136,.35)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h.01M7 12h10M7 15.5h6"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Sincronizar catálogo RD</div><div class="mbs" id="mbtn-rd-sub">Jalar familias desde Registro Diario</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="abrirImportarExcel()">
+      <div class="mbtn-ico amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Importar desde Excel</div><div class="mbs">Cargar catálogo de viviendas</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="exportarExcel()">
+      <div class="mbtn-ico blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Exportar a Excel</div><div class="mbs">Descargar catálogo completo</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="window.location.href='index.html'">
+      <div class="mbtn-ico" style="background:rgba(26,58,96,.35)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Menú Principal</div><div class="mbs">Volver a index.html</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="sincronizar()" id="mbtn-sync" style="display:none">
+      <div class="mbtn-ico" style="background:rgba(21,101,192,.35)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Sincronizar con Nube</div><div class="mbs" id="mbtn-sync-sub">Subir y bajar datos de Firebase</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <!-- Botones Subir / Bajar lado a lado -->
+    <div id="mbtn-updn-row" style="display:none;flex-direction:row;gap:.75rem;padding:0 .25rem">
+      <button onclick="subirNube()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;padding:.9rem .5rem;border-radius:14px;border:1.5px solid rgba(0,196,140,.55);background:rgba(0,196,140,.18);color:white;font-size:.85rem;font-weight:600;cursor:pointer;line-height:1.2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00c48c" stroke-width="2.5" width="28" height="28"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="16"/><path d="M5 20h14"/></svg>
+        <span style="color:#00c48c">Subir</span>
+        <span style="font-size:.7rem;font-weight:400;opacity:.75;color:white">Local → Nube</span>
+      </button>
+      <button onclick="bajarNube()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;padding:.9rem .5rem;border-radius:14px;border:1.5px solid rgba(100,160,255,.55);background:rgba(21,101,192,.22);color:white;font-size:.85rem;font-weight:600;cursor:pointer;line-height:1.2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6fa8ff" stroke-width="2.5" width="28" height="28"><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="8"/><path d="M5 4h14"/></svg>
+        <span style="color:#6fa8ff">Bajar</span>
+        <span style="font-size:.7rem;font-weight:400;opacity:.75;color:white">Nube → Local</span>
+      </button>
+    </div>
+
+    <div class="danger-zone">
+      <p>Zona peligrosa — irreversible en local. 🔒 La nube no se toca.</p>
+      <div class="danger-zone-btns">
+        <button class="clear-btn" onclick="borrarViviendas()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Borrar viviendas y personas
+        </button>
+        <button class="clear-btn amber" onclick="borrarPDI()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Borrar puntos de interés
+        </button>
+        <div class="danger-sep"></div>
+        <button class="clear-btn full" onclick="borrarTodo()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Borrar TODO (viviendas + PDI)
+        </button>
+      </div>
+    </div>
+  </div>
+</div><!-- /home -->
+
+
+<!-- ════════════════════════════
+     MAPA
+════════════════════════════ -->
+<div class="screen" id="screen-mapa">
+  <div class="topbar">
+    <button class="back-btn" onclick="irA('screen-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      Inicio
+    </button>
+    <span class="topbar-title">🗺️ Mapa Sanitario Poblacional</span>
+  </div>
+  <div class="scroller">
+
+    <!-- Leyenda -->
+    <div class="mapa-leyenda">
+      <strong style="font-size:.77em;color:var(--ink);margin-right:2px">Simbología:</strong>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#16a34a"></span>Sin Riesgo</span>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#ca8a04"></span>Riesgo Medio</span>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#c62828"></span>Alto Riesgo</span>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#9e9e9e;border-style:dashed"></span><span id="leyenda-sin-gps">Sin GPS</span></span>
+    </div>
+
+    <!-- Filtros -->
+    <div class="mapa-filtros">
+      <button class="btn-filtro-mapa f-todos" id="mf-todos"    onclick="filtrarMapa('todos')">🏠 Todos</button>
+      <button class="btn-filtro-mapa"          id="mf-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
+      <button class="btn-filtro-mapa"          id="mf-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
+      <button class="btn-filtro-mapa"          id="mf-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
+    </div>
+
+    <!-- Mapa Leaflet -->
+    <div id="mapa-wrapper">
+      <div id="mapa-leaflet"></div>
+
+      <!-- Banner georreferenciación -->
+      <div id="banner-georref">
+        <span class="bng-ico">📍</span>
+        <div class="bng-txt">
+          <strong id="bng-titulo">Georreferenciar vivienda</strong>
+          <small id="bng-sub">Toca el mapa para colocar el marcador</small>
+        </div>
+        <button class="bng-confirm" id="bng-confirm" onclick="confirmarGeoRefMapa()">✅ Guardar</button>
+        <button class="bng-cancel" onclick="cancelarGeoRefMapa()">✕ Cancelar</button>
+      </div>
+
+      <button id="btn-fs" onclick="toggleFs()" title="Pantalla completa">⛶</button>
+
+      <button id="btn-capas-mapa" onclick="toggleCapas()" title="Capas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+      </button>
+      <div id="panel-capas">
+        <button class="btn-capa activa" onclick="cambiarCapa('osm')">🗺️ Estándar</button>
+        <button class="btn-capa"        onclick="cambiarCapa('topo')">⛰️ Topográfico</button>
+        <button class="btn-capa"        onclick="cambiarCapa('satelite')">🛰️ Satélite</button>
+        <button class="btn-capa"        onclick="cambiarCapa('carto')">🏙️ Claro</button>
+      </div>
+
+      <button id="btn-gps-mapa" onclick="gpsUbicacion()" title="Mi ubicación">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          <circle cx="12" cy="12" r="8" stroke-opacity=".3"/>
+        </svg>
+      </button>
+
+      <!-- Botón georref desde mapa -->
+      <button id="btn-georref-mapa" onclick="abrirSheetGeoRef()" title="Georreferenciar vivienda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Georref. vivienda
+      </button>
+
+      <!-- Botón PDI -->
+      <button id="btn-pdi-mapa" onclick="abrirSheetPDI()" title="Agregar punto de interés">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Punto de interés
+      </button>
+
+      <!-- Banner PDI -->
+      <div id="banner-pdi">
+        <span style="font-size:1.2rem;flex-shrink:0" id="bpdi-ico">⭐</span>
+        <div class="bpdi-txt">
+          <strong id="bpdi-titulo">Agregar punto de interés</strong>
+          <small id="bpdi-sub">Toca el mapa para colocarlo</small>
+        </div>
+        <button class="bpdi-cancel" onclick="cancelarPDI()">✕ Cancelar</button>
+      </div>
+
+      <!-- Sheet tipo PDI -->
+      <div id="sheet-pdi">
+        <div class="spdi-head">
+          <strong>⭐ Tipo de punto de interés</strong>
+          <button class="spdi-close" onclick="cerrarSheetPDI()">✕</button>
+        </div>
+        <div class="spdi-grid" id="spdi-grid"></div>
+      </div>
+
+      <!-- Sheet selector -->
+      <div id="sheet-georref">
+        <div class="sgh-head">
+          <strong>📍 Selecciona una vivienda</strong>
+          <button class="sgh-close" onclick="cerrarSheetGeoRef()">✕</button>
+        </div>
+        <div class="sgh-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="sgh-buscador" placeholder="Buscar por número o nombre…" oninput="filtrarSheetGeoRef()" autocomplete="off"/>
+        </div>
+        <div class="sgh-list" id="sgh-lista"></div>
+      </div>
+
+      <!-- Barra fullscreen -->
+      <div id="filtros-fs">
+        <button class="btn-filtro-fs f-todos"    id="ff-todos"    onclick="filtrarMapa('todos')">🏠 Todos</button>
+        <button class="btn-filtro-fs"             id="ff-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
+        <button class="btn-filtro-fs"             id="ff-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
+        <button class="btn-filtro-fs"             id="ff-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
+      </div>
+    </div><!-- /mapa-wrapper -->
+
+    <!-- Estadísticas por edad -->
+    <div class="stats-panel">
+      <div class="stats-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="15" height="15"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Datos Generales de Población por Edad
+      </div>
+      <div class="stats-body">
+        <div id="stats-chips" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem"></div>
+        <div id="stats-edad"></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /mapa -->
+
+
+<!-- ════════════════════════════
+     CATÁLOGO
+════════════════════════════ -->
+<div class="screen" id="screen-catalogo">
+  <div class="topbar cat-topbar">
+    <button class="back-btn" onclick="irA('screen-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      Inicio
+    </button>
+    <button class="tbtn primary" onclick="abrirNuevaVivienda()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva
+    </button>
+    <button class="tbtn amber" onclick="abrirImportarExcel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar
+    </button>
+    <button class="tbtn secondary" onclick="exportarExcel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar
+    </button>
+  </div>
+
+  <div class="cat-search-wrap">
+    <div class="cat-search-inner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="cat-buscar" placeholder="Buscar por vivienda o nombre…" oninput="_debounceCat()" autocomplete="off"/>
+    </div>
+  </div>
+
+  <div class="scroller" id="cat-lista"></div>
+</div><!-- /catalogo -->
+
+
+<!-- ════════════════
+     MODAL NUEVA/EDITAR VIVIENDA
+════════════════ -->
+<div class="modal-bg" id="modal-vivienda" onclick="cerrarModal('modal-vivienda')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close-x" onclick="cerrarModal('modal-vivienda')">✕</button>
+    <h3 id="mviv-titulo">Nueva Vivienda</h3>
+    <p id="mviv-sub">Registra el número de vivienda y el nivel de riesgo sanitario.</p>
+    <div class="f-group">
+      <label>N° de Vivienda *</label>
+      <input type="text" id="mviv-num" placeholder="Ej: 15"/>
+    </div>
+    <div class="f-group">
+      <label class="mviv-riesgo-label">
+        Nivel de Riesgo Sanitario
+        <span class="riesgo-auto-chip auto" id="mviv-riesgo-chip">⚡ Auto</span>
+      </label>
+      <select id="mviv-riesgo" onchange="mvivRiesgoManual()">
+        <option value="ninguno">🟢 Sin Riesgo</option>
+        <option value="medio">🟡 Riesgo Medio</option>
+        <option value="alto">🔴 Alto Riesgo</option>
+      </select>
+      <small id="mviv-riesgo-hint" style="font-size:.67rem;color:var(--muted);margin-top:3px;display:block">
+        Calculado automáticamente según cantidad de integrantes. Puedes cambiarlo manualmente.
+      </small>
+    </div>
+    <div class="modal-btns">
+      <button class="btn cancel" onclick="cerrarModal('modal-vivienda')">Cancelar</button>
+      <button class="btn save" onclick="guardarVivienda()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════
+     MODAL NUEVA/EDITAR PERSONA
+════════════════ -->
+<div class="modal-bg" id="modal-persona" onclick="cerrarModal('modal-persona')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close-x" onclick="cerrarModal('modal-persona')">✕</button>
+    <h3 id="mper-titulo">Agregar Integrante</h3>
+    <p id="mper-sub" style="font-size:.78rem;color:var(--muted);margin-bottom:.9rem"></p>
+    <div class="f-group">
+      <label>Nombre completo *</label>
+      <input type="text" id="mper-nombre" placeholder="Nombre del integrante"/>
+    </div>
+    <div class="f-group">
+      <label>Fecha de nacimiento</label>
+      <input type="date" id="mper-fnac" oninput="calcEdadModal()"/>
+    </div>
+    <div class="edad-display" id="mper-edad-display">
+      <span>🎂</span>
+      <div>
+        <span id="mper-edad-txt">—</span>
+        <small id="mper-edad-sub"></small>
+      </div>
+    </div>
+    <div class="f-group">
+      <label>Edad (manual si no ingresa fecha)</label>
+      <input type="text" id="mper-edad-manual" placeholder="Ej: 32 años, 6 meses, 15 días…"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn cancel" onclick="cerrarModal('modal-persona')">Cancelar</button>
+      <button class="btn save" onclick="guardarPersona()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════
+     MODAL IMPORTAR EXCEL
+════════════════ -->
+<div class="modal-bg import-modal" id="modal-importar" onclick="cerrarModal('modal-importar')">
+  <div class="modal-box" style="max-width:520px;padding:0;overflow:hidden" onclick="event.stopPropagation()">
+    <div style="padding:1.3rem 1.4rem .9rem;background:linear-gradient(135deg,var(--ink),var(--ink2));color:#fff;position:relative;">
+      <button class="modal-close-x" style="background:rgba(255,255,255,.15);color:#fff" onclick="cerrarModal('modal-importar')">✕</button>
+      <h3 style="color:#fff;font-family:'Instrument Serif',serif;font-size:1.15rem;margin-bottom:.2rem">Importar Catálogo</h3>
+      <p style="color:rgba(255,255,255,.55);font-size:.77rem;margin:0">Formato Excel (.xlsx, .xls) o CSV · Columnas: Vivienda | Nombre | Fecha Nacimiento</p>
+    </div>
+
+    <!-- Paso 1: subir -->
+    <div id="imp-paso1" style="padding:1.1rem 1.3rem 1.3rem">
+      <label class="dropzone-lbl" id="imp-dropzone"
+        ondragover="event.preventDefault();this.style.borderColor='var(--emerald)'"
+        ondragleave="this.style.borderColor=''"
+        ondrop="onDrop(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <strong>Toca para seleccionar archivo</strong>
+        <small>o arrastra aquí · .xlsx · .xls · .csv</small>
+        <input type="file" id="imp-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="leerArchivo(this.files[0])"/>
+      </label>
+      <div class="import-error" id="imp-error"></div>
+      <!-- Plantilla -->
+      <div style="margin-top:.8rem;text-align:center">
+        <button onclick="descargarPlantilla()" style="background:none;border:1.5px solid var(--border);color:var(--teal);border-radius:8px;padding:.38rem .9rem;font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s" onmouseover="this.style.background='var(--mist)'" onmouseout="this.style.background='none'">
+          📥 Descargar plantilla de ejemplo
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 2: vista previa -->
+    <div id="imp-paso2" style="display:none">
+      <div class="import-resumen" id="imp-resumen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        —
+      </div>
+      <div class="preview-wrap">
+        <table class="prev-table">
+          <thead>
+            <tr>
+              <th>Vivienda</th><th>Nombre</th><th>F. Nacimiento → Edad</th>
+              <th>Riesgo</th>
+            </tr>
+          </thead>
+          <tbody id="imp-tbody"></tbody>
+        </table>
+      </div>
+      <div class="import-checkbox">
+        <input type="checkbox" id="imp-reemplazar"/>
+        <label for="imp-reemplazar"><strong>Reemplazar</strong> catálogo existente (si no, se fusiona)</label>
+      </div>
+      <div class="import-footer">
+        <button class="btn cancel" onclick="impVolverPaso1()">← Cambiar</button>
+        <button class="btn save" onclick="confirmarImport()">✅ Importar ahora</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PANTALLA PDI
+════════════════════════════ -->
+<div class="screen" id="screen-pdi">
+  <div class="topbar">
+    <button class="back-btn" onclick="irA('screen-mapa')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+      Mapa
+    </button>
+    <span class="topbar-title">⭐ Puntos de Interés</span>
+    <button class="tbtn primary" onclick="irA('screen-mapa');setTimeout(abrirSheetPDI,320)" style="flex-shrink:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Agregar
+    </button>
+  </div>
+  <div class="scroller" id="pdi-lista"></div>
+</div>
+
+<!-- ════════════════
+     MODAL FAMILIA COMPLETA
+════════════════ -->
+<div id="modal-familia">
+  <div class="mfam-box">
+    <div class="mfam-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <span class="mfam-titulo" id="mfam-titulo">Vivienda —</span>
+      <span class="mfam-riesgo sin" id="mfam-riesgo-badge">Sin Riesgo</span>
+      <button class="mfam-close" onclick="cerrarModalFamilia()">✕ Cerrar</button>
+    </div>
+    <div class="mfam-body" id="mfam-body"></div>
+    <div class="mfam-footer">
+      <button class="tbtn primary" onclick="_mfamAgregarPersona()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar
+      </button>
+      <button class="tbtn secondary" onclick="_mfamEditarVivienda()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editar vivienda
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════
+     MODAL UID / PROMOTOR
+════════════════ -->
+<div class="modal-bg" id="modal-uid" onclick="event.stopPropagation()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close-x" onclick="cerrarModal('modal-uid')">✕</button>
+    <h3>☁️ Configurar Sync</h3>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">
+      Ingresa tu código de promotor. Este código identifica tus datos en la nube.
+      Usa el mismo en todos tus dispositivos.
+    </p>
+    <input class="uid-input" type="text" id="uid-input"
+      placeholder="Ej: PROMOTOR_01"
+      maxlength="30" autocomplete="off" autocapitalize="characters"
+      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')"/>
+    <div class="uid-hint">Solo letras, números y guión bajo. Sin espacios ni tildes.</div>
+    <div class="modal-btns">
+      <button class="btn cancel" onclick="cerrarModal('modal-uid')">Cancelar</button>
+      <button class="btn save" onclick="guardarUID()">✅ Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+// ── STORAGE ──
+const LS_KEY = 'mapa_san_catalogo';
+const LS_PDI = 'mapa_san_pdi';
+function getCatalogo(){ return JSON.parse(localStorage.getItem(LS_KEY)||'[]'); }
+function saveCatalogo(cat){ localStorage.setItem(LS_KEY,JSON.stringify(cat)); }
+
+// ── RIESGO AUTOMÁTICO POR CANTIDAD DE MIEMBROS ──
+// 1-4 → ninguno | 5-7 → medio | 8+ → alto
+function calcRiesgoAuto(n){
+  if(n>=8) return 'alto';
+  if(n>=5) return 'medio';
+  return 'ninguno';
+}
+// Aplica riesgo automático a todas las viviendas que no tengan override manual
+// Si riesgoManual===undefined se recalcula siempre (usado en import/carga inicial)
+function recalcRiesgoVivienda(v){
+  // Si tiene flag de override manual, no tocar
+  if(v._riesgoManual) return;
+  const n=(v.personas||[]).length;
+  v.riesgo=calcRiesgoAuto(n);
+}
+
+// Indicador auto/manual en el select del modal vivienda
+let _mvivRiesgoEsManual=false;
+function mvivRiesgoManual(){
+  _mvivRiesgoEsManual=true;
+  const chip=document.getElementById('mviv-riesgo-chip');
+  if(chip){chip.textContent='✏️ Manual';chip.className='riesgo-auto-chip manual';}
+}
+function _mvivSetRiesgo(vivId){
+  // Calcula el riesgo auto para mostrar en el select al abrir
+  _mvivRiesgoEsManual=false;
+  const cat=getCatalogo();
+  const v=vivId?cat.find(x=>x.id===vivId):null;
+  const chip=document.getElementById('mviv-riesgo-chip');
+  if(v&&v._riesgoManual){
+    _mvivRiesgoEsManual=true;
+    document.getElementById('mviv-riesgo').value=v.riesgo||'ninguno';
+    if(chip){chip.textContent='✏️ Manual';chip.className='riesgo-auto-chip manual';}
+  } else {
+    const n=v?(v.personas||[]).length:0;
+    const auto=calcRiesgoAuto(n);
+    document.getElementById('mviv-riesgo').value=auto;
+    if(chip){chip.textContent='⚡ Auto';chip.className='riesgo-auto-chip auto';}
+  }
+}
+function getPDI(){ return JSON.parse(localStorage.getItem(LS_PDI)||'[]'); }
+function savePDI(arr){ localStorage.setItem(LS_PDI,JSON.stringify(arr)); }
+
+// ── HELPERS ──
+function toast(msg,tipo='',dur=2800){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(tipo);t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.display='none'},dur);
+}
+function cerrarModal(id){document.getElementById(id).classList.remove('show')}
+function abrirModal(id){document.getElementById(id).classList.add('show')}
+
+function calcularEdadTexto(fnacISO){
+  if(!fnacISO) return '';
+  const hoy=new Date(); const fnac=new Date(fnacISO+'T00:00:00');
+  if(isNaN(fnac)||fnac>hoy) return '';
+  let a=hoy.getFullYear()-fnac.getFullYear();
+  let m=hoy.getMonth()-fnac.getMonth();
+  let d=hoy.getDate()-fnac.getDate();
+  if(d<0){m--;const dm=new Date(hoy.getFullYear(),hoy.getMonth(),0).getDate();d+=dm}
+  if(m<0){a--;m+=12}
+  if(a===0&&m===0) return `${d} día${d!==1?'s':''}`;
+  if(a===0){let t=`${m} mes${m!==1?'es':''}`;if(d>0)t+=` ${d} día${d!==1?'s':''}`;return t}
+  let t=`${a} año${a!==1?'s':''}`;if(m>0)t+=` ${m} mes${m!==1?'es':''}`;return t;
+}
+
+function normalISO(s){
+  if(!s) return ''; s=s.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m1=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+  const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(m2) return `${m2[1]}-${m2[2].padStart(2,'0')}-${m2[3].padStart(2,'0')}`;
+  return s;
+}
+function serialExcelAFecha(serial){
+  const base=new Date(Date.UTC(1899,11,30));
+  const dt=new Date(base.getTime()+serial*86400000);
+  const d=String(dt.getUTCDate()).padStart(2,'0');
+  const m=String(dt.getUTCMonth()+1).padStart(2,'0');
+  return `${dt.getUTCFullYear()}-${m}-${d}`;
+}
+function calcEdadImport(s){
+  if(!s) return null;
+  const r=String(s).trim();
+  if(/^\d{4,6}$/.test(r)){const iso=serialExcelAFecha(parseInt(r));return calcularEdadTexto(iso)||null;}
+  const iso=normalISO(r);
+  return iso?calcularEdadTexto(iso)||null:null;
+}
+function normalFnacImport(s){
+  if(!s) return '';
+  const r=String(s).trim();
+  if(/^\d{4,6}$/.test(r)) return serialExcelAFecha(parseInt(r));
+  return normalISO(r);
+}
+
+// ── NAVEGACIÓN ──
+function irA(id){
+  if(id!=='screen-mapa'){
+    const w=document.getElementById('mapa-wrapper');
+    const b=document.getElementById('btn-fs');
+    if(w&&w.dataset.simFs){
+      _desactFs(w,b,true); // salida instantánea, sin resize
+    } else if(document.fullscreenElement||document.webkitFullscreenElement){
+      try{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(e){}
+    }
+  }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-home') actualizarHome();
+  if(id==='screen-catalogo') renderCatalogo();
+  if(id==='screen-mapa') abrirMapa();
+  if(id==='screen-pdi') renderPDI();
+}
+
+// ── HOME ──
+function actualizarHome(){
+  const cat=getCatalogo();
+  let sin=0,med=0,alt=0,pers=0,geo=0;
+  cat.forEach(v=>{
+    const r=v.riesgo||'ninguno';
+    if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
+    pers+=(v.personas||[]).length;
+    if(v.lat&&v.lng)geo++;
+  });
+  document.getElementById('hc-sin').textContent=sin;
+  document.getElementById('hc-med').textContent=med;
+  document.getElementById('hc-alt').textContent=alt;
+  document.getElementById('hs-viv').textContent=cat.length;
+  document.getElementById('hs-per').textContent=pers;
+  document.getElementById('hs-geo').textContent=geo;
+}
+window.addEventListener('DOMContentLoaded',()=>{ actualizarHome(); _actualizarSyncUI(); });
+
+// ── CATÁLOGO ──
+let _editVivId=null;
+let _editPerId=null;
+let _editPerVivId=null;
+
+// ── CATÁLOGO ──
+let _catDebounceTimer=null;
+function _debounceCat(){
+  clearTimeout(_catDebounceTimer);
+  _catDebounceTimer=setTimeout(()=>renderCatalogo(),120);
+}
+
+function renderCatalogo(opcs){
+  const _renderCompleto=opcs&&opcs.renderCompleto;
+  const cat=getCatalogo();
+  const q=(document.getElementById('cat-buscar')?.value||'').trim().toLowerCase();
+  const cont=document.getElementById('cat-lista');
+  if(!cont) return;
+
+  if(!cat.length){
+    cont.innerHTML=`<div class="cat-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <p>No hay viviendas registradas.<br>Toca <strong>Nueva</strong> para comenzar.</p>
+    </div>`;
+    return;
+  }
+
+  const sorted=[...cat].sort((a,b)=>{
+    const na=parseFloat(a.vivienda)||0,nb=parseFloat(b.vivienda)||0;
+    return na!==nb?na-nb:String(a.vivienda).localeCompare(String(b.vivienda));
+  });
+
+  let lista=sorted;
+  if(q){
+    lista=sorted.reduce((acc,viv)=>{
+      const matchViv=String(viv.vivienda||'').toLowerCase().includes(q);
+      const persFiltradas=(viv.personas||[]).filter(p=>(p.nombre||'').toLowerCase().includes(q));
+      if(matchViv) acc.push(viv);
+      else if(persFiltradas.length) acc.push({...viv,personas:persFiltradas,_filtroPersona:true});
+      return acc;
+    },[]);
+  }
+
+  if(!lista.length){
+    cont.innerHTML=`<div class="cat-empty"><p>Sin resultados para "<strong>${q}</strong>"</p></div>`;
+    return;
+  }
+
+  function _htmlViv(viv){
+    const rk=viv.riesgo||'ninguno';
+    const rkLabel=rk==='alto'?'Alto':rk==='medio'?'Medio':'Sin Riesgo';
+    const rkClass=rk==='alto'?'alt':rk==='medio'?'med':'sin';
+    const pers=(viv.personas||[]).map(p=>{
+      const edad=p.fnac?calcularEdadTexto(p.fnac):(p.edad||'');
+      const esFiltrado=!!viv._filtroPersona;
+      if(esFiltrado){
+        // Fila como <button> nativo para garantizar el toque en mobile/WebView
+        return `<button type="button" class="cat-persona-item highlight-result" style="width:100%;text-align:left;background:#fefce8;border:none;border-left:3px solid #ca8a04;cursor:pointer;font-family:inherit;padding:.55rem 1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--mist2);" onclick="abrirModalFamilia('${viv.id}','${p.id}')">
+          <span class="cat-per-ico">👤</span>
+          <div class="cat-per-info" style="flex:1;min-width:0">
+            <strong style="display:block;font-size:.82rem;color:var(--ink)">${p.nombre}</strong>
+            <span style="font-size:.7rem;color:var(--muted)">${edad?'🎂 '+edad:'Sin edad'}${p.fnac?' · Nac. '+p.fnac.split('-').reverse().join('/'):''}</span>
+            <span style="display:block;font-size:.7rem;color:var(--teal);font-weight:700;margin-top:2px">✏️ Ver y editar familia completa</span>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="flex-shrink:0;opacity:.4"><path d="M9 18l6-6-6-6"/></svg>
+        </button>`;
+      }
+      return `<div class="cat-persona-item">
+        <span class="cat-per-ico">👤</span>
+        <div class="cat-per-info">
+          <strong>${p.nombre}</strong>
+          <span>${edad?'🎂 '+edad:'Sin edad'}${p.fnac?' · Nac. '+p.fnac.split('-').reverse().join('/'):''}</span>
+        </div>
+        <button class="cat-per-edit" onclick="abrirEditPersona('${viv.id}','${p.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="cat-per-del" onclick="eliminarPersona('${viv.id}','${p.id}')">✕</button>
+      </div>`;
+    }).join('');
+    const ubicTxt=viv.lat&&viv.lng
+      ?`✅ ${Number(viv.lat).toFixed(5)}, ${Number(viv.lng).toFixed(5)} · ${viv.origen_ubic==='gps'?'🛰️ GPS':'🖊️ Manual'}`
+      :'⚠️ Sin ubicación — no aparece en el mapa';
+    return `<div class="cat-viv-card" data-viv-id="${viv.id}">
+      <div class="cat-viv-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span class="cat-viv-num">Vivienda ${viv.vivienda}</span>
+        <span class="risk-badge ${rkClass}" onclick="ciclarRiesgo('${viv.id}')" title="Cambiar riesgo">
+          ${rk==='alto'?'🔴':rk==='medio'?'🟡':'🟢'} ${rkLabel}
+        </span>
+        <div class="cat-viv-btns">
+          <button class="cat-ico-btn" onclick="abrirEditVivienda('${viv.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="cat-ico-btn" onclick="eliminarVivienda('${viv.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="ubic-bloque">
+        <div class="ubic-btns">
+          <button class="btn-gps-viv" onclick="gpsVivienda('${viv.id}')">🛰️ GPS</button>
+          <button class="btn-map-viv" onclick="iniciarGeoRefMapa('${viv.id}',false)">🖊️ En Mapa</button>
+        </div>
+        <div class="ubic-status" id="ubic-${viv.id}">${ubicTxt}</div>
+      </div>
+      ${pers?`<div class="cat-personas">${pers}</div>`:'<div style="padding:.5rem 1rem;font-size:.78rem;color:var(--muted);font-style:italic">Sin integrantes</div>'}
+      <button class="cat-add-per-btn" onclick="abrirNuevaPersona('${viv.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar integrante
+      </button>
+    </div>`;
+  }
+
+  if(cont._catObserver){cont._catObserver.disconnect();cont._catObserver=null;}
+
+  const LOTE=10;
+  if(_renderCompleto||lista.length<=LOTE){
+    cont.innerHTML=lista.map(_htmlViv).join('');
+    return;
+  }
+
+  cont.innerHTML=lista.slice(0,LOTE).map(_htmlViv).join('');
+  let loaded=LOTE;
+  const sentinel=document.createElement('div');
+  sentinel.style.cssText='height:1px;width:100%';
+  cont.appendChild(sentinel);
+  const observer=new IntersectionObserver(entries=>{
+    if(!entries[0].isIntersecting) return;
+    const sig=lista.slice(loaded,loaded+LOTE);
+    if(!sig.length){observer.disconnect();sentinel.remove();return;}
+    sentinel.insertAdjacentHTML('beforebegin',sig.map(_htmlViv).join(''));
+    loaded+=sig.length;
+    if(loaded>=lista.length){observer.disconnect();sentinel.remove();}
+  },{rootMargin:'200px'});
+  observer.observe(sentinel);
+  cont._catObserver=observer;
+}
+
+// ── CRUD VIVIENDA ──
+function abrirNuevaVivienda(){
+  _editVivId=null;
+  document.getElementById('mviv-titulo').textContent='Nueva Vivienda';
+  document.getElementById('mviv-sub').textContent='Registra el número y el nivel de riesgo sanitario.';
+  document.getElementById('mviv-num').value='';
+  _mvivSetRiesgo(null);
+  abrirModal('modal-vivienda');
+  setTimeout(()=>document.getElementById('mviv-num').focus(),80);
+}
+function abrirEditVivienda(id){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===id); if(!v) return;
+  _editVivId=id;
+  document.getElementById('mviv-titulo').textContent='Editar Vivienda '+v.vivienda;
+  document.getElementById('mviv-sub').textContent='Modifica los datos de esta vivienda.';
+  document.getElementById('mviv-num').value=v.vivienda;
+  _mvivSetRiesgo(id);
+  abrirModal('modal-vivienda');
+}
+function guardarVivienda(){
+  const num=document.getElementById('mviv-num').value.trim();
+  if(!num){toast('Ingresa el número de vivienda','error');return;}
+  const riesgo=document.getElementById('mviv-riesgo').value;
+  const cat=getCatalogo();
+  const ts=new Date().toISOString();
+  if(_editVivId){
+    const v=cat.find(x=>x.id===_editVivId); if(!v) return;
+    const dup=cat.find(x=>x.vivienda===num&&x.id!==_editVivId);
+    if(dup){toast('Ese número ya existe','error');return;}
+    v.vivienda=num; v.riesgo=riesgo; v.actualizadoEn=ts;
+    v._riesgoManual=_mvivRiesgoEsManual||false;
+  } else {
+    if(cat.find(v=>v.vivienda===num)){toast('Esa vivienda ya existe','error');return;}
+    cat.push({id:'viv_'+Date.now(),vivienda:num,riesgo,personas:[],actualizadoEn:ts,_riesgoManual:_mvivRiesgoEsManual||false});
+  }
+  saveCatalogo(cat);
+  cerrarModal('modal-vivienda');
+  renderCatalogo();
+  actualizarHome();
+  toast((_editVivId?'✏️':'🏠 Vivienda '+(num)+' ')+'guardada','success');
+}
+function eliminarVivienda(id){
+  if(!confirm('¿Eliminar esta vivienda y todos sus integrantes?')) return;
+  saveCatalogo(getCatalogo().filter(v=>v.id!==id));
+  renderCatalogo();actualizarHome();
+  toast('Vivienda eliminada','success');
+}
+function ciclarRiesgo(id){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===id); if(!v) return;
+  const ciclo={ninguno:'medio',medio:'alto',alto:'ninguno'};
+  v.riesgo=ciclo[v.riesgo||'ninguno'];
+  v._riesgoManual=true; // El usuario lo cambió manualmente → no recalcular auto
+  v.actualizadoEn=new Date().toISOString();
+  saveCatalogo(cat);
+  // Actualizar solo el badge afectado sin re-renderizar todo
+  const rk=v.riesgo;
+  const rkClass=rk==='alto'?'alt':rk==='medio'?'med':'sin';
+  const rkLabel=rk==='alto'?'Alto':rk==='medio'?'Medio':'Sin Riesgo';
+  const rkIco=rk==='alto'?'🔴':rk==='medio'?'🟡':'🟢';
+  // El badge está en el header de la tarjeta con onclick="ciclarRiesgo('id')"
+  const allBadges=document.querySelectorAll('.risk-badge');
+  allBadges.forEach(b=>{
+    if(b.getAttribute('onclick')==="ciclarRiesgo('"+id+"')"){
+      b.className='risk-badge '+rkClass;
+      b.textContent=rkIco+' '+rkLabel;
+    }
+  });
+  actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  const lbl={ninguno:'🟢 Sin Riesgo',medio:'🟡 Riesgo Medio',alto:'🔴 Alto Riesgo'};
+  toast('Viv. '+v.vivienda+' → '+lbl[v.riesgo],'success');
+}
+
+// ── CRUD PERSONA ──
+function abrirNuevaPersona(vivId){
+  _editPerVivId=vivId; _editPerId=null;
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId);
+  document.getElementById('mper-titulo').textContent='Agregar Integrante';
+  document.getElementById('mper-sub').textContent='Vivienda '+(v?v.vivienda:'');
+  document.getElementById('mper-nombre').value='';
+  document.getElementById('mper-fnac').value='';
+  document.getElementById('mper-edad-manual').value='';
+  document.getElementById('mper-edad-display').classList.remove('show');
+  abrirModal('modal-persona');
+  setTimeout(()=>document.getElementById('mper-nombre').focus(),80);
+}
+function abrirEditPersona(vivId,perId){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId);
+  const p=(v?.personas||[]).find(x=>x.id===perId); if(!p) return;
+  _editPerVivId=vivId; _editPerId=perId;
+  document.getElementById('mper-titulo').textContent='Editar Integrante';
+  document.getElementById('mper-sub').textContent='Vivienda '+(v?v.vivienda:'');
+  document.getElementById('mper-nombre').value=p.nombre||'';
+  document.getElementById('mper-fnac').value=p.fnac||'';
+  document.getElementById('mper-edad-manual').value=(!p.fnac&&p.edad)?p.edad:'';
+  calcEdadModal();
+  abrirModal('modal-persona');
+}
+function calcEdadModal(){
+  const fnac=document.getElementById('mper-fnac').value;
+  const edad=calcularEdadTexto(fnac);
+  const disp=document.getElementById('mper-edad-display');
+  if(edad){
+    document.getElementById('mper-edad-txt').textContent=edad;
+    const [y,m,d]=fnac.split('-');
+    document.getElementById('mper-edad-sub').textContent=`Nacido/a el ${d}/${m}/${y}`;
+    disp.classList.add('show');
+    document.getElementById('mper-edad-manual').value='';
+    document.getElementById('mper-edad-manual').placeholder=edad+' (calculado)';
+  } else {
+    disp.classList.remove('show');
+    document.getElementById('mper-edad-manual').placeholder='Ej: 32 años, 6 meses…';
+  }
+}
+function guardarPersona(){
+  const nombre=document.getElementById('mper-nombre').value.trim();
+  if(!nombre){toast('Ingresa el nombre','error');return;}
+  const fnac=document.getElementById('mper-fnac').value;
+  const edadCalc=calcularEdadTexto(fnac);
+  const edadManual=document.getElementById('mper-edad-manual').value.trim();
+  const edad=edadCalc||edadManual;
+  const cat=getCatalogo();
+  const v=cat.find(x=>x.id===_editPerVivId); if(!v) return;
+  if(!v.personas) v.personas=[];
+  const ts=new Date().toISOString();
+  if(_editPerId){
+    const p=v.personas.find(x=>x.id===_editPerId); if(!p) return;
+    p.nombre=nombre; p.fnac=fnac||''; p.edad=edad;
+  } else {
+    v.personas.push({id:'per_'+Date.now(),nombre,fnac:fnac||'',edad});
+  }
+  v.actualizadoEn=ts;
+  // Recalcular riesgo automático si no tiene override manual
+  recalcRiesgoVivienda(v);
+  saveCatalogo(cat);
+  cerrarModal('modal-persona');
+  renderCatalogo();actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  toast('👤 '+nombre+' guardado/a','success');
+}
+function eliminarPersona(vivId,perId){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId); if(!v) return;
+  v.personas=(v.personas||[]).filter(p=>p.id!==perId);
+  v.actualizadoEn=new Date().toISOString();
+  recalcRiesgoVivienda(v);
+  saveCatalogo(cat);renderCatalogo();actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  toast('Integrante eliminado','success');
+}
+
+// ── GPS VIVIENDA ──
+function gpsVivienda(vivId){
+  if(!navigator.geolocation){toast('GPS no disponible','error');return;}
+  const st=document.getElementById('ubic-'+vivId);
+  if(st) st.textContent='🛰️ Buscando GPS…';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat,longitude:lng}=pos.coords;
+    const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId); if(!v) return;
+    v.lat=lat; v.lng=lng; v.origen_ubic='gps'; v.actualizadoEn=new Date().toISOString();
+    saveCatalogo(cat);
+    if(st) st.innerHTML=`✅ GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)} · 🛰️ GPS`;
+    actualizarHome();
+    if(_mapaZona) renderMarcadores(_filtroMapa);
+    toast('📍 GPS guardado en Viv. '+v.vivienda,'success');
+  },err=>{
+    const m={1:'Permiso denegado.',2:'Sin señal GPS.',3:'Tiempo agotado.'};
+    if(st) st.textContent='❌ '+(m[err.code]||err.message);
+    toast(m[err.code]||err.message,'error');
+  },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+
+// ── GEORREFERENCIACIÓN DESDE MAPA PRINCIPAL ──
+let _georrefVivId=null, _georrefMarker=null, _georrefPendingLL=null;
+
+function iniciarGeoRefMapa(vivId, yaEnMapa){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId); if(!v) return;
+  const _activar=()=>{
+    _georrefVivId=vivId;
+    _georrefPendingLL=null;
+    const _jefe=(v.personas&&v.personas.length)?v.personas[0].nombre:'';
+    document.getElementById('bng-titulo').textContent='Viv. '+v.vivienda+(_jefe?' — '+_jefe:'')+'  · Georreferenciar';
+    document.getElementById('bng-sub').textContent='Toca el mapa para colocar el marcador';
+    document.getElementById('bng-confirm').classList.remove('visible');
+    document.getElementById('banner-georref').classList.add('visible');
+    document.getElementById('mapa-leaflet').classList.add('modo-georref');
+    if(v.lat&&v.lng){
+      _mapaZona.setView([v.lat,v.lng],17,{animate:true});
+      _colocarMarkerGeoRef(L.latLng(v.lat,v.lng),v);
+    }
+    _mapaZona.off('click',_onMapaClickGeoRef);
+    _mapaZona.on('click',_onMapaClickGeoRef);
+    _mapaZona.closePopup();
+  };
+  if(yaEnMapa){
+    _activar();
+  } else {
+    irA('screen-mapa');
+    setTimeout(_activar, 320);
+  }
+}
+
+function _onMapaClickGeoRef(e){
+  if(!_georrefVivId) return;
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===_georrefVivId);
+  _colocarMarkerGeoRef(e.latlng,v);
+}
+
+function _colocarMarkerGeoRef(ll,v){
+  if(_georrefMarker){_georrefMarker.remove();_georrefMarker=null;}
+  _georrefPendingLL=ll;
+  const svgPin=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44"><ellipse cx="18" cy="41" rx="7" ry="3" fill="rgba(0,0,0,.25)"/><path d="M18 2C10.27 2 4 8.27 4 16c0 9.75 14 26 14 26s14-16.25 14-26C32 8.27 25.73 2 18 2z" fill="#1565c0" stroke="#fff" stroke-width="2"/><circle cx="18" cy="16" r="5.5" fill="#fff" opacity=".9"/></svg>`;
+  _georrefMarker=L.marker(ll,{
+    icon:L.divIcon({html:svgPin,className:'',iconSize:[36,44],iconAnchor:[18,44],popupAnchor:[0,-46]}),
+    draggable:true
+  }).addTo(_mapaZona);
+  _georrefMarker.on('drag',()=>{
+    _georrefPendingLL=_georrefMarker.getLatLng();
+    document.getElementById('bng-sub').textContent=
+      `📍 ${_georrefPendingLL.lat.toFixed(5)}, ${_georrefPendingLL.lng.toFixed(5)}`;
+  });
+  _georrefMarker.on('dragend',()=>{
+    _georrefPendingLL=_georrefMarker.getLatLng();
+  });
+  _georrefMarker.bindPopup(
+    `<div style="font-family:sans-serif;font-size:.8rem;text-align:center;padding:2px">
+      <strong>Viv. ${v?v.vivienda:''}</strong>${(v&&v.personas&&v.personas.length)?`<br><span style="color:#1565c0;font-weight:700">${v.personas[0].nombre}</span>`:''}<br>
+      <small style="color:#555">Arrastra para ajustar<br>o toca otro punto del mapa</small>
+    </div>`
+  ).openPopup();
+  document.getElementById('bng-sub').textContent=
+    `📍 ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)} — Arrastra o toca para mover`;
+  document.getElementById('bng-confirm').classList.add('visible');
+}
+
+function confirmarGeoRefMapa(){
+  if(!_georrefVivId||!_georrefPendingLL) return;
+  const ll=_georrefPendingLL;
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===_georrefVivId); if(!v) return;
+  v.lat=ll.lat; v.lng=ll.lng; v.origen_ubic='manual'; v.actualizadoEn=new Date().toISOString();
+  saveCatalogo(cat);
+  // Actualizar status en catálogo si está visible
+  const st=document.getElementById('ubic-'+_georrefVivId);
+  if(st) st.innerHTML=`✅ ${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)} · 🖊️ Manual`;
+  actualizarHome();
+  renderMarcadores(_filtroMapa);
+  toast('📍 Viv. '+v.vivienda+' georreferenciada','success');
+  _limpiarGeoRefMapa();
+}
+
+function cancelarGeoRefMapa(){
+  _limpiarGeoRefMapa();
+  toast('Cancelado','success');
+}
+
+function _limpiarGeoRefMapa(){
+  if(_georrefMarker){_georrefMarker.remove();_georrefMarker=null;}
+  _georrefVivId=null; _georrefPendingLL=null;
+  document.getElementById('banner-georref').classList.remove('visible');
+  document.getElementById('mapa-leaflet').classList.remove('modo-georref');
+  document.getElementById('bng-confirm').classList.remove('visible');
+  if(_mapaZona) _mapaZona.off('click',_onMapaClickGeoRef);
+}
+
+// ── MAPA PRINCIPAL ──
+const LAT0=13.8800, LNG0=-89.5000, ZOOM0=14;
+let _mapaZona=null,_filtroMapa='todos',_marcadores=[];
+let _capas={},_capaActual='osm';
+let _marcGPS=null,_circGPS=null;
+
+function cargarLeaflet(){
+  if(typeof L!=='undefined') return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload=res; s.onerror=()=>rej(new Error('No se cargó Leaflet'));
+    document.head.appendChild(s);
+  });
+}
+
+async function abrirMapa(){
+  try{await cargarLeaflet();}catch(e){toast('⚠️ Conexión necesaria para el mapa','error');return;}
+  setTimeout(()=>{
+    if(!_mapaZona){
+      _mapaZona=L.map('mapa-leaflet').setView([LAT0,LNG0],ZOOM0);
+      _capas={
+        osm:     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}),
+        topo:    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'© OpenTopoMap',maxZoom:17}),
+        satelite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19}),
+        carto:   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19})
+      };
+      _capaActual='osm'; _capas.osm.addTo(_mapaZona);
+    } else { _mapaZona.invalidateSize(); }
+    _filtroMapa='todos'; actualizarBotonesFiltro('todos');
+    renderMarcadores('todos');
+    renderMarcadoresPDI();
+    renderStats();
+  },180);
+}
+
+function colorVivienda(v){
+  const r=v.riesgo||'ninguno';
+  if(r==='alto') return '#c62828';
+  if(r==='medio') return '#ca8a04';
+  return '#16a34a';
+}
+function iconoLeaflet(color, label){
+  const svg=`<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="${color}" stroke="white" stroke-width="2.5"/><circle cx="15" cy="15" r="4.5" fill="white" opacity=".85"/></svg>
+    <span style="background:${color};color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.35);letter-spacing:.02em;line-height:1.4;font-family:sans-serif">${label}</span>
+  </div>`;
+  return L.divIcon({html:svg,className:'',iconSize:[30,46],iconAnchor:[15,15],popupAnchor:[0,-20]});
+}
+function renderMarcadores(filtro){
+  if(!_mapaZona) return;
+  _filtroMapa=filtro;
+  _marcadores.forEach(m=>m.remove()); _marcadores=[];
+
+  const cat=getCatalogo();
+  let sinUbic=[],conUbic=0;
+
+  cat.forEach(viv=>{
+    const rk=viv.riesgo||'ninguno';
+    // Filtrar
+    if(filtro==='verde'&&rk!=='ninguno') return;
+    if(filtro==='amarillo'&&rk!=='medio') return;
+    if(filtro==='rojo'&&rk!=='alto') return;
+
+    const jefe=(viv.personas&&viv.personas.length)?viv.personas[0].nombre:'—';
+    const nP=viv.personas?viv.personas.length:0;
+    if(!viv.lat||!viv.lng){sinUbic.push(viv);return;}
+    conUbic++;
+
+    const color=colorVivienda(viv);
+    const etNivel=rk==='alto'?'🔴 Alto Riesgo':rk==='medio'?'🟡 Riesgo Medio':'🟢 Sin Riesgo';
+    const bgN=rk==='alto'?'#ffebee':rk==='medio'?'#fefce8':'#f0fdf4';
+    const bdN=rk==='alto'?'#c62828':rk==='medio'?'#ca8a04':'#16a34a';
+
+    const intList=(viv.personas||[]).slice(0,5).map(p=>`<div style="font-size:.77em;padding:2px 0;border-bottom:1px solid #f0f0f0;color:#444;">👤 ${p.nombre}${p.edad?' <span style="color:#888;font-size:.9em">· '+p.edad+'</span>':''}</div>`).join('')
+      +(viv.personas&&viv.personas.length>5?`<div style="font-size:.72em;color:#888;padding-top:2px">…y ${viv.personas.length-5} más</div>`:'');
+
+    const popupHTML=`<div style="min-width:190px;max-width:215px;font-family:sans-serif;padding:2px;">
+      <div style="background:linear-gradient(135deg,#0c1f18,#1a3a2d);color:#fff;padding:7px 10px;border-radius:7px 7px 0 0;margin:-2px -2px 8px;display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="13" height="13"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <strong style="font-size:.88em">Vivienda ${viv.vivienda}</strong>
+      </div>
+      <div style="background:${bgN};border-left:3px solid ${bdN};padding:3px 7px;border-radius:4px;margin-bottom:6px;font-size:.78em;font-weight:bold;color:${bdN}">${etNivel}</div>
+      <div style="font-size:.78em;margin-bottom:4px;"><strong style="color:#0a3d2e">👨‍👩‍👧 Jefe/a:</strong> ${jefe}</div>
+      <div style="font-size:.75em;color:#546e7a;margin-bottom:5px;">🏠 <strong>${nP}</strong> integrante${nP!==1?'s':''}</div>
+      <div style="border-top:1px solid #eee;padding-top:5px;margin-bottom:5px">${intList||'<em style="font-size:.77em;color:#aaa">Sin integrantes</em>'}</div>
+      <div style="font-size:.7em;color:#888;margin-bottom:5px">${viv.origen_ubic==='gps'?'🛰️ GPS':'🖊️ Manual'}</div>
+      <button onclick="irA('screen-catalogo');setTimeout(()=>{const i=document.getElementById('cat-buscar');if(i){i.value='${viv.vivienda}';renderCatalogo();}},100)"
+        style="background:#0a3d2e;color:#fff;border:none;padding:7px 0;border-radius:7px;font-size:.82em;font-weight:bold;cursor:pointer;width:100%;margin-bottom:4px">📋 Ver Familia</button>
+      <button onclick="iniciarGeoRefMapa('${viv.id}',true)"
+        style="background:#1565c0;color:#fff;border:none;padding:6px 0;border-radius:7px;font-size:.78em;font-weight:bold;cursor:pointer;width:100%">📍 Reubicar en mapa</button>
+    </div>`;
+
+    const m=L.marker([viv.lat,viv.lng],{icon:iconoLeaflet(color, viv.vivienda)})
+      .addTo(_mapaZona).bindPopup(popupHTML,{maxWidth:220});
+    _marcadores.push(m);
+  });
+
+  // Mostrar contador de sin GPS en la leyenda (no marcador en el mapa)
+  const cSinGPS=document.getElementById('leyenda-sin-gps');
+  if(cSinGPS){
+    if(sinUbic.length>0&&filtro==='todos'){
+      cSinGPS.textContent=`Sin GPS (${sinUbic.length})`;
+      cSinGPS.parentElement.style.display='flex';
+    } else {
+      cSinGPS.parentElement.style.display='none';
+    }
+  }
+}
+
+function filtrarMapa(t){
+  _filtroMapa=t; actualizarBotonesFiltro(t); renderMarcadores(t);
+}
+function actualizarBotonesFiltro(t){
+  const m={todos:'f-todos',verde:'f-verde',amarillo:'f-amarillo',rojo:'f-rojo'};
+  ['todos','verde','amarillo','rojo'].forEach(k=>{
+    const b1=document.getElementById('mf-'+k),b2=document.getElementById('ff-'+k);
+    if(b1) b1.className='btn-filtro-mapa'+(k===t?' '+m[k]:'');
+    if(b2) b2.className='btn-filtro-fs'+(k===t?' '+m[k]:'');
+  });
+}
+
+// ── CAPAS ──
+function toggleCapas(){
+  const p=document.getElementById('panel-capas'); if(!p) return;
+  if(p.classList.contains('visible')){p.classList.remove('visible');return;}
+  p.classList.add('visible');
+  setTimeout(()=>{
+    function cf(e){const pp=document.getElementById('panel-capas'),bb=document.getElementById('btn-capas-mapa');if(!pp||!bb)return;if(!pp.contains(e.target)&&!bb.contains(e.target)){pp.classList.remove('visible');document.removeEventListener('click',cf);}}
+    document.addEventListener('click',cf);
+  },0);
+}
+function cambiarCapa(id){
+  if(!_mapaZona||!_capas[id]) return;
+  if(_capas[_capaActual]&&_mapaZona.hasLayer(_capas[_capaActual])) _mapaZona.removeLayer(_capas[_capaActual]);
+  _capas[id].addTo(_mapaZona); _capaActual=id;
+  document.querySelectorAll('.btn-capa').forEach((b,i)=>{
+    b.classList.toggle('activa',['osm','topo','satelite','carto'][i]===id);
+  });
+  document.getElementById('panel-capas').classList.remove('visible');
+}
+
+// ── GPS ──
+function gpsUbicacion(){
+  const btn=document.getElementById('btn-gps-mapa');
+  if(!navigator.geolocation){toast('GPS no disponible','error');return;}
+  if(btn) btn.classList.add('buscando');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const{latitude:lat,longitude:lng,accuracy:acc}=pos.coords;
+    if(_marcGPS){_marcGPS.remove();_marcGPS=null;}
+    if(_circGPS){_circGPS.remove();_circGPS=null;}
+    _mapaZona.setView([lat,lng],16,{animate:true});
+    _circGPS=L.circle([lat,lng],{radius:acc,color:'#1a73e8',fillColor:'#1a73e8',fillOpacity:.08,weight:1}).addTo(_mapaZona);
+    const ig=L.divIcon({className:'',html:'<div class="gps-dot-outer"><div class="gps-dot-inner"></div></div>',iconSize:[20,20],iconAnchor:[10,10]});
+    _marcGPS=L.marker([lat,lng],{icon:ig}).addTo(_mapaZona).bindPopup(`📍 Tu ubicación<br><small>±${Math.round(acc)} m</small>`).openPopup();
+    if(btn){btn.classList.remove('buscando');btn.classList.add('encontrado');}
+    setTimeout(()=>{if(btn)btn.classList.remove('encontrado');},2500);
+  },err=>{
+    if(btn) btn.classList.remove('buscando');
+    const m={1:'Permiso denegado.',2:'Sin señal GPS.',3:'Tiempo agotado.'};
+    toast(m[err.code]||err.message,'error');
+  },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+
+// ── SHEET GEORREF DESDE MAPA ──
+let _sghSorted = []; // cache ordenado para filtrado
+
+function _sghRenderLista(lista) {
+  const cont = document.getElementById('sgh-lista');
+  if (!lista.length) {
+    cont.innerHTML = '<div class="sgh-empty">Sin resultados.</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(v => {
+    const rk = v.riesgo || 'ninguno';
+    const rkClass = rk === 'alto' ? 'alt' : rk === 'medio' ? 'med' : 'sin';
+    const rkLabel = rk === 'alto' ? 'Alto' : rk === 'medio' ? 'Medio' : 'Sin Riesgo';
+    const ubic = v.lat && v.lng ? `✅ ${Number(v.lat).toFixed(4)}, ${Number(v.lng).toFixed(4)}` : '⚠️ Sin ubicación';
+    const nP = (v.personas || []).length;
+    const jefe = (v.personas && v.personas.length) ? v.personas[0].nombre : 'Sin integrantes';
+    return `<div class="sgh-item" onclick="seleccionarVivGeoRef('${v.id}')">
+      <span class="sgh-item-ico">🏠</span>
+      <div class="sgh-item-txt">
+        <strong>Viv. ${v.vivienda} — ${jefe}</strong>
+        <small>${ubic} · ${nP} integrante${nP !== 1 ? 's' : ''}</small>
+      </div>
+      <span class="sgh-badge ${rkClass}">${rkLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function filtrarSheetGeoRef() {
+  const q = (document.getElementById('sgh-buscador').value || '').trim().toLowerCase();
+  if (!q) { _sghRenderLista(_sghSorted); return; }
+  const filtrada = _sghSorted.filter(v => {
+    if (String(v.vivienda).toLowerCase().includes(q)) return true;
+    return (v.personas || []).some(p => (p.nombre || '').toLowerCase().includes(q));
+  });
+  _sghRenderLista(filtrada);
+}
+
+function abrirSheetGeoRef(){
+  if(!_mapaZona){toast('Abre el mapa primero','error');return;}
+  const cat = getCatalogo();
+  // Limpiar buscador
+  const inp = document.getElementById('sgh-buscador');
+  if (inp) inp.value = '';
+  if (!cat.length) {
+    _sghSorted = [];
+    document.getElementById('sgh-lista').innerHTML = '<div class="sgh-empty">No hay viviendas registradas en el catálogo.</div>';
+  } else {
+    _sghSorted = [...cat].sort((a, b) => {
+      const na = parseFloat(a.vivienda) || 0, nb = parseFloat(b.vivienda) || 0;
+      return na !== nb ? na - nb : String(a.vivienda).localeCompare(String(b.vivienda));
+    });
+    _sghRenderLista(_sghSorted);
+  }
+  document.getElementById('sheet-georref').classList.add('visible');
+  document.getElementById('panel-capas').classList.remove('visible');
+  // Focus al buscador con pequeño delay para que el sheet esté visible
+  setTimeout(() => { if (inp) inp.focus(); }, 200);
+}
+function cerrarSheetGeoRef(){
+  document.getElementById('sheet-georref').classList.remove('visible');
+}
+function seleccionarVivGeoRef(vivId){
+  cerrarSheetGeoRef();
+  iniciarGeoRefMapa(vivId,true);
+}
+
+// ── FULLSCREEN ──
+function toggleFs(){
+  const w=document.getElementById('mapa-wrapper');
+  const b=document.getElementById('btn-fs');
+  const native=document.fullscreenElement||document.webkitFullscreenElement;
+  if(w.dataset.simFs){_desactFs(w,b);}
+  else if(native){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+  else{
+    const req=w.requestFullscreen||w.webkitRequestFullscreen;
+    if(req){const p=req.call(w);if(p&&typeof p.catch==='function')p.catch(()=>_actFs(w,b));else setTimeout(()=>{if(!(document.fullscreenElement||document.webkitFullscreenElement))_actFs(w,b);},150);}
+    else _actFs(w,b);
+  }
+}
+function _actFs(w,b){
+  w.dataset.simFs='1';
+  [['position','fixed'],['top','0'],['left','0'],['width','100vw'],['height','100vh'],['z-index','9999'],['border-radius','0'],['margin','0']].forEach(([p,v])=>w.style.setProperty(p,v,'important'));
+  const m=document.getElementById('mapa-leaflet');
+  if(m){m.style.setProperty('height','100vh','important');m.style.setProperty('border-radius','0','important');m.style.setProperty('margin-bottom','0','important');}
+  const f=document.getElementById('filtros-fs');if(f)f.style.setProperty('display','flex','important');
+  if(b){b.textContent='✕';b.style.setProperty('z-index','10000','important');b.style.setProperty('min-width','44px','important');b.style.setProperty('min-height','44px','important');}
+  setTimeout(()=>{if(_mapaZona)_mapaZona.invalidateSize();},300);
+}
+function _desactFs(w,b,skipResize){
+  delete w.dataset.simFs;
+  ['position','top','left','width','height','z-index','border-radius','margin'].forEach(p=>w.style.removeProperty(p));
+  const m=document.getElementById('mapa-leaflet');if(m)['height','border-radius','margin-bottom'].forEach(p=>m.style.removeProperty(p));
+  const f=document.getElementById('filtros-fs');if(f)f.style.removeProperty('display');
+  if(b){b.textContent='⛶';['z-index','min-width','min-height'].forEach(p=>b.style.removeProperty(p));}
+  if(!skipResize) requestAnimationFrame(()=>requestAnimationFrame(()=>{if(_mapaZona)_mapaZona.invalidateSize({animate:false});}));
+}
+document.addEventListener('fullscreenchange',()=>{
+  const b=document.getElementById('btn-fs'),w=document.getElementById('mapa-wrapper');
+  if(w&&!w.dataset.simFs){if(b)b.textContent=document.fullscreenElement?'✕':'⛶';setTimeout(()=>{if(_mapaZona)_mapaZona.invalidateSize();},300);}
+});
+document.addEventListener('webkitfullscreenchange',()=>{
+  const b=document.getElementById('btn-fs'),w=document.getElementById('mapa-wrapper');
+  if(w&&!w.dataset.simFs){if(b)b.textContent=document.webkitFullscreenElement?'✕':'⛶';setTimeout(()=>{if(_mapaZona)_mapaZona.invalidateSize();},300);}
+});
+
+// ── ESTADÍSTICAS EDAD ──
+const GRUPOS_EDAD=[
+  {label:'0 – 4 años',  test:m=>m>=0&&m<60},
+  {label:'5 – 11 años', test:m=>m>=60&&m<144},
+  {label:'12 – 17 años',test:m=>m>=144&&m<216},
+  {label:'18 – 59 años',test:m=>m>=216&&m<720},
+  {label:'60 a más',    test:m=>m>=720},
+];
+function mesesPersona(p){
+  if(p.fnac){const f=new Date(p.fnac+'T00:00:00');if(!isNaN(f)){const h=new Date();const ms=(h.getFullYear()-f.getFullYear())*12+(h.getMonth()-f.getMonth());return Math.max(0,ms);}}
+  return null;
+}
+function renderStats(){
+  const cat=getCatalogo();
+  let sin=0,med=0,alt=0,total=0;
+  const conteo=GRUPOS_EDAD.map(()=>0);
+  cat.forEach(v=>{
+    const r=v.riesgo||'ninguno';
+    if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
+    (v.personas||[]).forEach(p=>{
+      total++;
+      const m=mesesPersona(p);
+      if(m!==null) GRUPOS_EDAD.forEach((g,i)=>{if(g.test(m))conteo[i]++;});
+    });
+  });
+  const chips=document.getElementById('stats-chips');
+  if(chips) chips.innerHTML=`
+    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${sin}</span>Sin Riesgo</div>
+    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#fefce8;color:#ca8a04;border:1.5px solid #fde68a"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${med}</span>Riesgo Medio</div>
+    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#fff0f0;color:#c62828;border:1.5px solid #f5a0a0"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${alt}</span>Alto Riesgo</div>
+    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#e0f2fe;color:#0369a1;border:1.5px solid #7dd3fc"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${total}</span>Total Pers.</div>`;
+
+  const tablaEl=document.getElementById('stats-edad');
+  if(!tablaEl) return;
+  if(total===0){tablaEl.innerHTML='<p style="color:var(--muted);font-size:.8rem;text-align:center;padding:.8rem 0">Sin personas en el catálogo.</p>';return;}
+  const maxN=Math.max(...conteo,1);
+  tablaEl.innerHTML=GRUPOS_EDAD.map((g,i)=>{
+    const n=conteo[i],pct=total>0?((n/total)*100).toFixed(1):'0.0',w=Math.round((n/maxN)*100);
+    return `<div class="edad-row">
+      <span class="edad-label">${g.label}</span>
+      <span class="edad-n">${n}</span>
+      <div class="edad-bar-wrap"><div class="edad-bar-inner" style="width:${w}%"></div></div>
+      <span class="edad-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ── IMPORTAR EXCEL ──
+let _impFilas=[];
+function abrirImportarExcel(){impVolverPaso1();abrirModal('modal-importar');}
+function impVolverPaso1(){
+  document.getElementById('imp-paso1').style.display='block';
+  document.getElementById('imp-paso2').style.display='none';
+  document.getElementById('imp-error').style.display='none';
+  document.getElementById('imp-file').value='';
+  _impFilas=[];
+}
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('imp-dropzone').style.borderColor='';
+  const f=e.dataTransfer.files[0];if(f)leerArchivo(f);
+}
+function mostrarError(msg){const e=document.getElementById('imp-error');e.textContent=msg;e.style.display='block';}
+
+function leerArchivo(file){
+  if(!file) return;
+  document.getElementById('imp-error').style.display='none';
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const txt=e.target.result;
+        const sep=txt.indexOf(';')!==-1?';':',';
+        const lines=txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+        if(lines.length<2){mostrarError('Archivo vacío o sin datos.');return;}
+        const filas=lines.slice(1).map(l=>{
+          const cols=[];let dentro=false,campo='';
+          for(let i=0;i<l.length;i++){const c=l[i];if(c==='"')dentro=!dentro;else if(c===sep&&!dentro){cols.push(campo.trim());campo='';}else campo+=c;}
+          cols.push(campo.trim());return cols;
+        });
+        procesarFilas(filas);
+      }catch(err){mostrarError('Error CSV: '+err.message);}
+    };
+    r.readAsText(file,'UTF-8'); return;
+  }
+  if(ext==='xlsx'||ext==='xls'){
+    if(typeof XLSX==='undefined'){mostrarError('Librería de Excel no cargó. Intenta de nuevo.');return;}
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const datos=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        if(datos.length<2){mostrarError('Archivo vacío o sin datos.');return;}
+        procesarFilas(datos.slice(1).filter(r=>r.some(c=>String(c).trim()!=='')));
+      }catch(err){mostrarError('Error Excel: '+err.message);}
+    };
+    r.readAsArrayBuffer(file); return;
+  }
+  mostrarError('Formato no compatible. Usa .xlsx, .xls o .csv');
+}
+
+function procesarFilas(filas){
+  // Columnas: 0=vivienda, 1=nombre, 2=fecha nacimiento, 3=riesgo (opcional)
+  const res=[]; let err=0; let ultViv='';
+  filas.forEach(cols=>{
+    let viv=String(cols[0]??'').trim();
+    const nom=String(cols[1]??'').trim();
+    let fnacRaw=String(cols[2]??'').trim();
+    const riesgoRaw=String(cols[3]??'').trim().toLowerCase();
+    if(!viv&&!nom) return;
+    if(!viv&&nom) viv=ultViv;
+    if(viv) ultViv=viv;
+    if(!viv||!nom) err++;
+    // Normalizar riesgo
+    let riesgo='ninguno';
+    if(/alto|high|alrp/.test(riesgoRaw)) riesgo='alto';
+    else if(/medio|med|moderate/.test(riesgoRaw)) riesgo='medio';
+    else if(/sin|bajo|no|none|low/.test(riesgoRaw)) riesgo='ninguno';
+    // Normalizar fecha
+    if(/^\d{4,6}$/.test(fnacRaw)){const iso=serialExcelAFecha(parseInt(fnacRaw));fnacRaw=iso;}
+    else fnacRaw=normalISO(fnacRaw);
+    res.push({viv,nom,fnac:fnacRaw,riesgo,_err:!viv||!nom});
+  });
+  if(!res.length){mostrarError('No se encontraron filas válidas.');return;}
+  _impFilas=res;
+
+  const tbody=document.getElementById('imp-tbody');
+  const rMap={ninguno:'🟢 Sin Riesgo',medio:'🟡 Medio',alto:'🔴 Alto'};
+  tbody.innerHTML=res.map(f=>{
+    const edad=f.fnac?calcEdadImport(f.fnac)||'—':'—';
+    const fnacDisp=f.fnac?(()=>{const p=f.fnac.split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:f.fnac})():'—';
+    return `<tr>
+      <td class="${f._err&&!f.viv?'err':''}">${f.viv||'⚠ vacío'}</td>
+      <td class="${f._err&&!f.nom?'err':''}">${f.nom||'⚠ vacío'}</td>
+      <td><strong>${edad}</strong><br><span style="font-size:.68em;color:#666">${fnacDisp}</span></td>
+      <td>${rMap[f.riesgo]||rMap.ninguno}</td>
+    </tr>`;
+  }).join('');
+
+  const vivU=new Set(res.filter(f=>!f._err).map(f=>f.viv)).size;
+  const val=res.filter(f=>!f._err).length;
+  document.getElementById('imp-resumen').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 11l3 3L22 4"/></svg> ${val} personas en ${vivU} vivienda${vivU!==1?'s':''}${err?` · ⚠ ${err} fila${err>1?'s':''} con datos incompletos`:''}`;
+  document.getElementById('imp-reemplazar').checked=false;
+  document.getElementById('imp-paso1').style.display='none';
+  document.getElementById('imp-paso2').style.display='block';
+}
+
+function confirmarImport(){
+  const reemplazar=document.getElementById('imp-reemplazar').checked;
+  const filas=_impFilas.filter(f=>!f._err);
+  if(!filas.length){toast('No hay filas válidas','error');return;}
+  let cat=reemplazar?[]:getCatalogo();
+  const ts=new Date().toISOString();
+  filas.forEach(f=>{
+    let v=cat.find(x=>x.vivienda===f.viv);
+    if(!v){
+      v={id:'viv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+         vivienda:f.viv,riesgo:f.riesgo,personas:[],actualizadoEn:ts};
+      cat.push(v);
+    } else {
+      // Actualizar riesgo si vino en el Excel
+      if(f.riesgo&&f.riesgo!=='ninguno') v.riesgo=f.riesgo;
+    }
+    const yaExiste=(v.personas||[]).some(p=>p.nombre.toLowerCase()===f.nom.toLowerCase());
+    if(!yaExiste){
+      const edad=f.fnac?calcularEdadTexto(f.fnac)||'':'';
+      v.personas.push({id:'per_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),nombre:f.nom,fnac:f.fnac||'',edad});
+      v.actualizadoEn=ts;
+    }
+  });
+  // Recalcular riesgo automático para todas las viviendas afectadas
+  cat.forEach(v=>recalcRiesgoVivienda(v));
+  saveCatalogo(cat);
+  cerrarModal('modal-importar');
+  renderCatalogo();actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  const vivU=new Set(filas.map(f=>f.viv)).size;
+  toast(`✅ ${filas.length} personas importadas en ${vivU} viviendas`,'success');
+}
+
+// ── EXPORTAR EXCEL ──
+function exportarExcel(){
+  const cat=getCatalogo();
+  if(!cat.length){toast('No hay datos para exportar','error');return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel no disponible','error');return;}
+  const filas=[['N° Vivienda','Nombre','Fecha Nacimiento','Riesgo','Latitud','Longitud']];
+  cat.forEach(v=>{
+    const r=v.riesgo||'ninguno';
+    if(!v.personas||!v.personas.length){
+      filas.push([v.vivienda,'','',r,v.lat||'',v.lng||'']);
+    } else {
+      v.personas.forEach((p,i)=>{
+        const fnacDisp=p.fnac?(()=>{const pts=p.fnac.split('-');return pts.length===3?`${pts[2]}/${pts[1]}/${pts[0]}`:p.fnac})():'';
+        filas.push([v.vivienda,p.nombre,fnacDisp,i===0?r:'',i===0?(v.lat||''):'',i===0?(v.lng||''):'']);
+      });
+    }
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(filas);
+  ws['!cols']=[{wch:12},{wch:30},{wch:18},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'Catálogo');
+  const fecha=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,`MapaSanitario_${fecha}.xlsx`);
+  toast('✅ Excel exportado','success');
+}
+
+// ── PLANTILLA ──
+function descargarPlantilla(){
+  if(typeof XLSX==='undefined'){
+    // Fallback CSV
+    const csv='N° Vivienda,Nombre,Fecha Nacimiento (DD/MM/AAAA),Riesgo (alto/medio/sin riesgo)\n1,María García,15/03/1985,sin riesgo\n1,Juan García,22/07/1983,\n2,Ana López,05/11/2002,medio\n3,Pedro Martínez,30/01/1960,alto';
+    const a=document.createElement('a');
+    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download='Plantilla_MapaSanitario.csv'; a.click(); return;
+  }
+  const filas=[
+    ['N° Vivienda','Nombre','Fecha Nacimiento (DD/MM/AAAA)','Riesgo (alto/medio/sin riesgo)'],
+    [1,'María García','15/03/1985','sin riesgo'],
+    [1,'Juan García','22/07/1983',''],
+    [2,'Ana López','05/11/2002','medio'],
+    [3,'Pedro Martínez','30/01/1960','alto'],
+  ];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(filas);
+  ws['!cols']=[{wch:14},{wch:28},{wch:28},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Plantilla');
+  XLSX.writeFile(wb,'Plantilla_MapaSanitario.xlsx');
+  toast('📥 Plantilla descargada','success');
+}
+
+// ── BORRAR TODO ──
+function borrarViviendas(){
+  if(!confirm('⚠️ ¿Borrar todas las viviendas y personas?\n\nSe eliminarán del dispositivo incluyendo sus coordenadas GPS.\n\n🔒 La nube NO se toca.')) return;
+  localStorage.removeItem(LS_KEY);
+  actualizarHome();renderCatalogo();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  toast('🏠 Viviendas borradas · La nube permanece intacta','success');
+}
+
+function borrarPDI(){
+  if(!confirm('⚠️ ¿Borrar todos los puntos de interés?\n\n🔒 La nube NO se toca.')) return;
+  localStorage.removeItem(LS_PDI);
+  if(typeof renderPDI==='function') renderPDI();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  toast('📌 Puntos de interés borrados · La nube permanece intacta','success');
+}
+
+function borrarTodo(){
+  if(!confirm('⚠️ ¿Borrar TODO?\n\nSe eliminarán viviendas, personas y puntos de interés del dispositivo.\n\n🔒 La nube NO se toca — puedes recuperar con "Bajar de la Nube" si tenías datos subidos.')) return;
+  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_PDI);
+  actualizarHome();renderCatalogo();
+  if(typeof renderPDI==='function') renderPDI();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  toast('🗑️ Todo borrado · La nube permanece intacta','success');
+}
+
+// ═══════════════════════════════════════
+// PUNTOS DE INTERÉS (PDI)
+// ═══════════════════════════════════════
+const PDI_TIPOS=[
+  {id:'escuela',    ico:'🏫', label:'Escuela'},
+  {id:'clinica',    ico:'🏥', label:'Clínica/UDS'},
+  {id:'iglesia',    ico:'⛪', label:'Iglesia'},
+  {id:'agua',       ico:'💧', label:'Agua/Pozo'},
+  {id:'mercado',    ico:'🛒', label:'Mercado'},
+  {id:'cancha',     ico:'⚽', label:'Cancha'},
+  {id:'puente',     ico:'🌉', label:'Puente'},
+  {id:'riesgo',     ico:'⚠️', label:'Zona Riesgo'},
+  {id:'otro',       ico:'📌', label:'Otro'},
+];
+
+let _pdiTipoSel=null;
+let _pdiMarcadores=[];
+
+function abrirSheetPDI(){
+  if(!_mapaZona){toast('Abre el mapa primero','error');return;}
+  const grid=document.getElementById('spdi-grid');
+  grid.innerHTML=PDI_TIPOS.map(t=>`
+    <button class="spdi-tipo" onclick="seleccionarTipoPDI('${t.id}')">
+      <span>${t.ico}</span>${t.label}
+    </button>`).join('');
+  document.getElementById('sheet-pdi').classList.add('visible');
+  document.getElementById('panel-capas').classList.remove('visible');
+  document.getElementById('sheet-georref').classList.remove('visible');
+}
+function cerrarSheetPDI(){
+  document.getElementById('sheet-pdi').classList.remove('visible');
+}
+function seleccionarTipoPDI(tid){
+  cerrarSheetPDI();
+  _pdiTipoSel=PDI_TIPOS.find(t=>t.id===tid);
+  if(!_pdiTipoSel) return;
+  document.getElementById('bpdi-ico').textContent=_pdiTipoSel.ico;
+  document.getElementById('bpdi-titulo').textContent='Agregar: '+_pdiTipoSel.label;
+  document.getElementById('bpdi-sub').textContent='Toca el mapa para colocarlo';
+  document.getElementById('banner-pdi').classList.add('visible');
+  document.getElementById('mapa-leaflet').classList.add('modo-pdi');
+  _mapaZona.off('click',_onMapaClickPDI);
+  _mapaZona.once('click',_onMapaClickPDI);
+  _mapaZona.closePopup();
+}
+function _onMapaClickPDI(e){
+  if(!_pdiTipoSel) return;
+  const nombre=prompt(`Nombre del punto (${_pdiTipoSel.label}):`,'');
+  if(nombre===null){cancelarPDI();return;}
+  const pdi={
+    id:'pdi_'+Date.now(),
+    tipo:_pdiTipoSel.id,
+    ico:_pdiTipoSel.ico,
+    label:_pdiTipoSel.label,
+    nombre:nombre.trim()||_pdiTipoSel.label,
+    lat:e.latlng.lat,
+    lng:e.latlng.lng,
+    creadoEn:new Date().toISOString()
+  };
+  const arr=getPDI(); arr.push(pdi); savePDI(arr);
+  _renderMarcadorPDI(pdi);
+  toast(pdi.ico+' '+pdi.nombre+' guardado','success');
+  cancelarPDI();
+}
+function cancelarPDI(){
+  _pdiTipoSel=null;
+  document.getElementById('banner-pdi').classList.remove('visible');
+  document.getElementById('mapa-leaflet').classList.remove('modo-pdi');
+  if(_mapaZona) _mapaZona.off('click',_onMapaClickPDI);
+}
+function _iconoPDI(pdi){
+  const html=`<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+    <div style="background:#fff;border:2.5px solid #7b1fa2;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.3)">${pdi.ico}</div>
+    <span style="background:#7b1fa2;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.3);font-family:sans-serif;line-height:1.4">${pdi.nombre.length>12?pdi.nombre.slice(0,11)+'…':pdi.nombre}</span>
+  </div>`;
+  return L.divIcon({html,className:'',iconSize:[30,50],iconAnchor:[15,15],popupAnchor:[0,-20]});
+}
+function _renderMarcadorPDI(pdi){
+  const popup=`<div style="min-width:150px;font-family:sans-serif;padding:2px">
+    <div style="background:linear-gradient(135deg,#4a148c,#7b1fa2);color:#fff;padding:6px 10px;border-radius:7px 7px 0 0;margin:-2px -2px 7px;font-size:.86em;font-weight:bold">${pdi.ico} ${pdi.nombre}</div>
+    <div style="font-size:.75em;color:#666;margin-bottom:5px">📍 ${pdi.label}</div>
+    <div style="font-size:.7em;color:#aaa;margin-bottom:6px">${Number(pdi.lat).toFixed(5)}, ${Number(pdi.lng).toFixed(5)}</div>
+    <button onclick="eliminarPDI('${pdi.id}')" style="background:#c62828;color:#fff;border:none;padding:5px 0;border-radius:6px;font-size:.75em;font-weight:bold;cursor:pointer;width:100%">🗑️ Eliminar</button>
+  </div>`;
+  const m=L.marker([pdi.lat,pdi.lng],{icon:_iconoPDI(pdi)})
+    .addTo(_mapaZona).bindPopup(popup,{maxWidth:200});
+  m._pdiId=pdi.id;
+  _pdiMarcadores.push(m);
+}
+function eliminarPDI(pdiId){
+  if(!confirm('¿Eliminar este punto de interés?')) return;
+  const arr=getPDI().filter(p=>p.id!==pdiId); savePDI(arr);
+  const idx=_pdiMarcadores.findIndex(m=>m._pdiId===pdiId);
+  if(idx>=0){_pdiMarcadores[idx].remove();_pdiMarcadores.splice(idx,1);}
+  if(_mapaZona) _mapaZona.closePopup();
+  renderPDI();
+  toast('Punto eliminado','success');
+}
+function renderMarcadoresPDI(){
+  _pdiMarcadores.forEach(m=>m.remove()); _pdiMarcadores=[];
+  getPDI().forEach(p=>_renderMarcadorPDI(p));
+}
+function renderPDI(){
+  const arr=getPDI();
+  const lista=document.getElementById('pdi-lista');
+  if(!arr.length){
+    lista.innerHTML=`<div class="pdi-empty"><span>⭐</span><p>No hay puntos de interés registrados.<br>Agrégalos desde la pantalla del mapa.</p></div>`;
+    return;
+  }
+  lista.innerHTML=arr.map(p=>`
+    <div class="pdi-card">
+      <div class="pdi-card-head">
+        <span class="pdi-ico">${p.ico}</span>
+        <strong>${p.nombre}</strong>
+        <button class="pdi-del-btn" onclick="eliminarPDI('${p.id}')">🗑️</button>
+      </div>
+      <div class="pdi-card-body">
+        📍 ${p.label}
+        <div class="pdi-coords">${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// EXPORTAR MAPA
+// ═══════════════════════════════════════
+let _mfamVivId = null;
+let _mfamResaltarPerId = null;
+
+function _mfamRender() {
+  const cat = getCatalogo();
+  const viv = cat.find(v => v.id === _mfamVivId);
+  if (!viv) { cerrarModalFamilia(); return; }
+
+  // Título y badge de riesgo
+  document.getElementById('mfam-titulo').textContent = 'Vivienda ' + viv.vivienda;
+  const rk = viv.riesgo || 'ninguno';
+  const badge = document.getElementById('mfam-riesgo-badge');
+  badge.className = 'mfam-riesgo ' + (rk === 'alto' ? 'alt' : rk === 'medio' ? 'med' : 'sin');
+  badge.textContent = rk === 'alto' ? '🔴 Alto Riesgo' : rk === 'medio' ? '🟡 Riesgo Medio' : '🟢 Sin Riesgo';
+
+  const body = document.getElementById('mfam-body');
+  const personas = viv.personas || [];
+
+  if (!personas.length) {
+    body.innerHTML = '<div class="mfam-empty">Sin integrantes registrados.<br>Toca <strong>Agregar</strong> para añadir.</div>';
+    return;
+  }
+
+  body.innerHTML = personas.map(p => {
+    const fnacISO = p.fnac ? (() => {
+      const s = p.fnac.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+      return s;
+    })() : '';
+    const edad = fnacISO ? calcularEdadTexto(fnacISO) : (p.edad || '');
+    const subtxt = fnacISO ? (() => { const [y,m,d] = fnacISO.split('-'); return `Nac. ${d}/${m}/${y}`; })() : '';
+    const esResaltada = _mfamResaltarPerId === p.id;
+    return `<div class="mfam-persona-row${esResaltada ? ' resaltada' : ''}" id="mfam-row-${p.id}">
+      <span class="mfam-per-ico">👤</span>
+      <div class="mfam-per-info">
+        <strong>${p.nombre}</strong>
+        <span>${edad ? '🎂 ' + edad : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}</span>
+      </div>
+      <div class="mfam-per-btns">
+        <button class="mfam-btn-edit" onclick="_mfamEditarPersona('${viv.id}','${p.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="mfam-btn-del" onclick="_mfamEliminarPersona('${viv.id}','${p.id}')" title="Eliminar">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Scroll y resaltado de la persona buscada
+  if (_mfamResaltarPerId) {
+    setTimeout(() => {
+      const row = document.getElementById('mfam-row-' + _mfamResaltarPerId);
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(() => {
+          row.style.transition = 'background .7s, outline .7s';
+          row.classList.remove('resaltada');
+        }, 2200);
+      }
+    }, 120);
+  }
+}
+
+function abrirModalFamilia(vivId, resaltarPerId) {
+  _mfamVivId = vivId;
+  _mfamResaltarPerId = resaltarPerId || null;
+  _mfamRender();
+  document.getElementById('modal-familia').classList.add('show');
+}
+
+function cerrarModalFamilia() {
+  document.getElementById('modal-familia').classList.remove('show');
+  _mfamVivId = null;
+  _mfamResaltarPerId = null;
+  // Refrescar catálogo por si hubo cambios
+  renderCatalogo();
+  actualizarHome();
+}
+
+function _mfamAgregarPersona() {
+  if (!_mfamVivId) return;
+  const vivId = _mfamVivId;
+  const mfam = document.getElementById('modal-familia');
+  mfam.classList.add('detras');
+  abrirNuevaPersona(vivId);
+  const _orig = window.guardarPersona;
+  const _origCerrar = window.cerrarModal;
+  const _restaurar = () => { mfam.classList.remove('detras'); };
+  window.guardarPersona = function() {
+    _orig();
+    window.guardarPersona = _orig;
+    _restaurar();
+    if (mfam.classList.contains('show')) {
+      setTimeout(() => { _mfamVivId = vivId; _mfamResaltarPerId = null; _mfamRender(); }, 80);
+    }
+  };
+  window.cerrarModal = function(id) {
+    _origCerrar(id);
+    if (id === 'modal-persona') {
+      window.cerrarModal = _origCerrar;
+      _restaurar();
+    }
+  };
+}
+
+function _mfamEditarPersona(vivId, perId) {
+  _mfamVivId = vivId;
+  const mfam = document.getElementById('modal-familia');
+  mfam.classList.add('detras');
+  abrirEditPersona(vivId, perId);
+  const _orig = window.guardarPersona;
+  const _origCerrar = window.cerrarModal;
+  const _restaurar = () => { mfam.classList.remove('detras'); };
+  window.guardarPersona = function() {
+    _orig();
+    window.guardarPersona = _orig;
+    _restaurar();
+    if (mfam.classList.contains('show')) {
+      setTimeout(() => { _mfamResaltarPerId = null; _mfamRender(); }, 80);
+    }
+  };
+  window.cerrarModal = function(id) {
+    _origCerrar(id);
+    if (id === 'modal-persona') {
+      window.cerrarModal = _origCerrar;
+      _restaurar();
+    }
+  };
+}
+
+function _mfamEliminarPersona(vivId, perId) {
+  eliminarPersona(vivId, perId);
+  // eliminarPersona ya llama renderCatalogo; solo refrescar el modal
+  setTimeout(() => {
+    if (document.getElementById('modal-familia').classList.contains('show')) {
+      _mfamResaltarPerId = null; _mfamRender();
+    }
+  }, 80);
+}
+
+function _mfamEditarVivienda() {
+  if (!_mfamVivId) return;
+  const mfam = document.getElementById('modal-familia');
+  mfam.classList.add('detras');
+  abrirEditVivienda(_mfamVivId);
+  const _orig = window.guardarVivienda;
+  const _origCerrar = window.cerrarModal;
+  const _restaurar = () => { mfam.classList.remove('detras'); };
+  // Restaurar si cancela o guarda
+  window.guardarVivienda = function() {
+    _orig();
+    window.guardarVivienda = _orig;
+    _restaurar();
+    if (mfam.classList.contains('show')) {
+      setTimeout(() => { _mfamResaltarPerId = null; _mfamRender(); }, 80);
+    }
+  };
+  window.cerrarModal = function(id) {
+    _origCerrar(id);
+    if (id === 'modal-vivienda') {
+      window.cerrarModal = _origCerrar;
+      _restaurar();
+    }
+  };
+}
+// ═══════════════════════════════════════════════════
+// FIREBASE SYNC — Mapa Sanitario
+// ═══════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyALJaLC7dBeZjoX3Id4Ebdtc4cBdCRKOZY",
+  authDomain: "mapa-sanitario-ef790.firebaseapp.com",
+  projectId: "mapa-sanitario-ef790",
+  storageBucket: "mapa-sanitario-ef790.firebasestorage.app",
+  messagingSenderId: "519108711868",
+  appId: "1:519108711868:web:8c945ce0e96d0a8df807b9"
+};
+const LS_UID = 'mapa_san_uid';
+const LS_SYNC = 'mapa_san_syncAt';
+
+let _fbApp=null, _fbDb=null, _fbCargando=false;
+
+// ── Inicializar Firebase lazy ──
+async function _initFB(){
+  if(_fbDb) return true;
+  try{
+    const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const {getFirestore,collection,doc,setDoc,getDocs,writeBatch,serverTimestamp}=
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    if(!getApps().length) _fbApp=initializeApp(FIREBASE_CONFIG);
+    else _fbApp=getApps()[0];
+    _fbDb=getFirestore(_fbApp);
+    window._fb={collection,doc,setDoc,getDocs,writeBatch,serverTimestamp,getFirestore};
+    return true;
+  } catch(e){
+    toast('Sin conexión a Firebase','error');
+    return false;
+  }
+}
+
+// ── UID del promotor ──
+function getUID(){ return localStorage.getItem(LS_UID)||''; }
+
+function abrirModalUID(){
+  document.getElementById('uid-input').value=getUID();
+  document.getElementById('modal-uid').classList.add('show');
+  setTimeout(()=>document.getElementById('uid-input').focus(),80);
+}
+
+function guardarUID(){
+  const val=document.getElementById('uid-input').value.trim().toUpperCase();
+  if(!val){toast('Ingresa un código de promotor','error');return;}
+  localStorage.setItem(LS_UID,val);
+  cerrarModal('modal-uid');
+  _actualizarSyncUI();
+  toast('✅ Código guardado: '+val,'success');
+}
+
+function _actualizarSyncUI(){
+  const uid=getUID();
+  const syncAt=localStorage.getItem(LS_SYNC);
+  const txt=document.getElementById('sync-txt');
+  const cfgBtn=document.getElementById('sync-cfg-btn');
+  const upBtn=document.getElementById('sync-up-btn');
+  const dnBtn=document.getElementById('sync-dn-btn');
+  // compatibilidad con variante botón único
+  const syncBtn=document.getElementById('sync-btn');
+  const mbtnSync=document.getElementById('mbtn-sync');
+  const mbtnSub=document.getElementById('mbtn-sync-sub');
+  if(uid){
+    txt.textContent=syncAt?'Último sync: '+syncAt:'Promotor: '+uid+' · Sin sincronizar';
+    cfgBtn.textContent='✏️ '+uid;
+    if(upBtn) upBtn.style.display='';
+    if(dnBtn) dnBtn.style.display='';
+    if(syncBtn) syncBtn.style.display='';
+    if(mbtnSync) mbtnSync.style.display='';
+    const updnRow=document.getElementById('mbtn-updn-row');
+    if(updnRow) updnRow.style.display='flex';
+    if(mbtnSub) mbtnSub.textContent=syncAt?'Último: '+syncAt:'Sin sincronizar';
+  } else {
+    txt.textContent='Sin conectar — toca Configurar';
+    cfgBtn.textContent='⚙️ Configurar';
+    if(upBtn) upBtn.style.display='none';
+    if(dnBtn) dnBtn.style.display='none';
+    if(syncBtn) syncBtn.style.display='none';
+    if(mbtnSync) mbtnSync.style.display='none';
+    const updnRow=document.getElementById('mbtn-updn-row');
+    if(updnRow) updnRow.style.display='none';
+  }
+}
+
+// ── SINCRONIZAR (sube y baja) ──
+async function sincronizar(){
+  const uid=getUID();
+  if(!uid){abrirModalUID();return;}
+  if(_fbCargando) return;
+  _fbCargando=true;
+
+  // UI: estado cargando
+  const btn=document.getElementById('sync-btn');
+  const bar=document.getElementById('sync-bar');
+  if(btn){btn.disabled=true;btn.classList.add('spin');}
+  document.getElementById('sync-txt').textContent='Sincronizando…';
+
+  const ok=await _initFB();
+  if(!ok){_fbCargando=false;if(btn){btn.disabled=false;btn.classList.remove('spin');}return;}
+
+  const {collection,doc,setDoc,getDocs,writeBatch}=window._fb;
+
+  try{
+    // ── 1. SUBIR viviendas locales ──
+    const catLocal=getCatalogo();
+    const pdiLocal=getPDI();
+    const vivRef=collection(_fbDb,'mapa_sanitario',uid,'viviendas');
+    const pdiRef=collection(_fbDb,'mapa_sanitario',uid,'pdi');
+
+    // Subir viviendas (batch de 500 max, usamos múltiples si necesario)
+    if(catLocal.length){
+      let batch=writeBatch(_fbDb); let ops=0;
+      for(const v of catLocal){
+        batch.set(doc(vivRef,v.id),{...v,_device:navigator.userAgent.slice(0,40)});
+        ops++;
+        if(ops===490){await batch.commit();batch=writeBatch(_fbDb);ops=0;}
+      }
+      if(ops>0) await batch.commit();
+    }
+
+    // Subir PDI
+    if(pdiLocal.length){
+      let batch=writeBatch(_fbDb); let ops=0;
+      for(const p of pdiLocal){
+        batch.set(doc(pdiRef,p.id),p);
+        ops++;
+        if(ops===490){await batch.commit();batch=writeBatch(_fbDb);ops=0;}
+      }
+      if(ops>0) await batch.commit();
+    }
+
+    // ── 2. BAJAR viviendas de nube ──
+    const vivSnap=await getDocs(vivRef);
+    const catNube=[];
+    vivSnap.forEach(d=>{ if(!d.data().deleted) catNube.push(d.data()); });
+
+    // Merge: gana el registro con actualizadoEn más reciente
+    const catMerge=_mergeArrays(catLocal,catNube,'id');
+    saveCatalogo(catMerge);
+
+    // ── 3. BAJAR PDI de nube ──
+    const pdiSnap=await getDocs(pdiRef);
+    const pdiNube=[];
+    pdiSnap.forEach(d=>{ if(!d.data().deleted) pdiNube.push(d.data()); });
+    const pdiMerge=_mergeArrays(pdiLocal,pdiNube,'id');
+    savePDI(pdiMerge);
+
+    // ── 4. Actualizar UI ──
+    const ahora=new Date().toLocaleString('es-SV',{hour12:false,
+      year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(LS_SYNC,ahora);
+    actualizarHome();
+    if(document.getElementById('screen-catalogo').classList.contains('active')) renderCatalogo();
+    if(document.getElementById('screen-pdi').classList.contains('active')) renderPDI();
+    if(_mapaZona) renderMarcadores(_filtroMapa);
+    _actualizarSyncUI();
+    toast('☁️ Sync completo · '+catMerge.length+' viv, '+pdiMerge.length+' PDI','success');
+
+  } catch(e){
+    toast('Error sync: '+e.message,'error');
+    document.getElementById('sync-txt').textContent='Error al sincronizar';
+  } finally {
+    _fbCargando=false;
+    if(btn){btn.disabled=false;btn.classList.remove('spin');}
+  }
+}
+
+// ── Merge por ID: gana el más reciente ──
+function _mergeArrays(local,nube,idKey){
+  const map=new Map();
+  // Primero locales
+  local.forEach(r=>map.set(r[idKey],r));
+  // Luego nube — gana si actualizadoEn es mayor o igual
+  nube.forEach(r=>{
+    const existing=map.get(r[idKey]);
+    if(!existing) map.set(r[idKey],r);
+    else{
+      const tLocal=existing.actualizadoEn||'';
+      const tNube=r.actualizadoEn||'';
+      if(tNube>tLocal) map.set(r[idKey],r);
+    }
+  });
+  return Array.from(map.values()).filter(r=>!r.deleted);
+}
+
+function _syncUI(bloqueado, btnId, texto){
+  _fbCargando=bloqueado;
+  ['sync-up-btn','sync-dn-btn'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){b.disabled=bloqueado;if(id===btnId){bloqueado?b.classList.add('spin'):b.classList.remove('spin');}}
+  });
+  if(texto) document.getElementById('sync-txt').textContent=texto;
+}
+
+async function subirNube(){
+  const uid=getUID();
+  if(!uid){abrirModalUID();return;}
+  if(_fbCargando) return;
+
+  const catLocal=getCatalogo();
+  const pdiLocal=getPDI();
+
+  // Aviso normal
+  if(!confirm('¿Subir todos los datos locales a la nube?\n\nEsto sobreescribirá lo que hay en Firebase con tus datos actuales.')) return;
+
+  // Protección extra si el catálogo local está vacío
+  if(!catLocal.length){
+    if(!confirm('⚠️ Tu catálogo local está VACÍO.\n\nSi continúas, se borrarán también todas las viviendas de la nube.\n\n¿Estás seguro?')) return;
+  }
+
+  _syncUI(true,'sync-up-btn','Subiendo a la nube…');
+  const ok=await _initFB();
+  if(!ok){_syncUI(false,'sync-up-btn');_actualizarSyncUI();return;}
+
+  const {collection,doc,getDocs,writeBatch}=window._fb;
+
+  try{
+    const vivRef=collection(_fbDb,'mapa_sanitario',uid,'viviendas');
+    const pdiRef=collection(_fbDb,'mapa_sanitario',uid,'pdi');
+
+    // 1. Borrar de la nube lo que ya no existe localmente
+    const vivSnap=await getDocs(vivRef);
+    const idsLocal=new Set(catLocal.map(v=>v.id));
+    let delBatch=writeBatch(_fbDb); let delOps=0;
+    vivSnap.forEach(d=>{
+      if(!idsLocal.has(d.id)){
+        delBatch.delete(doc(vivRef,d.id)); delOps++;
+        if(delOps===490){delBatch.commit();delBatch=writeBatch(_fbDb);delOps=0;}
+      }
+    });
+    if(delOps>0) await delBatch.commit();
+
+    const pdiSnap=await getDocs(pdiRef);
+    const idsPdiLocal=new Set(pdiLocal.map(p=>p.id));
+    let delBatch2=writeBatch(_fbDb); let delOps2=0;
+    pdiSnap.forEach(d=>{
+      if(!idsPdiLocal.has(d.id)){
+        delBatch2.delete(doc(pdiRef,d.id)); delOps2++;
+        if(delOps2===490){delBatch2.commit();delBatch2=writeBatch(_fbDb);delOps2=0;}
+      }
+    });
+    if(delOps2>0) await delBatch2.commit();
+
+    // 2. Subir todos los datos locales actuales
+    if(catLocal.length){
+      let batch=writeBatch(_fbDb); let ops=0;
+      for(const v of catLocal){
+        batch.set(doc(vivRef,v.id),{...v,_device:navigator.userAgent.slice(0,40)});
+        ops++;
+        if(ops===490){await batch.commit();batch=writeBatch(_fbDb);ops=0;}
+      }
+      if(ops>0) await batch.commit();
+    }
+    if(pdiLocal.length){
+      let batch=writeBatch(_fbDb); let ops=0;
+      for(const p of pdiLocal){
+        batch.set(doc(pdiRef,p.id),p);
+        ops++;
+        if(ops===490){await batch.commit();batch=writeBatch(_fbDb);ops=0;}
+      }
+      if(ops>0) await batch.commit();
+    }
+
+    const ahora=new Date().toLocaleString('es-SV',{hour12:false,
+      year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(LS_SYNC,ahora);
+    _actualizarSyncUI();
+    toast(`☁️ Subida completa · ${catLocal.length} viviendas, ${pdiLocal.length} PDI`,'success');
+
+  } catch(e){
+    toast('Error al subir: '+e.message,'error');
+    document.getElementById('sync-txt').textContent='Error al subir';
+  } finally {
+    _syncUI(false,'sync-up-btn');
+  }
+}
+
+// ══════════════════════════════════════════
+// BAJAR — nube → local (reemplaza local)
+// ══════════════════════════════════════════
+async function bajarNube(){
+  const uid=getUID();
+  if(!uid){abrirModalUID();return;}
+  if(_fbCargando) return;
+
+  if(!confirm('¿Bajar datos de la nube?\n\nEsto reemplazará tus datos locales con los que están en Firebase.')) return;
+
+  _syncUI(true,'sync-dn-btn','Bajando de la nube…');
+  const ok=await _initFB();
+  if(!ok){_syncUI(false,'sync-dn-btn');_actualizarSyncUI();return;}
+
+  const {collection,getDocs}=window._fb;
+
+  try{
+    const vivRef=collection(_fbDb,'mapa_sanitario',uid,'viviendas');
+    const pdiRef=collection(_fbDb,'mapa_sanitario',uid,'pdi');
+
+    const vivSnap=await getDocs(vivRef);
+    const catNube=[];
+    vivSnap.forEach(d=>{ const data=d.data(); delete data._device; catNube.push(data); });
+
+    const pdiSnap=await getDocs(pdiRef);
+    const pdiNube=[];
+    pdiSnap.forEach(d=>pdiNube.push(d.data()));
+
+    if(!catNube.length && !pdiNube.length){
+      toast('La nube está vacía para este promotor','error');
+      _syncUI(false,'sync-dn-btn');
+      _actualizarSyncUI();
+      return;
+    }
+
+    saveCatalogo(catNube);
+    savePDI(pdiNube);
+
+    const ahora=new Date().toLocaleString('es-SV',{hour12:false,
+      year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem(LS_SYNC,ahora);
+    actualizarHome();
+    if(document.getElementById('screen-catalogo').classList.contains('active')) renderCatalogo();
+    if(document.getElementById('screen-pdi').classList.contains('active')) renderPDI();
+    if(_mapaZona) renderMarcadores(_filtroMapa);
+    _actualizarSyncUI();
+    toast(`📥 Descarga completa · ${catNube.length} viviendas, ${pdiNube.length} PDI`,'success');
+
+  } catch(e){
+    toast('Error al bajar: '+e.message,'error');
+    document.getElementById('sync-txt').textContent='Error al bajar';
+  } finally {
+    _syncUI(false,'sync-dn-btn');
+  }
+}
+
+// _actualizarSyncUI se llama desde el DOMContentLoaded unificado arriba
+
+// ═══════════════════════════════════════════════════
+// SYNC CATÁLOGO DESDE REGISTRO DIARIO
+// Lee rdps_catalogo (RegistroDiario_Promotor) y lo
+// fusiona en mapa_san_catalogo preservando coords,
+// riesgo manual y demás campos propios de MapaSanitario.
+// ═══════════════════════════════════════════════════
+function sincronizarDesdeRD(){
+  // 1. Leer catálogo fuente (Registro Diario)
+  let rdCat;
+  try {
+    rdCat = JSON.parse(localStorage.getItem('rdps_catalogo') || '[]');
+  } catch(e) {
+    toast('Error al leer rdps_catalogo','error'); return;
+  }
+
+  if(!rdCat.length){
+    toast('⚠️ rdps_catalogo está vacío o no existe en este dispositivo','error',4000);
+    return;
+  }
+
+  // 2. Catálogo actual de MapaSanitario
+  const msCat = getCatalogo();
+
+  // Índice por id y por número de vivienda (para merge por número cuando los ids difieren)
+  const msById  = new Map(msCat.map(v=>[v.id, v]));
+  const msByNum = new Map(msCat.map(v=>[String(v.vivienda).trim(), v]));
+
+  let nuevas=0, actualizadas=0;
+  const tsNow = new Date().toISOString();
+
+  rdCat.forEach(rdViv => {
+    const numKey = String(rdViv.vivienda||'').trim();
+    // Buscar por id exacto primero; si no, por número de vivienda
+    const existing = msById.get(rdViv.id) || msByNum.get(numKey);
+
+    if(existing){
+      // ── Merge de personas: deduplicar por id Y por nombre+fnac ──
+      const perMap = new Map((existing.personas||[]).map(p=>[p.id,p]));
+      // Índice secundario por nombre+fnac para detectar duplicados cuando los ids difieren
+      const perByNombre = new Map(
+        (existing.personas||[]).map(p=>[
+          (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'')).trim(), p
+        ])
+      );
+      (rdViv.personas||[]).forEach(p=>{
+        const nameKey = (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'')).trim();
+        if(perMap.has(p.id)){
+          // Misma persona por id: enriquecer si RD tiene más datos
+          const curr = perMap.get(p.id);
+          if(!curr.fnac && p.fnac) perMap.set(p.id, {...curr,...p});
+          else if(p.nombre && !curr.nombre) perMap.set(p.id, {...curr, nombre:p.nombre});
+        } else if(nameKey && nameKey !== '|' && perByNombre.has(nameKey)){
+          // Misma persona por nombre+fnac pero id distinto: enriquecer sin duplicar
+          const curr = perByNombre.get(nameKey);
+          if(!curr.fnac && p.fnac) perMap.set(curr.id, {...curr,...p});
+        } else {
+          // Persona genuinamente nueva
+          perMap.set(p.id, p);
+        }
+      });
+      existing.personas = Array.from(perMap.values());
+      existing.actualizadoEn = tsNow;
+      // Recalcular riesgo automático solo si no fue sobreescrito manualmente
+      if(!existing._riesgoManual) recalcRiesgoVivienda(existing);
+      // Asegurar que el id del RD esté mapeado si se encontró por número
+      if(!msById.has(rdViv.id)) msById.set(rdViv.id, existing);
+      actualizadas++;
+    } else {
+      // ── Nueva vivienda: importar con riesgo auto calculado ──
+      const nuevaViv = {
+        id: rdViv.id || ('viv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),
+        vivienda: rdViv.vivienda,
+        personas: (rdViv.personas||[]).map(p=>({...p})),
+        riesgo: 'ninguno',
+        _riesgoManual: false,
+        actualizadoEn: tsNow
+        // lat/lng: no se copian — se georreferencian desde el mapa
+      };
+      recalcRiesgoVivienda(nuevaViv);
+      msCat.push(nuevaViv);
+      msById.set(nuevaViv.id, nuevaViv);
+      msByNum.set(numKey, nuevaViv);
+      nuevas++;
+    }
+  });
+
+  saveCatalogo(msCat);
+  actualizarHome();
+  if(document.getElementById('screen-catalogo').classList.contains('active')) renderCatalogo();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+
+  // Actualizar subtítulo del botón
+  const sub = document.getElementById('mbtn-rd-sub');
+  if(sub){
+    const ahora = new Date().toLocaleString('es-SV',{hour12:false,
+      year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    sub.textContent = 'Último sync: '+ahora;
+  }
+
+  toast(`✅ RD→MS: ${nuevas} nuevas, ${actualizadas} actualizadas`,'success',3500);
+}
+
+</script>
+</body>
+</html>
