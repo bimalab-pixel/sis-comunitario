@@ -13,6 +13,7 @@ const PRECACHE_URLS = [
   './mef.html',
   './visita_domiciliar.html',
   './RegistroDiario_Promotor.html'
+  './MapaSanitario.html'
 ];
 
 // ── INSTALL: pre-cachear todos los archivos core ──
