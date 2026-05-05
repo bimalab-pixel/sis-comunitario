@@ -1348,16 +1348,12 @@
         <!-- Leyenda -->
         <div class="mapa-leyenda">
             <div class="leyenda-item">
-                <div class="leyenda-dot" style="background:#673ab7;"></div>
+                <div class="leyenda-dot" style="background:#d32f2f;"></div>
                 <span>Embarazada</span>
             </div>
             <div class="leyenda-item">
                 <div class="leyenda-dot" style="background:#f9a825;"></div>
                 <span>Puérpera</span>
-            </div>
-            <div class="leyenda-item">
-                <div class="leyenda-dot" style="background:#d32f2f;"></div>
-                <span>Con riesgo</span>
             </div>
             <div class="leyenda-item">
                 <div class="leyenda-dot" style="background:#9e9e9e;border:2px dashed #555;"></div>
@@ -1374,7 +1370,10 @@
         </div>
 
         <!-- Contador -->
-        <div id="mapa-contador" style="font-size:0.82em; color:#546e7a; margin-bottom:8px; text-align:right;"></div>
+        <div id="mapa-contador" style="font-size:0.82em; color:#546e7a; margin-bottom:4px; text-align:right;"></div>
+        <div style="font-size:0.75em; color:#e65100; text-align:right; margin-bottom:6px; opacity:0.85;">
+            ✋ Toca un punto → botón <strong>Mover</strong> para reubicarlo
+        </div>
 
         <!-- Mapa Leaflet -->
         <div id="mapa-zona-leaflet-wrapper">
@@ -4599,8 +4598,8 @@ function generarReporteHTML() {
         return;
     }
 
-    const colores = { EMB: {bg:'#ede7f6', border:'#673ab7', tag:'#673ab7', label:'🤰 Embarazada'},
-                      PUE: {bg:'#fce4ec', border:'#e91e63', tag:'#e91e63', label:'🤱 Puérpera'},
+    const colores = { EMB: {bg:'#ffebee', border:'#d32f2f', tag:'#d32f2f', label:'🤰 Embarazada'},
+                      PUE: {bg:'#fff8e1', border:'#f9a825', tag:'#f57f17', label:'🤱 Puérpera'},
                       ARC: {bg:'#eceff1', border:'#607d8b', tag:'#546e7a', label:'📦 Archivada'} };
 
     let html = '';
@@ -4987,11 +4986,10 @@ let _mapaZona = null;           // Instancia del mapa principal
 let _mapaFiltroActual = 'todos';
 let _marcadoresMapa = [];
 
-// Colores según tipo
+// Colores según tipo (Rojo=Embarazada, Amarillo=Puérpera)
 function _colorMarcador(p, tipo) {
-    if (p.riesgo_obstetrico === 'si') return '#d32f2f';   // rojo
-    if (tipo === 'embarazada') return '#673ab7';            // morado
-    return '#f9a825';                                       // amarillo puérpera
+    if (tipo === 'embarazada') return '#d32f2f';   // rojo embarazada
+    return '#f9a825';                               // amarillo puérpera
 }
 
 // Ícono SVG de círculo para Leaflet
@@ -5094,19 +5092,36 @@ function renderizarMarcadores(filtro) {
             }
 
             // Badge tipo con color explícito
-            const tipoBadgeColor = tipo === 'embarazada' ? '#673ab7' : '#f9a825';
+            const tipoBadgeColor = tipo === 'embarazada' ? '#d32f2f' : '#f9a825';
             const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : '🤱 PUÉRPERA';
-            const tipoBadge = `<span style="
+            const tipoTextColor = tipo === 'puerpera' ? '#333' : 'white';
+
+            // Pastilla de riesgo (verde=sin riesgo, rojo=con riesgo)
+            const tieneRiesgo = p.riesgo_obstetrico === 'si';
+            const riesgoPill = `<span style="
                 display:inline-block;
-                background:${tipoBadgeColor};
-                color:${tipo === 'puerpera' ? '#333' : 'white'};
+                background:${tieneRiesgo ? '#d32f2f' : '#2e7d32'};
+                color:white;
                 font-size:0.72em;
                 font-weight:bold;
                 padding:2px 8px;
                 border-radius:10px;
                 letter-spacing:0.3px;
                 margin-bottom:5px;
-            ">${tipoLabel}</span>`;
+                margin-left:4px;
+            ">${tieneRiesgo ? '🔴 Con riesgo' : '🟢 Sin riesgo'}</span>`;
+
+            const tipoBadge = `<span style="
+                display:inline-block;
+                background:${tipoBadgeColor};
+                color:${tipoTextColor};
+                font-size:0.72em;
+                font-weight:bold;
+                padding:2px 8px;
+                border-radius:10px;
+                letter-spacing:0.3px;
+                margin-bottom:5px;
+            ">${tipoLabel}</span>${riesgoPill}`;
 
             // Estado gestacional / puerperio
             let estadoInfo = '';
@@ -5133,6 +5148,9 @@ function renderizarMarcadores(filtro) {
                 : '<span style="color:#1976d2;font-size:0.75em;">🖊️ Manual</span>';
 
             const seccion = tipo === 'embarazada' ? 'listado-embarazadas' : 'listado-puerperas';
+            // ID único para el botón Mover de este marcador
+            const btnMoverId = `_btn-mover-${tipo}-${index}`;
+
             const popupHTML = `
                 <div style="min-width:185px;max-width:210px;font-family:sans-serif;padding:2px;">
                     ${tipoBadge}<br>
@@ -5143,16 +5161,68 @@ function renderizarMarcadores(filtro) {
                     <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
                     <div style="font-size:0.75em;color:#888;margin-bottom:2px;">👤 <em>Registrada por:</em> ${p.registrado_por || 'Desconocido'}</div>
                     <div style="margin-bottom:8px;">${origenTag}</div>
-                    <button onclick="irAFichaDesdeMapaT(this,'${seccion}',${index},'${tipo}');"
-                        style="background:#00796b;color:white;border:none;padding:7px 0;
-                               border-radius:7px;font-size:0.85em;font-weight:bold;cursor:pointer;width:100%;">
-                        📋 Ver Ficha
-                    </button>
+                    <div style="display:flex;gap:6px;">
+                        <button onclick="irAFichaDesdeMapaT(this,'${seccion}',${index},'${tipo}');"
+                            style="flex:1;background:#00796b;color:white;border:none;padding:7px 0;
+                                   border-radius:7px;font-size:0.85em;font-weight:bold;cursor:pointer;">
+                            📋 Ver Ficha
+                        </button>
+                        <button id="${btnMoverId}"
+                            style="flex:0 0 auto;background:#e65100;color:white;border:none;padding:7px 10px;
+                                   border-radius:7px;font-size:0.85em;font-weight:bold;cursor:pointer;">
+                            ✋ Mover
+                        </button>
+                    </div>
                 </div>`;
 
-            const marker = L.marker([p.lat, p.lng], { icon: icono })
+            const marker = L.marker([p.lat, p.lng], { icon: icono, draggable: false })
                 .addTo(_mapaZona)
-                .bindPopup(popupHTML, { maxWidth: 220 });
+                .bindPopup(popupHTML, { maxWidth: 230 });
+
+            // Función para activar modo arrastre
+            const activarArrastre = () => {
+                marker.closePopup();
+                marker.dragging.enable();
+                marker.setIcon(_iconoLeaflet('#FF6F00'));
+                marker.bindPopup(
+                    `<div style="text-align:center;font-family:sans-serif;padding:6px 10px;">
+                        <div style="font-weight:bold;font-size:0.92em;color:#e65100;">✏️ Modo reubicación activo</div>
+                        <div style="font-size:0.82em;color:#555;margin:5px 0;">${p.nombre}</div>
+                        <div style="font-size:0.78em;color:#888;">📌 Arrastra el pin y suéltalo<br>para guardar la nueva posición</div>
+                     </div>`, { maxWidth: 210 }
+                ).openPopup();
+            };
+
+            // Asignar onclick al botón Mover cuando el popup se abra
+            marker.on('popupopen', () => {
+                const btn = document.getElementById(btnMoverId);
+                if (btn) btn.onclick = () => activarArrastre();
+            });
+
+            // Al soltar el arrastre: guardar y confirmar
+            marker.on('dragend', (ev) => {
+                const pos = ev.target.getLatLng();
+                const newLat = parseFloat(pos.lat.toFixed(6));
+                const newLng = parseFloat(pos.lng.toFixed(6));
+
+                _guardarUbicacionPaciente(index, tipo, newLat, newLng, 'manual');
+
+                marker.dragging.disable();
+                marker.setIcon(_iconoLeaflet(_colorMarcador(
+                    tipo === 'embarazada' ? embarazadas[index] : puerperas[index], tipo
+                )));
+                marker.bindPopup(
+                    `<div style="text-align:center;font-family:sans-serif;padding:6px 10px;">
+                        <div style="font-weight:bold;font-size:0.92em;color:#2e7d32;">✅ Ubicación guardada</div>
+                        <div style="font-size:0.82em;color:#555;margin:5px 0;">${p.nombre}</div>
+                        <div style="font-size:0.78em;color:#888;">Lat: ${newLat} · Lng: ${newLng}</div>
+                     </div>`, { maxWidth: 210 }
+                ).openPopup();
+
+                setTimeout(() => {
+                    marker.bindPopup(popupHTML, { maxWidth: 230 });
+                }, 2500);
+            });
 
             _marcadoresMapa.push(marker);
         });
@@ -5401,12 +5471,28 @@ async function _abrirSelectorManualDetalle(index, tipo) {
         _modalMapaInst = L.map('_mini-det-map').setView([latIni, lngIni], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_modalMapaInst);
 
+        // Forzar recálculo del tamaño del mapa (crítico en modales y Android WebView)
+        setTimeout(() => { _modalMapaInst.invalidateSize(); }, 200);
+
+        // Si ya tiene ubicación: mostrar pin arrastrable, pero NO precargar latSel/lngSel.
+        // El botón queda deshabilitado hasta que el usuario mueva el pin o toque el mapa.
         if (p.lat) {
             pinSel = L.marker([p.lat, p.lng], { draggable: true }).addTo(_modalMapaInst);
-            latSel = p.lat; lngSel = p.lng;
-            document.getElementById('_det-map-status').textContent = `Ubicación actual. Toca para mover.`;
-            document.getElementById('_btn-det-confirmar').disabled = false;
-            document.getElementById('_btn-det-confirmar').style.opacity = '1';
+            pinSel.bindPopup('📍 Arrastra a la nueva posición').openPopup();
+            document.getElementById('_det-map-status').innerHTML =
+                `<span style="color:#e65100;font-weight:bold;">⚠️ Mueve el pin o toca el mapa para registrar la nueva ubicación</span>`;
+            document.getElementById('_btn-det-confirmar').disabled = true;
+            document.getElementById('_btn-det-confirmar').style.opacity = '0.5';
+
+            pinSel.on('dragend', (ev) => {
+                const pos = ev.target.getLatLng();
+                latSel = parseFloat(pos.lat.toFixed(6));
+                lngSel = parseFloat(pos.lng.toFixed(6));
+                document.getElementById('_det-map-status').innerHTML =
+                    `<span style="color:#2e7d32;font-weight:bold;">✅ Nueva posición: Lat: ${latSel}, Lng: ${lngSel}</span>`;
+                const btn = document.getElementById('_btn-det-confirmar');
+                btn.disabled = false; btn.style.opacity = '1';
+            });
         }
 
         _modalMapaInst.on('click', (e) => {
@@ -5419,9 +5505,11 @@ async function _abrirSelectorManualDetalle(index, tipo) {
                 const pos = ev.target.getLatLng();
                 latSel = parseFloat(pos.lat.toFixed(6));
                 lngSel = parseFloat(pos.lng.toFixed(6));
-                document.getElementById('_det-map-status').textContent = `Lat: ${latSel}, Lng: ${lngSel}`;
+                document.getElementById('_det-map-status').innerHTML =
+                    `<span style="color:#2e7d32;font-weight:bold;">✅ Nueva posición: Lat: ${latSel}, Lng: ${lngSel}</span>`;
             });
-            document.getElementById('_det-map-status').textContent = `Lat: ${latSel}, Lng: ${lngSel}`;
+            document.getElementById('_det-map-status').innerHTML =
+                `<span style="color:#2e7d32;font-weight:bold;">✅ Nueva posición: Lat: ${latSel}, Lng: ${lngSel}</span>`;
             const btn = document.getElementById('_btn-det-confirmar');
             btn.disabled = false; btn.style.opacity = '1';
         });
@@ -5430,7 +5518,7 @@ async function _abrirSelectorManualDetalle(index, tipo) {
             if (latSel === null) return;
             _guardarUbicacionPaciente(index, tipo, latSel, lngSel, 'manual');
             _modalMapaDetalle.remove();
-            alert(`✅ Ubicación guardada para ${p.nombre}.\nLa paciente aparecerá en el Mapa de Zona.`);
+            alert(`✅ Ubicación actualizada para ${p.nombre}.\nLat: ${latSel}, Lng: ${lngSel}\n\nLa paciente aparecerá en el Mapa de Zona.`);
             mostrarDetalle(index, tipo);
         };
     }, 120);
