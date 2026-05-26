@@ -1074,6 +1074,29 @@
             align-items: center;
         }
 
+        /* --- ROSA DE LOS VIENTOS --- */
+        .leaflet-rosa-vientos {
+            width: 64px;
+            height: 64px;
+            background: transparent;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+            pointer-events: none;
+            margin-bottom: 6px;
+            margin-left: 6px;
+        }
+        .leaflet-rosa-vientos svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        /* En pantalla completa, subir la rosa por encima de la barra de filtros */
+        #mapa-zona-leaflet-wrapper:-webkit-full-screen .leaflet-bottom.leaflet-left,
+        #mapa-zona-leaflet-wrapper:fullscreen .leaflet-bottom.leaflet-left,
+        #mapa-zona-leaflet-wrapper[data-simulated-fs] .leaflet-bottom.leaflet-left {
+            bottom: 62px !important;
+        }
+
         /* Mini mapa para ubicación manual */
         #mini-mapa-emb, #mini-mapa-puerp {
             width: 100%;
@@ -5049,6 +5072,42 @@ async function abrirMapaZona() {
             };
             _capaActual = 'osm';
             _capasDisponibles.osm.addTo(_mapaZona);
+
+            // --- CONTROL DE PUNTOS CARDINALES (ROSA DE LOS VIENTOS) ---
+            const RosaControl = L.Control.extend({
+                options: { position: 'bottomleft' },
+                onAdd: function() {
+                    const div = L.DomUtil.create('div', 'leaflet-rosa-vientos');
+                    div.innerHTML = `
+                        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Círculo de fondo con sombra -->
+                            <circle cx="40" cy="40" r="38" fill="rgba(255,255,255,0.96)" stroke="#00796b" stroke-width="2.5"/>
+                            <!-- Flecha Norte (arriba) — roja -->
+                            <polygon points="40,5 34,32 40,27 46,32" fill="#d32f2f"/>
+                            <!-- Flecha Sur (abajo) -->
+                            <polygon points="40,75 34,48 40,53 46,48" fill="#78909c"/>
+                            <!-- Flecha Este (derecha) -->
+                            <polygon points="75,40 48,34 53,40 48,46" fill="#78909c"/>
+                            <!-- Flecha Oeste (izquierda) -->
+                            <polygon points="5,40 32,34 27,40 32,46" fill="#78909c"/>
+                            <!-- Círculo central -->
+                            <circle cx="40" cy="40" r="5" fill="#00796b" stroke="white" stroke-width="1.5"/>
+                            <!-- Letras con contorno blanco para legibilidad -->
+                            <text x="40" y="17" text-anchor="middle" font-size="11" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">N</text>
+                            <text x="40" y="17" text-anchor="middle" font-size="11" font-weight="bold" font-family="sans-serif" fill="#d32f2f">N</text>
+                            <text x="40" y="72" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">S</text>
+                            <text x="40" y="72" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">S</text>
+                            <text x="67" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">E</text>
+                            <text x="67" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">E</text>
+                            <text x="13" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">O</text>
+                            <text x="13" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">O</text>
+                        </svg>`;
+                    L.DomEvent.disableClickPropagation(div);
+                    return div;
+                }
+            });
+            new RosaControl().addTo(_mapaZona);
+
         } else {
             _mapaZona.invalidateSize();
         }
