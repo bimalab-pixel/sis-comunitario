@@ -17,7 +17,7 @@
   --emerald:#00c48c; --sage:#6db89a; --mist:#e8f5ef; --mist2:#d0ead8;
   --border:#b8d9c8; --white:#fff; --text:#0c1f18; --muted:#4a7c64;
   --red:#c62828; --red-lt:#fff0f0; --red-bd:#f5a0a0;
-  --amber:#ca8a04; --amber-lt:#fefce8; --amber-bd:#fde68a;
+  --amber:#eab308; --amber-lt:#fefce8; --amber-bd:#fde68a;
   --green:#16a34a; --green-lt:#f0fdf4; --green-bd:#86efac;
   --shadow:0 4px 32px rgba(10,60,46,.13); --shadow-sm:0 2px 12px rgba(10,60,46,.09);
   --radius:14px;
@@ -79,7 +79,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .hstat-n{font-family:'Instrument Serif',serif;font-size:1.8rem;color:#fff;line-height:1}
 .hstat-l{font-size:.6rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;margin-top:.25rem;line-height:1.3}
 .hstat-n.red{color:#ff8a8a}
-.hstat-n.amber{color:#fbbf24}
+.hstat-n.amber{color:#eab308}
 .hstat-n.emerald{color:var(--emerald)}
 
 /* Risk chips */
@@ -93,7 +93,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 }
 .rchip-n{font-size:1.3rem;font-weight:800;line-height:1}
 .rchip.sin{background:rgba(22,163,74,.18);color:#86efac;border:1px solid rgba(22,163,74,.3)}
-.rchip.med{background:rgba(202,138,4,.18);color:#fde68a;border:1px solid rgba(202,138,4,.3)}
+.rchip.med{background:rgba(234,179,8,.18);color:#eab308;border:1px solid rgba(234,179,8,.35)}
 .rchip.alt{background:rgba(198,40,40,.22);color:#ff8a8a;border:1px solid rgba(198,40,40,.35)}
 
 /* Menu buttons */
@@ -140,7 +140,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
   display:flex;align-items:center;justify-content:center;gap:.4rem;transition:all .2s;
 }
 .clear-btn:hover{background:rgba(192,57,43,.4);color:#fff}
-.clear-btn.amber{background:rgba(192,120,0,.22);border-color:rgba(192,120,0,.45);color:#fbbf24}
+.clear-btn.amber{background:rgba(192,120,0,.22);border-color:rgba(192,120,0,.45);color:#eab308}
 .clear-btn.amber:hover{background:rgba(192,120,0,.4);color:#fff}
 .clear-btn.full{background:rgba(120,0,0,.35);border-color:rgba(192,57,43,.7);color:#ff8a8a}
 .clear-btn.full:hover{background:rgba(160,0,0,.55);color:#fff}
@@ -232,7 +232,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
   flex-shrink:0;
 }
 .risk-badge.sin{background:#16a34a;color:#fff}
-.risk-badge.med{background:#ca8a04;color:#fff}
+.risk-badge.med{background:#eab308;color:#fff}
 .risk-badge.alt{background:#c62828;color:#fff}
 .risk-badge:hover{filter:brightness(1.15);transform:scale(1.05)}
 .cat-viv-btns{display:flex;gap:.3rem;flex-shrink:0}
@@ -267,7 +267,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 }
 
 /* Personas */
-.cat-persona-item.highlight-result{background:#fefce8;border-left:3px solid #ca8a04}
+.cat-persona-item.highlight-result{background:#fefce8;border-left:3px solid #eab308}
 .cat-persona-item{
   display:flex;align-items:center;gap:.6rem;padding:.55rem 1rem;
   border-bottom:1px solid var(--mist2);transition:background .15s;
@@ -362,7 +362,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 }
 .btn-filtro-mapa.f-todos  {background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn-filtro-mapa.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
-.btn-filtro-mapa.f-amarillo{background:#ca8a04;color:#fff;border-color:#ca8a04}
+.btn-filtro-mapa.f-amarillo{background:#eab308;color:#fff;border-color:#eab308}
 .btn-filtro-mapa.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
 
 /* Leyenda */
@@ -400,7 +400,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 }
 .btn-filtro-fs.f-todos  {background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn-filtro-fs.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
-.btn-filtro-fs.f-amarillo{background:#ca8a04;color:#fff;border-color:#ca8a04}
+.btn-filtro-fs.f-amarillo{background:#eab308;color:#fff;border-color:#eab308}
 .btn-filtro-fs.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
 
 /* Banner modo georref */
@@ -448,6 +448,29 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 #btn-georref-mapa:hover{background:#1565c0;transform:scale(1.04)}
 #btn-georref-mapa svg{width:15px;height:15px}
 
+/* --- ROSA DE LOS VIENTOS (posición absoluta sobre el mapa) --- */
+#rosa-vientos-abs {
+  position: absolute;
+  bottom: 112px; /* encima del botón GPS (60px) + su altura (44px) + 8px gap */
+  right: 10px;
+  width: 62px;
+  height: 62px;
+  z-index: 999;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0,0,0,.28);
+}
+#rosa-vientos-abs svg { width: 100%; height: 100%; display: block; }
+/* En fullscreen: subir la rosa junto con el GPS que también sube */
+#mapa-wrapper:-webkit-full-screen #rosa-vientos-abs,
+#mapa-wrapper:fullscreen #rosa-vientos-abs,
+#mapa-wrapper[data-sim-fs] #rosa-vientos-abs { bottom: 170px; }
+
+/* En fullscreen, subir el contenedor bottom-left por encima de la barra de filtros */
+#mapa-wrapper:-webkit-full-screen .leaflet-bottom.leaflet-left,
+#mapa-wrapper:fullscreen .leaflet-bottom.leaflet-left,
+#mapa-wrapper[data-sim-fs] .leaflet-bottom.leaflet-left{bottom:62px!important;}
+
 /* En fullscreen: subir botones para que no queden bajo la barra de filtros (~58px) */
 #mapa-wrapper:-webkit-full-screen #btn-georref-mapa,
 #mapa-wrapper:fullscreen #btn-georref-mapa,
@@ -483,7 +506,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .sgh-item-txt small{font-size:.7rem;color:#4a7c64}
 .sgh-badge{font-size:.65rem;padding:2px 7px;border-radius:7px;font-weight:700;flex-shrink:0}
 .sgh-badge.sin{background:#16a34a;color:#fff}
-.sgh-badge.med{background:#ca8a04;color:#fff}
+.sgh-badge.med{background:#eab308;color:#fff}
 .sgh-badge.alt{background:#c62828;color:#fff}
 .sgh-empty{padding:1.5rem;text-align:center;color:#888;font-size:.82rem}
 .sgh-search{
@@ -665,7 +688,7 @@ td.err{color:var(--red);font-weight:700}
 .mfam-titulo{font-family:'Instrument Serif',serif;font-size:1.05rem;flex:1}
 .mfam-riesgo{font-size:.68rem;padding:3px 9px;border-radius:9px;font-weight:800;flex-shrink:0}
 .mfam-riesgo.sin{background:#16a34a;color:#fff}
-.mfam-riesgo.med{background:#ca8a04;color:#fff}
+.mfam-riesgo.med{background:#eab308;color:#fff}
 .mfam-riesgo.alt{background:#c62828;color:#fff}
 .mfam-close{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
   color:#fff;border-radius:8px;padding:.28rem .6rem;font-size:.8rem;
@@ -1028,7 +1051,7 @@ td.err{color:var(--red);font-weight:700}
     <div class="mapa-leyenda">
       <strong style="font-size:.77em;color:var(--ink);margin-right:2px">Simbología:</strong>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#16a34a"></span>Sin Riesgo</span>
-      <span class="leyenda-item"><span class="leyenda-dot" style="background:#ca8a04"></span>Riesgo Medio</span>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#eab308"></span>Riesgo Medio</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#c62828"></span>Alto Riesgo</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#9e9e9e;border-style:dashed"></span><span id="leyenda-sin-gps">Sin GPS</span></span>
     </div>
@@ -1579,7 +1602,7 @@ function renderCatalogo(opcs){
       const esFiltrado=!!viv._filtroPersona;
       if(esFiltrado){
         // Fila como <button> nativo para garantizar el toque en mobile/WebView
-        return `<button type="button" class="cat-persona-item highlight-result" style="width:100%;text-align:left;background:#fefce8;border:none;border-left:3px solid #ca8a04;cursor:pointer;font-family:inherit;padding:.55rem 1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--mist2);" onclick="abrirModalFamilia('${viv.id}','${p.id}')">
+        return `<button type="button" class="cat-persona-item highlight-result" style="width:100%;text-align:left;background:#fefce8;border:none;border-left:3px solid #eab308;cursor:pointer;font-family:inherit;padding:.55rem 1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--mist2);" onclick="abrirModalFamilia('${viv.id}','${p.id}')">
           <span class="cat-per-ico">👤</span>
           <div class="cat-per-info" style="flex:1;min-width:0">
             <strong style="display:block;font-size:.82rem;color:var(--ink)">${p.nombre}</strong>
@@ -1951,6 +1974,32 @@ async function abrirMapa(){
         carto:   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19})
       };
       _capaActual='osm'; _capas.osm.addTo(_mapaZona);
+
+      // --- CONTROL DE PUNTOS CARDINALES (ROSA DE LOS VIENTOS) ---
+      // Rosa de los vientos: div absoluto dentro de mapa-wrapper (evita conflictos con botones del mapa)
+      if (!document.getElementById('rosa-vientos-abs')) {
+        const rosaDiv = document.createElement('div');
+        rosaDiv.id = 'rosa-vientos-abs';
+        rosaDiv.innerHTML = `
+          <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="38" fill="rgba(255,255,255,0.96)" stroke="#2d6a4f" stroke-width="2.5"/>
+            <polygon points="40,5 34,32 40,27 46,32" fill="#d32f2f"/>
+            <polygon points="40,75 34,48 40,53 46,48" fill="#78909c"/>
+            <polygon points="75,40 48,34 53,40 48,46" fill="#78909c"/>
+            <polygon points="5,40 32,34 27,40 32,46" fill="#78909c"/>
+            <circle cx="40" cy="40" r="5" fill="#2d6a4f" stroke="white" stroke-width="1.5"/>
+            <text x="40" y="17" text-anchor="middle" font-size="11" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">N</text>
+            <text x="40" y="17" text-anchor="middle" font-size="11" font-weight="bold" font-family="sans-serif" fill="#d32f2f">N</text>
+            <text x="40" y="72" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">S</text>
+            <text x="40" y="72" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">S</text>
+            <text x="67" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">E</text>
+            <text x="67" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">E</text>
+            <text x="13" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" stroke="white" stroke-width="3" paint-order="stroke">O</text>
+            <text x="13" y="44" text-anchor="middle" font-size="10" font-weight="bold" font-family="sans-serif" fill="#455a64">O</text>
+          </svg>`;
+        document.getElementById('mapa-wrapper').appendChild(rosaDiv);
+      }
+
     } else { _mapaZona.invalidateSize(); }
     _filtroMapa='todos'; actualizarBotonesFiltro('todos');
     renderMarcadores('todos');
@@ -1962,15 +2011,17 @@ async function abrirMapa(){
 function colorVivienda(v){
   const r=v.riesgo||'ninguno';
   if(r==='alto') return '#c62828';
-  if(r==='medio') return '#ca8a04';
+  if(r==='medio') return '#eab308';
   return '#16a34a';
 }
 function iconoLeaflet(color, label){
-  const svg=`<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="${color}" stroke="white" stroke-width="2.5"/><circle cx="15" cy="15" r="4.5" fill="white" opacity=".85"/></svg>
-    <span style="background:${color};color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.35);letter-spacing:.02em;line-height:1.4;font-family:sans-serif">${label}</span>
-  </div>`;
-  return L.divIcon({html:svg,className:'',iconSize:[30,46],iconAnchor:[15,15],popupAnchor:[0,-20]});
+  // Número dentro del círculo: compacto, sin etiqueta debajo
+  const fontSize = label.length > 2 ? '8' : '10';
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2.5"/>
+    <text x="16" y="20" text-anchor="middle" font-size="${fontSize}" font-weight="800" font-family="sans-serif" fill="white" letter-spacing="-0.5">${label}</text>
+  </svg>`;
+  return L.divIcon({html:svg,className:'',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]});
 }
 function renderMarcadores(filtro){
   if(!_mapaZona) return;
@@ -1995,7 +2046,7 @@ function renderMarcadores(filtro){
     const color=colorVivienda(viv);
     const etNivel=rk==='alto'?'🔴 Alto Riesgo':rk==='medio'?'🟡 Riesgo Medio':'🟢 Sin Riesgo';
     const bgN=rk==='alto'?'#ffebee':rk==='medio'?'#fefce8':'#f0fdf4';
-    const bdN=rk==='alto'?'#c62828':rk==='medio'?'#ca8a04':'#16a34a';
+    const bdN=rk==='alto'?'#c62828':rk==='medio'?'#eab308':'#16a34a';
 
     const intList=(viv.personas||[]).slice(0,5).map(p=>`<div style="font-size:.77em;padding:2px 0;border-bottom:1px solid #f0f0f0;color:#444;">👤 ${p.nombre}${p.edad?' <span style="color:#888;font-size:.9em">· '+p.edad+'</span>':''}</div>`).join('')
       +(viv.personas&&viv.personas.length>5?`<div style="font-size:.72em;color:#888;padding-top:2px">…y ${viv.personas.length-5} más</div>`:'');
@@ -2220,7 +2271,7 @@ function renderStats(){
   const chips=document.getElementById('stats-chips');
   if(chips) chips.innerHTML=`
     <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${sin}</span>Sin Riesgo</div>
-    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#fefce8;color:#ca8a04;border:1.5px solid #fde68a"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${med}</span>Riesgo Medio</div>
+    <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#fefce8;color:#eab308;border:1.5px solid #fde68a"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${med}</span>Riesgo Medio</div>
     <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#fff0f0;color:#c62828;border:1.5px solid #f5a0a0"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${alt}</span>Alto Riesgo</div>
     <div style="flex:1;min-width:65px;padding:.5rem .4rem;border-radius:9px;text-align:center;font-size:.71rem;font-weight:700;background:#e0f2fe;color:#0369a1;border:1.5px solid #7dd3fc"><span style="font-size:1.3rem;font-weight:800;display:block;line-height:1">${total}</span>Total Pers.</div>`;
 
@@ -2661,11 +2712,13 @@ function _mfamAgregarPersona() {
   if (!_mfamVivId) return;
   const vivId = _mfamVivId;
   const mfam = document.getElementById('modal-familia');
+  const mper = document.getElementById('modal-persona');
   mfam.classList.add('detras');
+  mper.style.zIndex = '10010';
   abrirNuevaPersona(vivId);
   const _orig = window.guardarPersona;
   const _origCerrar = window.cerrarModal;
-  const _restaurar = () => { mfam.classList.remove('detras'); };
+  const _restaurar = () => { mfam.classList.remove('detras'); mper.style.zIndex = ''; };
   window.guardarPersona = function() {
     _orig();
     window.guardarPersona = _orig;
@@ -2686,11 +2739,13 @@ function _mfamAgregarPersona() {
 function _mfamEditarPersona(vivId, perId) {
   _mfamVivId = vivId;
   const mfam = document.getElementById('modal-familia');
+  const mper = document.getElementById('modal-persona');
   mfam.classList.add('detras');
+  mper.style.zIndex = '10010';
   abrirEditPersona(vivId, perId);
   const _orig = window.guardarPersona;
   const _origCerrar = window.cerrarModal;
-  const _restaurar = () => { mfam.classList.remove('detras'); };
+  const _restaurar = () => { mfam.classList.remove('detras'); mper.style.zIndex = ''; };
   window.guardarPersona = function() {
     _orig();
     window.guardarPersona = _orig;
@@ -2721,11 +2776,13 @@ function _mfamEliminarPersona(vivId, perId) {
 function _mfamEditarVivienda() {
   if (!_mfamVivId) return;
   const mfam = document.getElementById('modal-familia');
+  const mviv = document.getElementById('modal-vivienda');
   mfam.classList.add('detras');
+  mviv.style.zIndex = '10010';
   abrirEditVivienda(_mfamVivId);
   const _orig = window.guardarVivienda;
   const _origCerrar = window.cerrarModal;
-  const _restaurar = () => { mfam.classList.remove('detras'); };
+  const _restaurar = () => { mfam.classList.remove('detras'); mviv.style.zIndex = ''; };
   // Restaurar si cancela o guarda
   window.guardarVivienda = function() {
     _orig();
