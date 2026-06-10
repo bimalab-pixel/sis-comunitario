@@ -1992,7 +1992,9 @@ function obtenerFechaLocalISO() {
 }
 
     function crearFechaLocal(dateString) {
-        const parts = dateString.split('-');
+        if (!dateString) return new Date();
+        const parts = String(dateString).split('-');
+        if (parts.length < 3) return new Date();
         // Asume formato 'YYYY-MM-DD'
         return new Date(parts[0], parts[1] - 1, parts[2]);
     }
@@ -2842,8 +2844,8 @@ function importarDatos(event) {
                 const vac = h.vacunas || {};
 
                 // CALCULO DE SEMANAS AL NACER
-                const furEfectiva = getEffectiveFURDate(h); // Usamos la misma función que para embarazadas pero pasamos el historial
-                const semanasAlNacer = calcularEdadGestacionalAlParto(furEfectiva, fpDate);
+                const furEfectiva = (h.fur || h.fus_date) ? getEffectiveFURDate(h) : null;
+                const semanasAlNacer = furEfectiva ? calcularEdadGestacionalAlParto(furEfectiva, fpDate) : 'No calculable';
 
                 const checkV = (date) => date ? `<span class="status-ok">Sí (${formatDate(crearFechaLocal(date))})</span>` : `<span class="status-pending">No</span>`;
 
@@ -3110,8 +3112,8 @@ function importarDatos(event) {
             if (p.historial_embarazo) {
                 const h = p.historial_embarazo;
                 const vac = h.vacunas || {};
-                const furEfectiva = getEffectiveFURDate(h);
-                const semanasAlNacer = calcularEdadGestacionalAlParto(furEfectiva, fpDate);
+                const furEfectiva = (h.fur || h.fus_date) ? getEffectiveFURDate(h) : null;
+                const semanasAlNacer = furEfectiva ? calcularEdadGestacionalAlParto(furEfectiva, fpDate) : 'No calculable';
                 const checkV = (date) => date ? `<span class="status-ok">Sí (${formatDate(crearFechaLocal(date))})</span>` : `<span class="status-pending">No</span>`;
 
                 historialHTML = `
