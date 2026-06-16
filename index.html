@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0d6e8a" />
   <meta name="description" content="SIS Comunitario – Salud Integral Familiar" />
   <title>SIS Comunitario</title>
@@ -22,12 +22,11 @@
       --card-bg: #ffffff;
       --body-bg: #f0f7fa;
       --text:    #1a2e3a;
-      --sub:     #546e7a;
-      --radius:  18px;
+      --sub:     #546e7a; 
       --shadow:  0 8px 32px rgba(13,110,138,.15);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     body {
       font-family: 'Lato', sans-serif;
@@ -145,6 +144,8 @@
       position: relative;
       overflow: hidden;
       cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
     }
     .app-card::before {
       content: '';
@@ -163,6 +164,7 @@
     .card-visita::before     { background: linear-gradient(90deg,#2e7d32,#66bb6a); }
     .card-registro::before   { background: linear-gradient(90deg,#e65100,#ffa726); }
     .card-mapa::before       { background: linear-gradient(90deg,#0a5c3c,#00c48c); }
+    .card-tabulador::before  { background: linear-gradient(90deg,#f57f17,#ffca28); } /* Nuevo color tabulador */
 
     .card-icon {
       width: 64px; height: 64px;
@@ -177,6 +179,7 @@
     .icon-visita     { background: #e8f5e9; }
     .icon-registro   { background: #fff3e0; }
     .icon-mapa       { background: #e8f5ef; }
+    .icon-tabulador  { background: #fffde7; } /* Nuevo fondo icono tabulador */
 
     .card-label {
       font-family: 'Nunito', sans-serif;
@@ -206,6 +209,118 @@
     .arrow-visita     { background: #e8f5e9; color: #2e7d32; }
     .arrow-registro   { background: #fff3e0; color: #e65100; }
     .arrow-mapa       { background: #e8f5ef; color: #0a5c3c; }
+    .arrow-tabulador  { background: #fffde7; color: #f57f17; } /* Nueva flecha tabulador */
+
+    /* Botón de edición en la tarjeta del Tabulador */
+    .btn-edit-card {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      background: rgba(245, 127, 23, 0.1);
+      color: #f57f17;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .btn-edit-card:active { background: rgba(245, 127, 23, 0.25); }
+
+    /* ── MODAL TABULADOR ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.52);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 28px 22px 22px;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,.28);
+      animation: popIn .2s ease;
+      font-family: 'Lato', sans-serif;
+    }
+    @keyframes popIn {
+      from { transform: scale(.85); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+
+    .modal-icon { font-size: 2.4rem; text-align: center; margin-bottom: 8px; }
+
+    .modal-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1a2e3a;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 0.85rem;
+      color: #546e7a;
+      text-align: center;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    /* Estilo para el input de URL */
+    .modal-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #1a2e3a;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: 'Lato', sans-serif;
+    }
+    .modal-input:focus { border-color: #ffca28; }
+
+    .modal-note {
+      background: #fff8e1;
+      border-left: 3px solid #ffca28;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: .76rem;
+      color: #795548;
+      margin-bottom: 20px;
+      line-height: 1.45;
+    }
+    .modal-note a { color: #f57f17; font-weight: bold; text-decoration: none; }
+
+    .modal-btns { display: flex; gap: 10px; }
+    .btn-cancel {
+      flex: 1; padding: 12px;
+      border: 2px solid #e0e0e0; border-radius: 12px;
+      background: #fff; color: #546e7a;
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      font-family: 'Nunito', sans-serif;
+    }
+    .btn-open {
+      flex: 2; padding: 12px;
+      border: none; border-radius: 12px;
+      background: linear-gradient(135deg,#f57f17,#ffca28); color: #fff;
+      font-size: .85rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(245,127,23,.35);
+      font-family: 'Nunito', sans-serif;
+    }
+    .btn-open:active, .btn-cancel:active { opacity: .8; }
 
     /* ── FOOTER ── */
     footer {
@@ -252,7 +367,6 @@
 
 <main>
 
-  <!-- 1. Vigilancia Materna -->
   <a class="app-card card-vigilancia" href="Vigilancia_Materna.html">
     <div class="card-icon icon-vigilancia">👩‍⚕️</div>
     <div class="card-label">Vigilancia Materna</div>
@@ -260,7 +374,6 @@
     <div class="card-arrow arrow-vigilancia">→</div>
   </a>
 
-  <!-- 2. Calculadora Materna -->
   <a class="app-card card-calculadora" href="calculadora_materna.html">
     <div class="card-icon icon-calculadora">🗓️</div>
     <div class="card-label">Calculadora Materna</div>
@@ -268,7 +381,6 @@
     <div class="card-arrow arrow-calculadora">→</div>
   </a>
 
-  <!-- 3. Control MEF -->
   <a class="app-card card-mef" href="mef.html">
     <div class="card-icon icon-mef">📋</div>
     <div class="card-label">Control MEF</div>
@@ -276,7 +388,6 @@
     <div class="card-arrow arrow-mef">→</div>
   </a>
 
-  <!-- 4. Visita Domiciliar -->
   <a class="app-card card-visita" href="visita_domiciliar.html">
     <div class="card-icon icon-visita">🏠</div>
     <div class="card-label">Visita Domiciliar</div>
@@ -284,7 +395,6 @@
     <div class="card-arrow arrow-visita">→</div>
   </a>
 
-  <!-- 5. Registro Diario del Promotor -->
   <a class="app-card card-registro" href="RegistroDiario_Promotor.html">
     <div class="card-icon icon-registro">📝</div>
     <div class="card-label">Registro Diario</div>
@@ -292,7 +402,6 @@
     <div class="card-arrow arrow-registro">→</div>
   </a>
 
-  <!-- 6. Mapa Sanitario -->
   <a class="app-card card-mapa" href="MapaSanitario.html">
     <div class="card-icon icon-mapa">🗺️</div>
     <div class="card-label">Mapa Sanitario</div>
@@ -300,14 +409,44 @@
     <div class="card-arrow arrow-mapa">→</div>
   </a>
 
+  <div class="app-card card-tabulador" onclick="manejarClickTabulador(event)">
+    <div class="btn-edit-card" onclick="abrirModalTabulador(event, true)" title="Cambiar enlace guardado">✏️</div>
+    <div class="card-icon icon-tabulador">📂</div>
+    <div class="card-label">Carpeta Oficial Salud Comunitaria</div>
+    <div class="card-sub">Registro de datos en carpeta de Google Drive</div>
+    <div class="card-arrow arrow-tabulador">→</div>
+  </div>
+
 </main>
 
-<footer>© 2026 SIS Comunitario ·Moisés Labor- Todos los derechos reservados</footer>
+<footer>© 2026 SIS Comunitario · Moisés Labor- Todos los derechos reservados</footer>
+
+<div class="modal-overlay" id="modalTabulador" onclick="cerrarSiOverlay(event)">
+  <div class="modal-box">
+    <div class="modal-icon">🔗</div>
+    <div class="modal-title" id="tituloModal">Configurar Carpeta</div>
+
+    <p class="modal-desc">
+      Pega aquí el enlace de <strong>tu carpeta oficial personal</strong> para acceder directamente en el futuro.
+    </p>
+
+    <input type="url" id="inputEnlaceTabulador" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+
+    <div class="modal-note">
+      💡 <strong>¿No tienes tu copia?</strong><br/>Abre tu <a href="https://docs.google.com/spreadsheets/d/1vhBwewCHQxI97RBvKZnZvvCzlZbwoJESOkUbJKRkH3w/edit?usp=drivesdk" target="_blank">Carpeta Base</a>, abre Google Drive y busca tu "Carpeta Oficial" Selecciona el menu de la carpeta en los 3 puntitos de a la par, busca donde dice "copiar vínculo" cópialo y pegalo acá, dale guardar y Listo!!
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-open" onclick="guardarYAbrirTabulador()">💾 Guardar y Abrir</button>
+    </div>
+  </div>
+</div>
 
 <div id="offline-toast">📶 Sin conexión – modo sin conexión activo</div>
 
 <script>
-  // ── Service Worker ──
+  // ── Lógica Service Worker y PWA Original ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js')
@@ -316,7 +455,6 @@
     });
   }
 
-  // ── Install prompt ──
   let deferredPrompt;
   const banner = document.getElementById('install-banner');
   const installBtn = document.getElementById('install-btn');
@@ -345,6 +483,59 @@
   window.addEventListener('offline', () => toast.classList.add('show'));
   window.addEventListener('online',  () => toast.classList.remove('show'));
   if (!navigator.onLine) toast.classList.add('show');
+
+  // ── Lógica Nueva del Tabulador (Optimizada para WebView) ──
+  function manejarClickTabulador(e) {
+    // Si toca el lápiz, no hace esto
+    if (e.target.closest('.btn-edit-card')) return;
+
+    const enlaceGuardado = localStorage.getItem('enlaceTabuladorPersonal');
+    
+    if (enlaceGuardado) {
+      // Modificado para WebView: Evita window.open y redirige la ventana actual
+      window.location.href = enlaceGuardado;
+    } else {
+      abrirModalTabulador(null, false);
+    }
+  }
+
+  function abrirModalTabulador(e, esEdicion) {
+    if (e) e.stopPropagation(); 
+    
+    const input = document.getElementById('inputEnlaceTabulador');
+    const titulo = document.getElementById('tituloModal');
+    const enlaceGuardado = localStorage.getItem('enlaceTabuladorPersonal');
+
+    input.value = enlaceGuardado ? enlaceGuardado : '';
+    titulo.innerText = esEdicion ? 'Actualizar Enlace' : 'Configurar Tabulador';
+
+    document.getElementById('modalTabulador').classList.add('active');
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalTabulador').classList.remove('active');
+  }
+
+  function cerrarSiOverlay(e) {
+    if (e.target === document.getElementById('modalTabulador')) cerrarModal();
+  }
+
+  function guardarYAbrirTabulador() {
+    const input = document.getElementById('inputEnlaceTabulador');
+    const url = input.value.trim();
+
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+      alert('Por favor, ingresa un enlace válido que comience con http:// o https://');
+      return;
+    }
+
+    // Guardar en el dispositivo
+    localStorage.setItem('enlaceTabuladorPersonal', url);
+    cerrarModal();
+    
+    // Modificado para WebView: Evita window.open y redirige la ventana actual
+    window.location.href = url;
+  }
 </script>
 
 </body>
