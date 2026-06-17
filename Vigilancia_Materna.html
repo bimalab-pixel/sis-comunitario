@@ -5914,7 +5914,7 @@ function descargarPDF(index, tipo) {
         notasImpresion.forEach(nota => {
             doc.write(`
                 <div class="nota-final">
-                    <div class="nota-fecha">📅 ${nota.fecha} ${nota.etapa ? '['+nota.etapa+']' : ''}</div>
+                    <div class="nota-fecha">📅 ${nota.fecha ? nota.fecha.split(',')[0] : ''} ${nota.etapa ? '['+nota.etapa+']' : ''}</div>
                     <div style="white-space: pre-wrap; font-size: 13px;">${nota.texto}</div>
                 </div>
             `);
