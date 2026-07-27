@@ -297,6 +297,37 @@
         .btn.secondary{background:var(--white);border:1.5px solid var(--border);color:var(--navy2)}.btn.secondary:hover{background:var(--light2)}
         .btn.gold{background:var(--gold);color:#fff}.btn.gold:hover{filter:brightness(1.1)}
 
+        /* ══════════════ BOTÓN MÁGICO — Generar con IA ══════════════ */
+        .btn-magic{
+          position:relative;overflow:hidden;
+          width:100%;padding:.85rem 1rem;border:none;border-radius:10px;
+          font-family:inherit;font-size:.85rem;font-weight:800;letter-spacing:.03em;
+          text-transform:none;color:#fff;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;gap:.5rem;
+          background:linear-gradient(180deg,#e879f9 0%,#c026d3 100%);
+          box-shadow:0 4px 0 #86198f,0 7px 16px rgba(192,38,211,.4);
+          transition:box-shadow .08s ease,filter .15s ease;
+          animation:magicLatido 1.8s ease-in-out infinite;
+          margin:.3rem 0 .1rem;
+        }
+        .btn-magic span{position:relative;z-index:2}
+        .btn-magic::after{
+          content:'';position:absolute;top:0;left:-60%;width:35%;height:100%;
+          background:linear-gradient(115deg,transparent,rgba(255,255,255,.65),transparent);
+          transform:skewX(-20deg);z-index:1;pointer-events:none;
+          animation:magicBrillo 2.6s ease-in-out infinite;
+        }
+        @keyframes magicLatido{
+          0%,100%{transform:translateY(0) scale(1);box-shadow:0 4px 0 #86198f,0 7px 16px rgba(192,38,211,.4);}
+          50%{transform:translateY(-2px) scale(1.012);box-shadow:0 6px 0 #86198f,0 10px 22px rgba(232,121,249,.6);}
+        }
+        @keyframes magicBrillo{0%{left:-60%}55%{left:130%}100%{left:130%}}
+        .btn-magic:hover{filter:brightness(1.07)}
+        .btn-magic:active{animation-play-state:paused;transform:translateY(3px) scale(1);box-shadow:0 1px 0 #86198f,0 2px 4px rgba(192,38,211,.4);}
+        .btn-magic:disabled{animation:none;filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
+        .btn-magic-hint{font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
+        @media (prefers-reduced-motion: reduce){.btn-magic,.btn-magic::after{animation:none!important}}
+
         /* ══════════════ REPORTES SCREEN ══════════════ */
         .rep-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--border);overflow:hidden;margin-bottom:1rem;}
         .rep-card-header{
@@ -1231,6 +1262,22 @@
                         <label>Acciones Ejecutadas</label>
                         <textarea id="r-acciones" placeholder="Describa las acciones tomadas o intervenciones realizadas..."></textarea>
                     </div>
+
+                    <div class="sp">
+                        <div class="f-group" style="margin-bottom:.5rem">
+                            <label>🎛️ Nivel de Detalle para la IA</label>
+                            <select id="r-nivel-ia">
+                                <option value="resumido">⚡ Resumido / Directo (frases breves)</option>
+                                <option value="balanceado" selected>⚖️ Balanceado (recomendado)</option>
+                                <option value="detallado">🔍 Extenso / Detallado</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-magic" id="btn-magic-ia" onclick="generarConIA()">
+                            <span id="btn-magic-ia-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
+                        </button>
+                        <div class="btn-magic-hint">Escribe la idea básica en "Hallazgos" y la IA la redacta en formato oficial, en estos mismos campos.</div>
+                    </div>
+
                     <div class="sp" id="banner-otra-persona">
                         <span class="bop-ico">🏠</span>
                         <div class="bop-txt">
@@ -1723,6 +1770,14 @@
                     <label>Municipio / Distrito</label>
                     <input type="text" id="cfg-municipio" placeholder="Ej: Coatepeque"/>
                 </div>
+                <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
+                <div class="profile-field">
+                    <label>🔑 Clave API para el Botón Mágico (IA)</label>
+                    <input type="text" id="cfg-api-key" placeholder="Pega tu clave gsk_... aquí" style="font-family:monospace;font-size:.78rem"/>
+                    <p style="font-size:.68rem;color:var(--muted);margin-top:.3rem;line-height:1.4">
+                        Se usa solo para el botón ✨ que redacta Hallazgos y Acciones. Se guarda únicamente en este dispositivo y nunca aparece en los reportes impresos.
+                    </p>
+                </div>
             </div>
             <button class="profile-save-btn" onclick="guardarConfiguracion()">
                 💾 Guardar perfil
@@ -2016,6 +2071,7 @@
       document.getElementById('cfg-comunidad').value       = perfil.comunidad       || '';
       document.getElementById('cfg-establecimiento').value = perfil.establecimiento  || '';
       document.getElementById('cfg-municipio').value       = perfil.municipio        || '';
+      document.getElementById('cfg-api-key').value         = localStorage.getItem('rdps_groq_api_key') || '';
       document.getElementById('modal-config').classList.add('show');
     }
     function cerrarModal(id) {
@@ -2031,6 +2087,10 @@
       perfil.establecimiento = document.getElementById('cfg-establecimiento').value.trim();
       perfil.municipio       = document.getElementById('cfg-municipio').value.trim();
       localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
+
+      const clave = document.getElementById('cfg-api-key').value.trim();
+      localStorage.setItem('rdps_groq_api_key', clave); // Guardada aparte: nunca se imprime en los reportes
+
       actualizarHome();
       cerrarModal('modal-config');
       toast('✅ Configuración guardada', 'success');
@@ -2091,6 +2151,236 @@
     // ── CRUD ──
     let _modoOtraPersona = null; // { vivienda, fecha, hora }
     let _ultimoRegistro  = null; // último registro guardado (para modal-siguiente)
+
+    // ══════════════════════════════════════════════════════════
+    // BOTÓN MÁGICO — Genera Hallazgos y Acciones con IA (Groq)
+    // Misma lógica y reglas ya afinadas en el Asistente de Registros Diarios.
+    // No crea tablas nuevas ni historial: solo llena los campos r-hallazgos y r-acciones.
+    // ══════════════════════════════════════════════════════════
+
+    // Guarda la nota original (idea básica) para que cambiar de nivel (Resumido/Balanceado/Detallado)
+    // siempre regenere a partir de la MISMA idea original, y no sobre el texto ya redactado por la IA.
+    let _iaNotaBaseOriginal = null;
+    let _iaUltimaSalidaHallazgos = null;
+
+    function _iaResetCache() {
+      _iaNotaBaseOriginal = null;
+      _iaUltimaSalidaHallazgos = null;
+    }
+
+    async function fetchConTimeoutIA(url, options, timeoutMs) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    }
+
+    async function llamarIAConReintentoRDPS(url, options, intentos = 2, timeoutMs = 25000) {
+      let ultimoError = null;
+      for (let i = 0; i < intentos; i++) {
+        try {
+          return await fetchConTimeoutIA(url, options, timeoutMs);
+        } catch (error) {
+          ultimoError = error;
+          if (i < intentos - 1) await new Promise(res => setTimeout(res, 1200));
+        }
+      }
+      throw ultimoError;
+    }
+
+    // Valida que la fila TSV devuelta tenga exactamente 4 columnas
+    function validarFilaTSV_RDPS(tsvData) {
+      const linea = tsvData.split('\n').find(l => l.trim() !== '');
+      if (!linea) return { valido: false, motivo: 'no se generó ninguna fila' };
+      const cols = linea.split('\t');
+      if (cols.length !== 4) return { valido: false, motivo: `se esperaban 4 columnas y llegaron ${cols.length}` };
+      return { valido: true, celdas: cols };
+    }
+
+    async function generarConIA() {
+      const apiKey = localStorage.getItem('rdps_groq_api_key');
+      if (!apiKey) {
+        toast('⚠️ Configura tu clave API en Mi Perfil (⚙️)', 'error');
+        abrirConfig();
+        return;
+      }
+
+      const nombre = document.getElementById('r-nombre').value.trim();
+      const edad   = document.getElementById('r-edad').value.trim();
+      const campoHallazgosActual = document.getElementById('r-hallazgos').value.trim();
+      const notasAcciones  = document.getElementById('r-acciones').value.trim();
+      const nivel  = document.getElementById('r-nivel-ia').value;
+
+      if (!nombre) { toast('⚠️ Ingresa el nombre antes de usar la IA', 'error'); return; }
+      if (!campoHallazgosActual) { toast('⚠️ Escribe la idea básica en "Hallazgos" primero', 'error'); return; }
+
+      // ¿El campo "Hallazgos" es exactamente el mismo texto que la IA ya redactó la última vez?
+      // Si es así, el usuario solo cambió el nivel (Resumido/Balanceado/Detallado) sin tocar el texto,
+      // así que regeneramos desde la NOTA ORIGINAL guardada, no desde el texto ya redactado.
+      // Si el texto es distinto, significa que el usuario escribió/editó algo nuevo → esa es la nueva nota base.
+      let notasHallazgos;
+      if (_iaNotaBaseOriginal !== null && campoHallazgosActual === _iaUltimaSalidaHallazgos) {
+        notasHallazgos = _iaNotaBaseOriginal;
+      } else {
+        notasHallazgos = campoHallazgosActual;
+        _iaNotaBaseOriginal = campoHallazgosActual;
+      }
+
+      // Si ya había algo escrito en Acciones, se incluye como contexto adicional (no se pierde)
+      const notasCompletas = notasAcciones
+        ? `${notasHallazgos}\n(Nota adicional ya escrita sobre acciones/consejería a considerar: ${notasAcciones})`
+        : notasHallazgos;
+
+      let reglaDetalle = "";
+      let temp = 0.35;
+
+      if (nivel === "resumido") {
+        reglaDetalle = `
+4. Estilo RESUMIDO Y DIRECTO (el más corto de los 3 niveles):
+   - "Hallazgos": UNA sola oración corta y directa (máximo ~15 palabras). Solo el dato principal, sin contexto adicional.
+   - "Acciones Ejecutadas": UNA sola oración corta (máximo ~15-18 palabras) que mencione la recomendación principal y el acuerdo, fusionados en una sola frase.
+   - No agregues explicaciones, contexto clínico ni antecedentes. Ve directo al punto.`;
+        temp = 0.25;
+      } else if (nivel === "detallado") {
+        reglaDetalle = `
+4. Estilo EXTENSO Y DETALLADO (el más largo de los 3 niveles — debe ser notablemente más extenso que el modo Balanceado, al menos el doble de longitud):
+   - "Hallazgos": entre 4 y 6 oraciones. Debes incluir explícitamente, cuando la nota lo permita: (a) la condición o situación detectada, (b) el contexto o antecedente relevante, (c) posibles riesgos o complicaciones asociadas a esa condición, y (d) el impacto en la vivienda, la vida diaria o el entorno familiar si aplica.
+   - "Acciones Ejecutadas": entre 4 y 6 oraciones, desglosando POR SEPARADO: (1) la consejería educativa explicada con más detalle (qué se explicó y por qué es importante), (2) la acción técnica o clínica ejecutada, (3) la recomendación de seguimiento indicando un plazo o próxima fecha/control, y (4) el acuerdo redactado de forma extensa como "Acuerdo: [detalle amplio del compromiso]".
+   - Si notas que tu redacción quedó con una extensión parecida al modo Balanceado, amplíala aún más agregando contexto clínico, antecedentes y pasos de seguimiento explícitos hasta que la diferencia sea evidente.`;
+        temp = 0.5;
+      } else {
+        reglaDetalle = `
+4. Estilo BALANCEADO (equilibrio entre completo y conciso — NO tan extenso como Detallado, pero SIN dejar ningún tema fuera):
+   - Cubre TODOS los temas o condiciones que menciona la nota, cada uno con su razonamiento (por qué es relevante o qué riesgo implica) y su acción/consejería correspondiente. No omitas un tema solo para acortar el texto.
+   - Como referencia de extensión: si la nota trae 1 solo tema, usa 2 oraciones en "Hallazgos" y 2 en "Acciones Ejecutadas". Si trae 2 o 3 temas, usa una oración compacta por tema en cada columna (puedes fusionar temas muy relacionados en una sola oración si tiene sentido clínico).
+   - No repitas ideas ni agregues relleno; sé directo pero completo. La meta es que se lea denso en información útil, ni telegráfico ni saturado de paja.`;
+        temp = 0.35;
+      }
+
+      const btn = document.getElementById('btn-magic-ia');
+      const btnTexto = document.getElementById('btn-magic-ia-texto');
+      const textoOriginal = btnTexto.textContent;
+      btn.disabled = true;
+      btnTexto.textContent = '⏳ Redactando con IA...';
+
+      const promptSystem = `
+Eres un asistente experto en salud comunitaria para promotores de campo.
+Tu tarea es tomar los datos de UNA sola persona visitada y estructurar el resultado en UNA sola fila delimitada por tabulaciones (TSV) con 4 columnas exactas:
+
+Nombre de la Persona \t Edad \t Hallazgos en la Visita \t Acciones Ejecutadas, Consejería y Acuerdos
+
+REGLAS DE FORMATO Y REDACCIÓN:
+1. Formato de la Columna "Edad":
+   - Para adultos y niños mayores, escribe siempre la palabra completa. Ejemplo: "35 años", "12 años".
+   - Para bebés o niños pequeños, conserva la especificación exacta de años y meses. Ejemplo: "1 año 2 meses", "8 meses".
+
+2. Estilo de Redacción y Tiempo Verbal:
+   - Utiliza redacción técnica formal para informes diarios de campo (pretérito perfecto impersonal).
+   - La sección de acuerdos siempre debe comunicar claramente el compromiso establecido con la persona o su responsable.
+
+3. VARIEDAD OBLIGATORIA EN LA REDACCIÓN (muy importante):
+   - EVITA usar la palabra "paciente" como sustantivo por defecto; varía cómo te refieres a la persona usando alternativas como: "la persona", "el usuario", "el señor"/"la señora" (si la edad lo sugiere), "el niño"/"la niña"/"el menor" (si aplica por edad), o simplemente el pronombre implícito sin repetir el sustantivo. No uses "paciente" más de una vez.
+   - Para "Hallazgos en la Visita", usa una construcción natural como: "Se identificó...", "Se detectó...", "Se constató...", "Se evidenció...", "Se observó que...", "La persona presenta...", "Durante la visita se encontró...", "Se evaluó la condición de...", entre otras equivalentes.
+   - Para la parte de consejería/recomendación, NO la empieces siempre con "Se...". Considera también construcciones como: "La persona recibió orientación sobre...", "Como parte de la atención se educó sobre...", "Durante la visita se recomendó...", "Ante esta situación, se explicó...", "Fue orientado/a acerca de...", "La consejería brindada abordó...", entre otras equivalentes. NUNCA uses la frase "el equipo de salud" ni "el personal de salud", ya que las visitas las realiza un solo promotor de salud, no un equipo.
+   - Para el ACUERDO, varía la redacción usando opciones como: "Acuerdo: se compromete a...", "Como compromiso, la persona acordó...", "Se estableció el compromiso de...", "Acuerdo alcanzado: la persona se compromete a...", "Quedó como compromiso...", "La persona/el responsable acordó...", entre otras equivalentes.
+   - EVITA LA MULETILLA "que la persona se encuentra en..." justo después del inicio elegido: en construcciones con "Se" (Se identificó, Se detectó, etc.) el sujeto ya queda implícito gramaticalmente, así que casi siempre puedes ir directo al hallazgo sin nombrar a la persona (ej: "Se identificó un embarazo de 32 semanas..." en vez de "Se identificó que la persona se encuentra en estado de embarazo de 32 semanas..."). Usa una referencia explícita a la persona (la persona/la usuaria/el señor/la señora/el niño/la niña) como máximo en UNA de las dos columnas, no en ambas.
+
+${reglaDetalle}
+
+RAZONAMIENTO LIMITADO A LOS HALLAZGOS (regla crítica, no negociable):
+   - La consejería, las "Acciones Ejecutadas" y el acuerdo DEBEN derivarse únicamente de lo que está explícitamente mencionado en las notas/hallazgos. NO inventes diagnósticos, condiciones, antecedentes, exámenes ni intervenciones que el promotor no haya anotado.
+   - SÍ está permitido el razonamiento clínico lógico y directo sobre lo que fue mencionado (ej: si la nota dice "con gripe", es válido recomendar reposo, hidratación y observación de signos de alarma, porque es manejo estándar de esa condición ya mencionada).
+   - NO está permitido extender el caso a temas no relacionados con la nota (ej: no menciones planificación familiar, vacunas, tuberculosis u otra condición si la nota no la trata; no inventes un medicamento, dosis o procedimiento específico que el promotor no haya escrito).
+   - Si la nota es muy escueta, la consejería debe seguir siendo genérica y relacionada directamente a lo mencionado, sin agregar detalles clínicos inventados solo para "rellenar" el texto.
+
+IDENTIFICACIÓN DE RIESGOS (regla importante):
+   - Cuando el hallazgo lo permita, agrega el riesgo o posible complicación clínica directa asociada a lo encontrado (ej: hipertensión no controlada → riesgo de complicaciones cardiovasculares; diarrea con deshidratación en niño pequeño → riesgo de deshidratación severa; embarazo con hta → riesgo de preeclampsia; alto riesgo reproductivo → riesgo de complicaciones en el embarazo).
+   - Este riesgo debe basarse SOLO en lo mencionado en la nota, sin inventar condiciones nuevas, y debe reflejarse en "Hallazgos" o como justificación de la acción/consejería en "Acciones Ejecutadas".
+
+CONTEXTO SIN DESVIARSE (regla importante):
+   - Puedes agregar contexto clínico breve que ayude a entender la relevancia del hallazgo (qué implica, por qué se actúa así), pero SIN salirte del tema principal de la nota ni mencionar condiciones, antecedentes o recomendaciones que no estén relacionadas con lo que el promotor anotó.
+
+DATO CLÍNICO OBLIGATORIO (regla crítica, no negociable):
+   - CUALQUIER dato concreto que aparezca en la nota original —resultados de laboratorio o pruebas, cifras de signos vitales (ej: "140 mmHg"), fechas exactas, semanas de gestación, dosis, nombres de vacunas o medicamentos, lugares de referencia, etc.— DEBE aparecer reflejado en la columna correspondiente (Hallazgos o Acciones), aunque la redacción se resuma o parafrasee.
+   - Está PROHIBIDO omitir o "perder" un dato numérico o clínico concreto de la nota original. Antes de redactar, revisa mentalmente la nota dato por dato y verifica que ninguno se haya quedado fuera del texto generado.
+
+COBERTURA COMPLETA DE TODOS LOS TEMAS MENCIONADOS (regla crítica, no negociable):
+   - Si la nota menciona MÁS DE UN hallazgo, condición o tema independiente (ej: "depresión y citología atrasada"), la respuesta DEBE abordar TODOS y cada uno de esos temas, tanto en "Hallazgos en la Visita" como en "Acciones Ejecutadas". Está PROHIBIDO responder solo al primer tema y omitir el segundo (o el tercero).
+   - Cada tema debe tener: (a) su propio razonamiento o riesgo en "Hallazgos", y (b) su propia acción/consejería en "Acciones Ejecutadas". Ningún tema puede quedar solo mencionado sin su acción correspondiente.
+   - Antes de redactar, cuenta mentalmente cuántos temas/condiciones distintos hay en la nota. La celda de "Hallazgos" debe reflejar cada uno, y la celda de "Acciones Ejecutadas" debe incluir consejería/acción/acuerdo específico para CADA tema (puede ser una oración por tema dentro de la misma celda; no hace falta separar en párrafos distintos, pero ningún tema debe quedar sin su acción correspondiente).
+   - Esta regla aplica en los 3 niveles de detalle: incluso en modo Resumido, si hay 2 temas, la oración corta debe mencionar ambos aunque sea de forma breve.
+
+5. Devuelve ÚNICAMENTE la fila TSV limpia, sin encabezados, sin marcas markdown \`\`\`tsv ni introducciones, sin saltos de línea adicionales.
+
+Datos de la persona:
+Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | Notas: ${notasCompletas}
+      `;
+
+      try {
+        const response = await llamarIAConReintentoRDPS('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: promptSystem }],
+            temperature: temp
+          })
+        });
+
+
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* respuesta sin JSON válido */ }
+
+        if (!response.ok) {
+          const mensajeError = (data && data.error && data.error.message) ? data.error.message : `Error del servidor (código ${response.status}).`;
+          let sugerencia = '';
+          if (response.status === 401) sugerencia = ' Verifica tu clave API en Mi Perfil ⚙️.';
+          else if (response.status === 429) sugerencia = ' Alcanzaste el límite gratuito de Groq por ahora. Espera unos minutos.';
+          else if (response.status >= 500) sugerencia = ' El servicio de IA podría estar caído. Intenta de nuevo en un momento.';
+          toast(`❌ ${mensajeError}${sugerencia}`, 'error');
+          return;
+        }
+
+        if (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+          let resultado = data.choices[0].message.content;
+          resultado = resultado.replace(/```tsv/g, '').replace(/```/g, '').trim();
+
+          const validacion = validarFilaTSV_RDPS(resultado);
+          if (!validacion.valido) {
+            toast(`⚠️ La IA devolvió un formato inesperado (${validacion.motivo}). Intenta de nuevo.`, 'error');
+            return;
+          }
+
+          const [, , hallazgosIA, accionesIA] = validacion.celdas;
+          const hallazgosFinal = (hallazgosIA || '').trim();
+          document.getElementById('r-hallazgos').value = hallazgosFinal;
+          document.getElementById('r-acciones').value  = (accionesIA || '').trim();
+          _iaUltimaSalidaHallazgos = hallazgosFinal; // Para detectar si el usuario edita manualmente después
+          toast('✨ Redacción generada — revisa antes de guardar', 'success');
+        } else {
+          toast('❌ La IA no devolvió contenido válido. Intenta de nuevo.', 'error');
+        }
+      } catch (error) {
+        console.error(error);
+        if (error.name === 'AbortError') {
+          toast('❌ La conexión tardó demasiado (señal débil). Intenta de nuevo.', 'error');
+        } else {
+          toast('❌ Error de conexión con el servicio de IA. Verifica tu internet.', 'error');
+        }
+      } finally {
+        btn.disabled = false;
+        btnTexto.textContent = textoOriginal;
+      }
+    }
 
     function guardarRegistro(modoOtra) {
       const nombre = document.getElementById('r-nombre').value.trim();
@@ -2164,6 +2454,7 @@
     }
 
     function limpiarFormulario(mantenerVivienda) {
+      _iaResetCache();
       document.getElementById('edit-id').value     = '';
       document.getElementById('r-nombre').value    = '';
       document.getElementById('r-edad').value      = '';
@@ -2993,13 +3284,44 @@
         box-shadow: inset 0 0 0 1.5px #0b8a72;
       }
       .edit-hint {
-        display: flex; align-items: center; gap: 6px;
+        display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
         font-size: 11px; color: #7c6f2e;
         background: #fffde7; border: 1px solid #f0d060;
         border-radius: 6px; padding: 5px 10px;
         margin-bottom: 6px;
       }
       .edit-hint svg { flex-shrink: 0; }
+      .edit-hint > span:first-of-type { flex: 1 1 220px; }
+      .ia-toolbar {
+        display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+        background: #fdf4ff; border: 1px solid #e9b3fb;
+        border-radius: 8px; padding: 7px 10px;
+        margin-bottom: 6px;
+      }
+      .ia-nivel-wrap {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 11px; color: #6b21a8; font-weight: 700;
+        white-space: nowrap;
+      }
+      .ia-nivel-wrap select {
+        font-family: Arial, sans-serif; font-size: 11px; font-weight: 700;
+        color: #6b21a8; background: #fff; border: 1px solid #d8b4fe;
+        border-radius: 5px; padding: 3px 6px; cursor: pointer;
+      }
+      .btn-magic-tabla {
+        position: relative; overflow: hidden;
+        border: none; border-radius: 8px; cursor: pointer;
+        font-family: Arial, sans-serif; font-size: 12px; font-weight: 800;
+        color: #fff; padding: 7px 14px;
+        display: inline-flex; align-items: center; gap: 6px;
+        background: linear-gradient(180deg,#e879f9 0%,#c026d3 100%);
+        box-shadow: 0 3px 0 #86198f, 0 5px 12px rgba(192,38,211,.4);
+        transition: filter .15s ease;
+      }
+      .btn-magic-tabla:hover { filter: brightness(1.07); }
+      .btn-magic-tabla:active { transform: translateY(2px); box-shadow: 0 1px 0 #86198f, 0 2px 4px rgba(192,38,211,.4); }
+      .btn-magic-tabla:disabled { filter: grayscale(.4) brightness(.9); cursor: not-allowed; }
+      .ia-toolbar-hint { font-size: 10.5px; color: #86198f; flex-basis: 100%; }
       .cambios-bar {
         display: none; position: sticky; bottom: 0; left: 0; right: 0;
         background: #0a3d2e; color: #fff;
@@ -3020,7 +3342,7 @@
     }
     @media print {
       .c-editable { cursor: default !important; }
-      .edit-hint, .cambios-bar { display: none !important; }
+      .edit-hint, .ia-toolbar, .cambios-bar { display: none !important; }
     }
 
     /* ══ PANTALLA — tablet / escritorio ══ */
@@ -3258,7 +3580,22 @@
 
     <div class="edit-hint" id="edit-hint">
       <svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Toca una celda de <b>Hallazgos</b> o <b>Acciones</b> para editar. Los cambios se guardan en el registro.
+      <span>Toca una celda de <b>Hallazgos</b> o <b>Acciones</b> para editar. Los cambios se guardan en el registro.</span>
+    </div>
+
+    <div class="ia-toolbar" id="ia-toolbar">
+      <button type="button" class="btn-magic-tabla" id="btn-magic-tabla" onclick="generarConIATabla()">
+        <span id="btn-magic-tabla-texto">✨ Generar  Informe Profesional</span>
+      </button>
+      <span class="ia-nivel-wrap">
+        <label for="rep-nivel-ia">🎛️ Nivel:</label>
+        <select id="rep-nivel-ia">
+          <option value="resumido">Resumido</option>
+          <option value="balanceado" selected>Balanceado</option>
+          <option value="detallado">Detallado</option>
+        </select>
+      </span>
+      <span class="ia-toolbar-hint">Usa como idea básica lo que ya esté escrito en "Hallazgos" de cada fila; las filas vacías se omiten.</span>
     </div>
 
     <div class="tabla-wrap">
@@ -3411,6 +3748,328 @@
 
 
     })();
+
+    // ══════════════════════════════════════════════════════════
+    // BOTÓN MÁGICO POR FILA — Genera Hallazgos y Acciones con IA (Groq)
+    // Reutiliza la clave API guardada por la app principal (mismo origen: localStorage compartido).
+    // ══════════════════════════════════════════════════════════
+    var _repNL = String.fromCharCode(10);
+    var _repBT = String.fromCharCode(96);
+    var _repIaCache = {};
+
+    function _repHtmlToText(html) {
+      var div = document.createElement('div');
+      div.innerHTML = (html || '').replace(/<br[^>]*>/gi, ' ');
+      return (div.textContent || div.innerText || '').trim();
+    }
+
+    function _repToast(msg) {
+      var el = document.createElement('div');
+      el.textContent = msg;
+      el.style.cssText = 'position:fixed;left:50%;bottom:64px;transform:translateX(-50%);' +
+        'background:#1a1a2e;color:#fff;padding:9px 16px;border-radius:8px;' +
+        'font:600 12px Arial,sans-serif;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.3);' +
+        'max-width:90%;text-align:center;';
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 3400);
+    }
+
+    async function _repFetchConTimeout(url, options, timeoutMs) {
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, timeoutMs);
+      try {
+        var opts = {};
+        for (var k in options) { opts[k] = options[k]; }
+        opts.signal = controller.signal;
+        var response = await fetch(url, opts);
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    }
+
+    function _repValidarLoteTSV(tsvData, cantidadEsperada) {
+      var lineas = tsvData.split(_repNL);
+      var filas = [];
+      for (var i = 0; i < lineas.length; i++) {
+        var l = lineas[i].trim();
+        if (!l) continue;
+        var cols = lineas[i].split('\t');
+        if (cols.length !== 5) continue;
+        var idx = parseInt(cols[0], 10);
+        if (isNaN(idx)) continue;
+        filas.push({ idx: idx, nombre: (cols[1]||'').trim(), edad: (cols[2]||'').trim(), hallazgos: (cols[3]||'').trim(), acciones: (cols[4]||'').trim() });
+      }
+      return filas;
+    }
+
+    // Extrae números (incluye cifras compuestas como 145/90, 37.5, semanas, dosis) para verificar que no se pierdan
+    function _repExtraerNumeros(texto) {
+      var m = (texto || '').match(/\\d+(?:[.:\\/-]\\d+)*/g) || [];
+      var vistos = {};
+      var out = [];
+      for (var i = 0; i < m.length; i++) {
+        if (!vistos[m[i]]) { vistos[m[i]] = true; out.push(m[i]); }
+      }
+      return out;
+    }
+
+    async function _repLlamarIA(promptSystem, temp, apiKey, timeoutMs) {
+      try {
+        var response = await _repFetchConTimeout('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: promptSystem }],
+            temperature: temp
+          })
+        }, timeoutMs || 25000);
+
+        var data = null;
+        try { data = await response.json(); } catch (e) {}
+
+        if (!response.ok) {
+          var mensajeError = (data && data.error && data.error.message) ? data.error.message : ('Error del servidor (código ' + response.status + ').');
+          var esFatal = (response.status === 401);
+          var sugerencia = '';
+          if (response.status === 401) sugerencia = ' Verifica tu clave API en Mi Perfil ⚙️.';
+          else if (response.status === 429) sugerencia = ' Alcanzaste el límite gratuito de Groq por ahora. Espera unos minutos.';
+          else if (response.status >= 500) sugerencia = ' El servicio de IA podría estar caído. Intenta de nuevo en un momento.';
+          return { ok: false, fatal: esFatal, mensaje: '❌ ' + mensajeError + sugerencia };
+        }
+
+        if (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+          var resultado = data.choices[0].message.content;
+          var fence3 = _repBT + _repBT + _repBT;
+          resultado = resultado.split(fence3 + 'tsv').join('').split(fence3).join('').trim();
+          return { ok: true, contenido: resultado };
+        }
+        return { ok: false, mensaje: 'La IA no devolvió contenido válido' };
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          return { ok: false, mensaje: 'La conexión tardó demasiado (lote grande). Intenta con menos filas o revisa tu internet.' };
+        }
+        return { ok: false, mensaje: 'Error de conexión con el servicio de IA' };
+      }
+    }
+
+    var _repAperturasHallazgos = [
+      'Se identificó', 'Se detectó', 'Se constató', 'Se evidenció',
+      'Se observó que', 'Durante la visita se encontró', 'La visita permitió constatar',
+      'Se evaluó la condición de la persona y se determinó'
+    ];
+    var _repAperturasAcciones = [
+      'La persona recibió orientación sobre', 'Como parte de la atención se educó sobre',
+      'Durante la visita se recomendó', 'Ante esta situación, se explicó',
+      'Fue orientado/a acerca de', 'La consejería brindada abordó',
+      'Se brindó consejería enfocada en', 'La atención incluyó orientación sobre'
+    ];
+
+    function _repReglaNivel(nivel) {
+      if (nivel === 'resumido') {
+        return {
+          temp: 0.25,
+          texto: 'ESTILO RESUMIDO (el más corto): "Hallazgos" en 1 sola oración corta (máx. ~18 palabras) con el dato principal y el riesgo si aplica. "Acciones Ejecutadas" en 1 sola oración corta (máx. ~20 palabras) con consejería + acuerdo fusionados. Aun así, TODAS las cifras exactas de la nota deben aparecer.'
+        };
+      } else if (nivel === 'detallado') {
+        return {
+          temp: 0.5,
+          texto: 'ESTILO DETALLADO (el más extenso, al menos el doble que Balanceado): "Hallazgos" en 4-6 oraciones cubriendo condición, contexto, riesgos/complicaciones posibles e impacto en el hogar si aplica. "Acciones Ejecutadas" en 4-6 oraciones desglosando consejería detallada, acción técnica ejecutada, seguimiento con plazo, y Acuerdo extenso.'
+        };
+      }
+      return {
+        temp: 0.35,
+        texto: 'ESTILO BALANCEADO (equilibrio entre completo y conciso, NO tan extenso como Detallado, pero SIN dejar ningún tema fuera): cubre TODOS los temas de la nota, cada uno con su razonamiento/riesgo en Hallazgos y su acción/consejería en Acciones. Referencia de extensión: 1 solo tema → 2 oraciones por columna; 2-3 temas → una oración compacta por tema en cada columna (fusiona temas muy relacionados si tiene sentido). Sin relleno ni repetición, pero sin omitir temas para acortar.'
+      };
+    }
+
+    function _repConstruirPromptLote(items, nivel, refuerzos) {
+      var regla = _repReglaNivel(nivel);
+      var personas = items.map(function(it) {
+        var ref = (refuerzos && refuerzos[it.idx]) ? (' [DEBES incluir textualmente estas cifras que faltaron antes: ' + refuerzos[it.idx].join(', ') + ']') : '';
+        return it.idx + ') Nombre: ' + (it.nombre || 'No especificado') + ' | Edad: ' + (it.edad || 'No especificada') +
+          ' | Inicio obligatorio Hallazgos: "' + it.aperturaHallazgos + '" | Inicio obligatorio Acciones: "' + it.aperturaAcciones + '"' +
+          ' | Notas: ' + it.notasCompletas + ref;
+      }).join(_repNL);
+
+      var partes = [
+        'Eres un asistente experto en salud comunitaria para promotores de campo en El Salvador.',
+        'Recibirás una lista de ' + items.length + ' personas visitadas en el mismo día. Para CADA una debes generar una fila TSV (separada por tabulaciones) con 5 columnas exactas, EN ESTE ORDEN:',
+        'N° \t Nombre de la Persona \t Edad \t Hallazgos en la Visita \t Acciones Ejecutadas, Consejería y Acuerdos',
+        'Debes devolver EXACTAMENTE ' + items.length + ' filas, una por persona, respetando el número N° indicado para cada una (no lo cambies, no lo omitas, no reordenes).',
+        'REGLAS PARA TODAS LAS FILAS:',
+        '1. Edad: adultos y niños mayores con la palabra completa ("35 años"); bebés/niños pequeños con años y meses ("1 año 2 meses", "8 meses").',
+        '2. Redacción técnica formal (pretérito perfecto impersonal). Evita usar "paciente" como sustantivo por defecto (usa "la persona", "el usuario", "el señor"/"la señora", "el niño"/"la niña"). Nunca "el equipo de salud" ni "el personal de salud".',
+        '3. INICIO FIJO POR PERSONA (no negociable): cada persona tiene asignado su propio inicio para Hallazgos y para Acciones (ver lista de personas abajo). Úsalo literalmente al comenzar esa columna para esa persona; distintas personas ya tienen distintos inicios asignados, así que el resultado tendrá variedad automáticamente.',
+        '3b. EVITA LA MULETILLA "que la persona se encuentra en..." (regla crítica): no sigas el inicio asignado con esa misma frase en cada fila. En construcciones con "Se" (Se identificó, Se detectó, Se constató, etc.) el sujeto ya queda implícito gramaticalmente, así que casi siempre puedes ir directo al hallazgo sin nombrar a la persona (ej: "Se identificó un embarazo de 32 semanas..." en vez de "Se identificó que la persona se encuentra en estado de embarazo de 32 semanas..."). Usa una referencia explícita a la persona (la persona/la usuaria/el señor/la señora/el niño/la niña) como máximo en UNA de las dos columnas de esa fila, no en ambas.',
+        '4. ' + regla.texto,
+        '5. IDENTIFICACIÓN DE RIESGOS (regla importante): cuando el hallazgo lo permita, agrega el riesgo o posible complicación clínica directa asociada a lo encontrado (ej. hipertensión no controlada → riesgo de complicaciones cardiovasculares; diarrea con deshidratación en niño pequeño → riesgo de deshidratación severa; embarazo con hta → riesgo de preeclampsia). Este riesgo debe basarse SOLO en lo mencionado en la nota, sin inventar condiciones nuevas, y debe reflejarse en Hallazgos o como justificación de la Acción/consejería.',
+        '6. RAZONAMIENTO LIMITADO A LOS HALLAZGOS: la consejería, acciones, acuerdo y riesgos deben derivarse únicamente de lo explícitamente mencionado en la nota de esa persona. No inventes diagnósticos, antecedentes ni intervenciones no anotadas.',
+        '7. DATO CLÍNICO OBLIGATORIO (crítico): cualquier cifra de la nota de una persona (presión arterial, glucosa, hemoglobina, semanas de gestación, dosis, fechas) DEBE copiarse tal cual (mismos dígitos) en la fila de ESA persona, sin redondear ni omitir.',
+        '8. COBERTURA COMPLETA: si la nota de una persona menciona más de un hallazgo o tema, la fila de esa persona debe abordar TODOS: cada tema con su propio razonamiento/riesgo en Hallazgos y su propia acción/consejería en Acciones. Ningún tema puede quedar solo mencionado sin su acción correspondiente.',
+        '9. CONTEXTO SIN DESVIARSE: puedes agregar contexto clínico breve que ayude a entender la relevancia del hallazgo, pero sin salirte del tema principal de la nota de esa persona ni mencionar condiciones o recomendaciones no relacionadas con lo anotado.',
+        '10. Cada fila es independiente: no mezcles datos de una persona con otra.',
+        '11. Devuelve ÚNICAMENTE las ' + items.length + ' filas TSV limpias, una por línea, sin encabezado, sin numeración adicional, sin marcas de código ni texto introductorio.',
+        'Lista de personas:',
+        personas
+      ];
+      return partes.join(_repNL);
+    }
+
+    async function _repProcesarLote(items, nivel, apiKey, refuerzos) {
+      if (!items.length) return [];
+      var regla = _repReglaNivel(nivel);
+      var prompt = _repConstruirPromptLote(items, nivel, refuerzos);
+      var timeoutMs = Math.min(20000 + items.length * 3000, 90000);
+      var llamada = await _repLlamarIA(prompt, regla.temp, apiKey, timeoutMs);
+
+      if (!llamada.ok) {
+        return items.map(function(it) {
+          return { idx: it.idx, ok: false, fatal: llamada.fatal, mensaje: llamada.mensaje };
+        });
+      }
+
+      var filasRecibidas = _repValidarLoteTSV(llamada.contenido, items.length);
+      var porIdx = {};
+      for (var i = 0; i < filasRecibidas.length; i++) { porIdx[filasRecibidas[i].idx] = filasRecibidas[i]; }
+
+      return items.map(function(it) {
+        var fila = porIdx[it.idx];
+        if (!fila) {
+          return { idx: it.idx, ok: false, mensaje: 'La IA no devolvió una fila para "' + (it.nombre || ('persona ' + it.idx)) + '"' };
+        }
+        var combinado = fila.hallazgos + ' ' + fila.acciones;
+        var faltan = [];
+        for (var n = 0; n < it.numerosOriginales.length; n++) {
+          if (combinado.indexOf(it.numerosOriginales[n]) === -1) faltan.push(it.numerosOriginales[n]);
+        }
+        if (faltan.length) {
+          return { idx: it.idx, ok: false, faltan: faltan, mensaje: '⚠️ "' + (it.nombre || 'Fila') + '": faltaron estas cifras (' + faltan.join(', ') + ')' };
+        }
+        return { idx: it.idx, ok: true, hallazgos: fila.hallazgos, acciones: fila.acciones };
+      });
+    }
+
+    async function generarConIATabla() {
+      var apiKey = localStorage.getItem('rdps_groq_api_key');
+      if (!apiKey) {
+        _repToast('⚠️ Configura tu clave API en Mi Perfil (⚙️) de la app principal');
+        return;
+      }
+
+      var filas = Array.prototype.slice.call(document.querySelectorAll('tr[data-id]'));
+      if (!filas.length) { _repToast('⚠️ No hay filas en la tabla'); return; }
+
+      var nivelSel = document.getElementById('rep-nivel-ia');
+      var nivel = nivelSel ? nivelSel.value : 'balanceado';
+
+      var btn = document.getElementById('btn-magic-tabla');
+      var btnTexto = document.getElementById('btn-magic-tabla-texto');
+      var textoOriginal = btnTexto ? btnTexto.textContent : '✨ Generar con IA (toda la tabla)';
+      if (btn) btn.disabled = true;
+
+      // Arma la lista de personas elegibles (con Hallazgos escritos) en UNA sola pasada
+      var items = [];
+      var omitidas = 0;
+      var refIdx = 0;
+      for (var i = 0; i < filas.length; i++) {
+        var tr = filas[i];
+        var hallCell = tr.querySelector('.c-hall');
+        var accCell = tr.querySelector('.c-acc');
+        if (!hallCell || !accCell) continue;
+        var campoHallazgosActual = _repHtmlToText(hallCell.innerHTML);
+        if (!campoHallazgosActual) { omitidas++; continue; }
+        var notasAcciones = _repHtmlToText(accCell.innerHTML);
+        var id = tr.getAttribute('data-id');
+        var celdaNombre = tr.querySelector('.c-nombre');
+        var celdaEdad = tr.querySelector('.c-edad');
+
+        var cache = _repIaCache[id] || { notaBase: null, ultimaSalida: null };
+        var notasHallazgos;
+        if (cache.notaBase !== null && campoHallazgosActual === cache.ultimaSalida) {
+          notasHallazgos = cache.notaBase;
+        } else {
+          notasHallazgos = campoHallazgosActual;
+          cache.notaBase = campoHallazgosActual;
+        }
+        var notasCompletas = notasAcciones
+          ? (notasHallazgos + ' (Nota adicional ya escrita sobre acciones/consejería a considerar: ' + notasAcciones + ')')
+          : notasHallazgos;
+
+        items.push({
+          idx: refIdx,
+          id: id,
+          tr: tr,
+          hallCell: hallCell,
+          accCell: accCell,
+          cache: cache,
+          nombre: (celdaNombre ? celdaNombre.textContent : '').trim(),
+          edad: (celdaEdad ? celdaEdad.textContent : '').trim(),
+          notasCompletas: notasCompletas,
+          numerosOriginales: _repExtraerNumeros(notasCompletas),
+          aperturaHallazgos: _repAperturasHallazgos[refIdx % _repAperturasHallazgos.length],
+          aperturaAcciones: _repAperturasAcciones[refIdx % _repAperturasAcciones.length]
+        });
+        refIdx++;
+      }
+
+      if (!items.length) {
+        if (btn) btn.disabled = false;
+        _repToast('⚠️ No hay filas con "Hallazgos" escritos para generar');
+        return;
+      }
+
+      if (btnTexto) btnTexto.textContent = '⏳ Redactando ' + items.length + ' persona(s) en un solo envío...';
+
+      var resultados = await _repProcesarLote(items, nivel, apiKey);
+
+      // Reintento (una sola llamada adicional) solo para las filas con problema, si el fallo no es fatal
+      var pendientes = resultados.filter(function(r) { return !r.ok && !r.fatal; });
+      var huboFatal = resultados.some(function(r) { return !r.ok && r.fatal; });
+
+      if (pendientes.length && !huboFatal) {
+        if (btnTexto) btnTexto.textContent = '⏳ Reintentando ' + pendientes.length + ' fila(s)...';
+        var refuerzos = {};
+        pendientes.forEach(function(r) { if (r.faltan) refuerzos[r.idx] = r.faltan; });
+        var itemsReintento = items.filter(function(it) { return pendientes.some(function(r) { return r.idx === it.idx; }); });
+        var resultadosReintento = await _repProcesarLote(itemsReintento, nivel, apiKey, refuerzos);
+        var porIdxReintento = {};
+        resultadosReintento.forEach(function(r) { porIdxReintento[r.idx] = r; });
+        resultados = resultados.map(function(r) { return porIdxReintento[r.idx] || r; });
+      }
+
+      var generadas = 0, conError = 0;
+      var primerError = null;
+
+      resultados.forEach(function(r) {
+        var it = items[r.idx];
+        if (!it) return;
+        if (r.ok) {
+          it.hallCell.innerHTML = r.hallazgos.split(_repNL).join('<br>');
+          it.hallCell.dispatchEvent(new Event('input', { bubbles: true }));
+          it.accCell.innerHTML = r.acciones.split(_repNL).join('<br>');
+          it.accCell.dispatchEvent(new Event('input', { bubbles: true }));
+          it.cache.ultimaSalida = r.hallazgos;
+          _repIaCache[it.id] = it.cache;
+          generadas++;
+        } else {
+          conError++;
+          if (!primerError && r.mensaje) primerError = r.mensaje;
+        }
+      });
+
+      if (btnTexto) btnTexto.textContent = textoOriginal;
+      if (btn) btn.disabled = false;
+
+      var resumen = '✨ ' + generadas + ' fila(s) generada(s)';
+      if (omitidas) resumen += ', ' + omitidas + ' omitida(s) sin Hallazgos';
+      if (conError) resumen += ', ' + conError + ' sin modificar (revisar)';
+      _repToast(resumen);
+      if (primerError) setTimeout(function() { _repToast(primerError); }, 3600);
+    }
     <\/script>
     </div>
     </body></html>`;
@@ -4955,6 +5614,7 @@
     Object.assign(window, {
       irA, abrirConfig, cerrarModal,
       guardarConfiguracion, guardarRegistro, guardarYOtraPersona, agregarOtraPersona, limpiarFormulario,
+      generarConIA,
       siguienteMismaVivienda, siguienteNuevaVivienda, siguienteIrInicio,
       vivAutocompletar, seleccionarVivienda, cerrarVivDropdown,
       editarRegistro, guardarEdicion, eliminarRegistro,
