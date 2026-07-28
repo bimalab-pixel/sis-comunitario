@@ -1772,11 +1772,21 @@
                 </div>
                 <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
                 <div class="profile-field">
-                    <label>🔑 Clave API para el Botón Mágico (IA)</label>
+                    <label>🤖 Proveedor de IA para el Botón Mágico</label>
+                    <select id="cfg-ia-proveedor" onchange="actualizarCamposProveedorRDPS()" style="width:100%;padding:.55rem .6rem;border-radius:8px;border:1px solid var(--border);font-size:.85rem"></select>
+                </div>
+                <div class="profile-field">
+                    <label>🔑 Clave API</label>
                     <input type="text" id="cfg-api-key" placeholder="Pega tu clave gsk_... aquí" style="font-family:monospace;font-size:.78rem"/>
                     <p style="font-size:.68rem;color:var(--muted);margin-top:.3rem;line-height:1.4">
                         Se usa solo para el botón ✨ que redacta Hallazgos y Acciones. Se guarda únicamente en este dispositivo y nunca aparece en los reportes impresos.
                     </p>
+                    <a id="cfg-ia-ayuda" href="#" target="_blank" rel="noopener" style="display:inline-block;margin-top:.3rem;font-size:.72rem;color:var(--navy);text-decoration:none">Obtener clave gratis →</a>
+                </div>
+                <div class="profile-field">
+                    <label>Modelo</label>
+                    <select id="cfg-ia-modelo" onchange="onModalModeloChangeRDPS()" style="width:100%;padding:.55rem .6rem;border-radius:8px;border:1px solid var(--border);font-size:.85rem"></select>
+                    <input type="text" id="cfg-ia-modelo-custom" style="width:100%;margin-top:.4rem;padding:.5rem .6rem;border-radius:8px;border:1px solid var(--border);font-size:.8rem;display:none" placeholder="Escribe el ID exacto del modelo"/>
                 </div>
             </div>
             <button class="profile-save-btn" onclick="guardarConfiguracion()">
@@ -2065,13 +2075,104 @@
       t._timer = setTimeout(() => { t.style.display = 'none'; }, dur);
     }
 
+    // ── PROVEEDORES DE IA (GRATIS) ──
+    // Cada proveedor guarda su propia clave y modelo en localStorage bajo llaves distintas,
+    // así se puede cambiar de proveedor sin perder las claves ya ingresadas anteriormente.
+    var RDPS_PROVEEDORES = {
+      groq: {
+        nombre: 'Groq',
+        keyStorage: 'rdps_groq_api_key', // se mantiene el nombre original por compatibilidad con versiones anteriores
+        modeloStorage: 'rdps_modelo_groq',
+        modeloDefault: 'llama-3.3-70b-versatile',
+        modelos: [
+          { id: 'llama-3.3-70b-versatile', nombre: 'Llama 3.3 70B Versatile (recomendado)' },
+          { id: 'llama-3.1-8b-instant', nombre: 'Llama 3.1 8B Instant (más rápido)' }
+        ],
+        keyPlaceholder: 'Pega tu clave gsk_... aquí',
+        keyHelpUrl: 'https://console.groq.com/keys'
+      },
+      gemini: {
+        nombre: 'Google Gemini',
+        keyStorage: 'rdps_gemini_api_key',
+        modeloStorage: 'rdps_modelo_gemini',
+        modeloDefault: 'gemini-3.5-flash',
+        modelos: [
+          { id: 'gemini-3.5-flash', nombre: 'Gemini 3.5 Flash (recomendado)' },
+          { id: 'gemini-3.1-flash-lite', nombre: 'Gemini 3.1 Flash Lite (más económico/rápido)' },
+          { id: 'gemini-2.5-flash-lite', nombre: 'Gemini 2.5 Flash Lite (alternativa)' }
+        ],
+        keyPlaceholder: 'Pega tu clave AIza... aquí',
+        keyHelpUrl: 'https://aistudio.google.com/apikey'
+      },
+      openrouter: {
+        nombre: 'OpenRouter (modelos gratis)',
+        keyStorage: 'rdps_openrouter_api_key',
+        modeloStorage: 'rdps_modelo_openrouter',
+        modeloDefault: 'meta-llama/llama-3.3-70b-instruct:free',
+        modelos: [
+          { id: 'meta-llama/llama-3.3-70b-instruct:free', nombre: 'Llama 3.3 70B (free)' },
+          { id: 'deepseek/deepseek-chat-v3-0324:free', nombre: 'DeepSeek V3 (free)' },
+          { id: 'google/gemini-2.0-flash-exp:free', nombre: 'Gemini 2.0 Flash Exp (free)' }
+        ],
+        keyPlaceholder: 'Pega tu clave sk-or-... aquí',
+        keyHelpUrl: 'https://openrouter.ai/keys'
+      }
+    };
+
+    function rdpsProveedorActual() {
+      return localStorage.getItem('rdps_proveedor_ia') || 'groq';
+    }
+
+    // Se ejecuta al abrir el modal de perfil y cada vez que el usuario cambia de proveedor:
+    // carga la clave y el modelo YA guardados para ese proveedor (si los hay), sin perder los de los demás.
+    function actualizarCamposProveedorRDPS() {
+      const provId = document.getElementById('cfg-ia-proveedor').value;
+      const prov = RDPS_PROVEEDORES[provId];
+
+      const campoClave = document.getElementById('cfg-api-key');
+      campoClave.placeholder = prov.keyPlaceholder;
+      campoClave.value = localStorage.getItem(prov.keyStorage) || '';
+
+      const linkAyuda = document.getElementById('cfg-ia-ayuda');
+      linkAyuda.href = prov.keyHelpUrl;
+      linkAyuda.textContent = `Obtener clave gratis de ${prov.nombre} →`;
+
+      const selectModelo = document.getElementById('cfg-ia-modelo');
+      selectModelo.innerHTML = prov.modelos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')
+        + '<option value="__custom__">✏️ Otro (escribir manualmente)</option>';
+
+      const modeloGuardado = localStorage.getItem(prov.modeloStorage) || prov.modeloDefault;
+      const coincideConListado = prov.modelos.some(m => m.id === modeloGuardado);
+      const campoCustom = document.getElementById('cfg-ia-modelo-custom');
+      if (coincideConListado) {
+        selectModelo.value = modeloGuardado;
+        campoCustom.style.display = 'none';
+        campoCustom.value = '';
+      } else {
+        selectModelo.value = '__custom__';
+        campoCustom.style.display = 'block';
+        campoCustom.value = modeloGuardado;
+      }
+    }
+
+    function onModalModeloChangeRDPS() {
+      const esCustom = document.getElementById('cfg-ia-modelo').value === '__custom__';
+      document.getElementById('cfg-ia-modelo-custom').style.display = esCustom ? 'block' : 'none';
+    }
+
     // ── MODALES ──
     function abrirConfig() {
       document.getElementById('cfg-nombre').value          = perfil.nombre          || '';
       document.getElementById('cfg-comunidad').value       = perfil.comunidad       || '';
       document.getElementById('cfg-establecimiento').value = perfil.establecimiento  || '';
       document.getElementById('cfg-municipio').value       = perfil.municipio        || '';
-      document.getElementById('cfg-api-key').value         = localStorage.getItem('rdps_groq_api_key') || '';
+
+      const selectProveedor = document.getElementById('cfg-ia-proveedor');
+      selectProveedor.innerHTML = Object.keys(RDPS_PROVEEDORES)
+        .map(id => `<option value="${id}">${RDPS_PROVEEDORES[id].nombre}</option>`).join('');
+      selectProveedor.value = rdpsProveedorActual();
+      actualizarCamposProveedorRDPS();
+
       document.getElementById('modal-config').classList.add('show');
     }
     function cerrarModal(id) {
@@ -2088,8 +2189,16 @@
       perfil.municipio       = document.getElementById('cfg-municipio').value.trim();
       localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
 
+      const provId = document.getElementById('cfg-ia-proveedor').value;
+      const prov = RDPS_PROVEEDORES[provId];
       const clave = document.getElementById('cfg-api-key').value.trim();
-      localStorage.setItem('rdps_groq_api_key', clave); // Guardada aparte: nunca se imprime en los reportes
+      let modeloElegido = document.getElementById('cfg-ia-modelo').value;
+      if (modeloElegido === '__custom__') {
+        modeloElegido = document.getElementById('cfg-ia-modelo-custom').value.trim() || prov.modeloDefault;
+      }
+      localStorage.setItem(prov.keyStorage, clave); // Guardada aparte: nunca se imprime en los reportes
+      localStorage.setItem(prov.modeloStorage, modeloElegido);
+      localStorage.setItem('rdps_proveedor_ia', provId);
 
       actualizarHome();
       cerrarModal('modal-config');
@@ -2163,6 +2272,74 @@
     let _iaNotaBaseOriginal = null;
     let _iaUltimaSalidaHallazgos = null;
 
+    // Listas de aperturas sugeridas (deben coincidir con las que se listan en el prompt) y
+    // un historial de las últimas usadas EN ESTA SESIÓN, para pedirle a la IA que no repita
+    // la misma apertura entre una persona y la siguiente durante la jornada.
+    const _iaAperturasHallazgos = [
+      'Se identificó', 'Se detectó', 'Se constató', 'Se evidenció',
+      'Se observó que', 'La persona presenta', 'Durante la visita se encontró', 'Se evaluó la condición de'
+    ];
+    const _iaAperturasAcciones = [
+      'La persona recibió orientación sobre', 'Como parte de la atención se educó sobre',
+      'Durante la visita se recomendó', 'Ante esta situación, se explicó',
+      'Fue orientado/a acerca de', 'La consejería brindada abordó'
+    ];
+    function _iaFechaHoyLocal() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    function _iaClaveHistorialHoy() {
+      return 'rdps_historial_aperturas_' + _iaFechaHoyLocal();
+    }
+
+    function _iaCargarHistorialAperturas() {
+      // Limpieza: borra historiales de aperturas de días anteriores (solo interesa el de hoy).
+      try {
+        const claveHoy = _iaClaveHistorialHoy();
+        Object.keys(localStorage)
+          .filter((k) => k.indexOf('rdps_historial_aperturas_') === 0 && k !== claveHoy)
+          .forEach((k) => localStorage.removeItem(k));
+      } catch (e) { /* no crítico */ }
+
+      try {
+        const guardado = localStorage.getItem(_iaClaveHistorialHoy());
+        if (guardado) {
+          const datos = JSON.parse(guardado);
+          return {
+            hallazgos: Array.isArray(datos.hallazgos) ? datos.hallazgos : [],
+            acciones: Array.isArray(datos.acciones) ? datos.acciones : []
+          };
+        }
+      } catch (e) { /* datos corruptos: se ignoran y se empieza de nuevo */ }
+      return { hallazgos: [], acciones: [] };
+    }
+
+    function _iaGuardarHistorialAperturas() {
+      try {
+        localStorage.setItem(_iaClaveHistorialHoy(), JSON.stringify(_iaHistorialAperturas));
+      } catch (e) { /* almacenamiento lleno o no disponible: no es crítico */ }
+    }
+
+    // Se carga lo guardado HOY (si lo hay) al abrir la app; cada día empieza con historial vacío.
+    const _iaHistorialAperturas = _iaCargarHistorialAperturas();
+
+    function _iaDetectarApertura(texto, lista) {
+      const t = (texto || '').trim().toLowerCase();
+      for (let i = 0; i < lista.length; i++) {
+        if (t.indexOf(lista[i].toLowerCase()) === 0) return lista[i];
+      }
+      return null;
+    }
+
+    function _iaRegistrarAperturaUsada(historialArr, apertura) {
+      if (!apertura) return;
+      historialArr.unshift(apertura);
+      historialArr.splice(3); // conserva solo las 3 más recientes
+      _iaGuardarHistorialAperturas();
+    }
+
     function _iaResetCache() {
       _iaNotaBaseOriginal = null;
       _iaUltimaSalidaHallazgos = null;
@@ -2203,10 +2380,59 @@
       return { valido: true, celdas: cols };
     }
 
+    // Arma la URL, cabeceras y cuerpo de la petición según el proveedor de IA elegido.
+    // Groq y OpenRouter usan el mismo formato "estilo OpenAI" (chat/completions);
+    // Gemini usa su propio formato (contents/parts) y pasa la clave por la URL.
+    function _rdpsConstruirPeticion(prov, modelo, apiKey, prompt, temperatura) {
+      if (prov === 'groq' || prov === 'openrouter') {
+        const url = prov === 'groq'
+          ? 'https://api.groq.com/openai/v1/chat/completions'
+          : 'https://openrouter.ai/api/v1/chat/completions';
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        };
+        if (prov === 'openrouter') {
+          headers['HTTP-Referer'] = window.location.origin || 'https://localhost';
+          headers['X-Title'] = 'RegistroDiario_Promotor';
+        }
+        return {
+          url,
+          options: {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ model: modelo, messages: [{ role: 'user', content: prompt }], temperature: temperatura })
+          },
+          extraerTexto: (data) => data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+        };
+      }
+
+      if (prov === 'gemini') {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        return {
+          url,
+          options: {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: temperatura }
+            })
+          },
+          extraerTexto: (data) => data && data.candidates && data.candidates[0] && data.candidates[0].content
+            && data.candidates[0].content.parts
+            && data.candidates[0].content.parts.map(p => p.text || '').join('')
+        };
+      }
+    }
+
     async function generarConIA() {
-      const apiKey = localStorage.getItem('rdps_groq_api_key');
+      const proveedorId = rdpsProveedorActual();
+      const proveedor = RDPS_PROVEEDORES[proveedorId];
+      const apiKey = localStorage.getItem(proveedor.keyStorage);
+      const modeloIA = localStorage.getItem(proveedor.modeloStorage) || proveedor.modeloDefault;
       if (!apiKey) {
-        toast('⚠️ Configura tu clave API en Mi Perfil (⚙️)', 'error');
+        toast(`⚠️ Configura tu clave API de ${proveedor.nombre} en Mi Perfil (⚙️)`, 'error');
         abrirConfig();
         return;
       }
@@ -2239,6 +2465,19 @@
 
       let reglaDetalle = "";
       let temp = 0.35;
+
+      // Si en esta misma sesión ya se generaron redacciones antes, se le pide a la IA
+      // que evite repetir las mismas aperturas usadas en la(s) persona(s) anterior(es).
+      let refuerzoVariedadSesion = "";
+      if (_iaHistorialAperturas.hallazgos.length || _iaHistorialAperturas.acciones.length) {
+        refuerzoVariedadSesion = `\nEVITA REPETIR APERTURAS YA USADAS EN PERSONAS ANTERIORES DE ESTA MISMA SESIÓN (elige una alternativa distinta a estas):`;
+        if (_iaHistorialAperturas.hallazgos.length) {
+          refuerzoVariedadSesion += `\n   - Para "Hallazgos en la Visita", NO uses: ${_iaHistorialAperturas.hallazgos.join(', ')}`;
+        }
+        if (_iaHistorialAperturas.acciones.length) {
+          refuerzoVariedadSesion += `\n   - Para "Acciones Ejecutadas", NO uses: ${_iaHistorialAperturas.acciones.join(', ')}`;
+        }
+      }
 
       if (nivel === "resumido") {
         reglaDetalle = `
@@ -2290,6 +2529,7 @@ REGLAS DE FORMATO Y REDACCIÓN:
    - Para la parte de consejería/recomendación, NO la empieces siempre con "Se...". Considera también construcciones como: "La persona recibió orientación sobre...", "Como parte de la atención se educó sobre...", "Durante la visita se recomendó...", "Ante esta situación, se explicó...", "Fue orientado/a acerca de...", "La consejería brindada abordó...", entre otras equivalentes. NUNCA uses la frase "el equipo de salud" ni "el personal de salud", ya que las visitas las realiza un solo promotor de salud, no un equipo.
    - Para el ACUERDO, varía la redacción usando opciones como: "Acuerdo: se compromete a...", "Como compromiso, la persona acordó...", "Se estableció el compromiso de...", "Acuerdo alcanzado: la persona se compromete a...", "Quedó como compromiso...", "La persona/el responsable acordó...", entre otras equivalentes.
    - EVITA LA MULETILLA "que la persona se encuentra en..." justo después del inicio elegido: en construcciones con "Se" (Se identificó, Se detectó, etc.) el sujeto ya queda implícito gramaticalmente, así que casi siempre puedes ir directo al hallazgo sin nombrar a la persona (ej: "Se identificó un embarazo de 32 semanas..." en vez de "Se identificó que la persona se encuentra en estado de embarazo de 32 semanas..."). Usa una referencia explícita a la persona (la persona/la usuaria/el señor/la señora/el niño/la niña) como máximo en UNA de las dos columnas, no en ambas.
+${refuerzoVariedadSesion}
 
 ${reglaDetalle}
 
@@ -2323,36 +2563,27 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       `;
 
       try {
-        const response = await llamarIAConReintentoRDPS('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [{ role: 'user', content: promptSystem }],
-            temperature: temp
-          })
-        });
+        const peticion = _rdpsConstruirPeticion(proveedorId, modeloIA, apiKey, promptSystem, temp);
+        const response = await llamarIAConReintentoRDPS(peticion.url, peticion.options);
 
 
         let data = null;
         try { data = await response.json(); } catch (e) { /* respuesta sin JSON válido */ }
 
         if (!response.ok) {
-          const mensajeError = (data && data.error && data.error.message) ? data.error.message : `Error del servidor (código ${response.status}).`;
+          const mensajeError = (data && data.error && (data.error.message || (typeof data.error === 'string' ? data.error : JSON.stringify(data.error))))
+            ? (data.error.message || data.error) : `Error del servidor (código ${response.status}).`;
           let sugerencia = '';
-          if (response.status === 401) sugerencia = ' Verifica tu clave API en Mi Perfil ⚙️.';
-          else if (response.status === 429) sugerencia = ' Alcanzaste el límite gratuito de Groq por ahora. Espera unos minutos.';
+          if (response.status === 401 || response.status === 403) sugerencia = ` Verifica tu clave API de ${proveedor.nombre} en Mi Perfil ⚙️.`;
+          else if (response.status === 429) sugerencia = ` Alcanzaste el límite gratuito de ${proveedor.nombre} por ahora. Espera unos minutos.`;
           else if (response.status >= 500) sugerencia = ' El servicio de IA podría estar caído. Intenta de nuevo en un momento.';
           toast(`❌ ${mensajeError}${sugerencia}`, 'error');
           return;
         }
 
-        if (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-          let resultado = data.choices[0].message.content;
-          resultado = resultado.replace(/```tsv/g, '').replace(/```/g, '').trim();
+        const resultadoTexto = peticion.extraerTexto(data);
+        if (resultadoTexto) {
+          let resultado = resultadoTexto.replace(/```tsv/g, '').replace(/```/g, '').trim();
 
           const validacion = validarFilaTSV_RDPS(resultado);
           if (!validacion.valido) {
@@ -2362,9 +2593,12 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
           const [, , hallazgosIA, accionesIA] = validacion.celdas;
           const hallazgosFinal = (hallazgosIA || '').trim();
+          const accionesFinal  = (accionesIA || '').trim();
           document.getElementById('r-hallazgos').value = hallazgosFinal;
-          document.getElementById('r-acciones').value  = (accionesIA || '').trim();
+          document.getElementById('r-acciones').value  = accionesFinal;
           _iaUltimaSalidaHallazgos = hallazgosFinal; // Para detectar si el usuario edita manualmente después
+          _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
+          _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
           toast('✨ Redacción generada — revisa antes de guardar', 'success');
         } else {
           toast('❌ La IA no devolvió contenido válido. Intenta de nuevo.', 'error');
@@ -3816,33 +4050,31 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       return out;
     }
 
-    async function _repLlamarIA(promptSystem, temp, apiKey, timeoutMs) {
+    async function _repLlamarIA(promptSystem, temp, apiKey, timeoutMs, proveedorId, modelo) {
       try {
-        var response = await _repFetchConTimeout('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [{ role: 'user', content: promptSystem }],
-            temperature: temp
-          })
-        }, timeoutMs || 25000);
+        if (!window.parent || typeof window.parent._rdpsConstruirPeticion !== 'function') {
+          return { ok: false, mensaje: 'No se pudo conectar con la app principal. Cierra este reporte y ábrelo de nuevo.' };
+        }
+        var peticion = window.parent._rdpsConstruirPeticion(proveedorId, modelo, apiKey, promptSystem, temp);
+        var response = await _repFetchConTimeout(peticion.url, peticion.options, timeoutMs || 25000);
 
         var data = null;
         try { data = await response.json(); } catch (e) {}
 
         if (!response.ok) {
-          var mensajeError = (data && data.error && data.error.message) ? data.error.message : ('Error del servidor (código ' + response.status + ').');
-          var esFatal = (response.status === 401);
+          var mensajeError = (data && data.error && (data.error.message || (typeof data.error === 'string' ? data.error : JSON.stringify(data.error))))
+            ? (data.error.message || data.error) : ('Error del servidor (código ' + response.status + ').');
+          var esFatal = (response.status === 401 || response.status === 403);
           var sugerencia = '';
-          if (response.status === 401) sugerencia = ' Verifica tu clave API en Mi Perfil ⚙️.';
-          else if (response.status === 429) sugerencia = ' Alcanzaste el límite gratuito de Groq por ahora. Espera unos minutos.';
+          if (response.status === 401 || response.status === 403) sugerencia = ' Verifica tu clave API en Mi Perfil ⚙️.';
+          else if (response.status === 429) sugerencia = ' Alcanzaste el límite gratuito por ahora. Espera unos minutos.';
           else if (response.status >= 500) sugerencia = ' El servicio de IA podría estar caído. Intenta de nuevo en un momento.';
           return { ok: false, fatal: esFatal, mensaje: '❌ ' + mensajeError + sugerencia };
         }
 
-        if (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-          var resultado = data.choices[0].message.content;
+        var resultadoTexto = peticion.extraerTexto(data);
+        if (resultadoTexto) {
+          var resultado = resultadoTexto;
           var fence3 = _repBT + _repBT + _repBT;
           resultado = resultado.split(fence3 + 'tsv').join('').split(fence3).join('').trim();
           return { ok: true, contenido: resultado };
@@ -3919,12 +4151,12 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       return partes.join(_repNL);
     }
 
-    async function _repProcesarLote(items, nivel, apiKey, refuerzos) {
+    async function _repProcesarLote(items, nivel, apiKey, refuerzos, proveedorId, modelo) {
       if (!items.length) return [];
       var regla = _repReglaNivel(nivel);
       var prompt = _repConstruirPromptLote(items, nivel, refuerzos);
       var timeoutMs = Math.min(20000 + items.length * 3000, 90000);
-      var llamada = await _repLlamarIA(prompt, regla.temp, apiKey, timeoutMs);
+      var llamada = await _repLlamarIA(prompt, regla.temp, apiKey, timeoutMs, proveedorId, modelo);
 
       if (!llamada.ok) {
         return items.map(function(it) {
@@ -3954,9 +4186,16 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     async function generarConIATabla() {
-      var apiKey = localStorage.getItem('rdps_groq_api_key');
+      if (!window.parent || typeof window.parent.rdpsProveedorActual !== 'function' || !window.parent.RDPS_PROVEEDORES) {
+        _repToast('⚠️ No se pudo conectar con la app principal. Cierra este reporte y ábrelo de nuevo.');
+        return;
+      }
+      var proveedorId = window.parent.rdpsProveedorActual();
+      var proveedor = window.parent.RDPS_PROVEEDORES[proveedorId];
+      var apiKey = localStorage.getItem(proveedor.keyStorage);
+      var modeloIA = localStorage.getItem(proveedor.modeloStorage) || proveedor.modeloDefault;
       if (!apiKey) {
-        _repToast('⚠️ Configura tu clave API en Mi Perfil (⚙️) de la app principal');
+        _repToast('⚠️ Configura tu clave API de ' + proveedor.nombre + ' en Mi Perfil (⚙️) de la app principal');
         return;
       }
 
@@ -4024,7 +4263,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       if (btnTexto) btnTexto.textContent = '⏳ Redactando ' + items.length + ' persona(s) en un solo envío...';
 
-      var resultados = await _repProcesarLote(items, nivel, apiKey);
+      var resultados = await _repProcesarLote(items, nivel, apiKey, undefined, proveedorId, modeloIA);
 
       // Reintento (una sola llamada adicional) solo para las filas con problema, si el fallo no es fatal
       var pendientes = resultados.filter(function(r) { return !r.ok && !r.fatal; });
@@ -4035,7 +4274,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         var refuerzos = {};
         pendientes.forEach(function(r) { if (r.faltan) refuerzos[r.idx] = r.faltan; });
         var itemsReintento = items.filter(function(it) { return pendientes.some(function(r) { return r.idx === it.idx; }); });
-        var resultadosReintento = await _repProcesarLote(itemsReintento, nivel, apiKey, refuerzos);
+        var resultadosReintento = await _repProcesarLote(itemsReintento, nivel, apiKey, refuerzos, proveedorId, modeloIA);
         var porIdxReintento = {};
         resultadosReintento.forEach(function(r) { porIdxReintento[r.idx] = r; });
         resultados = resultados.map(function(r) { return porIdxReintento[r.idx] || r; });
