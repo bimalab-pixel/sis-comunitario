@@ -126,9 +126,11 @@
           display:flex;align-items:center;gap:.7rem;
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
           border-radius:12px;padding:.65rem .9rem;margin-bottom:.7rem;cursor:pointer;
-          transition:all .22s;
+          transition:background .22s, transform .1s;
+          -webkit-tap-highlight-color:transparent;
         }
         .home-user-bar:hover{background:rgba(255,255,255,.14)}
+        .home-user-bar:active{background:rgba(255,255,255,.22);transform:scale(.98);transition:background .05s, transform .05s;}
         .user-avatar{
           width:38px;height:38px;border-radius:50%;flex-shrink:0;
           background:linear-gradient(135deg,var(--teal2),var(--navy2));
@@ -240,6 +242,30 @@
         .icon-btn.edit:hover{background:var(--navy2);border-color:var(--navy2);color:#fff}
         .icon-btn.iprint:hover{background:var(--teal);border-color:var(--teal);color:#fff}
         .icon-btn.del:hover{background:var(--danger);border-color:var(--danger);color:#fff}
+        .icon-btn.nutri{
+          color:#fff;border-color:transparent;
+          background:linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%);
+          box-shadow:0 2px 6px rgba(34,197,94,.4);
+        }
+        .icon-btn.nutri:hover{
+          background:linear-gradient(135deg,#16a34a 0%,#0284c7 100%);
+          box-shadow:0 3px 10px rgba(34,197,94,.55);
+          transform:translateY(-1px);
+        }
+        #modal-grafica-nutri .modal-box{max-width:520px}
+
+        .btn-ver-grafica-form{
+          display:flex;align-items:center;justify-content:center;gap:.4rem;
+          width:100%;margin-top:.6rem;padding:.6rem 1rem;border:none;border-radius:10px;
+          font-weight:700;font-size:.85rem;color:#fff;cursor:pointer;
+          background:linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%);
+          box-shadow:0 3px 8px rgba(34,197,94,.35);
+        }
+        .btn-ver-grafica-form:hover{
+          background:linear-gradient(135deg,#16a34a 0%,#0284c7 100%);
+          box-shadow:0 4px 12px rgba(34,197,94,.5);
+        }
+        .btn-ver-grafica-form:active{transform:scale(.98)}
 
         .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
         .empty-state svg{width:52px;height:52px;margin:0 auto 1rem;opacity:.3;display:block}
@@ -326,6 +352,22 @@
         .btn-magic:active{animation-play-state:paused;transform:translateY(3px) scale(1);box-shadow:0 1px 0 #86198f,0 2px 4px rgba(192,38,211,.4);}
         .btn-magic:disabled{animation:none;filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
         .btn-magic-hint{font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
+
+        .lbl-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+        .btn-guia-nutri{
+          background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.66rem;font-weight:700;
+          padding:.15rem .5rem;border-radius:20px;cursor:pointer;white-space:nowrap;
+        }
+        .btn-guia-nutri:hover{background:#dcfce7}
+        .guia-nutri-box{
+          display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;
+          padding:.6rem .75rem;margin:.3rem 0 .5rem;font-size:.74rem;color:#14532d;line-height:1.55;
+        }
+        .guia-nutri-box.show{display:block}
+        .guia-nutri-box b{color:#166534}
+        .guia-nutri-box ul{margin:.25rem 0 0;padding-left:1.1rem}
+        .guia-nutri-box li{margin-bottom:.15rem}
+        .guia-nutri-box code{background:#dcfce7;padding:.05rem .3rem;border-radius:4px;font-size:.72rem}
         @media (prefers-reduced-motion: reduce){.btn-magic,.btn-magic::after{animation:none!important}}
 
         /* ══════════════ REPORTES SCREEN ══════════════ */
@@ -1255,8 +1297,26 @@
                         <input type="text" id="r-nombre" placeholder="Nombre completo de la persona visitada"/>
                     </div>
                     <div class="f-group sp">
-                        <label>Hallazgos</label>
+                        <div class="lbl-row">
+                            <label style="margin:0">Hallazgos</label>
+                            <button type="button" class="btn-guia-nutri" onclick="toggleGuiaNutri('r')">ℹ️ Guía para evaluación nutricional</button>
+                        </div>
+                        <div class="guia-nutri-box" id="guia-nutri-r">
+                            📊 Para que el sistema detecte automáticamente el peso/talla/IMC contra las tablas OMS, escribe estos datos <b>con su unidad</b> dentro de Hallazgos:
+                            <ul>
+                                <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
+                                <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
+                                <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>, <code>1.08 m</code>/<code>mts</code>, o <code>mide: 108</code> sin unidad</li>
+                                <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
+                                <li><b>Presión arterial:</b> <code>120/80</code></li>
+                                <li><b>Glucosa:</b> <code>glucosa 130</code></li>
+                                <li><b>Temperatura:</b> <code>38.5°C</code></li>
+                                <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
+                            </ul>
+                            En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
+                        </div>
                         <textarea id="r-hallazgos" placeholder="Describa los hallazgos encontrados durante la visita..."></textarea>
+                        <button type="button" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('r')">📊 Ver estado nutricional (sin internet)</button>
                     </div>
                     <div class="f-group sp">
                         <label>Acciones Ejecutadas</label>
@@ -1879,12 +1939,65 @@
                 <div class="f-group"><label>No. Vivienda</label><input type="text" id="e-vivienda"/></div>
                 <div class="f-group"><label>Edad</label><input type="text" id="e-edad" placeholder="Ej: 25, 1 año, 6 meses"/></div>
                 <div class="f-group sp"><label>Nombre del Usuario *</label><input type="text" id="e-nombre"/></div>
-                <div class="f-group sp"><label>Hallazgos</label><textarea id="e-hallazgos"></textarea></div>
+                <div class="f-group sp">
+                    <div class="lbl-row">
+                        <label style="margin:0">Hallazgos</label>
+                        <button type="button" class="btn-guia-nutri" onclick="toggleGuiaNutri('e')">ℹ️ Guía para evaluación nutricional</button>
+                    </div>
+                    <div class="guia-nutri-box" id="guia-nutri-e">
+                        📊 Para que el sistema detecte automáticamente el peso/talla/IMC contra las tablas OMS, escribe estos datos <b>con su unidad</b> dentro de Hallazgos:
+                        <ul>
+                            <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
+                            <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
+                            <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>, <code>1.08 m</code>/<code>mts</code>, o <code>mide: 108</code> sin unidad</li>
+                            <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
+                            <li><b>Presión arterial:</b> <code>120/80</code></li>
+                            <li><b>Glucosa:</b> <code>glucosa 130</code></li>
+                            <li><b>Temperatura:</b> <code>38.5°C</code></li>
+                            <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
+                        </ul>
+                        En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
+                    </div>
+                    <textarea id="e-hallazgos"></textarea>
+                    <button type="button" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('e')">📊 Ver estado nutricional (sin internet)</button>
+                </div>
                 <div class="f-group sp"><label>Acciones Ejecutadas</label><textarea id="e-acciones"></textarea></div>
+                <div class="f-group sp" style="margin-bottom:.3rem">
+                    <label>🎛️ Nivel de Detalle para la IA</label>
+                    <select id="e-nivel-ia">
+                        <option value="resumido">⚡ Resumido / Directo (frases breves)</option>
+                        <option value="balanceado" selected>⚖️ Balanceado (recomendado)</option>
+                        <option value="detallado">🔍 Extenso / Detallado</option>
+                    </select>
+                </div>
+                <div class="f-group sp">
+                    <button type="button" class="btn-magic" id="btn-magic-ia-edit" onclick="generarConIA('e')" style="width:100%">
+                        <span id="btn-magic-ia-edit-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
+                    </button>
+                    <div class="btn-magic-hint">Escribe la idea básica en "Hallazgos" y la IA la redacta en formato oficial.</div>
+                </div>
             </div>
             <div class="modal-btns">
                 <button class="btn secondary" onclick="cerrarModal('modal-editar')">Cancelar</button>
                 <button class="btn save" onclick="guardarEdicion()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════
+     MODAL: GRÁFICA NUTRICIONAL (curvas OMS)
+════════════════════════════ -->
+<div class="modal-bg" id="modal-grafica-nutri" onclick="cerrarModal('modal-grafica-nutri')">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-box-inner" style="position:relative">
+            <button class="modal-close-x" onclick="cerrarModal('modal-grafica-nutri')">✕</button>
+            <h3 id="graficaNutriTitulo">📊 Evaluación Nutricional</h3>
+            <div id="graficaNutriSelectorWrap" style="margin-bottom:10px;"></div>
+            <canvas id="graficaNutriCanvas" width="500" height="300" style="width:100%; height:auto; display:block; background:#fff; border:1px solid var(--border); border-radius:8px;"></canvas>
+            <div id="graficaNutriResumen" style="margin-top:10px; font-size:13px; color:var(--text); line-height:1.5;"></div>
+            <div class="modal-btns">
+                <button class="btn secondary" onclick="cerrarModal('modal-grafica-nutri')">Cerrar</button>
             </div>
         </div>
     </div>
@@ -3263,22 +3376,59 @@ function _riesgoParsearNota(texto) {
   }
 
   // Sexo: por palabras explícitas en la nota (con variantes de género/número)
-  if (/\b(niñas?|femenin\w*|mujer(?:es)?|señora|sra\.?)\b/i.test(t)) datos.sexo = 'F';
-  else if (/\b(niños?|masculin\w*|var[oó]n(?:es)?|hombres?|señor|sr\.?)\b/i.test(t)) datos.sexo = 'M';
+  if (/\b(niñas?|femenin\w*|mujer(?:es)?|señora|sra\.?|muchachas?|chicas?|adolescente\s+femenin\w*)\b/i.test(t)) datos.sexo = 'F';
+  else if (/\b(niños?|masculin\w*|var[oó]n(?:es)?|hombres?|señor|sr\.?|muchachos?|chicos?|adolescente\s+masculin\w*)\b/i.test(t)) datos.sexo = 'M';
+  // Respaldo: palabras de género neutro (paciente, adolescente, menor, bebé, usuario/a) acompañadas
+  // del artículo "la"/"el" delante, que en español sí marca el género (ej. "la adolescente", "el paciente").
+  if (!datos.sexo) {
+    if (/\bla\s+(paciente|adolescente|menor|bebé|usuaria)\b/i.test(t)) datos.sexo = 'F';
+    else if (/\bel\s+(paciente|adolescente|menor|bebé|usuario)\b/i.test(t)) datos.sexo = 'M';
+  }
 
   // Embarazo (afecta el umbral de hemoglobina)
   datos.embarazada = /\b(embaraz\w*|gestante)\b/i.test(t);
 
-  // Peso: "16 kg", "16kg", "16.5 kg"
-  m = t.match(/(\d+(?:[.,]\d+)?)\s*kg\b/i);
+  // Peso: "16 kg", "16kg", "16.5 kg", "16 kgs", "16 kg.", y abreviatura rápida "16k" (sin la g)
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*kgs?\.?(?:\s|$|[.,;)])/i);
   if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
+  else {
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*k\.?(?:\s|$|[.,;)])/i);
+    if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
+  }
+  if (datos.pesoKg == null) {
+    // Peso en libras: "110 libras", "110 lb", "110 lbs" → se convierte a kg (báscula en libras).
+    // Si no se convierte aquí, el número en libras se usaría tal cual como si fueran kg,
+    // dando un IMC muy por encima del real.
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:libras?|lbs?)\.?(?:\s|$|[.,;)])/i);
+    if (m) datos.pesoKg = Math.round(parseFloat(m[1].replace(',', '.')) * 0.453592 * 10) / 10;
+  }
+  if (datos.pesoKg == null) {
+    // Respaldo: la palabra "peso"/"pesa" ya deja claro qué es el número, aunque no traiga
+    // ninguna unidad ("Peso: 65", "pesa 65"). Solo se acepta si el número cae en un rango
+    // humano plausible (evita capturar por error una edad, hora, etc.).
+    m = t.match(/\bpes[oa]\w*\b\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+    if (m) {
+      const v = parseFloat(m[1].replace(',', '.'));
+      if (v >= 1.5 && v <= 400) datos.pesoKg = v;
+    }
+  }
 
-  // Talla: "108 cm" o "1.08 m" / "1,08 m"
-  m = t.match(/(\d+(?:[.,]\d+)?)\s*cm\b/i);
+  // Talla: "108 cm", "108 cms", "1.08 m", "1,08 m", "1.08 mts", "1.08 mts."
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*cms?\.?(?:\s|$|[.,;)])/i);
   if (m) datos.tallaCm = parseFloat(m[1].replace(',', '.'));
   else {
-    m = t.match(/(\d+[.,]\d+)\s*m\b/i);
-    if (m) datos.tallaCm = parseFloat(m[1].replace(',', '.')) * 100;
+    m = t.match(/(\d+[.,]\d+)\s*m(?:ts?)?\.?(?:\s|$|[.,;)])/i);
+    if (m) datos.tallaCm = Math.round(parseFloat(m[1].replace(',', '.')) * 100 * 10) / 10;
+  }
+  if (datos.tallaCm == null) {
+    // Respaldo: "talla"/"mide"/"estatura" seguido de un número sin unidad. Si el número trae
+    // decimales y es menor a 3, se asume que está en metros; si no, se asume que ya está en cm.
+    m = t.match(/\b(?:talla|mide|estatura)\w*\b\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+    if (m) {
+      const v = parseFloat(m[1].replace(',', '.'));
+      if (v > 0 && v < 3) { if (v >= 0.3) datos.tallaCm = v * 100; }
+      else if (v >= 30 && v <= 250) datos.tallaCm = v;
+    }
   }
 
   // Hemoglobina: "Hb 13.5", "hemoglobina 13,5", "Hb: 10.5 g/dl"
@@ -3315,6 +3465,15 @@ function _riesgoParsearEdadCampo(texto) {
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
   m = t.match(/(\d+(?:[.,]\d+)?)\s*añ/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12);
+  // "días"/"día" (recién nacidos): se expresa como fracción de mes (ej. 15 días = 0.5),
+  // así encaja con la interpolación mensual del cálculo OMS en vez de perderse por completo.
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*d[ií]a/i);
+  if (m) return parseFloat(m[1].replace(',', '.')) / 30;
+  // Abreviaturas cortas típicas al escribir rápido en campo: "45a" (años), "8m" (meses)
+  m = t.match(/^(\d+(?:[.,]\d+)?)\s*a\.?$/i);
+  if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12);
+  m = t.match(/^(\d+(?:[.,]\d+)?)\s*m\.?$/i);
+  if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
   m = t.match(/^(\d+(?:[.,]\d+)?)$/); // número solo, sin unidad → se asume años
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12);
   return null;
@@ -3359,6 +3518,261 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
   return '[Evaluación automática OMS — ' + partes.join('; ') + ']';
 }
 
+// ══════════════════════════════════════════════════════════════════
+// GRÁFICA DE EVALUACIÓN NUTRICIONAL (curvas OMS) — dibuja en <canvas>
+// el punto de la persona sobre la curva oficial correspondiente,
+// reutilizando las mismas tablas LMS de arriba. Se recalcula al vuelo
+// desde el registro guardado (Edad + Hallazgos), así que si el
+// registro se edita, la próxima vez que se abra la gráfica ya
+// refleja el cambio, sin necesidad de guardar nada aparte.
+// ══════════════════════════════════════════════════════════════════
+
+function _riesgoTablaIndicador(indicador, edadMeses, sexo) {
+  if (indicador === 'pesoEdad') {
+    return { tabla: sexo === 'M' ? _OMS_WFA_M : _OMS_WFA_F, mesInicio: 0, unidad: 'kg', cortes: CORTES_PESO_EDAD };
+  }
+  if (indicador === 'tallaEdad') {
+    if (edadMeses <= 60) return { tabla: sexo === 'M' ? _OMS_LHFA_M : _OMS_LHFA_F, mesInicio: 0, unidad: 'cm', cortes: CORTES_TALLA_EDAD };
+    return { tabla: sexo === 'M' ? _OMS_HFA519_M : _OMS_HFA519_F, mesInicio: 61, unidad: 'cm', cortes: CORTES_TALLA_EDAD };
+  }
+  if (indicador === 'imcEdad') {
+    if (edadMeses <= 60) return { tabla: sexo === 'M' ? _OMS_BMIFA05_M : _OMS_BMIFA05_F, mesInicio: 0, unidad: 'kg/m²', cortes: CORTES_IMC_0_5 };
+    return { tabla: sexo === 'M' ? _OMS_BMIFA519_M : _OMS_BMIFA519_F, mesInicio: 61, unidad: 'kg/m²', cortes: CORTES_IMC_5_19 };
+  }
+  return null;
+}
+
+// Fórmula inversa OMS: dado L,M,S de una edad y una puntuación Z, devuelve el valor (peso/talla/imc)
+function _riesgoValorParaZ(L, M, S, z) {
+  if (Math.abs(L) < 1e-9) return M * Math.exp(S * z);
+  return M * Math.pow(1 + L * S * z, 1 / L);
+}
+
+// A partir del texto de Edad + Hallazgos (o nota) de un registro, determina qué indicadores
+// nutricionales aplican (Peso/Edad, Talla/Edad, IMC/Edad en menores; IMC en adultos) y con
+// qué valor. Devuelve null si no hay datos suficientes (sexo, edad, peso o talla).
+function _riesgoDatosGrafica(edadTexto, notaTexto) {
+  const edadMeses = _riesgoParsearEdadCampo(edadTexto);
+  if (edadMeses == null) return null;
+  const d = _riesgoParsearNota(notaTexto);
+  const imc = (d.pesoKg && d.tallaCm) ? d.pesoKg / Math.pow(d.tallaCm / 100, 2) : null;
+
+  const disponibles = [];
+  if (edadMeses < 228 && d.sexo) {
+    if (edadMeses <= 60 && d.pesoKg != null) disponibles.push({ id: 'pesoEdad', etiqueta: 'Peso / Edad', valor: d.pesoKg });
+    if (d.tallaCm != null) disponibles.push({ id: 'tallaEdad', etiqueta: 'Talla / Edad', valor: d.tallaCm });
+    if (imc != null) disponibles.push({ id: 'imcEdad', etiqueta: 'IMC / Edad', valor: Math.round(imc * 10) / 10 });
+  } else if (edadMeses >= 228 && imc != null) {
+    disponibles.push({ id: 'imcAdulto', etiqueta: 'IMC (adulto)', valor: Math.round(imc * 10) / 10 });
+  }
+  if (!disponibles.length) return null;
+  return { edadMeses, sexo: d.sexo, disponibles };
+}
+
+// Dibuja la curva OMS (líneas -3 a +3 DE) para el indicador dado y marca el punto de la persona.
+// Devuelve { unidad, clasificacion } para mostrar debajo del gráfico, o null si no hay tabla.
+// Colores por categoría clínica (mismas palabras que usa _riesgoClasificar / CORTES_*)
+function _riesgoColorCategoria(texto) {
+  if (/severo|severa/i.test(texto)) return { fill: 'rgba(220,38,38,0.16)', linea: '#dc2626' };
+  if (/obesidad/i.test(texto))      return { fill: 'rgba(220,38,38,0.16)', linea: '#dc2626' };
+  if (/normal/i.test(texto))        return { fill: 'rgba(22,163,74,0.14)', linea: '#16a34a' };
+  return { fill: 'rgba(245,158,11,0.16)', linea: '#f59e0b' }; // bajo peso/talla, emaciación, delgadez, riesgo/sobrepeso, alto
+}
+
+function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona) {
+  const info = _riesgoTablaIndicador(indicador, edadMesesPersona, sexo);
+  if (!info) return null;
+  const tabla = info.tabla, mesInicio = info.mesInicio;
+  const mesFin = mesInicio + tabla.length - 1;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 44, r: 14, t: 14, b: 30 };
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+
+  const zs = [-3, -2, -1, 0, 1, 2, 3];
+  const curvas = zs.map(z => tabla.map(row => _riesgoValorParaZ(row[0], row[1], row[2], z)));
+
+  let yMin = Math.min.apply(null, curvas[0]), yMax = Math.max.apply(null, curvas[curvas.length - 1]);
+  const margenY = (yMax - yMin) * 0.06;
+  yMin -= margenY; yMax += margenY;
+
+  function xPix(mes) { return pad.l + ((mes - mesInicio) / (mesFin - mesInicio)) * plotW; }
+  function yPix(val) { return pad.t + (1 - (val - yMin) / (yMax - yMin)) * plotH; }
+
+  // Construye las franjas reales según los puntos de corte de ESTE indicador (varían: en
+  // Peso/Talla lo normal es -2 a +2 DE, pero en IMC lo normal solo llega a +1 DE, etc.)
+  const fronterasInternas = info.cortes.slice(0, -1).map(c => c.max);
+  const fronteras = [-3, ...fronterasInternas, 3];
+  const zonas = info.cortes.map(function(c, i) {
+    return { zLow: fronteras[i], zHigh: fronteras[i + 1], texto: c.texto, color: _riesgoColorCategoria(c.texto) };
+  });
+  function curvaEnZ(z) { return curvas[z + 3]; } // z entero de -3 a 3 → índice 0..6
+
+  // Sombreado de cada franja con el color de su categoría real
+  zonas.forEach(function(zona) {
+    const cLow = curvaEnZ(zona.zLow), cHigh = curvaEnZ(zona.zHigh);
+    ctx.fillStyle = zona.color.fill;
+    ctx.beginPath();
+    cLow.forEach(function(v, i) { const x = xPix(mesInicio + i), y = yPix(v); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    for (let i = cHigh.length - 1; i >= 0; i--) { const x = xPix(mesInicio + i), y = yPix(cHigh[i]); ctx.lineTo(x, y); }
+    ctx.closePath(); ctx.fill();
+  });
+
+  // Ejes
+  ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
+
+  // Líneas de cada frontera real (coloreadas según la categoría que empieza ahí) + la mediana (0 DE)
+  const zLineas = Array.from(new Set([...fronteras, 0]));
+  zLineas.forEach(function(z) {
+    const zonaEntrando = zonas.find(zn => z >= zn.zLow && z <= zn.zHigh) || zonas[zonas.length - 1];
+    ctx.strokeStyle = z === 0 ? '#16a34a' : zonaEntrando.color.linea;
+    ctx.lineWidth = z === 0 ? 2.5 : 1.4;
+    ctx.beginPath();
+    curvaEnZ(z).forEach(function(v, i) { const x = xPix(mesInicio + i), y = yPix(v); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.stroke();
+  });
+
+  // Etiquetas del eje Y
+  ctx.fillStyle = '#64748b'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+  [yMin, (yMin + yMax) / 2, yMax].forEach(function(v) { ctx.fillText(v.toFixed(1), pad.l - 6, yPix(v) + 3); });
+
+  // Etiquetas del eje X (edad)
+  ctx.textAlign = 'center';
+  const pasoMeses = (mesFin - mesInicio) > 100 ? 24 : 12;
+  for (let mes = mesInicio; mes <= mesFin; mes += pasoMeses) {
+    const x = xPix(mes);
+    ctx.fillText(mes % 12 === 0 ? (mes / 12) + 'a' : mes + 'm', x, H - pad.b + 14);
+  }
+
+  // Punto de la persona
+  let clasificacion = null;
+  if (edadMesesPersona >= mesInicio && edadMesesPersona <= mesFin) {
+    const px = xPix(edadMesesPersona), py = yPix(valorPersona);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+  const lms = _riesgoLMS(tabla, mesInicio, edadMesesPersona);
+  if (lms) clasificacion = _riesgoClasificar(_riesgoZ(lms[0], lms[1], lms[2], valorPersona), info.cortes);
+
+  return { unidad: info.unidad, clasificacion: clasificacion, cortes: info.cortes };
+}
+
+// Para adultos no hay curva por edad (la OMS usa puntos de corte fijos): se dibuja una
+// escala horizontal de colores con el IMC de la persona marcado encima.
+function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 30, r: 30 };
+  const plotW = W - pad.l - pad.r;
+  const minIMC = 12, maxIMC = 42;
+  function xPix(v) { return pad.l + ((v - minIMC) / (maxIMC - minIMC)) * plotW; }
+
+  const zonas = [
+    { hasta: 18.5, color: '#eab308', texto: 'Bajo peso' },
+    { hasta: 25, color: '#16a34a', texto: 'Normal' },
+    { hasta: 30, color: '#f97316', texto: 'Sobrepeso' },
+    { hasta: maxIMC, color: '#ef4444', texto: 'Obesidad' }
+  ];
+  const barY = H / 2 - 16, barH = 32;
+  let prev = minIMC;
+  zonas.forEach(function(z) {
+    ctx.fillStyle = z.color;
+    ctx.fillRect(xPix(prev), barY, xPix(z.hasta) - xPix(prev), barH);
+    if (xPix(z.hasta) - xPix(prev) > 40) {
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(z.texto, (xPix(prev) + xPix(z.hasta)) / 2, barY + barH / 2 + 4);
+    }
+    prev = z.hasta;
+  });
+
+  const px = xPix(Math.min(Math.max(imcValor, minIMC), maxIMC));
+  ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(px, barY - 10); ctx.lineTo(px, barY + barH + 10); ctx.stroke();
+  ctx.fillStyle = '#1d4ed8'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(imcValor.toFixed(1), px, barY - 16);
+
+  ctx.fillStyle = '#64748b'; ctx.font = '10px sans-serif';
+  [15, 18.5, 25, 30, 35, 40].forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24); });
+}
+
+let _riesgoGraficaDatosActual = null;
+
+// Se llama desde el botón 📊 de cada tarjeta de "Ver Registros", usando el id del registro.
+function abrirGraficaNutricional(regId) {
+  const r = registros.find(x => String(x.id) === String(regId));
+  if (!r) return;
+
+  const datos = _riesgoDatosGrafica(r.edad || '', r.hallazgos || '');
+  if (!datos) { toast('⚠️ No hay suficientes datos (edad, sexo, peso o talla) en este registro para graficar', 'error'); return; }
+
+  _riesgoAbrirGraficaConDatos(datos, r.nombre || 'Persona');
+}
+
+// Se llama desde el botón 📊 de los formularios de Nueva Visita / Editar, usando lo que
+// el usuario ya escribió en pantalla (sin necesidad de guardar el registro primero, y sin
+// internet: todo se calcula localmente con las tablas OMS ya incluidas en el archivo).
+function abrirGraficaNutricionalForm(prefijo) {
+  const edad = document.getElementById(`${prefijo}-edad`).value;
+  const hallazgos = document.getElementById(`${prefijo}-hallazgos`).value;
+  const nombreEl = document.getElementById(`${prefijo}-nombre`);
+  const nombre = nombreEl ? nombreEl.value : '';
+
+  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '');
+  if (!datos) { toast('⚠️ Escribe la Edad y, en Hallazgos, el sexo + peso y/o talla (ver la Guía ℹ️) para poder graficar', 'error'); return; }
+
+  _riesgoAbrirGraficaConDatos(datos, nombre || 'Persona');
+}
+
+function _riesgoAbrirGraficaConDatos(datos, nombre) {
+  _riesgoGraficaDatosActual = datos;
+  document.getElementById('graficaNutriTitulo').textContent = '📊 Evaluación Nutricional — ' + nombre;
+
+  const selectorWrap = document.getElementById('graficaNutriSelectorWrap');
+  if (datos.disponibles.length > 1) {
+    let opciones = '';
+    datos.disponibles.forEach(function(d) { opciones += `<option value="${d.id}">${d.etiqueta}</option>`; });
+    selectorWrap.innerHTML = `<select id="graficaNutriSelector" onchange="_riesgoActualizarGrafica(this.value)" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; color:var(--text); background:white;">${opciones}</select>`;
+  } else {
+    selectorWrap.innerHTML = '';
+  }
+
+  document.getElementById('modal-grafica-nutri').classList.add('show');
+  _riesgoActualizarGrafica(datos.disponibles[0].id);
+}
+
+function _riesgoActualizarGrafica(indicadorId) {
+  const datos = _riesgoGraficaDatosActual;
+  if (!datos) return;
+  const item = datos.disponibles.find(function(d) { return d.id === indicadorId; }) || datos.disponibles[0];
+  const canvas = document.getElementById('graficaNutriCanvas');
+  const resumen = document.getElementById('graficaNutriResumen');
+
+  if (item.id === 'imcAdulto') {
+    _riesgoDibujarEscalaIMCAdulto(canvas, item.valor);
+    resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — clasificación según los puntos de corte fijos de la OMS para adultos (no varía por edad).`;
+  } else {
+    const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor);
+    if (r) {
+      const leyenda = r.cortes.map(function(c) {
+        return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap;">
+                  <span style="width:9px;height:9px;border-radius:50%;background:${_riesgoColorCategoria(c.texto).linea};display:inline-block;"></span>${c.texto}
+                </span>`;
+      }).join('');
+      resumen.innerHTML = `<b>${item.etiqueta}:</b> ${item.valor} ${r.unidad} — <b>${r.clasificacion || 'sin clasificar'}</b>.<br>
+        El punto azul marca a la persona. Categorías de este indicador:<br>
+        <div style="margin-top:4px;line-height:1.9;">${leyenda}</div>`;
+    } else {
+      resumen.innerHTML = 'No se pudo ubicar la edad dentro del rango de la tabla OMS correspondiente.';
+    }
+  }
+}
 
     // ── PROVEEDORES DE IA (GRATIS) ──
     // Cada proveedor guarda su propia clave y modelo en localStorage bajo llaves distintas,
@@ -3462,6 +3876,11 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
     }
     function cerrarModal(id) {
       document.getElementById(id).classList.remove('show');
+    }
+
+    function toggleGuiaNutri(prefijo) {
+      const box = document.getElementById(`guia-nutri-${prefijo}`);
+      if (box) box.classList.toggle('show');
     }
 
     // ── CONFIGURACIÓN ──
@@ -3686,7 +4105,7 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
           options: {
             method: 'POST',
             headers,
-            body: JSON.stringify({ model: modelo, messages: [{ role: 'user', content: prompt }], temperature: temperatura })
+            body: JSON.stringify({ model: modelo, messages: [{ role: 'user', content: prompt }], temperature: temperatura, max_tokens: 6000 })
           },
           extraerTexto: (data) => data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
         };
@@ -3701,7 +4120,7 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: temperatura }
+              generationConfig: { temperature: temperatura, maxOutputTokens: 6000 }
             })
           },
           extraerTexto: (data) => data && data.candidates && data.candidates[0] && data.candidates[0].content
@@ -3711,7 +4130,8 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
       }
     }
 
-    async function generarConIA() {
+    async function generarConIA(prefijo) {
+      prefijo = prefijo || 'r';
       const proveedorId = rdpsProveedorActual();
       const proveedor = RDPS_PROVEEDORES[proveedorId];
       const apiKey = localStorage.getItem(proveedor.keyStorage);
@@ -3722,11 +4142,12 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
         return;
       }
 
-      const nombre = document.getElementById('r-nombre').value.trim();
-      const edad   = document.getElementById('r-edad').value.trim();
-      const campoHallazgosActual = document.getElementById('r-hallazgos').value.trim();
-      const notasAcciones  = document.getElementById('r-acciones').value.trim();
-      const nivel  = document.getElementById('r-nivel-ia').value;
+      const nombre = document.getElementById(`${prefijo}-nombre`).value.trim();
+      const edad   = document.getElementById(`${prefijo}-edad`).value.trim();
+      const campoHallazgosActual = document.getElementById(`${prefijo}-hallazgos`).value.trim();
+      const notasAcciones  = document.getElementById(`${prefijo}-acciones`).value.trim();
+      const nivelEl = document.getElementById(`${prefijo}-nivel-ia`);
+      const nivel  = nivelEl ? nivelEl.value : 'balanceado';
 
       if (!nombre) { toast('⚠️ Ingresa el nombre antes de usar la IA', 'error'); return; }
       if (!campoHallazgosActual) { toast('⚠️ Escribe la idea básica en "Hallazgos" primero', 'error'); return; }
@@ -3792,13 +4213,13 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
         reglaDetalle = `
 4. Estilo BALANCEADO (equilibrio entre completo y conciso — NO tan extenso como Detallado, pero SIN dejar ningún tema fuera):
    - Cubre TODOS los temas o condiciones que menciona la nota, cada uno con su razonamiento (por qué es relevante o qué riesgo implica) y su acción/consejería correspondiente. No omitas un tema solo para acortar el texto.
-   - Como referencia de extensión: si la nota trae 1 solo tema, usa 2 oraciones en "Hallazgos" y 2 en "Acciones Ejecutadas". Si trae 2 o 3 temas, usa una oración compacta por tema en cada columna (puedes fusionar temas muy relacionados en una sola oración si tiene sentido clínico).
+   - Como referencia de extensión MÍNIMA (no es un techo): si la nota trae 1 solo tema, usa al menos 2 oraciones en "Hallazgos" y 2 en "Acciones Ejecutadas"; si trae 2 o 3 temas, usa al menos una oración compacta por tema en cada columna. Si la nota original que escribió el promotor ya trae bastante texto o detalle, esta referencia queda sin efecto: conserva TODA esa información (reformulada si hace falta), aunque el resultado quede más largo que esta referencia.
    - No repitas ideas ni agregues relleno; sé directo pero completo. La meta es que se lea denso en información útil, ni telegráfico ni saturado de paja.`;
         temp = 0.35;
       }
 
-      const btn = document.getElementById('btn-magic-ia');
-      const btnTexto = document.getElementById('btn-magic-ia-texto');
+      const btn = document.getElementById(prefijo === 'e' ? 'btn-magic-ia-edit' : 'btn-magic-ia');
+      const btnTexto = document.getElementById(prefijo === 'e' ? 'btn-magic-ia-edit-texto' : 'btn-magic-ia-texto');
       const textoOriginal = btnTexto.textContent;
       btn.disabled = true;
       btnTexto.textContent = '⏳ Redactando con IA...';
@@ -3846,6 +4267,11 @@ DATO CLÍNICO OBLIGATORIO (regla crítica, no negociable):
    - CUALQUIER dato concreto que aparezca en la nota original —resultados de laboratorio o pruebas, cifras de signos vitales (ej: "140 mmHg"), fechas exactas, semanas de gestación, dosis, nombres de vacunas o medicamentos, lugares de referencia, etc.— DEBE aparecer reflejado en la columna correspondiente (Hallazgos o Acciones), aunque la redacción se resuma o parafrasee.
    - Está PROHIBIDO omitir o "perder" un dato numérico o clínico concreto de la nota original. Antes de redactar, revisa mentalmente la nota dato por dato y verifica que ninguno se haya quedado fuera del texto generado.
 
+PROHIBIDO RECORTAR INFORMACIÓN YA ESCRITA (regla crítica, no negociable):
+   - Tu tarea NO es resumir ni acortar lo que el promotor ya escribió. Tu tarea es: (a) corregir ortografía y gramática si hay errores, (b) ordenar la redacción en el formato oficial de este reporte, y (c) agregar razonamiento clínico, riesgo o consejería relacionada cuando corresponda.
+   - Si la nota original ya trae bastante texto, varias ideas o mucho detalle, el resultado debe conservar TODA esa información (puedes reformularla para que suene formal, pero sin perder ningún dato ni idea), aunque el texto final quede más largo que la referencia de extensión indicada para el nivel elegido (incluso en Balanceado o Resumido).
+   - Las referencias de extensión (número de oraciones) son un PISO mínimo para notas escuetas, nunca una excusa para eliminar contenido que el promotor ya redactó.
+
 COBERTURA COMPLETA DE TODOS LOS TEMAS MENCIONADOS (regla crítica, no negociable):
    - Si la nota menciona MÁS DE UN hallazgo, condición o tema independiente (ej: "depresión y citología atrasada"), la respuesta DEBE abordar TODOS y cada uno de esos temas, tanto en "Hallazgos en la Visita" como en "Acciones Ejecutadas". Está PROHIBIDO responder solo al primer tema y omitir el segundo (o el tercero).
    - Cada tema debe tener: (a) su propio razonamiento o riesgo en "Hallazgos", y (b) su propia acción/consejería en "Acciones Ejecutadas". Ningún tema puede quedar solo mencionado sin su acción correspondiente.
@@ -3890,8 +4316,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           const [, , hallazgosIA, accionesIA] = validacion.celdas;
           const hallazgosFinal = (hallazgosIA || '').trim();
           const accionesFinal  = (accionesIA || '').trim();
-          document.getElementById('r-hallazgos').value = hallazgosFinal;
-          document.getElementById('r-acciones').value  = accionesFinal;
+          document.getElementById(`${prefijo}-hallazgos`).value = hallazgosFinal;
+          document.getElementById(`${prefijo}-acciones`).value  = accionesFinal;
           _iaUltimaSalidaHallazgos = hallazgosFinal; // Para detectar si el usuario edita manualmente después
           _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
           _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
@@ -4274,6 +4700,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     function tarjetaRegistro(r, sinViv) {
+      const _tieneGrafica = !!_riesgoDatosGrafica(r.edad || '', r.hallazgos || '');
       return `
       <div class="record-card${sinViv ? ' sin-viv' : ''}">
         <div class="record-header">
@@ -4287,6 +4714,9 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
             </div>
           </div>
           <div class="record-actions">
+            ${_tieneGrafica ? `<button class="icon-btn nutri" title="Ver gráfica nutricional" onclick="abrirGraficaNutricional('${r.id}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            </button>` : ''}
             <button class="icon-btn edit" title="Editar" onclick="editarRegistro('${r.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -5321,16 +5751,41 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     function _repValidarLoteTSV(tsvData, cantidadEsperada) {
-      var lineas = tsvData.split(_repNL);
+      // Limpia posibles cercos de código markdown que a veces agrega la IA
+      var texto = (tsvData || '').replace(/\`\`\`[a-zA-Z]*/g, '').trim();
+      var lineasCrudas = texto.split(_repNL);
       var filas = [];
-      for (var i = 0; i < lineas.length; i++) {
-        var l = lineas[i].trim();
-        if (!l) continue;
-        var cols = lineas[i].split('\t');
-        if (cols.length !== 5) continue;
-        var idx = parseInt(cols[0], 10);
-        if (isNaN(idx)) continue;
-        filas.push({ idx: idx, nombre: (cols[1]||'').trim(), edad: (cols[2]||'').trim(), hallazgos: (cols[3]||'').trim(), acciones: (cols[4]||'').trim() });
+      var posicion = 0;
+      for (var i = 0; i < lineasCrudas.length; i++) {
+        var l = lineasCrudas[i];
+        if (!l.trim()) continue;
+
+        var cols = l.split('\t');
+        if (cols.length < 4) {
+          // A veces la IA usa varios espacios seguidos en vez de una tabulación real
+          var alt = l.split(/ {2,}/).filter(function(c) { return c.trim().length; });
+          if (alt.length >= 4) cols = alt;
+        }
+        if (cols.length < 4) continue; // línea no parece una fila de datos válida
+
+        var primero = (cols[0] || '').trim();
+        var m = primero.match(/^-?\d+/);
+        // Se lee desde el FINAL: "Acciones" siempre es la última columna y "Hallazgos" la
+        // penúltima, sin importar si la IA incluyó o se saltó la columna de Nombre/Edad de en
+        // medio (nombre/edad no se usan para nada más abajo, así que no hace falta adivinar
+        // exactamente en qué posición vienen).
+        var idx, hallazgos, acciones;
+        acciones = cols[cols.length - 1];
+        hallazgos = cols[cols.length - 2];
+        if (m) {
+          idx = parseInt(m[0], 10);
+        } else {
+          idx = (cantidadEsperada === 1) ? 0 : posicion;
+        }
+        if (isNaN(idx)) idx = posicion;
+
+        filas.push({ idx: idx, hallazgos: (hallazgos||'').trim(), acciones: (acciones||'').trim() });
+        posicion++;
       }
       return filas;
     }
@@ -5400,7 +5855,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       if (nivel === 'resumido') {
         return {
           temp: 0.25,
-          texto: 'ESTILO RESUMIDO (el más corto): "Hallazgos" en 1 sola oración corta (máx. ~18 palabras) con el dato principal y el riesgo si aplica. "Acciones Ejecutadas" en 1 sola oración corta (máx. ~20 palabras) con consejería + acuerdo fusionados. Aun así, TODAS las cifras exactas de la nota deben aparecer.'
+          texto: 'ESTILO RESUMIDO (el más corto): si la nota original es breve, "Hallazgos" en 1 sola oración corta (máx. ~18 palabras) con el dato principal y el riesgo si aplica, y "Acciones Ejecutadas" en 1 sola oración corta (máx. ~20 palabras) con consejería + acuerdo fusionados. Pero si la nota original ya trae varias oraciones o bastante detalle, NO la recortes ni pierdas contenido para forzarla a 1 sola oración: conserva TODA la información ya escrita, solo corrigiendo ortografía/redacción. Aun así, TODAS las cifras exactas de la nota deben aparecer.'
         };
       } else if (nivel === 'detallado') {
         return {
@@ -5410,7 +5865,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       }
       return {
         temp: 0.35,
-        texto: 'ESTILO BALANCEADO (equilibrio entre completo y conciso, NO tan extenso como Detallado, pero SIN dejar ningún tema fuera): cubre TODOS los temas de la nota, cada uno con su razonamiento/riesgo en Hallazgos y su acción/consejería en Acciones. Referencia de extensión: 1 solo tema → 2 oraciones por columna; 2-3 temas → una oración compacta por tema en cada columna (fusiona temas muy relacionados si tiene sentido). Sin relleno ni repetición, pero sin omitir temas para acortar.'
+        texto: 'ESTILO BALANCEADO (equilibrio entre completo y conciso, NO tan extenso como Detallado, pero SIN dejar ningún tema fuera): cubre TODOS los temas de la nota, cada uno con su razonamiento/riesgo en Hallazgos y su acción/consejería en Acciones. Referencia de extensión MÍNIMA (no es un techo): 1 solo tema → al menos 2 oraciones por columna; 2-3 temas → al menos una oración compacta por tema en cada columna. Si la nota original que escribió el promotor ya trae bastante texto o detalle, esa referencia queda sin efecto: conserva TODA la información ya escrita (aunque el resultado quede más largo que esta referencia), solo reordenándola/formalizándola. Sin relleno ni repetición, pero JAMÁS omitas o acortes contenido que el promotor ya redactó para "acortar el texto".'
       };
     }
 
@@ -5439,7 +5894,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       var partes = [
         'Eres un asistente experto en salud comunitaria para promotores de campo en El Salvador.',
-        'Recibirás una lista de ' + items.length + ' personas visitadas en el mismo día. Para CADA una debes generar una fila TSV (separada por tabulaciones) con 5 columnas exactas, EN ESTE ORDEN:',
+        'Recibirás una lista de ' + items.length + ' persona(s) visitada(s) en el mismo día. Para CADA una debes generar una fila TSV (separada por tabulaciones) con 5 columnas exactas, EN ESTE ORDEN:',
         'N° \t Nombre de la Persona \t Edad \t Hallazgos en la Visita \t Acciones Ejecutadas, Consejería y Acuerdos',
         'Debes devolver EXACTAMENTE ' + items.length + ' filas, una por persona, respetando el número N° indicado para cada una (no lo cambies, no lo omitas, no reordenes).',
         'REGLAS PARA TODAS LAS FILAS:',
@@ -5453,6 +5908,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         '7. DATO CLÍNICO OBLIGATORIO (crítico): cualquier cifra de la nota de una persona (presión arterial, glucosa, hemoglobina, semanas de gestación, dosis, fechas) DEBE copiarse tal cual (mismos dígitos) en la fila de ESA persona, sin redondear ni omitir.',
         '8. COBERTURA COMPLETA: si la nota de una persona menciona más de un hallazgo o tema, la fila de esa persona debe abordar TODOS: cada tema con su propio razonamiento/riesgo en Hallazgos y su propia acción/consejería en Acciones. Ningún tema puede quedar solo mencionado sin su acción correspondiente.',
         '9. CONTEXTO SIN DESVIARSE: puedes agregar contexto clínico breve que ayude a entender la relevancia del hallazgo, pero sin salirte del tema principal de la nota de esa persona ni mencionar condiciones o recomendaciones no relacionadas con lo anotado.',
+        '9b. PROHIBIDO RECORTAR INFORMACIÓN YA ESCRITA (regla crítica, no negociable): tu trabajo NO es resumir ni acortar lo que el promotor ya escribió en su nota. Tu trabajo es: (a) corregir ortografía y gramática si hay errores, (b) ordenar la redacción en formato oficial, y (c) agregar razonamiento/riesgo o consejería relacionada cuando corresponda. Si la nota de una persona ya trae bastante texto o varios datos, el resultado de esa fila debe conservar TODA esa información (reformulada si hace falta, pero sin perder ningún dato ni idea), aunque quede más largo que la referencia de extensión del nivel elegido. Nunca elimines contenido ya presente en la nota original solo para que el texto sea más corto.',
         '10. ACUERDO OBLIGATORIO EN CADA FILA (regla crítica, no negociable): "Acciones Ejecutadas" NUNCA debe terminar solo en consejería/orientación; SIEMPRE debe cerrar con el compromiso concreto establecido con la persona o su responsable (una fecha de control, la toma de un medicamento, un cambio de conducta acordado, etc.). Varía cómo lo introduces, por ejemplo: "Acuerdo: se compromete a...", "Como compromiso, la persona acordó...", "Se estableció el compromiso de...", "Quedó como compromiso...", "El responsable acordó...", entre otras equivalentes. Si la nota no menciona una fecha o acción de seguimiento explícita, igual redacta un compromiso directo y coherente con el tema tratado (ej. observar signos de alarma y acudir a la unidad de salud si aparecen). Ninguna fila puede quedar sin esta parte.',
         '11. Cada fila es independiente: no mezcles datos de una persona con otra.',
         '12. Devuelve ÚNICAMENTE las ' + items.length + ' filas TSV limpias, una por línea, sin encabezado, sin numeración adicional, sin marcas de código ni texto introductorio.'
@@ -5493,6 +5949,19 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         }
         if (faltan.length) {
           return { idx: it.idx, ok: false, faltan: faltan, mensaje: '⚠️ "' + (it.nombre || 'Fila') + '": faltaron estas cifras (' + faltan.join(', ') + ')' };
+        }
+        // Verificación estructural: si la IA regresó menos columnas de las 5 pedidas (ej. fusionó
+        // Hallazgos y Acciones en una sola celda), todo se corre una posición y "Hallazgos" termina
+        // recibiendo el valor de "Edad" en su lugar. Esa fila NO debe guardarse: se detecta aquí
+        // (comparando contra la edad original y contra la apertura obligatoria de esa persona) y se
+        // manda a reintento, igual que cuando faltan cifras.
+        var hallazgosNorm = (fila.hallazgos || '').trim().toLowerCase();
+        var edadNorm = (it.edad || '').trim().toLowerCase();
+        var parecePuraEdad = /^-?\d+\s*(años?|mes(es)?)\b/i.test((fila.hallazgos || '').trim());
+        var apertura = (it.aperturaHallazgos || '').trim().toLowerCase();
+        var noEmpiezaConApertura = apertura && hallazgosNorm.indexOf(apertura) !== 0;
+        if ((edadNorm && hallazgosNorm === edadNorm) || parecePuraEdad || noEmpiezaConApertura) {
+          return { idx: it.idx, ok: false, mensaje: '⚠️ "' + (it.nombre || 'Fila') + '": la IA devolvió columnas desordenadas (formato inválido)' };
         }
         return { idx: it.idx, ok: true, hallazgos: fila.hallazgos, acciones: fila.acciones };
       });
@@ -5574,20 +6043,56 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         return;
       }
 
-      if (btnTexto) btnTexto.textContent = '⏳ Redactando ' + items.length + ' persona(s) en un solo envío...';
+      if (btnTexto) btnTexto.textContent = '⏳ Redactando ' + items.length + ' persona(s)...';
 
-      var resultados = await _repProcesarLote(items, nivel, apiKey, undefined, proveedorId, modeloIA);
+      // Se divide en fragmentos pequeños (en vez de un solo envío gigante) porque un
+      // reporte mensual puede traer 40-60+ personas: un solo prompt tan grande casi
+      // siempre falla (se trunca la respuesta de la IA o se agota el tiempo de espera).
+      var _REP_TAM_FRAGMENTO = 8;
+      var fragmentos = [];
+      for (var fi = 0; fi < items.length; fi += _REP_TAM_FRAGMENTO) {
+        fragmentos.push(items.slice(fi, fi + _REP_TAM_FRAGMENTO));
+      }
+
+      var resultados = [];
+      var huboFatalGlobal = false;
+      var mensajeFatalGlobal = '';
+      for (var fj = 0; fj < fragmentos.length; fj++) {
+        if (huboFatalGlobal) {
+          // Ya hubo un error fatal (ej. clave API inválida): no sigas gastando tiempo/cuota
+          // en los fragmentos restantes, márcalos directamente como no procesados.
+          fragmentos[fj].forEach(function(it) {
+            resultados.push({ idx: it.idx, ok: false, fatal: true, mensaje: mensajeFatalGlobal });
+          });
+          continue;
+        }
+        if (fragmentos.length > 1 && btnTexto) {
+          btnTexto.textContent = '⏳ Redactando grupo ' + (fj + 1) + '/' + fragmentos.length + ' (' + fragmentos[fj].length + ' persona(s))...';
+        }
+        var resultadoFragmento = await _repProcesarLote(fragmentos[fj], nivel, apiKey, undefined, proveedorId, modeloIA);
+        resultados = resultados.concat(resultadoFragmento);
+        var fatalEnFragmento = resultadoFragmento.find(function(r) { return !r.ok && r.fatal; });
+        if (fatalEnFragmento) { huboFatalGlobal = true; mensajeFatalGlobal = fatalEnFragmento.mensaje; }
+      }
 
       // Reintento (una sola llamada adicional) solo para las filas con problema, si el fallo no es fatal
       var pendientes = resultados.filter(function(r) { return !r.ok && !r.fatal; });
       var huboFatal = resultados.some(function(r) { return !r.ok && r.fatal; });
 
       if (pendientes.length && !huboFatal) {
-        if (btnTexto) btnTexto.textContent = '⏳ Reintentando ' + pendientes.length + ' fila(s)...';
         var refuerzos = {};
         pendientes.forEach(function(r) { if (r.faltan) refuerzos[r.idx] = r.faltan; });
         var itemsReintento = items.filter(function(it) { return pendientes.some(function(r) { return r.idx === it.idx; }); });
-        var resultadosReintento = await _repProcesarLote(itemsReintento, nivel, apiKey, refuerzos, proveedorId, modeloIA);
+        var fragmentosReintento = [];
+        for (var ri = 0; ri < itemsReintento.length; ri += _REP_TAM_FRAGMENTO) {
+          fragmentosReintento.push(itemsReintento.slice(ri, ri + _REP_TAM_FRAGMENTO));
+        }
+        var resultadosReintento = [];
+        for (var rj = 0; rj < fragmentosReintento.length; rj++) {
+          if (btnTexto) btnTexto.textContent = '⏳ Reintentando ' + (fragmentosReintento.length > 1 ? ('grupo ' + (rj + 1) + '/' + fragmentosReintento.length + ' ') : '') + fragmentosReintento[rj].length + ' fila(s)...';
+          var resFrag = await _repProcesarLote(fragmentosReintento[rj], nivel, apiKey, refuerzos, proveedorId, modeloIA);
+          resultadosReintento = resultadosReintento.concat(resFrag);
+        }
         var porIdxReintento = {};
         resultadosReintento.forEach(function(r) { porIdxReintento[r.idx] = r; });
         resultados = resultados.map(function(r) { return porIdxReintento[r.idx] || r; });
@@ -6558,6 +7063,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       document.getElementById('r-vivienda').value = '';
       document.getElementById('r-nombre').value   = '';
       document.getElementById('r-edad').value      = '';
+      document.getElementById('r-hallazgos').value = '';
+      document.getElementById('r-acciones').value  = '';
     }
 
     // ══════════════════════════════════════════
