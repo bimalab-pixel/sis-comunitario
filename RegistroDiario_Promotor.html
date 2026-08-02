@@ -252,7 +252,18 @@
           box-shadow:0 3px 10px rgba(34,197,94,.55);
           transform:translateY(-1px);
         }
-        #modal-grafica-nutri .modal-box{max-width:520px}
+        #modal-grafica-nutri .modal-box{max-width:520px;transition:max-width .15s,width .15s}
+        .btn-fullscreen-grafica{
+          position:absolute;top:.9rem;right:2.9rem;background:#f0fdf4;border:1px solid #bbf7d0;
+          color:#166534;border-radius:8px;width:30px;height:30px;font-size:1rem;cursor:pointer;
+        }
+        .btn-fullscreen-grafica:hover{background:#16a34a;color:#fff;border-color:#16a34a}
+        #modal-grafica-nutri-box.fullscreen{
+          max-width:none !important;width:100vw;height:100vh;max-height:100vh;
+          border-radius:0;margin:0;
+        }
+        #modal-grafica-nutri-box.fullscreen .modal-box-inner{height:100%;overflow-y:auto}
+        #modal-grafica-nutri-box.fullscreen #graficaNutriCanvas{max-height:70vh;width:auto;margin:0 auto}
 
         .btn-ver-grafica-form{
           display:flex;align-items:center;justify-content:center;gap:.4rem;
@@ -1312,6 +1323,7 @@
                                 <li><b>Glucosa:</b> <code>glucosa 130</code></li>
                                 <li><b>Temperatura:</b> <code>38.5°C</code></li>
                                 <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
+                                <li><b>Prematuro:</b> escribe <code>nació a las 32 semanas</code> o <code>prematuro de 32 semanas</code> — el sistema calcula sola la edad corregida</li>
                             </ul>
                             En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
                         </div>
@@ -1955,6 +1967,7 @@
                             <li><b>Glucosa:</b> <code>glucosa 130</code></li>
                             <li><b>Temperatura:</b> <code>38.5°C</code></li>
                             <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
+                                <li><b>Prematuro:</b> escribe <code>nació a las 32 semanas</code> o <code>prematuro de 32 semanas</code> — el sistema calcula sola la edad corregida</li>
                         </ul>
                         En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
                     </div>
@@ -1989,10 +2002,12 @@
      MODAL: GRÁFICA NUTRICIONAL (curvas OMS)
 ════════════════════════════ -->
 <div class="modal-bg" id="modal-grafica-nutri" onclick="cerrarModal('modal-grafica-nutri')">
-    <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-box" id="modal-grafica-nutri-box" onclick="event.stopPropagation()">
         <div class="modal-box-inner" style="position:relative">
             <button class="modal-close-x" onclick="cerrarModal('modal-grafica-nutri')">✕</button>
+            <button class="btn-fullscreen-grafica" id="btnFullscreenGrafica" onclick="toggleFullscreenGrafica()" title="Ver en pantalla completa">⛶</button>
             <h3 id="graficaNutriTitulo">📊 Evaluación Nutricional</h3>
+            <div id="graficaNutriAvisoPrematuro" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:8px; padding:.5rem .7rem; margin-bottom:10px; font-size:.78rem; line-height:1.5;"></div>
             <div id="graficaNutriSelectorWrap" style="margin-bottom:10px;"></div>
             <canvas id="graficaNutriCanvas" width="500" height="300" style="width:100%; height:auto; display:block; background:#fff; border:1px solid var(--border); border-radius:8px;"></canvas>
             <div id="graficaNutriResumen" style="margin-top:10px; font-size:13px; color:var(--text); line-height:1.5;"></div>
@@ -3388,6 +3403,17 @@ function _riesgoParsearNota(texto) {
   // Embarazo (afecta el umbral de hemoglobina)
   datos.embarazada = /\b(embaraz\w*|gestante)\b/i.test(t);
 
+  // Semanas de gestación al nacer (para bebés prematuros): "nació a las 32 semanas",
+  // "prematuro de 30 semanas", "32 semanas de gestación", "pretérmino de 28 semanas".
+  // Se usa después para calcular la EDAD CORREGIDA en vez de la cronológica.
+  let mg = t.match(/naci\w*\s*a\s*las?\s*(\d{2})\s*sem(?:anas?)?/i);
+  if (!mg) mg = t.match(/(?:prematur\w*|pret[eé]rmino)[^.]{0,20}?(\d{2})\s*sem(?:anas?)?/i);
+  if (!mg) mg = t.match(/(\d{2})\s*sem(?:anas?)?\s*de\s*gestaci[oó]n/i);
+  if (mg) {
+    const sg = parseInt(mg[1], 10);
+    if (sg >= 20 && sg <= 42) datos.semanasGestacion = sg;
+  }
+
   // Peso: "16 kg", "16kg", "16.5 kg", "16 kgs", "16 kg.", y abreviatura rápida "16k" (sin la g)
   m = t.match(/(\d+(?:[.,]\d+)?)\s*kgs?\.?(?:\s|$|[.,;)])/i);
   if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
@@ -3450,6 +3476,21 @@ function _riesgoParsearNota(texto) {
   return datos;
 }
 
+// Corrección de edad por prematurez (recomendación OMS/AIEPI): un bebé nacido antes de las
+// 37 semanas de gestación debe evaluarse en las curvas de crecimiento usando su EDAD
+// CORREGIDA (la que tendría si hubiera nacido a las 40 semanas), no la edad cronológica —
+// de lo contrario aparece como "bajo peso/talla" cuando en realidad va bien para su
+// desarrollo real. La corrección se aplica hasta los 24 meses de edad corregida, que es
+// el límite que recomiendan la OMS y el esquema AIEPI; después de esa edad ya no se corrige.
+function _riesgoAplicarEdadCorregida(edadMeses, semanasGestacion) {
+  if (edadMeses == null || semanasGestacion == null) return edadMeses;
+  if (semanasGestacion >= 37) return edadMeses; // no fue prematuro
+  if (edadMeses >= 24) return edadMeses; // ya no aplica la corrección pasados los 24 meses
+  const semanasFaltantes = 40 - semanasGestacion;
+  const correccionMeses = semanasFaltantes / 4.345;
+  return Math.max(0, Math.round((edadMeses - correccionMeses) * 10) / 10);
+}
+
 // El campo "Edad" de estas apps es un input de texto libre con su propia convención:
 // un número solo (ej. "25") se asume como AÑOS; "6 meses" o "1 año" también son válidos.
 // Se parsea aparte del resto de la nota porque su convención es distinta (sin unidad = años).
@@ -3488,8 +3529,12 @@ function riesgoEvaluarNota(texto, edadMesesCampo) {
   if (edadMesesCampo != null) d.edadMeses = edadMesesCampo;
   const partes = [];
 
-  if (d.edadMeses != null && d.sexo && (d.pesoKg != null || d.tallaCm != null)) {
-    const r = riesgoCrecimiento(d.edadMeses, d.sexo, d.pesoKg, d.tallaCm);
+  const edadParaEvaluar = _riesgoAplicarEdadCorregida(d.edadMeses, d.semanasGestacion);
+  const seCorrigio = d.semanasGestacion != null && d.semanasGestacion < 37 && edadParaEvaluar !== d.edadMeses;
+
+  if (edadParaEvaluar != null && d.sexo && (d.pesoKg != null || d.tallaCm != null)) {
+    const r = riesgoCrecimiento(edadParaEvaluar, d.sexo, d.pesoKg, d.tallaCm);
+    if (seCorrigio) partes.push(`Nació prematuro a las ${d.semanasGestacion} semanas de gestación; por eso su edad corregida (${edadParaEvaluar} meses, en vez de su edad cronológica de ${d.edadMeses} meses) es la que se usó para evaluar su crecimiento, tal como recomienda la OMS/AIEPI para prematuros menores de 24 meses de edad corregida`);
     if (r.pesoEdad) partes.push('Peso/Edad: ' + r.pesoEdad);
     if (r.tallaEdad) partes.push('Talla/Edad: ' + r.tallaEdad);
     if (r.imcEdad) partes.push('IMC/Edad: ' + r.imcEdad);
@@ -3552,9 +3597,11 @@ function _riesgoValorParaZ(L, M, S, z) {
 // nutricionales aplican (Peso/Edad, Talla/Edad, IMC/Edad en menores; IMC en adultos) y con
 // qué valor. Devuelve null si no hay datos suficientes (sexo, edad, peso o talla).
 function _riesgoDatosGrafica(edadTexto, notaTexto) {
-  const edadMeses = _riesgoParsearEdadCampo(edadTexto);
-  if (edadMeses == null) return null;
+  const edadCronologica = _riesgoParsearEdadCampo(edadTexto);
+  if (edadCronologica == null) return null;
   const d = _riesgoParsearNota(notaTexto);
+  const edadMeses = _riesgoAplicarEdadCorregida(edadCronologica, d.semanasGestacion);
+  const seCorrigio = d.semanasGestacion != null && d.semanasGestacion < 37 && edadMeses !== edadCronologica;
   const imc = (d.pesoKg && d.tallaCm) ? d.pesoKg / Math.pow(d.tallaCm / 100, 2) : null;
 
   const disponibles = [];
@@ -3566,7 +3613,91 @@ function _riesgoDatosGrafica(edadTexto, notaTexto) {
     disponibles.push({ id: 'imcAdulto', etiqueta: 'IMC (adulto)', valor: Math.round(imc * 10) / 10 });
   }
   if (!disponibles.length) return null;
-  return { edadMeses, sexo: d.sexo, disponibles };
+  return {
+    edadMeses, sexo: d.sexo, disponibles,
+    edadCronologica: seCorrigio ? edadCronologica : null,
+    semanasGestacion: seCorrigio ? d.semanasGestacion : null
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HISTORIAL DE PESO/TALLA EN LA NUBE (Firebase) — permite comparar la
+// evolución de una misma persona a través de varias visitas en la misma
+// gráfica. Usa la MISMA cuenta/estructura de Firebase que ya usa
+// "Guardar/Restaurar datos en Firebase" (colección rdps/{promotor}/...),
+// así que no requiere configuración aparte: si el promotor ya tiene su
+// perfil configurado, esto funciona solo. Si no hay internet o no hay
+// perfil configurado, falla en silencio y la gráfica sigue funcionando
+// normal (solo sin el historial comparativo).
+// ══════════════════════════════════════════════════════════════════
+
+function _riesgoClaveIdentidad(vivienda, nombre) {
+  const base = `${(vivienda || '').toString().trim()}_${(nombre || '').trim()}`;
+  return base.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '') || null;
+}
+
+// Se llama automáticamente al guardar cualquier registro (nuevo o editado). No bloquea el
+// guardado local: es "best effort" en segundo plano, con el mismo espíritu offline-first del
+// resto de la app — si falla (sin internet, sin perfil), simplemente no queda ese punto en el
+// historial de la nube, pero el registro local se guarda igual.
+async function _riesgoGuardarHistorialPeso(reg) {
+  try {
+    if (!reg || !reg.nombre || !reg.fecha) return;
+    const datos = _riesgoDatosGrafica(reg.edad || '', reg.hallazgos || '');
+    if (!datos) return; // sin edad/sexo/peso-talla detectables, no hay nada que archivar
+    const dParse = _riesgoParsearNota(reg.hallazgos || '');
+    if (dParse.pesoKg == null && dParse.tallaCm == null) return;
+
+    const docId = _docIdPromotor();
+    if (!docId) return;
+    const clave = _riesgoClaveIdentidad(reg.vivienda, reg.nombre);
+    if (!clave) return;
+    const fbOk = await _cargarFirebase();
+    if (!fbOk) return;
+
+    const db = initFirebase();
+    const ref = doc(db, 'rdps', docId, 'historialCrecimiento', clave);
+    const snap = await getDoc(ref);
+    let mediciones = snap.exists() ? (snap.data().mediciones || []) : [];
+    // Si ya existe una medición de esta misma fecha (ej. se corrigió el registro del mismo
+    // día), se reemplaza en vez de duplicarla.
+    mediciones = mediciones.filter(m => m.fecha !== reg.fecha);
+    mediciones.push({
+      fecha: reg.fecha,
+      pesoKg: dParse.pesoKg != null ? dParse.pesoKg : null,
+      tallaCm: dParse.tallaCm != null ? dParse.tallaCm : null,
+      edadMeses: datos.edadMeses
+    });
+    mediciones.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+    await setDoc(ref, { nombre: reg.nombre, vivienda: reg.vivienda || '', mediciones }, { merge: true });
+  } catch (e) {
+    console.warn('No se pudo guardar el historial de peso en la nube:', e);
+  }
+}
+
+// Trae el historial completo de una persona desde la nube. Devuelve [] si no hay nada,
+// no hay internet, o no hay perfil configurado (nunca lanza error hacia quien lo llama).
+async function _riesgoObtenerHistorialPeso(vivienda, nombre) {
+  try {
+    const docId = _docIdPromotor();
+    if (!docId) return [];
+    const clave = _riesgoClaveIdentidad(vivienda, nombre);
+    if (!clave) return [];
+    const fbOk = await _cargarFirebase();
+    if (!fbOk) return [];
+    const db = initFirebase();
+    const ref = doc(db, 'rdps', docId, 'historialCrecimiento', clave);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return [];
+    return (snap.data().mediciones || []).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  } catch (e) {
+    console.warn('No se pudo cargar el historial de peso desde la nube:', e);
+    return [];
+  }
 }
 
 // Dibuja la curva OMS (líneas -3 a +3 DE) para el indicador dado y marca el punto de la persona.
@@ -3579,7 +3710,36 @@ function _riesgoColorCategoria(texto) {
   return { fill: 'rgba(245,158,11,0.16)', linea: '#f59e0b' }; // bajo peso/talla, emaciación, delgadez, riesgo/sobrepeso, alto
 }
 
-function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona) {
+// Orientación clínica práctica por categoría exacta (mismo texto que usan las tablas
+// CORTES_*), pensada para el promotor en campo: qué significa, y qué hacer a continuación.
+// Esto es apoyo educativo/orientativo, no reemplaza el criterio del personal de salud.
+const _riesgoConsejos = {
+  'Bajo peso severo': { urgencia: 'alta', texto: 'Puede indicar desnutrición aguda. Se recomienda referencia URGENTE a la unidad de salud para evaluación médica. Investigar signos de alarma (edema, letargo, rechazo a la alimentación). Reforzar consejería en frecuencia y calidad de las comidas. Repetir control de peso en máximo 1-2 semanas.' },
+  'Bajo peso': { urgencia: 'media', texto: 'Reforzar consejería sobre frecuencia, cantidad y calidad de los alimentos según la edad. Verificar esquema de vacunación y desparasitación al día. Investigar causas recientes (destete, enfermedades, acceso a alimentos). Repetir control en 3-4 semanas.' },
+  'Peso alto para la edad': { urgencia: 'media', texto: 'Revisar hábitos alimentarios (frecuencia, tamaño de porciones, azúcares/ultraprocesados) y nivel de actividad física. Vigilar la tendencia en los próximos controles para descartar sobrepeso.' },
+
+  'Talla muy baja (retraso de crecimiento severo)': { urgencia: 'alta', texto: 'Sugiere desnutrición crónica prolongada (retraso de crecimiento). Se recomienda referencia a la unidad de salud para evaluación integral. Investigar antecedentes de bajo peso al nacer, prematurez o infecciones repetidas. Reforzar la alimentación complementaria adecuada para la edad.' },
+  'Talla baja para la edad': { urgencia: 'media', texto: 'Vigilar la tendencia de crecimiento en los próximos controles. Reforzar consejería nutricional y revisar frecuencia de enfermedades infecciosas (diarreas, parasitosis) que puedan estar afectando el crecimiento.' },
+  'Talla alta para la edad': { urgencia: 'baja', texto: 'Generalmente no representa un riesgo por sí sola. Continuar con el seguimiento habitual; puede estar relacionado con antecedentes familiares de talla.' },
+
+  'Emaciación severa': { urgencia: 'alta', texto: 'Es una emergencia nutricional (desnutrición aguda severa). Se recomienda referencia INMEDIATA a la unidad de salud. Buscar signos de alarma (edema bilateral en pies, delgadez extrema, pérdida de apetito) y manejar según el protocolo AIEPI vigente.' },
+  'Emaciación': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación y posible suplementación nutricional. Reforzar consejería en alimentación. Repetir control de peso/talla en 1-2 semanas para ver la evolución.' },
+  'Riesgo de sobrepeso': { urgencia: 'media', texto: 'Educar sobre alimentación saludable (porciones, frecuencia, reducir azúcares/ultraprocesados) y fomentar actividad física apropiada para la edad. Vigilar la tendencia en los próximos controles.' },
+  'Sobrepeso': { urgencia: 'media', texto: 'Reforzar consejería en alimentación saludable y fomentar actividad física diaria apropiada para la edad. Repetir control en 4-6 semanas para ver evolución.' },
+  'Obesidad': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación integral (descartar comorbilidades). Reforzar consejería nutricional intensiva junto con la familia, ya que suele requerir cambios en todo el entorno alimentario del hogar.' },
+
+  'Delgadez severa': { urgencia: 'alta', texto: 'Puede indicar desnutrición aguda. Se recomienda referencia URGENTE a la unidad de salud para evaluación médica y posible manejo nutricional especializado.' },
+  'Delgadez': { urgencia: 'media', texto: 'Reforzar consejería nutricional (calidad y frecuencia de las comidas). Investigar causas (apetito, enfermedades recientes, hábitos alimentarios). Repetir control en 3-4 semanas.' }
+};
+const _riesgoConsejoNormal = 'Está dentro de los parámetros normales para su edad y sexo. Continuar con la alimentación actual, la lactancia materna si aplica, y los controles de crecimiento según el calendario habitual.';
+
+function _riesgoObtenerConsejo(clasificacionTexto) {
+  if (!clasificacionTexto) return null;
+  if (/normal/i.test(clasificacionTexto)) return { urgencia: 'baja', texto: _riesgoConsejoNormal };
+  return _riesgoConsejos[clasificacionTexto] || null;
+}
+
+function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona, historialPuntos) {
   const info = _riesgoTablaIndicador(indicador, edadMesesPersona, sexo);
   if (!info) return null;
   const tabla = info.tabla, mesInicio = info.mesInicio;
@@ -3589,7 +3749,11 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
-  const pad = { l: 44, r: 14, t: 14, b: 30 };
+  // Todo se escala en función del tamaño real del canvas, así que en pantalla completa
+  // (canvas más grande) el texto, líneas y puntos crecen proporcionalmente en vez de
+  // quedar diminutos como en la versión chica.
+  const esc = W / 500;
+  const pad = { l: 52 * esc, r: 18 * esc, t: 68 * esc, b: 42 * esc };
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
 
@@ -3612,6 +3776,39 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   });
   function curvaEnZ(z) { return curvas[z + 3]; } // z entero de -3 a 3 → índice 0..6
 
+  // Puntaje Z y clasificación de la persona (se calcula ANTES de dibujar, para poder
+  // mostrarlo ya en la insignia fija del encabezado, no flotando sobre las curvas).
+  let clasificacion = null, zPersona = null;
+  const lms = _riesgoLMS(tabla, mesInicio, edadMesesPersona);
+  if (lms) {
+    zPersona = _riesgoZ(lms[0], lms[1], lms[2], valorPersona);
+    clasificacion = _riesgoClasificar(zPersona, info.cortes);
+  }
+
+  // Título del gráfico, estilo carnet oficial: "Peso para la Edad — Niñas (0 a 5 años)"
+  const nombreIndicador = { pesoEdad: 'Peso para la Edad', tallaEdad: 'Talla/Longitud para la Edad', imcEdad: 'IMC para la Edad' }[indicador] || '';
+  const rango = mesFin > 60 ? `${Math.round(mesInicio / 12)} a ${Math.round(mesFin / 12)} años` : `0 a ${Math.round(mesFin / 12)} años`;
+  ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left';
+  ctx.font = `bold ${13 * esc}px sans-serif`;
+  ctx.fillText(`${nombreIndicador} — ${sexo === 'M' ? 'Niños' : 'Niñas'}`, pad.l, 16 * esc);
+  ctx.font = `${10.5 * esc}px sans-serif`; ctx.fillStyle = '#64748b';
+  ctx.fillText(`Patrón de crecimiento OMS 2006/2007 · ${rango} · unidad: ${info.unidad}`, pad.l, 30 * esc);
+
+  // Insignia con el valor de la persona, SIEMPRE en una posición fija dentro del margen
+  // reservado del encabezado — nunca se dibuja encima de las curvas ni cambia de lugar
+  // según dónde caiga el punto, así que jamás tapa una línea, sin importar el tamaño de
+  // pantalla ni en qué parte de la gráfica caiga el valor.
+  if (edadMesesPersona >= mesInicio && edadMesesPersona <= mesFin) {
+    const etiqueta = `●  ${valorPersona} ${info.unidad}${zPersona != null ? '  ·  Z ' + (zPersona >= 0 ? '+' : '') + zPersona.toFixed(2) : ''}`;
+    ctx.font = `bold ${11 * esc}px sans-serif`; ctx.textAlign = 'left';
+    const anchoTexto = ctx.measureText(etiqueta).width;
+    const bx = pad.l, by = 51 * esc;
+    ctx.fillStyle = '#eff6ff';
+    ctx.fillRect(bx - 5 * esc, by - 11 * esc, anchoTexto + 10 * esc, 16 * esc);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.fillText(etiqueta, bx, by);
+  }
+
   // Sombreado de cada franja con el color de su categoría real
   zonas.forEach(function(zona) {
     const cLow = curvaEnZ(zona.zLow), cHigh = curvaEnZ(zona.zHigh);
@@ -3622,8 +3819,23 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
     ctx.closePath(); ctx.fill();
   });
 
+  // Cuadrícula de fondo (más líneas de referencia, look de gráfica clínica profesional)
+  const numTicksY = 6;
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.setLineDash([3 * esc, 3 * esc]);
+  for (let i = 0; i <= numTicksY; i++) {
+    const v = yMin + (i / numTicksY) * (yMax - yMin);
+    const y = yPix(v);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  const pasoMesesGrid = (mesFin - mesInicio) > 100 ? 24 : 12;
+  for (let mes = mesInicio; mes <= mesFin; mes += pasoMesesGrid) {
+    const x = xPix(mes);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
   // Ejes
-  ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.3 * esc; ctx.setLineDash([]);
   ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
 
   // Líneas de cada frontera real (coloreadas según la categoría que empieza ahí) + la mediana (0 DE)
@@ -3631,36 +3843,66 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   zLineas.forEach(function(z) {
     const zonaEntrando = zonas.find(zn => z >= zn.zLow && z <= zn.zHigh) || zonas[zonas.length - 1];
     ctx.strokeStyle = z === 0 ? '#16a34a' : zonaEntrando.color.linea;
-    ctx.lineWidth = z === 0 ? 2.5 : 1.4;
+    ctx.lineWidth = (z === 0 ? 2.5 : 1.4) * esc;
     ctx.beginPath();
     curvaEnZ(z).forEach(function(v, i) { const x = xPix(mesInicio + i), y = yPix(v); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
     ctx.stroke();
   });
 
-  // Etiquetas del eje Y
-  ctx.fillStyle = '#64748b'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
-  [yMin, (yMin + yMax) / 2, yMax].forEach(function(v) { ctx.fillText(v.toFixed(1), pad.l - 6, yPix(v) + 3); });
+  // Etiquetas del eje Y (más marcas, con el valor y unidad)
+  ctx.fillStyle = '#475569'; ctx.font = `${10 * esc}px sans-serif`; ctx.textAlign = 'right';
+  for (let i = 0; i <= numTicksY; i++) {
+    const v = yMin + (i / numTicksY) * (yMax - yMin);
+    ctx.fillText(v.toFixed(1), pad.l - 8 * esc, yPix(v) + 3.5 * esc);
+  }
+  ctx.save();
+  ctx.translate(12 * esc, pad.t + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#64748b'; ctx.font = `${9.5 * esc}px sans-serif`;
+  ctx.fillText(info.unidad, 0, 0);
+  ctx.restore();
 
   // Etiquetas del eje X (edad)
-  ctx.textAlign = 'center';
-  const pasoMeses = (mesFin - mesInicio) > 100 ? 24 : 12;
-  for (let mes = mesInicio; mes <= mesFin; mes += pasoMeses) {
+  ctx.textAlign = 'center'; ctx.fillStyle = '#475569'; ctx.font = `${10 * esc}px sans-serif`;
+  for (let mes = mesInicio; mes <= mesFin; mes += pasoMesesGrid) {
     const x = xPix(mes);
-    ctx.fillText(mes % 12 === 0 ? (mes / 12) + 'a' : mes + 'm', x, H - pad.b + 14);
+    ctx.fillText(mes % 12 === 0 ? (mes / 12) + 'a' : mes + 'm', x, H - pad.b + 16 * esc);
+  }
+  ctx.fillStyle = '#64748b'; ctx.font = `${9.5 * esc}px sans-serif`;
+  ctx.fillText('Edad', W - pad.r - 16 * esc, H - 8 * esc);
+
+  // Historial comparativo (visitas anteriores de la misma persona, cargado desde Firebase):
+  // línea punteada azul conectando cada medición en orden cronológico, con un punto pequeño
+  // por cada visita. Se dibuja ANTES del punto grande de "hoy" para que ese quede encima.
+  if (historialPuntos && historialPuntos.length > 1) {
+    const ptsValidos = historialPuntos
+      .filter(p => p.edadMeses >= mesInicio && p.edadMeses <= mesFin)
+      .sort((a, b) => a.edadMeses - b.edadMeses);
+    if (ptsValidos.length > 1) {
+      ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.6 * esc; ctx.setLineDash([5 * esc, 3 * esc]);
+      ctx.beginPath();
+      ptsValidos.forEach(function(p, i) { const x = xPix(p.edadMeses), y = yPix(p.valor); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      ctx.stroke(); ctx.setLineDash([]);
+      ptsValidos.forEach(function(p) {
+        const x = xPix(p.edadMeses), y = yPix(p.valor);
+        ctx.fillStyle = '#60a5fa';
+        ctx.beginPath(); ctx.arc(x, y, 3.4 * esc, 0, 2 * Math.PI); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1 * esc; ctx.stroke();
+      });
+    }
   }
 
-  // Punto de la persona
-  let clasificacion = null;
+  // Punto de la persona (el valor y el puntaje Z ya se muestran arriba, en la insignia fija
+  // del encabezado — aquí solo se dibuja el punto en sí, sin texto flotante que pueda
+  // taparse con las curvas en pantallas chicas).
   if (edadMesesPersona >= mesInicio && edadMesesPersona <= mesFin) {
     const px = xPix(edadMesesPersona), py = yPix(valorPersona);
     ctx.fillStyle = '#1d4ed8';
-    ctx.beginPath(); ctx.arc(px, py, 5, 0, 2 * Math.PI); ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, 5.5 * esc, 0, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8 * esc; ctx.stroke();
   }
-  const lms = _riesgoLMS(tabla, mesInicio, edadMesesPersona);
-  if (lms) clasificacion = _riesgoClasificar(_riesgoZ(lms[0], lms[1], lms[2], valorPersona), info.cortes);
 
-  return { unidad: info.unidad, clasificacion: clasificacion, cortes: info.cortes };
+  return { unidad: info.unidad, clasificacion: clasificacion, cortes: info.cortes, z: zPersona };
 }
 
 // Para adultos no hay curva por edad (la OMS usa puntos de corte fijos): se dibuja una
@@ -3669,10 +3911,16 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  const pad = { l: 30, r: 30 };
+  const esc = W / 500;
+  const pad = { l: 30 * esc, r: 30 * esc };
   const plotW = W - pad.l - pad.r;
   const minIMC = 12, maxIMC = 42;
   function xPix(v) { return pad.l + ((v - minIMC) / (maxIMC - minIMC)) * plotW; }
+
+  ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left'; ctx.font = `bold ${13 * esc}px sans-serif`;
+  ctx.fillText('IMC — Adulto', pad.l, 16 * esc);
+  ctx.fillStyle = '#64748b'; ctx.font = `${10.5 * esc}px sans-serif`;
+  ctx.fillText('Puntos de corte fijos de la OMS (no varían por edad ni sexo)', pad.l, 30 * esc);
 
   const zonas = [
     { hasta: 18.5, color: '#eab308', texto: 'Bajo peso' },
@@ -3680,29 +3928,50 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
     { hasta: 30, color: '#f97316', texto: 'Sobrepeso' },
     { hasta: maxIMC, color: '#ef4444', texto: 'Obesidad' }
   ];
-  const barY = H / 2 - 16, barH = 32;
+  const barY = H / 2 - 16 * esc, barH = 32 * esc;
   let prev = minIMC;
   zonas.forEach(function(z) {
     ctx.fillStyle = z.color;
     ctx.fillRect(xPix(prev), barY, xPix(z.hasta) - xPix(prev), barH);
-    if (xPix(z.hasta) - xPix(prev) > 40) {
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(z.texto, (xPix(prev) + xPix(z.hasta)) / 2, barY + barH / 2 + 4);
+    if (xPix(z.hasta) - xPix(prev) > 40 * esc) {
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${10 * esc}px sans-serif`; ctx.textAlign = 'center';
+      ctx.fillText(z.texto, (xPix(prev) + xPix(z.hasta)) / 2, barY + barH / 2 + 4 * esc);
     }
     prev = z.hasta;
   });
 
   const px = xPix(Math.min(Math.max(imcValor, minIMC), maxIMC));
-  ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(px, barY - 10); ctx.lineTo(px, barY + barH + 10); ctx.stroke();
-  ctx.fillStyle = '#1d4ed8'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(imcValor.toFixed(1), px, barY - 16);
+  ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3 * esc;
+  ctx.beginPath(); ctx.moveTo(px, barY - 10 * esc); ctx.lineTo(px, barY + barH + 10 * esc); ctx.stroke();
+  ctx.fillStyle = '#1d4ed8'; ctx.font = `bold ${13 * esc}px sans-serif`; ctx.textAlign = 'center';
+  ctx.fillText(imcValor.toFixed(1), px, barY - 16 * esc);
 
-  ctx.fillStyle = '#64748b'; ctx.font = '10px sans-serif';
-  [15, 18.5, 25, 30, 35, 40].forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24); });
+  ctx.fillStyle = '#64748b'; ctx.font = `${10 * esc}px sans-serif`;
+  [15, 18.5, 25, 30, 35, 40].forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24 * esc); });
 }
 
 let _riesgoGraficaDatosActual = null;
+let _riesgoGraficaIndicadorActual = null;
+
+// Alterna la gráfica entre tamaño normal y pantalla completa. Como el canvas se dibuja a
+// resolución fija (no es solo CSS), hay que agrandar/achicar el buffer real y volver a
+// dibujar — por eso llama de nuevo a _riesgoActualizarGrafica() con el mismo indicador.
+function toggleFullscreenGrafica() {
+  const box = document.getElementById('modal-grafica-nutri-box');
+  const canvas = document.getElementById('graficaNutriCanvas');
+  const btn = document.getElementById('btnFullscreenGrafica');
+  const entrando = !box.classList.contains('fullscreen');
+
+  box.classList.toggle('fullscreen', entrando);
+  if (entrando) {
+    canvas.width = 1400; canvas.height = 820;
+    btn.textContent = '⤢'; btn.title = 'Salir de pantalla completa';
+  } else {
+    canvas.width = 500; canvas.height = 300;
+    btn.textContent = '⛶'; btn.title = 'Ver en pantalla completa';
+  }
+  if (_riesgoGraficaIndicadorActual) _riesgoActualizarGrafica(_riesgoGraficaIndicadorActual);
+}
 
 // Se llama desde el botón 📊 de cada tarjeta de "Ver Registros", usando el id del registro.
 function abrirGraficaNutricional(regId) {
@@ -3712,7 +3981,7 @@ function abrirGraficaNutricional(regId) {
   const datos = _riesgoDatosGrafica(r.edad || '', r.hallazgos || '');
   if (!datos) { toast('⚠️ No hay suficientes datos (edad, sexo, peso o talla) en este registro para graficar', 'error'); return; }
 
-  _riesgoAbrirGraficaConDatos(datos, r.nombre || 'Persona');
+  _riesgoAbrirGraficaConDatos(datos, r.nombre || 'Persona', r.vivienda || '');
 }
 
 // Se llama desde el botón 📊 de los formularios de Nueva Visita / Editar, usando lo que
@@ -3723,16 +3992,46 @@ function abrirGraficaNutricionalForm(prefijo) {
   const hallazgos = document.getElementById(`${prefijo}-hallazgos`).value;
   const nombreEl = document.getElementById(`${prefijo}-nombre`);
   const nombre = nombreEl ? nombreEl.value : '';
+  const vivEl = document.getElementById(`${prefijo}-vivienda`);
+  const vivienda = vivEl ? vivEl.value : '';
 
   const datos = _riesgoDatosGrafica(edad || '', hallazgos || '');
   if (!datos) { toast('⚠️ Escribe la Edad y, en Hallazgos, el sexo + peso y/o talla (ver la Guía ℹ️) para poder graficar', 'error'); return; }
 
-  _riesgoAbrirGraficaConDatos(datos, nombre || 'Persona');
+  _riesgoAbrirGraficaConDatos(datos, nombre || 'Persona', vivienda || '');
 }
 
-function _riesgoAbrirGraficaConDatos(datos, nombre) {
+function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
+  datos.nombre = nombre;
+  datos.vivienda = vivienda || '';
+  datos.historial = null; // se llena en segundo plano si hay internet (ver abajo)
   _riesgoGraficaDatosActual = datos;
   document.getElementById('graficaNutriTitulo').textContent = '📊 Evaluación Nutricional — ' + nombre;
+
+  // Siempre arranca en tamaño normal, aunque la vez anterior se haya cerrado en pantalla completa.
+  const box = document.getElementById('modal-grafica-nutri-box');
+  const canvas = document.getElementById('graficaNutriCanvas');
+  box.classList.remove('fullscreen');
+  canvas.width = 500; canvas.height = 300;
+  document.getElementById('btnFullscreenGrafica').textContent = '⛶';
+
+  const avisoPrematuro = document.getElementById('graficaNutriAvisoPrematuro');
+  if (datos.edadCronologica != null) {
+    avisoPrematuro.style.display = 'block';
+    const semanasFaltantes = 40 - datos.semanasGestacion;
+    avisoPrematuro.innerHTML = `
+      <div style="font-weight:700;margin-bottom:3px;">👶 Edad corregida por prematurez</div>
+      Nació a las <b>${datos.semanasGestacion} semanas</b> de gestación (le faltaron ${semanasFaltantes} semanas para las 40 de un embarazo a término).
+      Por eso, en vez de su edad cronológica (<b>${datos.edadCronologica} meses</b>), aquí se le evalúa con su <b>edad corregida: ${datos.edadMeses} meses</b>.
+      <div style="margin-top:4px;">
+        <b>¿Por qué se hace esto?</b> Un bebé prematuro nace antes de completar su desarrollo, así que es normal y esperado que pese y mida menos que un bebé nacido a término de la misma edad cronológica.
+        Comparar a este bebé contra la curva de su edad cronológica lo marcaría como "bajo peso" o "talla baja" aunque en realidad esté creciendo bien para su desarrollo real.
+        La OMS y el esquema AIEPI recomiendan usar la edad corregida hasta los 24 meses; después de esa edad ya no se corrige.
+      </div>`;
+  } else {
+    avisoPrematuro.style.display = 'none';
+    avisoPrematuro.innerHTML = '';
+  }
 
   const selectorWrap = document.getElementById('graficaNutriSelectorWrap');
   if (datos.disponibles.length > 1) {
@@ -3745,29 +4044,83 @@ function _riesgoAbrirGraficaConDatos(datos, nombre) {
 
   document.getElementById('modal-grafica-nutri').classList.add('show');
   _riesgoActualizarGrafica(datos.disponibles[0].id);
+
+  // El historial se busca DESPUÉS de mostrar la gráfica (no bloquea, no depende de internet
+  // para funcionar): si hay conexión y ya existen visitas anteriores de esta persona, la
+  // gráfica se vuelve a dibujar agregando la línea comparativa de fechas.
+  _riesgoObtenerHistorialPeso(datos.vivienda, datos.nombre).then(function(hist) {
+    if (_riesgoGraficaDatosActual !== datos) return; // el usuario ya cerró/cambió de gráfica
+    datos.historial = hist;
+    if (_riesgoGraficaIndicadorActual) _riesgoActualizarGrafica(_riesgoGraficaIndicadorActual);
+  });
 }
 
 function _riesgoActualizarGrafica(indicadorId) {
   const datos = _riesgoGraficaDatosActual;
   if (!datos) return;
+  _riesgoGraficaIndicadorActual = indicadorId;
   const item = datos.disponibles.find(function(d) { return d.id === indicadorId; }) || datos.disponibles[0];
   const canvas = document.getElementById('graficaNutriCanvas');
   const resumen = document.getElementById('graficaNutriResumen');
+
+  // Construye los puntos comparativos de visitas anteriores (si ya se cargaron desde la
+  // nube) para ESTE indicador en particular: Peso/Edad usa pesoKg, Talla/Edad usa tallaCm,
+  // IMC/Edad se calcula a partir de ambos cuando están presentes en esa medición histórica.
+  let historialPuntos = null;
+  if (Array.isArray(datos.historial)) {
+    historialPuntos = datos.historial.map(function(m) {
+      let valor = null;
+      if (item.id === 'pesoEdad') valor = m.pesoKg;
+      else if (item.id === 'tallaEdad') valor = m.tallaCm;
+      else if (item.id === 'imcEdad' && m.pesoKg != null && m.tallaCm != null) valor = Math.round((m.pesoKg / Math.pow(m.tallaCm / 100, 2)) * 10) / 10;
+      return (valor != null && m.edadMeses != null) ? { edadMeses: m.edadMeses, valor: valor, fecha: m.fecha } : null;
+    }).filter(Boolean);
+  }
 
   if (item.id === 'imcAdulto') {
     _riesgoDibujarEscalaIMCAdulto(canvas, item.valor);
     resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — clasificación según los puntos de corte fijos de la OMS para adultos (no varía por edad).`;
   } else {
-    const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor);
+    const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor, historialPuntos);
     if (r) {
       const leyenda = r.cortes.map(function(c) {
         return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap;">
                   <span style="width:9px;height:9px;border-radius:50%;background:${_riesgoColorCategoria(c.texto).linea};display:inline-block;"></span>${c.texto}
                 </span>`;
       }).join('');
-      resumen.innerHTML = `<b>${item.etiqueta}:</b> ${item.valor} ${r.unidad} — <b>${r.clasificacion || 'sin clasificar'}</b>.<br>
-        El punto azul marca a la persona. Categorías de este indicador:<br>
-        <div style="margin-top:4px;line-height:1.9;">${leyenda}</div>`;
+      const zTexto = r.z != null ? ` (Z ${r.z >= 0 ? '+' : ''}${r.z.toFixed(2)} DE)` : '';
+      let notaHistorial;
+      if (!Array.isArray(datos.historial)) {
+        notaHistorial = `<div style="margin-top:6px;color:#94a3b8;">☁️ Buscando visitas anteriores en la nube…</div>`;
+      } else if (historialPuntos && historialPuntos.length > 1) {
+        notaHistorial = `<div style="margin-top:6px;color:#1d4ed8;">📈 Comparando con ${historialPuntos.length - 1} visita(s) anterior(es) — línea azul punteada (desde ${historialPuntos[0].fecha} hasta hoy).</div>`;
+      } else {
+        notaHistorial = `<div style="margin-top:6px;color:#94a3b8;">Esta es la primera medición registrada de ${item.etiqueta.split(' / ')[0].toLowerCase()} para esta persona — aún no hay comparativa.</div>`;
+      }
+
+      // Tarjeta de orientación clínica: qué significa esta clasificación y qué se
+      // recomienda hacer, coloreada según la urgencia (verde = normal, ámbar = vigilar,
+      // rojo = requiere atención/referencia pronta).
+      let tarjetaConsejo = '';
+      const consejo = _riesgoObtenerConsejo(r.clasificacion);
+      if (consejo) {
+        const estilos = {
+          alta:  { bg: '#fef2f2', borde: '#fecaca', texto: '#991b1b', icono: '🔴' },
+          media: { bg: '#fffbeb', borde: '#fde68a', texto: '#92400e', icono: '🟠' },
+          baja:  { bg: '#f0fdf4', borde: '#bbf7d0', texto: '#166534', icono: '🟢' }
+        };
+        const est = estilos[consejo.urgencia] || estilos.media;
+        tarjetaConsejo = `
+          <div style="margin-top:12px;background:${est.bg};border:1px solid ${est.borde};border-radius:10px;padding:.7rem .85rem;">
+            <div style="font-weight:700;color:${est.texto};margin-bottom:3px;">${est.icono} ${r.clasificacion} — orientación</div>
+            <div style="color:${est.texto};line-height:1.55;">${consejo.texto}</div>
+            <div style="margin-top:5px;font-size:.72rem;color:${est.texto};opacity:.8;">Esto es apoyo orientativo; no reemplaza el criterio del personal de salud.</div>
+          </div>`;
+      }
+
+      resumen.innerHTML = `<b>${item.etiqueta}:</b> ${item.valor} ${r.unidad}${zTexto} — <b>${r.clasificacion || 'sin clasificar'}</b>.<br>
+        El punto azul marca a la persona; la etiqueta junto al punto muestra su valor y puntaje Z exactos. Categorías de este indicador:<br>
+        <div style="margin-top:4px;line-height:1.9;">${leyenda}</div>${notaHistorial}${tarjetaConsejo}`;
     } else {
       resumen.innerHTML = 'No se pudo ubicar la edad dentro del rango de la tabla OMS correspondiente.';
     }
@@ -4267,6 +4620,10 @@ DATO CLÍNICO OBLIGATORIO (regla crítica, no negociable):
    - CUALQUIER dato concreto que aparezca en la nota original —resultados de laboratorio o pruebas, cifras de signos vitales (ej: "140 mmHg"), fechas exactas, semanas de gestación, dosis, nombres de vacunas o medicamentos, lugares de referencia, etc.— DEBE aparecer reflejado en la columna correspondiente (Hallazgos o Acciones), aunque la redacción se resuma o parafrasee.
    - Está PROHIBIDO omitir o "perder" un dato numérico o clínico concreto de la nota original. Antes de redactar, revisa mentalmente la nota dato por dato y verifica que ninguno se haya quedado fuera del texto generado.
 
+SEXO Y PESO/TALLA CON SU UNIDAD EXACTA (regla crítica, no negociable — alimenta la gráfica nutricional automática):
+   - Si la nota original menciona el sexo de la persona (niño/niña, varón/mujer, o el nombre propio deja claro el sexo) y/o un peso y/o talla, el texto generado DEBE seguir dejando claro el sexo (usando en algún punto de Hallazgos o Acciones una palabra como "niño"/"niña"/"varón"/"mujer", o un artículo que lo revele como "la menor"/"el paciente") Y DEBE repetir el peso y la talla con su cifra Y unidad exacta tal como se escribieron (ej. "16 kg", "108 cm", "1.08 m") — NUNCA los redondees, los conviertas a otra unidad, ni los reformules sin la unidad (ej. nunca escribas solo "su peso es adecuado" sin repetir la cifra "16 kg").
+   - Esto es distinto a la regla de variedad de redacción: aunque debes variar CÓMO te refieres a la persona en general, el sexo y el peso/talla con su unidad numérica son datos duros que deben sobrevivir intactos en el texto final, igual que cualquier otra cifra clínica.
+
 PROHIBIDO RECORTAR INFORMACIÓN YA ESCRITA (regla crítica, no negociable):
    - Tu tarea NO es resumir ni acortar lo que el promotor ya escribió. Tu tarea es: (a) corregir ortografía y gramática si hay errores, (b) ordenar la redacción en el formato oficial de este reporte, y (c) agregar razonamiento clínico, riesgo o consejería relacionada cuando corresponda.
    - Si la nota original ya trae bastante texto, varias ideas o mucho detalle, el resultado debe conservar TODA esa información (puedes reformularla para que suene formal, pero sin perder ningún dato ni idea), aunque el texto final quede más largo que la referencia de extensión indicada para el nivel elegido (incluso en Balanceado o Resumido).
@@ -4372,6 +4729,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       actualizarHome();
+      _riesgoGuardarHistorialPeso(reg).catch(() => {});
 
       if (modoOtra) {
         // Guardar vivienda/fecha/hora para continuar con la misma familia
@@ -4564,6 +4922,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       r.acciones  = document.getElementById('e-acciones').value.trim();
       r.actualizadoEn = new Date().toISOString();
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _riesgoGuardarHistorialPeso(r).catch(() => {});
       cerrarModal('modal-editar');
       actualizarHome();
       renderListado();
@@ -5906,6 +6265,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         '5. IDENTIFICACIÓN DE RIESGOS (regla importante): cuando el hallazgo lo permita, agrega el riesgo o posible complicación clínica directa asociada a lo encontrado (ej. hipertensión no controlada → riesgo de complicaciones cardiovasculares; diarrea con deshidratación en niño pequeño → riesgo de deshidratación severa; embarazo con hta → riesgo de preeclampsia). Este riesgo debe basarse SOLO en lo mencionado en la nota, sin inventar condiciones nuevas, y debe reflejarse en Hallazgos o como justificación de la Acción/consejería.',
         '6. RAZONAMIENTO LIMITADO A LOS HALLAZGOS: la consejería, acciones, acuerdo y riesgos deben derivarse únicamente de lo explícitamente mencionado en la nota de esa persona. No inventes diagnósticos, antecedentes ni intervenciones no anotadas.',
         '7. DATO CLÍNICO OBLIGATORIO (crítico): cualquier cifra de la nota de una persona (presión arterial, glucosa, hemoglobina, semanas de gestación, dosis, fechas) DEBE copiarse tal cual (mismos dígitos) en la fila de ESA persona, sin redondear ni omitir.',
+        '7b. SEXO Y PESO/TALLA CON SU UNIDAD EXACTA (crítico, alimenta la gráfica nutricional automática): si la nota de una persona menciona su sexo (niño/niña, varón/mujer) y/o un peso y/o talla, la fila de ESA persona debe seguir dejando claro el sexo (con alguna palabra como "niño"/"niña"/"varón"/"mujer" o un artículo que lo revele) Y repetir el peso/talla con su cifra Y unidad exacta tal como se escribió (ej. "16 kg", "108 cm") — nunca los redondees, cambies de unidad, ni los omitas diciendo solo "peso adecuado" sin la cifra.',
         '8. COBERTURA COMPLETA: si la nota de una persona menciona más de un hallazgo o tema, la fila de esa persona debe abordar TODOS: cada tema con su propio razonamiento/riesgo en Hallazgos y su propia acción/consejería en Acciones. Ningún tema puede quedar solo mencionado sin su acción correspondiente.',
         '9. CONTEXTO SIN DESVIARSE: puedes agregar contexto clínico breve que ayude a entender la relevancia del hallazgo, pero sin salirte del tema principal de la nota de esa persona ni mencionar condiciones o recomendaciones no relacionadas con lo anotado.',
         '9b. PROHIBIDO RECORTAR INFORMACIÓN YA ESCRITA (regla crítica, no negociable): tu trabajo NO es resumir ni acortar lo que el promotor ya escribió en su nota. Tu trabajo es: (a) corregir ortografía y gramática si hay errores, (b) ordenar la redacción en formato oficial, y (c) agregar razonamiento/riesgo o consejería relacionada cuando corresponda. Si la nota de una persona ya trae bastante texto o varios datos, el resultado de esa fila debe conservar TODA esa información (reformulada si hace falta, pero sin perder ningún dato ni idea), aunque quede más largo que la referencia de extensión del nivel elegido. Nunca elimines contenido ya presente en la nota original solo para que el texto sea más corto.',
