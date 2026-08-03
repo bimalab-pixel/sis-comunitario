@@ -4,6 +4,23 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
     <title>Registro Diario — Promotor de Salud</title>
+    <!-- PWA: manifest, ícono y theme-color -->
+    <link rel="manifest" href="manifest.json"/>
+    <meta name="theme-color" content="#0a3d2e"/>
+    <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png"/>
+    <link rel="apple-touch-icon" href="icon-192.png"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <script>
+    // Registro del Service Worker (habilita instalación y uso offline)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+          console.warn('No se pudo registrar el Service Worker:', err);
+        });
+      });
+    }
+    </script>
     <!-- Fuentes: no bloqueantes — si no hay internet usa sans-serif del sistema -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
@@ -1041,8 +1058,99 @@
         .firebase-status.ok{background:rgba(0,184,156,.2);color:#7effd9;border-color:rgba(0,184,156,.3)}
         .firebase-status.err{background:rgba(192,57,43,.2);color:#ffaaaa;border-color:rgba(192,57,43,.3)}
     </style>
+    <style>
+        /* ══════════════ BANNER DE INSTALACIÓN PWA ══════════════ */
+        #pwaInstallBanner{
+          position:fixed;left:0;right:0;bottom:0;z-index:9999;
+          display:none;align-items:center;gap:.75rem;
+          background:linear-gradient(135deg,#0a3d2e,#0e5c44);
+          color:#fff;padding:.85rem 1rem;
+          box-shadow:0 -4px 20px rgba(10,60,46,.35);
+          font-family:'DM Sans',sans-serif;
+          animation:pwaBannerUp .3s ease;
+        }
+        #pwaInstallBanner.mostrar{display:flex}
+        @keyframes pwaBannerUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+        #pwaInstallBanner .pwa-icono{
+          width:40px;height:40px;border-radius:9px;flex-shrink:0;
+          box-shadow:0 2px 8px rgba(0,0,0,.25);
+        }
+        #pwaInstallBanner .pwa-texto{flex:1;min-width:0}
+        #pwaInstallBanner .pwa-texto strong{display:block;font-size:.88rem;font-weight:700}
+        #pwaInstallBanner .pwa-texto span{display:block;font-size:.75rem;opacity:.85;margin-top:1px}
+        #pwaInstallBanner button{
+          font-family:inherit;font-weight:700;border:none;border-radius:8px;
+          cursor:pointer;flex-shrink:0;transition:opacity .2s;
+        }
+        #pwaInstallBanner button:hover{opacity:.88}
+        #pwaBtnInstalar{
+          background:#c8922a;color:#fff;padding:.55rem 1.1rem;font-size:.82rem;
+        }
+        #pwaBtnCerrar{
+          background:transparent;color:#fff;opacity:.7;padding:.55rem .6rem;font-size:1.1rem;line-height:1;
+        }
+        @media (max-width:420px){
+          #pwaInstallBanner .pwa-texto span{display:none}
+        }
+    </style>
 </head>
 <body>
+    <!-- Banner de instalación PWA: aparece si el navegador ofrece instalar y desaparece tras instalar o cerrar -->
+    <div id="pwaInstallBanner">
+      <img class="pwa-icono" src="icon-192.png" alt="Ícono de la app"/>
+      <div class="pwa-texto">
+        <strong>Instala Registro Diario</strong>
+        <span>Úsala como app, incluso sin conexión</span>
+      </div>
+      <button id="pwaBtnInstalar" type="button">Instalar</button>
+      <button id="pwaBtnCerrar" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <script>
+    (function(){
+      var eventoDiferido = null;
+      var banner = document.getElementById('pwaInstallBanner');
+      var btnInstalar = document.getElementById('pwaBtnInstalar');
+      var btnCerrar = document.getElementById('pwaBtnCerrar');
+      var CLAVE_OCULTO = 'rdps_pwa_banner_oculto';
+
+      function yaInstalada(){
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true;
+      }
+
+      function ocultarBanner(){
+        banner.classList.remove('mostrar');
+      }
+
+      window.addEventListener('beforeinstallprompt', function(e){
+        e.preventDefault();
+        eventoDiferido = e;
+        if (!yaInstalada() && localStorage.getItem(CLAVE_OCULTO) !== '1') {
+          banner.classList.add('mostrar');
+        }
+      });
+
+      btnInstalar.addEventListener('click', function(){
+        if (!eventoDiferido) { ocultarBanner(); return; }
+        eventoDiferido.prompt();
+        eventoDiferido.userChoice.finally(function(){
+          eventoDiferido = null;
+          ocultarBanner();
+        });
+      });
+
+      btnCerrar.addEventListener('click', function(){
+        localStorage.setItem(CLAVE_OCULTO, '1');
+        ocultarBanner();
+      });
+
+      // Se oculta automáticamente en cuanto la PWA queda instalada
+      window.addEventListener('appinstalled', function(){
+        localStorage.setItem(CLAVE_OCULTO, '1');
+        ocultarBanner();
+      });
+    })();
+    </script>
 
 <!-- ════════════════════════════
      SCREEN: HOME / MENÚ
