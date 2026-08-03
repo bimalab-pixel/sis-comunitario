@@ -1317,7 +1317,7 @@
                             <ul>
                                 <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
                                 <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
-                                <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>, <code>1.08 m</code>/<code>mts</code>, o <code>mide: 108</code> sin unidad</li>
+                                <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>/<code>centímetros</code>, <code>1.08 m</code>/<code>mts</code>/<code>metros</code>, o <code>mide</code>/<code>altura</code>/<code>estatura: 108</code> sin unidad</li>
                                 <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
                                 <li><b>Presión arterial:</b> <code>120/80</code></li>
                                 <li><b>Glucosa:</b> <code>glucosa 130</code></li>
@@ -1961,7 +1961,7 @@
                         <ul>
                             <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
                             <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
-                            <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>, <code>1.08 m</code>/<code>mts</code>, o <code>mide: 108</code> sin unidad</li>
+                            <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>/<code>centímetros</code>, <code>1.08 m</code>/<code>mts</code>/<code>metros</code>, o <code>mide</code>/<code>altura</code>/<code>estatura: 108</code> sin unidad</li>
                             <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
                             <li><b>Presión arterial:</b> <code>120/80</code></li>
                             <li><b>Glucosa:</b> <code>glucosa 130</code></li>
@@ -3439,17 +3439,19 @@ function _riesgoParsearNota(texto) {
     }
   }
 
-  // Talla: "108 cm", "108 cms", "1.08 m", "1,08 m", "1.08 mts", "1.08 mts."
-  m = t.match(/(\d+(?:[.,]\d+)?)\s*cms?\.?(?:\s|$|[.,;)])/i);
+  // Talla: "108 cm", "108 cms", "170 centímetros", "1.08 m", "1,08 m", "1.08 mts", "1.08 mts.", "1.70 metros"
+  m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:cms?|cent[ií]metros?)\.?(?:\s|$|[.,;)])/i);
   if (m) datos.tallaCm = parseFloat(m[1].replace(',', '.'));
   else {
-    m = t.match(/(\d+[.,]\d+)\s*m(?:ts?)?\.?(?:\s|$|[.,;)])/i);
+    m = t.match(/(\d+[.,]\d+)\s*(?:mts?|metros?)\.?(?:\s|$|[.,;)])/i);
     if (m) datos.tallaCm = Math.round(parseFloat(m[1].replace(',', '.')) * 100 * 10) / 10;
   }
   if (datos.tallaCm == null) {
-    // Respaldo: "talla"/"mide"/"estatura" seguido de un número sin unidad. Si el número trae
-    // decimales y es menor a 3, se asume que está en metros; si no, se asume que ya está en cm.
-    m = t.match(/\b(?:talla|mide|estatura)\w*\b\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+    // Respaldo: "talla"/"mide"/"estatura"/"altura" sin unidad, ya sea ANTES del número
+    // ("mide 170", "altura: 1.70") o DESPUÉS ("1.70 metros de estatura", "170 de talla").
+    // Si el número trae decimales y es menor a 3, se asume que está en metros; si no, cm.
+    m = t.match(/\b(?:talla|mide|estatura|altura)\w*\b\s*(?:es\s*de|de|es|:)?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+    if (!m) m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:metros?|cm|cms)?\s*(?:de\s+)?(?:talla|estatura|altura)\w*\b/i);
     if (m) {
       const v = parseFloat(m[1].replace(',', '.'));
       if (v > 0 && v < 3) { if (v >= 0.3) datos.tallaCm = v * 100; }
@@ -3737,6 +3739,23 @@ function _riesgoObtenerConsejo(clasificacionTexto) {
   if (!clasificacionTexto) return null;
   if (/normal/i.test(clasificacionTexto)) return { urgencia: 'baja', texto: _riesgoConsejoNormal };
   return _riesgoConsejos[clasificacionTexto] || null;
+}
+
+// Orientación específica para ADULTOS (IMC con puntos de corte fijos OMS). Se separa del
+// diccionario pediátrico de arriba porque, aunque la clasificación usa las mismas palabras
+// ("Bajo peso", "Normal", "Sobrepeso", "Obesidad"), el consejo correcto para un adulto es
+// distinto al de un menor (no aplica vacunación, lactancia, ni desparasitación infantil).
+const _riesgoConsejosAdulto = {
+  'Bajo peso': { urgencia: 'media', texto: 'Puede deberse a ingesta alimentaria insuficiente, una condición de salud subyacente, o pérdida de peso reciente. Indagar apetito, enfermedades crónicas y acceso a alimentos. Si hay pérdida de peso reciente no intencionada, se recomienda referencia a la unidad de salud para evaluación.' },
+  'Sobrepeso': { urgencia: 'media', texto: 'Reforzar consejería en alimentación saludable (reducir azúcares, ultraprocesados y tamaño de porciones) y fomentar actividad física regular apropiada para su condición. Vigilar la tendencia en los próximos controles.' },
+  'Obesidad': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación integral, ya que aumenta el riesgo de hipertensión, diabetes y enfermedad cardiovascular. Reforzar consejería nutricional y fomentar actividad física progresiva según tolerancia.' }
+};
+const _riesgoConsejoAdultoNormal = 'Su IMC está dentro del rango normal para adultos. Continuar con una alimentación balanceada y actividad física regular.';
+
+function _riesgoObtenerConsejoAdulto(clasificacionTexto) {
+  if (!clasificacionTexto) return null;
+  if (/normal/i.test(clasificacionTexto)) return { urgencia: 'baja', texto: _riesgoConsejoAdultoNormal };
+  return _riesgoConsejosAdulto[clasificacionTexto] || null;
 }
 
 function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona, historialPuntos) {
@@ -4079,7 +4098,30 @@ function _riesgoActualizarGrafica(indicadorId) {
 
   if (item.id === 'imcAdulto') {
     _riesgoDibujarEscalaIMCAdulto(canvas, item.valor);
-    resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — clasificación según los puntos de corte fijos de la OMS para adultos (no varía por edad).`;
+    let clasifAdulto;
+    if (item.valor < 18.5) clasifAdulto = 'Bajo peso';
+    else if (item.valor < 25) clasifAdulto = 'Normal';
+    else if (item.valor < 30) clasifAdulto = 'Sobrepeso';
+    else clasifAdulto = 'Obesidad';
+
+    let tarjetaConsejoAdulto = '';
+    const consejoAdulto = _riesgoObtenerConsejoAdulto(clasifAdulto);
+    if (consejoAdulto) {
+      const estilosA = {
+        alta:  { bg: '#fef2f2', borde: '#fecaca', texto: '#991b1b', icono: '🔴' },
+        media: { bg: '#fffbeb', borde: '#fde68a', texto: '#92400e', icono: '🟠' },
+        baja:  { bg: '#f0fdf4', borde: '#bbf7d0', texto: '#166534', icono: '🟢' }
+      };
+      const estA = estilosA[consejoAdulto.urgencia] || estilosA.media;
+      tarjetaConsejoAdulto = `
+        <div style="margin-top:12px;background:${estA.bg};border:1px solid ${estA.borde};border-radius:10px;padding:.7rem .85rem;">
+          <div style="font-weight:700;color:${estA.texto};margin-bottom:3px;">${estA.icono} ${clasifAdulto} — orientación</div>
+          <div style="color:${estA.texto};line-height:1.55;">${consejoAdulto.texto}</div>
+          <div style="margin-top:5px;font-size:.72rem;color:${estA.texto};opacity:.8;">Esto es apoyo orientativo; no reemplaza el criterio del personal de salud.</div>
+        </div>`;
+    }
+
+    resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — <b>${clasifAdulto}</b> (puntos de corte fijos de la OMS para adultos, no varían por edad).${tarjetaConsejoAdulto}`;
   } else {
     const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor, historialPuntos);
     if (r) {
