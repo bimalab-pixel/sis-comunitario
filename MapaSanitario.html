@@ -95,6 +95,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .rchip.sin{background:rgba(22,163,74,.18);color:#86efac;border:1px solid rgba(22,163,74,.3)}
 .rchip.med{background:rgba(234,179,8,.18);color:#eab308;border:1px solid rgba(234,179,8,.35)}
 .rchip.alt{background:rgba(198,40,40,.22);color:#ff8a8a;border:1px solid rgba(198,40,40,.35)}
+.rchip.desh{background:rgba(117,117,117,.22);color:#bdbdbd;border:1px solid rgba(117,117,117,.4)}
 
 /* Menu buttons */
 .menu-wrap{padding:.5rem 1.25rem 2rem}
@@ -234,6 +235,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .risk-badge.sin{background:#16a34a;color:#fff}
 .risk-badge.med{background:#eab308;color:#fff}
 .risk-badge.alt{background:#c62828;color:#fff}
+.risk-badge.desh{background:#757575;color:#fff}
 .risk-badge:hover{filter:brightness(1.15);transform:scale(1.05)}
 .cat-viv-btns{display:flex;gap:.3rem;flex-shrink:0}
 .cat-ico-btn{
@@ -364,6 +366,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .btn-filtro-mapa.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
 .btn-filtro-mapa.f-amarillo{background:#eab308;color:#fff;border-color:#eab308}
 .btn-filtro-mapa.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
+.btn-filtro-mapa.f-gris   {background:#757575;color:#fff;border-color:#757575}
 
 /* Leyenda */
 .mapa-leyenda{
@@ -402,6 +405,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .btn-filtro-fs.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
 .btn-filtro-fs.f-amarillo{background:#eab308;color:#fff;border-color:#eab308}
 .btn-filtro-fs.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
+.btn-filtro-fs.f-gris   {background:#757575;color:#fff;border-color:#757575}
 
 /* Banner modo georref */
 #banner-georref{
@@ -1005,6 +1009,7 @@ td.err{color:var(--red);font-weight:700}
     <div class="rchip sin"><span class="rchip-n" id="hc-sin">0</span>Sin Riesgo</div>
     <div class="rchip med"><span class="rchip-n" id="hc-med">0</span>Riesgo Medio</div>
     <div class="rchip alt"><span class="rchip-n" id="hc-alt">0</span>Alto Riesgo</div>
+    <div class="rchip desh"><span class="rchip-n" id="hc-desh">0</span>Deshabitadas</div>
   </div>
 
   <!-- Stats -->
@@ -1147,6 +1152,7 @@ td.err{color:var(--red);font-weight:700}
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#16a34a"></span>Sin Riesgo</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#eab308"></span>Riesgo Medio</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#c62828"></span>Alto Riesgo</span>
+      <span class="leyenda-item"><span class="leyenda-dot" style="background:#757575"></span>Deshabitada</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#9e9e9e;border-style:dashed"></span><span id="leyenda-sin-gps">Sin GPS</span></span>
     </div>
 
@@ -1156,6 +1162,7 @@ td.err{color:var(--red);font-weight:700}
       <button class="btn-filtro-mapa"          id="mf-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
       <button class="btn-filtro-mapa"          id="mf-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
       <button class="btn-filtro-mapa"          id="mf-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
+      <button class="btn-filtro-mapa"          id="mf-gris"    onclick="filtrarMapa('gris')">⚪ Deshabitadas</button>
     </div>
 
     <!-- Mapa Leaflet -->
@@ -1274,6 +1281,7 @@ td.err{color:var(--red);font-weight:700}
         <button class="btn-filtro-fs"             id="ff-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
         <button class="btn-filtro-fs"             id="ff-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
         <button class="btn-filtro-fs"             id="ff-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
+        <button class="btn-filtro-fs"             id="ff-gris"    onclick="filtrarMapa('gris')">⚪ Deshabitadas</button>
       </div>
     </div><!-- /mapa-wrapper -->
 
@@ -1339,7 +1347,11 @@ td.err{color:var(--red);font-weight:700}
       <label>N° de Vivienda *</label>
       <input type="text" id="mviv-num" placeholder="Ej: 15"/>
     </div>
-    <div class="f-group">
+    <label class="import-checkbox" style="border-radius:8px;border:1.5px solid var(--border);margin-bottom:.9rem">
+      <input type="checkbox" id="mviv-deshabitada" onchange="mvivToggleDeshabitada()"/>
+      🏚️ Vivienda deshabitada (sin familia)
+    </label>
+    <div class="f-group" id="mviv-riesgo-group">
       <label class="mviv-riesgo-label">
         Nivel de Riesgo Sanitario
         <span class="riesgo-auto-chip auto" id="mviv-riesgo-chip">⚡ Auto</span>
@@ -1556,6 +1568,13 @@ function calcRiesgoAuto(n){
 }
 // Aplica riesgo automático a todas las viviendas que no tengan override manual
 // Si riesgoManual===undefined se recalcula siempre (usado en import/carga inicial)
+// Si una vivienda marcada como deshabitada recibe integrantes (por registro manual,
+// importación Excel o sincronización RD→MS), se reactiva automáticamente como habitada.
+function _reactivarSiTienePersonas(v){
+  if(v.deshabitada && v.personas && v.personas.length>0){
+    v.deshabitada=false;
+  }
+}
 function recalcRiesgoVivienda(v){
   // Si tiene flag de override manual, no tocar
   if(v._riesgoManual) return;
@@ -1569,6 +1588,12 @@ function mvivRiesgoManual(){
   _mvivRiesgoEsManual=true;
   const chip=document.getElementById('mviv-riesgo-chip');
   if(chip){chip.textContent='✏️ Manual';chip.className='riesgo-auto-chip manual';}
+}
+// Muestra/oculta el bloque de riesgo según si la vivienda está marcada como deshabitada
+function mvivToggleDeshabitada(){
+  const chk=document.getElementById('mviv-deshabitada').checked;
+  const grp=document.getElementById('mviv-riesgo-group');
+  if(grp) grp.style.display=chk?'none':'';
 }
 function _mvivSetRiesgo(vivId){
   // Calcula el riesgo auto para mostrar en el select al abrir
@@ -1665,8 +1690,9 @@ function irA(id){
 // ── HOME ──
 function actualizarHome(){
   const cat=getCatalogo();
-  let sin=0,med=0,alt=0,pers=0,geo=0;
+  let sin=0,med=0,alt=0,desh=0,pers=0,geo=0;
   cat.forEach(v=>{
+    if(v.deshabitada){ desh++; if(v.lat&&v.lng)geo++; return; }
     const r=v.riesgo||'ninguno';
     if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
     pers+=(v.personas||[]).length;
@@ -1675,6 +1701,7 @@ function actualizarHome(){
   document.getElementById('hc-sin').textContent=sin;
   document.getElementById('hc-med').textContent=med;
   document.getElementById('hc-alt').textContent=alt;
+  document.getElementById('hc-desh').textContent=desh;
   document.getElementById('hs-viv').textContent=cat.length;
   document.getElementById('hs-per').textContent=pers;
   document.getElementById('hs-geo').textContent=geo;
@@ -1731,8 +1758,10 @@ function renderCatalogo(opcs){
 
   function _htmlViv(viv){
     const rk=viv.riesgo||'ninguno';
-    const rkLabel=rk==='alto'?'Alto':rk==='medio'?'Medio':'Sin Riesgo';
-    const rkClass=rk==='alto'?'alt':rk==='medio'?'med':'sin';
+    const desh=!!viv.deshabitada;
+    const rkLabel=desh?'Deshabitada':rk==='alto'?'Alto':rk==='medio'?'Medio':'Sin Riesgo';
+    const rkClass=desh?'desh':rk==='alto'?'alt':rk==='medio'?'med':'sin';
+    const rkIco=desh?'⚪':rk==='alto'?'🔴':rk==='medio'?'🟡':'🟢';
     const pers=(viv.personas||[]).map(p=>{
       const edad=p.fnac?calcularEdadTexto(p.fnac):(p.edad||'');
       const esFiltrado=!!viv._filtroPersona;
@@ -1767,8 +1796,8 @@ function renderCatalogo(opcs){
       <div class="cat-viv-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
         <span class="cat-viv-num">Vivienda ${viv.vivienda}</span>
-        <span class="risk-badge ${rkClass}" onclick="ciclarRiesgo('${viv.id}')" title="Cambiar riesgo">
-          ${rk==='alto'?'🔴':rk==='medio'?'🟡':'🟢'} ${rkLabel}
+        <span class="risk-badge ${rkClass}" ${desh?'':`onclick="ciclarRiesgo('${viv.id}')"`} title="${desh?'Vivienda deshabitada':'Cambiar riesgo'}">
+          ${rkIco} ${rkLabel}
         </span>
         <div class="cat-viv-btns">
           <button class="cat-ico-btn" onclick="abrirEditVivienda('${viv.id}')">
@@ -1786,11 +1815,11 @@ function renderCatalogo(opcs){
         </div>
         <div class="ubic-status" id="ubic-${viv.id}">${ubicTxt}</div>
       </div>
-      ${pers?`<div class="cat-personas">${pers}</div>`:'<div style="padding:.5rem 1rem;font-size:.78rem;color:var(--muted);font-style:italic">Sin integrantes</div>'}
-      <button class="cat-add-per-btn" onclick="abrirNuevaPersona('${viv.id}')">
+      ${desh?'<div style="padding:.5rem 1rem;font-size:.78rem;color:var(--muted);font-style:italic">🏚️ Vivienda deshabitada — sin familia</div>':(pers?`<div class="cat-personas">${pers}</div>`:'<div style="padding:.5rem 1rem;font-size:.78rem;color:var(--muted);font-style:italic">Sin integrantes</div>')}
+      ${desh?'':`<button class="cat-add-per-btn" onclick="abrirNuevaPersona('${viv.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Agregar integrante
-      </button>
+      </button>`}
     </div>`;
   }
 
@@ -1825,6 +1854,8 @@ function abrirNuevaVivienda(){
   document.getElementById('mviv-titulo').textContent='Nueva Vivienda';
   document.getElementById('mviv-sub').textContent='Registra el número y el nivel de riesgo sanitario.';
   document.getElementById('mviv-num').value='';
+  document.getElementById('mviv-deshabitada').checked=false;
+  mvivToggleDeshabitada();
   _mvivSetRiesgo(null);
   abrirModal('modal-vivienda');
   setTimeout(()=>document.getElementById('mviv-num').focus(),80);
@@ -1835,13 +1866,16 @@ function abrirEditVivienda(id){
   document.getElementById('mviv-titulo').textContent='Editar Vivienda '+v.vivienda;
   document.getElementById('mviv-sub').textContent='Modifica los datos de esta vivienda.';
   document.getElementById('mviv-num').value=v.vivienda;
+  document.getElementById('mviv-deshabitada').checked=!!v.deshabitada;
+  mvivToggleDeshabitada();
   _mvivSetRiesgo(id);
   abrirModal('modal-vivienda');
 }
 function guardarVivienda(){
   const num=document.getElementById('mviv-num').value.trim();
   if(!num){toast('Ingresa el número de vivienda','error');return;}
-  const riesgo=document.getElementById('mviv-riesgo').value;
+  const deshabitada=document.getElementById('mviv-deshabitada').checked;
+  const riesgo=deshabitada?'ninguno':document.getElementById('mviv-riesgo').value;
   const cat=getCatalogo();
   const ts=new Date().toISOString();
   if(_editVivId){
@@ -1850,14 +1884,16 @@ function guardarVivienda(){
     if(dup){toast('Ese número ya existe','error');return;}
     v.vivienda=num; v.riesgo=riesgo; v.actualizadoEn=ts;
     v._riesgoManual=_mvivRiesgoEsManual||false;
+    v.deshabitada=deshabitada;
   } else {
     if(cat.find(v=>v.vivienda===num)){toast('Esa vivienda ya existe','error');return;}
-    cat.push({id:'viv_'+Date.now(),vivienda:num,riesgo,personas:[],actualizadoEn:ts,_riesgoManual:_mvivRiesgoEsManual||false});
+    cat.push({id:'viv_'+Date.now(),vivienda:num,riesgo,personas:[],actualizadoEn:ts,_riesgoManual:_mvivRiesgoEsManual||false,deshabitada});
   }
   saveCatalogo(cat);
   cerrarModal('modal-vivienda');
   renderCatalogo();
   actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
   toast((_editVivId?'✏️':'🏠 Vivienda '+(num)+' ')+'guardada','success');
 }
 function eliminarVivienda(id){
@@ -1958,13 +1994,16 @@ function guardarPersona(){
     v.personas.push({id:'per_'+Date.now(),nombre,fnac:fnac||'',edad,sexo:_sexoSel});
   }
   v.actualizadoEn=ts;
+  // Reactivar la vivienda si estaba marcada deshabitada y ahora tiene integrantes
+  const _seReactivo=v.deshabitada && v.personas.length>0;
+  _reactivarSiTienePersonas(v);
   // Recalcular riesgo automático si no tiene override manual
   recalcRiesgoVivienda(v);
   saveCatalogo(cat);
   cerrarModal('modal-persona');
   renderCatalogo();actualizarHome();
   if(_mapaZona) renderMarcadores(_filtroMapa);
-  toast('👤 '+nombre+' guardado/a','success');
+  toast(_seReactivo?'👤 '+nombre+' guardado/a · 🏠 vivienda reactivada':'👤 '+nombre+' guardado/a','success');
 }
 function eliminarPersona(vivId,perId){
   const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId); if(!v) return;
@@ -2161,6 +2200,7 @@ async function abrirMapa(){
 }
 
 function colorVivienda(v){
+  if(v.deshabitada) return '#757575';
   const r=v.riesgo||'ninguno';
   if(r==='alto') return '#c62828';
   if(r==='medio') return '#eab308';
@@ -2185,7 +2225,10 @@ function renderMarcadores(filtro){
 
   cat.forEach(viv=>{
     const rk=viv.riesgo||'ninguno';
+    const desh=!!viv.deshabitada;
     // Filtrar
+    if(filtro==='gris'&&!desh) return;
+    if(filtro!=='gris'&&filtro!=='todos'&&desh) return;
     if(filtro==='verde'&&rk!=='ninguno') return;
     if(filtro==='amarillo'&&rk!=='medio') return;
     if(filtro==='rojo'&&rk!=='alto') return;
@@ -2196,9 +2239,9 @@ function renderMarcadores(filtro){
     conUbic++;
 
     const color=colorVivienda(viv);
-    const etNivel=rk==='alto'?'🔴 Alto Riesgo':rk==='medio'?'🟡 Riesgo Medio':'🟢 Sin Riesgo';
-    const bgN=rk==='alto'?'#ffebee':rk==='medio'?'#fefce8':'#f0fdf4';
-    const bdN=rk==='alto'?'#c62828':rk==='medio'?'#eab308':'#16a34a';
+    const etNivel=desh?'⚪ Deshabitada':rk==='alto'?'🔴 Alto Riesgo':rk==='medio'?'🟡 Riesgo Medio':'🟢 Sin Riesgo';
+    const bgN=desh?'#f5f5f5':rk==='alto'?'#ffebee':rk==='medio'?'#fefce8':'#f0fdf4';
+    const bdN=desh?'#757575':rk==='alto'?'#c62828':rk==='medio'?'#eab308':'#16a34a';
 
     const intList=(viv.personas||[]).slice(0,5).map(p=>`<div style="font-size:.77em;padding:2px 0;border-bottom:1px solid #f0f0f0;color:#444;">👤 ${p.nombre}${p.edad?' <span style="color:#888;font-size:.9em">· '+p.edad+'</span>':''}</div>`).join('')
       +(viv.personas&&viv.personas.length>5?`<div style="font-size:.72em;color:#888;padding-top:2px">…y ${viv.personas.length-5} más</div>`:'');
@@ -2209,9 +2252,9 @@ function renderMarcadores(filtro){
         <strong style="font-size:.88em">Vivienda ${viv.vivienda}</strong>
       </div>
       <div style="background:${bgN};border-left:3px solid ${bdN};padding:3px 7px;border-radius:4px;margin-bottom:6px;font-size:.78em;font-weight:bold;color:${bdN}">${etNivel}</div>
-      <div style="font-size:.78em;margin-bottom:4px;"><strong style="color:#0a3d2e">👨‍👩‍👧 Jefe/a:</strong> ${jefe}</div>
+      ${desh?'':`<div style="font-size:.78em;margin-bottom:4px;"><strong style="color:#0a3d2e">👨‍👩‍👧 Jefe/a:</strong> ${jefe}</div>
       <div style="font-size:.75em;color:#546e7a;margin-bottom:5px;">🏠 <strong>${nP}</strong> integrante${nP!==1?'s':''}</div>
-      <div style="border-top:1px solid #eee;padding-top:5px;margin-bottom:5px">${intList||'<em style="font-size:.77em;color:#aaa">Sin integrantes</em>'}</div>
+      <div style="border-top:1px solid #eee;padding-top:5px;margin-bottom:5px">${intList||'<em style="font-size:.77em;color:#aaa">Sin integrantes</em>'}</div>`}
       <div style="font-size:.7em;color:#888;margin-bottom:5px">${viv.origen_ubic==='gps'?'🛰️ GPS':'🖊️ Manual'}</div>
       <button onclick="irA('screen-catalogo');setTimeout(()=>{const i=document.getElementById('cat-buscar');if(i){i.value='${viv.vivienda}';renderCatalogo();}},100)"
         style="background:#0a3d2e;color:#fff;border:none;padding:7px 0;border-radius:7px;font-size:.82em;font-weight:bold;cursor:pointer;width:100%;margin-bottom:4px">📋 Ver Familia</button>
@@ -2240,8 +2283,8 @@ function filtrarMapa(t){
   _filtroMapa=t; actualizarBotonesFiltro(t); renderMarcadores(t);
 }
 function actualizarBotonesFiltro(t){
-  const m={todos:'f-todos',verde:'f-verde',amarillo:'f-amarillo',rojo:'f-rojo'};
-  ['todos','verde','amarillo','rojo'].forEach(k=>{
+  const m={todos:'f-todos',verde:'f-verde',amarillo:'f-amarillo',rojo:'f-rojo',gris:'f-gris'};
+  ['todos','verde','amarillo','rojo','gris'].forEach(k=>{
     const b1=document.getElementById('mf-'+k),b2=document.getElementById('ff-'+k);
     if(b1) b1.className='btn-filtro-mapa'+(k===t?' '+m[k]:'');
     if(b2) b2.className='btn-filtro-fs'+(k===t?' '+m[k]:'');
@@ -2661,7 +2704,7 @@ function confirmarImport(){
   });
 
   // Recalcular riesgo automático en todas las viviendas afectadas
-  cat.forEach(v=>{ if(!v._riesgoManual) recalcRiesgoVivienda(v); });
+  cat.forEach(v=>{ _reactivarSiTienePersonas(v); if(!v._riesgoManual) recalcRiesgoVivienda(v); });
   saveCatalogo(cat);
   cerrarModal('modal-importar');
   renderCatalogo(); actualizarHome();
@@ -2679,7 +2722,7 @@ function exportarExcel(){
   if(typeof XLSX==='undefined'){toast('Librería Excel no disponible','error');return;}
   const filas=[['N° Vivienda','Nombre','Fecha Nacimiento','Riesgo','Latitud','Longitud','Sexo']];
   cat.forEach(v=>{
-    const r=v.riesgo||'ninguno';
+    const r=v.deshabitada?'DESHABITADA':(v.riesgo||'ninguno');
     if(!v.personas||!v.personas.length){
       filas.push([v.vivienda,'','',r,v.lat||'',v.lng||'','']);
     } else {
@@ -3519,6 +3562,8 @@ function sincronizarDesdeRD(){
       });
       existing.personas = Array.from(perMap.values());
       existing.actualizadoEn = tsNow;
+      // Reactivar si estaba marcada deshabitada y ahora recibió integrantes
+      _reactivarSiTienePersonas(existing);
       // Recalcular riesgo automático solo si no fue sobreescrito manualmente
       if(!existing._riesgoManual) recalcRiesgoVivienda(existing);
       // Asegurar que el id del RD esté mapeado si se encontró por número
