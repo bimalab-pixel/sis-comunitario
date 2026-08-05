@@ -288,12 +288,19 @@
           font-weight:700;font-size:.85rem;color:#fff;cursor:pointer;
           background:linear-gradient(135deg,#22c55e 0%,#0ea5e9 100%);
           box-shadow:0 3px 8px rgba(34,197,94,.35);
+          transition:all .2s;
         }
-        .btn-ver-grafica-form:hover{
+        .btn-ver-grafica-form:hover:not(:disabled){
           background:linear-gradient(135deg,#16a34a 0%,#0284c7 100%);
           box-shadow:0 4px 12px rgba(34,197,94,.5);
         }
-        .btn-ver-grafica-form:active{transform:scale(.98)}
+        .btn-ver-grafica-form:active:not(:disabled){transform:scale(.98)}
+        .btn-ver-grafica-form:disabled{
+          background:#9ca3af;
+          box-shadow:none;
+          cursor:not-allowed;
+          opacity:.6;
+        }
 
         .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
         .empty-state svg{width:52px;height:52px;margin:0 auto 1rem;opacity:.3;display:block}
@@ -358,28 +365,21 @@
           font-family:inherit;font-size:.85rem;font-weight:800;letter-spacing:.03em;
           text-transform:none;color:#fff;cursor:pointer;
           display:flex;align-items:center;justify-content:center;gap:.5rem;
-          background:linear-gradient(180deg,#e879f9 0%,#c026d3 100%);
-          box-shadow:0 4px 0 #86198f,0 7px 16px rgba(192,38,211,.4);
-          transition:box-shadow .08s ease,filter .15s ease;
-          animation:magicLatido 1.8s ease-in-out infinite;
+          background:linear-gradient(180deg,#1e40af 0%,#1e3a8a 100%);
+          box-shadow:0 2px 0 #1e3a8a,0 4px 8px rgba(30,58,138,.25);
+          transition:box-shadow .15s ease,filter .15s ease;
           margin:.3rem 0 .1rem;
         }
         .btn-magic span{position:relative;z-index:2}
         .btn-magic::after{
           content:'';position:absolute;top:0;left:-60%;width:35%;height:100%;
-          background:linear-gradient(115deg,transparent,rgba(255,255,255,.65),transparent);
+          background:linear-gradient(115deg,transparent,rgba(255,255,255,.2),transparent);
           transform:skewX(-20deg);z-index:1;pointer-events:none;
-          animation:magicBrillo 2.6s ease-in-out infinite;
         }
-        @keyframes magicLatido{
-          0%,100%{transform:translateY(0) scale(1);box-shadow:0 4px 0 #86198f,0 7px 16px rgba(192,38,211,.4);}
-          50%{transform:translateY(-2px) scale(1.012);box-shadow:0 6px 0 #86198f,0 10px 22px rgba(232,121,249,.6);}
-        }
-        @keyframes magicBrillo{0%{left:-60%}55%{left:130%}100%{left:130%}}
-        .btn-magic:hover{filter:brightness(1.07)}
-        .btn-magic:active{animation-play-state:paused;transform:translateY(3px) scale(1);box-shadow:0 1px 0 #86198f,0 2px 4px rgba(192,38,211,.4);}
-        .btn-magic:disabled{animation:none;filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
-        .btn-magic-hint{font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
+        .btn-magic:hover{filter:brightness(1.1);box-shadow:0 2px 0 #1e3a8a,0 6px 12px rgba(30,58,138,.35);}
+        .btn-magic:active{transform:translateY(2px);box-shadow:0 0 0 #1e3a8a,0 2px 4px rgba(30,58,138,.2);}
+        .btn-magic:disabled{filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
+        .btn-magic-hint{display:none;font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
 
         .lbl-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
         .btn-guia-nutri{
@@ -1436,7 +1436,7 @@
                             En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
                         </div>
                         <textarea id="r-hallazgos" placeholder="Describa los hallazgos encontrados durante la visita..."></textarea>
-                        <button type="button" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('r')">📊 Ver estado nutricional (sin internet)</button>
+                        <button type="button" id="btn-grafica-r" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('r')" disabled>📊 Ver estado nutricional (sin internet)</button>
                     </div>
                     <div class="f-group sp">
                         <label>Acciones Ejecutadas</label>
@@ -2080,7 +2080,7 @@
                         En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
                     </div>
                     <textarea id="e-hallazgos"></textarea>
-                    <button type="button" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('e')">📊 Ver estado nutricional (sin internet)</button>
+                    <button type="button" id="btn-grafica-e" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('e')" disabled>📊 Ver estado nutricional (sin internet)</button>
                 </div>
                 <div class="f-group sp"><label>Acciones Ejecutadas</label><textarea id="e-acciones"></textarea></div>
                 <div class="f-group sp" style="margin-bottom:.3rem">
@@ -4114,6 +4114,23 @@ function abrirGraficaNutricional(regId) {
 // Se llama desde el botón 📊 de los formularios de Nueva Visita / Editar, usando lo que
 // el usuario ya escribió en pantalla (sin necesidad de guardar el registro primero, y sin
 // internet: todo se calcula localmente con las tablas OMS ya incluidas en el archivo).
+// ══════════════════════════════════════════════════════════════════
+// VALIDAR Y ACTUALIZAR ESTADO DEL BOTÓN DE NUTRICIÓN
+// ══════════════════════════════════════════════════════════════════
+function _puedeGraficar(prefijo) {
+  const edad = document.getElementById(`${prefijo}-edad`).value;
+  const hallazgos = document.getElementById(`${prefijo}-hallazgos`).value;
+  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '');
+  return datos != null;
+}
+
+function _actualizarBtnGrafica(prefijo) {
+  const btn = document.getElementById(`btn-grafica-${prefijo}`);
+  if (btn) {
+    btn.disabled = !_puedeGraficar(prefijo);
+  }
+}
+
 function abrirGraficaNutricionalForm(prefijo) {
   const edad = document.getElementById(`${prefijo}-edad`).value;
   const hallazgos = document.getElementById(`${prefijo}-hallazgos`).value;
@@ -4955,6 +4972,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         document.getElementById('btn-sel-pac-sub').textContent    = 'Buscar en catálogo de viviendas';
         document.getElementById('btn-sel-pac-chip').textContent   = 'Catálogo';
       }
+      // Deshabilitar botón de nutrición después de limpiar
+      _actualizarBtnGrafica('r');
     }
 
     // ── ACCIONES MODAL SIGUIENTE ──
@@ -5058,6 +5077,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       document.getElementById('e-hallazgos').value = r.hallazgos || '';
       document.getElementById('e-acciones').value  = r.acciones  || '';
       document.getElementById('modal-editar').classList.add('show');
+      // Validar botón de nutrición con los datos cargados
+      setTimeout(() => _actualizarBtnGrafica('e'), 50);
     }
 
     function guardarEdicion() {
@@ -8209,7 +8230,9 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       micatOnDrop, micatLeerArchivo, micatConfirmarImport,
       // Selector de paciente
       abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
-      seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado
+      seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado,
+      // Validación botón nutrición
+      _puedeGraficar, _actualizarBtnGrafica
     });
 
     // ══════════════════════════════════════════
@@ -8280,6 +8303,26 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       toast('✏️ ' + nombre + ' actualizado/a', 'success');
     }
 
+    // ══════════════════════════════════════════
+    // INICIALIZAR VALIDACIÓN DE BOTÓN DE NUTRICIÓN
+    // ══════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', function() {
+      // Para formulario de nuevo registro (r)
+      const rEdad = document.getElementById('r-edad');
+      const rHallazgos = document.getElementById('r-hallazgos');
+      if (rEdad) rEdad.addEventListener('input', () => _actualizarBtnGrafica('r'));
+      if (rHallazgos) rHallazgos.addEventListener('input', () => _actualizarBtnGrafica('r'));
+      
+      // Para formulario de edición (e)
+      const eEdad = document.getElementById('e-edad');
+      const eHallazgos = document.getElementById('e-hallazgos');
+      if (eEdad) eEdad.addEventListener('input', () => _actualizarBtnGrafica('e'));
+      if (eHallazgos) eHallazgos.addEventListener('input', () => _actualizarBtnGrafica('e'));
+      
+      // Validar estado inicial
+      _actualizarBtnGrafica('r');
+      _actualizarBtnGrafica('e');
+    });
 
 </script>
 </body>
