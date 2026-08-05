@@ -270,6 +270,7 @@
           transform:translateY(-1px);
         }
         #modal-grafica-nutri .modal-box{max-width:520px;transition:max-width .15s,width .15s}
+        #modal-grafica-nutri h3{padding-right:80px;word-wrap:break-word;overflow-wrap:break-word}
         .btn-fullscreen-grafica{
           position:absolute;top:.9rem;right:2.9rem;background:#f0fdf4;border:1px solid #bbf7d0;
           color:#166534;border-radius:8px;width:30px;height:30px;font-size:1rem;cursor:pointer;
@@ -3866,7 +3867,7 @@ function _riesgoObtenerConsejoAdulto(clasificacionTexto) {
   return _riesgoConsejosAdulto[clasificacionTexto] || null;
 }
 
-function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona, historialPuntos) {
+function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona, historialPuntos, edadCronologica = null) {
   const info = _riesgoTablaIndicador(indicador, edadMesesPersona, sexo);
   if (!info) return null;
   const tabla = info.tabla, mesInicio = info.mesInicio;
@@ -3926,7 +3927,9 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   // según dónde caiga el punto, así que jamás tapa una línea, sin importar el tamaño de
   // pantalla ni en qué parte de la gráfica caiga el valor.
   if (edadMesesPersona >= mesInicio && edadMesesPersona <= mesFin) {
-    const etiqueta = `●  ${valorPersona} ${info.unidad}${zPersona != null ? '  ·  Z ' + (zPersona >= 0 ? '+' : '') + zPersona.toFixed(2) : ''}`;
+    // Formatear edad (incluyendo edad corregida si es prematuro)
+    const edadTexto = _riesgoFormatearEdad(edadMesesPersona, edadCronologica);
+    const etiqueta = `●  ${valorPersona} ${info.unidad}  ·  ${edadTexto}${zPersona != null ? '  ·  Z ' + (zPersona >= 0 ? '+' : '') + zPersona.toFixed(2) : ''}`;
     ctx.font = `bold ${11 * esc}px sans-serif`; ctx.textAlign = 'left';
     const anchoTexto = ctx.measureText(etiqueta).width;
     const bx = pad.l, by = 51 * esc;
@@ -4145,12 +4148,49 @@ function abrirGraficaNutricionalForm(prefijo) {
   _riesgoAbrirGraficaConDatos(datos, nombre || 'Persona', vivienda || '');
 }
 
+// ══════════════════════════════════════════════════════════════════
+// FORMATEAR EDAD PARA MOSTRAR
+// ══════════════════════════════════════════════════════════════════
+function _riesgoFormatearEdad(edadMeses, edadCronologica = null) {
+  if (edadMeses == null) return '';
+  
+  function formatoInterno(meses) {
+    let texto = '';
+    if (meses < 1) {
+      const dias = Math.round(meses * 30);
+      texto = dias + ' d';
+    } else if (meses < 12) {
+      texto = Math.round(meses * 10) / 10 + ' m';
+    } else {
+      const años = Math.floor(meses / 12);
+      const meses_rest = Math.round(meses % 12);
+      texto = años + ' años';
+      if (meses_rest > 0) texto += ' ' + meses_rest + ' m';
+    }
+    return texto;
+  }
+  
+  // Si es prematuro, mostrar ambas edades
+  if (edadCronologica != null && edadCronologica !== edadMeses) {
+    const cronologica = formatoInterno(edadCronologica);
+    const corregida = formatoInterno(edadMeses);
+    return `${cronologica} / ${corregida} corregida`;
+  }
+  
+  // Si no es prematuro, solo mostrar la edad
+  return formatoInterno(edadMeses);
+}
+
 function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   datos.nombre = nombre;
   datos.vivienda = vivienda || '';
   datos.historial = null; // se llena en segundo plano si hay internet (ver abajo)
   _riesgoGraficaDatosActual = datos;
-  document.getElementById('graficaNutriTitulo').textContent = '📊 Evaluación Nutricional — ' + nombre;
+  
+  // Agregar edad formateada al título (con edad real y corregida si es prematuro)
+  const edadFormato = _riesgoFormatearEdad(datos.edadMeses, datos.edadCronologica);
+  const tituloCompleto = edadFormato ? `📊 Evaluación Nutricional — ${nombre} (${edadFormato})` : `📊 Evaluación Nutricional — ${nombre}`;
+  document.getElementById('graficaNutriTitulo').textContent = tituloCompleto;
 
   // Siempre arranca en tamaño normal, aunque la vez anterior se haya cerrado en pantalla completa.
   const box = document.getElementById('modal-grafica-nutri-box');
@@ -4248,7 +4288,7 @@ function _riesgoActualizarGrafica(indicadorId) {
 
     resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — <b>${clasifAdulto}</b> (puntos de corte fijos de la OMS para adultos, no varían por edad).${tarjetaConsejoAdulto}`;
   } else {
-    const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor, historialPuntos);
+    const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor, historialPuntos, datos.edadCronologica);
     if (r) {
       const leyenda = r.cortes.map(function(c) {
         return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap;">
