@@ -3713,7 +3713,28 @@ function _riesgoDatosGrafica(edadTexto, notaTexto) {
   const d = _riesgoParsearNota(notaTexto);
   const edadMeses = _riesgoAplicarEdadCorregida(edadCronologica, d.semanasGestacion);
   const seCorrigio = d.semanasGestacion != null && d.semanasGestacion < 37 && edadMeses !== edadCronologica;
+  
+  // Validación de sanidad: rechazar valores imposibles para peso y talla
+  // Peso válido: 0.5 kg (prematuros) a 300 kg
+  // Talla válida: 25 cm (prematuros) a 250 cm
+  if (d.pesoKg != null && (d.pesoKg < 0.5 || d.pesoKg > 300)) {
+    console.warn(`⚠️ Peso descartado por fuera de rango: ${d.pesoKg} kg`);
+    d.pesoKg = null;
+  }
+  if (d.tallaCm != null && (d.tallaCm < 25 || d.tallaCm > 250)) {
+    console.warn(`⚠️ Talla descartada por fuera de rango: ${d.tallaCm} cm`);
+    d.tallaCm = null;
+  }
+  
+  // Debug: mostrar en consola los valores capturados
+  if (d.pesoKg || d.tallaCm) {
+    console.log(`📊 Datos nutricionales capturados: peso=${d.pesoKg} kg, talla=${d.tallaCm} cm`);
+  }
+  
   const imc = (d.pesoKg && d.tallaCm) ? d.pesoKg / Math.pow(d.tallaCm / 100, 2) : null;
+  if (imc && (imc < 5 || imc > 60)) {
+    console.warn(`⚠️ IMC sospechoso: ${imc.toFixed(2)} (peso=${d.pesoKg}, talla=${d.tallaCm})`);
+  }
 
   const disponibles = [];
   if (edadMeses < 228 && d.sexo) {
