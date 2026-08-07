@@ -1205,6 +1205,17 @@
         <!-- Menú -->
         <div class="menu-section-label">Acciones</div>
 
+        <button class="menu-btn" onclick="abrirGuiaUsuario()">
+            <div class="menu-btn-icon" style="background:#7c3aed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Guía del Usuario</div>
+                <div class="mbs">Cómo llenar cada campo y activar la gráfica</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <button class="menu-btn" onclick="irA('screen-nuevo')">
             <div class="menu-btn-icon teal">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
@@ -1348,6 +1359,7 @@
             Inicio
         </button>
         <span class="topbar-title" id="nuevo-titulo">Nueva Visita</span>
+        <button class="topbar-btn secondary" onclick="abrirGuiaUsuario()" title="Guía del Usuario" style="flex-shrink:0;">📘 Guía</button>
     </div>
 
     <div class="scroller">
@@ -1424,9 +1436,9 @@
                         <div class="guia-nutri-box" id="guia-nutri-r">
                             📊 Para que el sistema detecte automáticamente el peso/talla/IMC contra las tablas OMS, escribe estos datos <b>con su unidad</b> dentro de Hallazgos:
                             <ul>
-                                <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
-                                <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
-                                <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>/<code>centímetros</code>, <code>1.08 m</code>/<code>mts</code>/<code>metros</code>, o <code>mide</code>/<code>altura</code>/<code>estatura: 108</code> sin unidad</li>
+                                <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos). Si no escribes ninguna de estas palabras, el sistema intenta reconocer el sexo por el <b>nombre propio</b> de la persona.</li>
+                                <li><b>Peso:</b> <code>16 kg</code>, <code>59.5 kg</code>, <code>59. 5 kg</code> (tolera espacios), <code>16k</code>, <code>110 libras</code>/<code>lb</code>, <code>pesa 16</code>, <code>peso: 16</code>, <code>se toma peso 16 kg</code>, <code>psa: 16</code>/<code>pso: 16</code></li>
+                                <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>, <code>1.08 m</code>/<code>1. 08 m</code> (tolera espacios), <code>centímetros</code>/<code>metros</code>, <code>mide 108</code>, <code>estatura 108</code>, <code>altura 1.08</code>, <code>se toma talla 108 cm</code>, <code>tal: 108</code>/<code>t.: 108</code></li>
                                 <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
                                 <li><b>Presión arterial:</b> <code>120/80</code></li>
                                 <li><b>Glucosa:</b> <code>glucosa 130</code></li>
@@ -1434,7 +1446,8 @@
                                 <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
                                 <li><b>Prematuro:</b> escribe <code>nació a las 32 semanas</code> o <code>prematuro de 32 semanas</code> — el sistema calcula sola la edad corregida</li>
                             </ul>
-                            En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
+                            En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).<br>
+                            <span style="font-size:.75rem;color:var(--text-muted);margin-top:.3rem;display:inline-block;">💡 <b>Tip:</b> Si escribes con espacios en decimales (<code>59. 5</code>) o en distintos formatos, el sistema lo captura automáticamente.</span>
                         </div>
                         <textarea id="r-hallazgos" placeholder="Describa los hallazgos encontrados durante la visita..."></textarea>
                         <button type="button" id="btn-grafica-r" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('r')" disabled>📊 Ver estado nutricional (sin internet)</button>
@@ -1978,6 +1991,71 @@
 </div>
 
 <!-- ════════════════════════════
+     MODAL: GUÍA DEL USUARIO
+════════════════════════════ -->
+<div class="modal-bg" id="modal-guia" onclick="cerrarModal('modal-guia')">
+    <div class="modal-box" style="max-width:620px;" onclick="event.stopPropagation()">
+        <div class="modal-box-inner" style="position:relative; text-align:left; max-height:80vh; overflow-y:auto;">
+            <button class="modal-close-x" onclick="cerrarModal('modal-guia')">✕</button>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:.3rem">📘 Guía del Usuario</h3>
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:1.1rem">
+                Cómo llenar cada campo del registro, y qué escribir para que la gráfica nutricional (📊) funcione.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1rem 0 .4rem;">🧑‍🤝‍🧑 Seleccionar paciente / Nombre del Usuario</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0;">
+                Puedes usar <b>"Seleccionar paciente"</b> para tomar el nombre, vivienda y datos ya guardados desde tu Catálogo de Familias, o escribir el <b>Nombre completo</b> directamente si es la primera vez que la registras.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1rem 0 .4rem;">📅 Fecha, Hora y No. Vivienda</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0;">
+                Fecha y hora se llenan con el selector nativo del celular. El número de vivienda es el que usas en tu croquis o mapa sanitario; si ya la registraste antes, el sistema te la sugiere automáticamente.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1rem 0 .4rem;">🎂 Edad</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0 0 .4rem;">
+                Escribe siempre número + unidad, así el sistema calcula bien las estadísticas y la gráfica:
+            </p>
+            <ul style="font-size:.85rem;line-height:1.7;margin:0 0 .4rem;padding-left:1.2rem;">
+                <li>Adultos y niños mayores: <b>"35 años"</b>, <b>"12 años"</b> (también sirve la forma corta "35a")</li>
+                <li>Bebés y niños pequeños: <b>"1 año 2 meses"</b>, <b>"8 meses"</b> (también sirve "8m")</li>
+                <li>Recién nacidos: <b>"15 días"</b></li>
+                <li>Si nació prematuro, menciónalo en Hallazgos: <b>"nació a las 32 semanas"</b> o <b>"prematuro de 30 semanas"</b> — el sistema ajusta automáticamente la edad para la gráfica.</li>
+            </ul>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1rem 0 .4rem;">📝 Hallazgos / ✅ Acciones Ejecutadas</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0;">
+                Escribe con tus propias palabras lo que observaste y lo que hiciste durante la visita. Puedes dejarlo así (sin IA) o presionar "✨ Generar Informe Profesional" para que se redacte en formato formal — la IA siempre toma como base lo que ya escribiste aquí.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--success, #0d9488);margin:1.1rem 0 .4rem;border-top:1px solid var(--border);padding-top:.9rem;">📊 Cómo activar la gráfica nutricional</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0 0 .5rem;">
+                El botón "📊 Ver estado nutricional" se activa automáticamente cuando detecta suficientes datos escritos en <b>Hallazgos</b> (o en Edad). Usa estas palabras clave:
+            </p>
+            <ul style="font-size:.85rem;line-height:1.8;margin:0 0 .5rem;padding-left:1.2rem;">
+                <li><b>Sexo</b> (en menores de edad): usa "niño" / "niña", o "masculino" / "femenino", o "varón" / "mujer". Ejemplo: <i>"Se evaluó a la niña..."</i>. Si no se escribe ninguna de estas palabras, el sistema intenta reconocer el sexo por el nombre propio de la persona.</li>
+                <li><b>Peso</b>: número + "kg" (ej. <i>"peso de 16 kg"</i>, "16.5kg", "59. 5 kg" — <b>tolera espacios</b>), <code>pesa 16</code>, <code>se toma peso 16</code>, <code>psa: 16</code>/<code>pso: 16</code>, o + "libras"/"lbs" si tu báscula es en libras.</li>
+                <li><b>Talla / estatura</b>: número + "cm" (ej. <i>"talla de 108 cm"</i>) o en metros (ej. "1.08 m", "1. 08 m" — <b>tolera espacios</b>, "1.08 mts"). También funciona con "mide", "talla", "estatura", "altura" sin unidad: <i>"mide 170"</i>, "se toma talla 108", "tal: 108".</li>
+                <li><b>Adultos</b>: con peso y talla es suficiente para calcular el IMC; no hace falta especificar sexo.</li>
+                <li><b>Otros datos que también detecta</b>: Hemoglobina (<code>Hb 13.5</code>), Presión arterial (<code>120/80</code>), Glucosa (<code>glucosa 130</code>), Temperatura (<code>38.5°C</code>) y Embarazo (<code>embarazada</code>/<code>gestante</code>).</li>
+            </ul>
+            <p style="font-size:.85rem;line-height:1.6;margin:0; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:.6rem .7rem;">
+                💡 Ejemplo completo: <i>"Se identificó niña de 3 años con un peso de 13 kg y una talla de 90 cm"</i> — con eso el sistema ya puede dibujar la gráfica OMS y clasificar el estado nutricional, sin necesidad de internet ni de generar con IA. También funciona con espacios: <i>"peso de 13 . 5 kg"</i> o <i>"talla de 1 . 50 m"</i>.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1.1rem 0 .4rem;">✨ Generar con IA</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0;">
+                Configura tu clave API gratuita en "Mi Perfil" (⚙️). Luego, escribe la idea básica en Hallazgos y presiona "✨ Generar Informe Profesional": la IA redacta Hallazgos y Acciones en formato oficial, y respeta la evaluación nutricional ya calculada localmente (sin internet) contra las tablas OMS.
+            </p>
+
+            <div style="text-align:right; margin-top:1.1rem;">
+                <button type="button" onclick="cerrarModal('modal-guia')" style="background:var(--navy2,#0056b3); color:white; border:none; padding:.5rem 1.1rem; border-radius:8px; cursor:pointer; font-weight:600;">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════
      MODAL: SIGUIENTE ACCIÓN
 ════════════════════════════ -->
 <div class="modal-bg" id="modal-siguiente">
@@ -2068,7 +2146,7 @@
                     <div class="guia-nutri-box" id="guia-nutri-e">
                         📊 Para que el sistema detecte automáticamente el peso/talla/IMC contra las tablas OMS, escribe estos datos <b>con su unidad</b> dentro de Hallazgos:
                         <ul>
-                            <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos)</li>
+                            <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos). Si no escribes ninguna de estas palabras, el sistema intenta reconocer el sexo por el <b>nombre propio</b> de la persona.</li>
                             <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
                             <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>/<code>centímetros</code>, <code>1.08 m</code>/<code>mts</code>/<code>metros</code>, o <code>mide</code>/<code>altura</code>/<code>estatura: 108</code> sin unidad</li>
                             <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
@@ -3485,9 +3563,83 @@ function riesgoTemperatura(gradosC) {
   if (gradosC <= 38) return 'Febrícula';
   return 'Fiebre';
 }
+// ===== Inferencia de sexo por nombre propio (respaldo cuando la nota no trae palabras =====
+// ===== explícitas de género, ej. "Juan Pérez, 3 años, 14 kg" sin decir "niño") =====
+// Se usa SOLO como último recurso, después de intentar detectar el sexo por palabras
+// explícitas en el texto (niño/niña, varón/mujer, etc.), que siempre tienen prioridad.
+// Está basada en nombres comunes en El Salvador/Centroamérica, más una regla de
+// terminación (-a/-o) para nombres no listados. Si el nombre es ambiguo o desconocido,
+// devuelve null a propósito: es preferible no graficar a graficar con el sexo mal
+// adivinado, porque las tablas de crecimiento de la OMS son distintas para niños y niñas.
+const _NOMBRES_FEMENINOS = new Set(['maria','ana','rosa','carmen','juana','francisca','antonia',
+  'josefa','dolores','guadalupe','teresa','isabel','cristina','patricia','sandra','karla','karen',
+  'erika','erica','vilma','marta','martha','yesenia','yanira','wendy','xiomara','blanca','silvia',
+  'gloria','elena','lorena','leticia','veronica','vanessa','diana','daniela','andrea','alejandra',
+  'fatima','esperanza','esmeralda','estefany','estefani','estefania','jessica','jesica','kimberly',
+  'kelly','katherine','catherine','melissa','michelle','monica','norma','nohemy','noemi','noemy',
+  'paola','perla','reina','roxana','ruth','sara','susana','sonia','sofia','stefany','zulma','zoila',
+  'ivonne','yolanda','yamileth','yamilet','ingrid','iris','irma','gladys','gabriela','fernanda',
+  'flor','delmy','deysi','deisy','dinora','elsy','elsa','emely','emily','estela','esther','evelyn',
+  'griselda','heidy','hilda','idalia','jacqueline','jaqueline','jenny','jennifer','judith','julissa',
+  'karina','kenia','laura','lidia','lilian','liliana','lissette','lourdes','luz','lucia','magdalena',
+  'marlene','marleny','marisol','maritza','mayra','mirna','mirian','miriam','nancy','nataly','natalia',
+  'nelly','nidia','olga','pamela','priscila','priscilla','rebeca','reyna','rocio','rosario','rosibel',
+  'sandy','scarlett','shirley','tatiana','violeta','vivian','xenia','yesica','zoraida','beatriz',
+  'claudia','cecilia','concepcion','consuelo','socorro','amparo','trinidad','soledad','milagro',
+  'milagros','carolina','angela','angelica','adriana','alicia','amanda','araceli','beverly','brenda',
+  'candelaria','celia','denisse','edith','elizabeth','emilia','eugenia','eva','flora','gisela',
+  'graciela','ileana','ivette','jimena','johana','juanita','julia','katia','leidy','lesly','lizbeth',
+  'lizeth','luisa','marcela','margarita','marilyn','marina','marisela','marleny','melany','mildred',
+  'nayeli','nery','olivia','ondina','paloma','pilar','rina','rita','rosa','sarai','saraí','stephanie',
+  'suyapa','thelma','vicky','victoria','virginia','yesenia','yenifer','yeimy','zenaida'
+]);
+const _NOMBRES_MASCULINOS = new Set(['jose','juan','carlos','luis','miguel','francisco','antonio',
+  'manuel','pedro','pablo','ricardo','roberto','rafael','fernando','alberto','alejandro','alexander',
+  'alexis','alvaro','andres','angel','armando','arnoldo','byron','cesar','cristian','christian',
+  'danilo','daniel','david','diego','edgar','eduardo','edwin','elmer','emerson','enrique','ernesto',
+  'esteban','ezequiel','federico','felipe','gerardo','gilberto','guillermo','gustavo','hector','henry',
+  'herbert','hugo','humberto','ismael','israel','ivan','jaime','javier','jefferson','jeremias',
+  'jhonny','johnny','jonathan','jonatan','jorge','josue','julio','kevin','leonardo','lorenzo','marco',
+  'marcos','mario','martin','mauricio','maximiliano','melvin','milton','moises','nelson','nery','noe',
+  'oscar','oswaldo','rene','reynaldo','rigoberto','rodrigo','ronald','rony','rosendo','salvador',
+  'samuel','santiago','saul','sergio','simon','tomas','ulises','vicente','victor','walter','wilfredo',
+  'wilber','wilmer','william','yosimar','yovani','abel','abraham','adan','adolfo','agustin','alfonso',
+  'alfredo','amilcar','anibal','aristides','arturo','baltazar','bayron','benjamin','bernardo','bladimir',
+  'bonifacio','bryan','cecilio','celso','cristobal','damian','danny','darwin','denis','dennis','dilan',
+  'dilcia','domingo','donaldo','edin','edison','efrain','elias','elias','elvin','emanuel','emiliano',
+  'erick','erik','estuardo','ever','ezequiel','fabian','fausto','feliciano','fidel','franklin','freddy',
+  'gabriel','geovani','geovanni','german','gonzalo','gregorio','heriberto','hipolito','honorio',
+  'horacio','isaias','isidro','jacobo','jhon','john','jonas','jose maria','josimar','juan carlos',
+  'juanjose','julian','justo','kenneth','leandro','leonel','levi','lisandro','luciano','mardoqueo',
+  'marlon','mateo','mauro','maynor','misael','nahum','nahún','napoleon','narciso','nehemias','nery',
+  'nestor','nicolas','norman','omar','onofre','orlando','osman','otoniel','pascual','porfirio',
+  'quintin','ramiro','ramon','raul','regino','remigio','renan','ronaldo','rubén','ruben','salomon',
+  'santos','saturnino','sebastian','severo','silvestre','tobias','ubaldo','urbano','valentin',
+  'vidal','wagner','wenceslao','wendel','wilder','wilson','yeferson','yerson','ysrael','zacarias'
+]);
+// Nombres que rompen la regla de terminación en -a/-o (excepciones conocidas)
+const _EXCEP_FEM_TERMINA_O = new Set(['rosario','consuelo','socorro','amparo']);
+const _EXCEP_MASC_TERMINA_A = new Set(['jose maria','luca','job','elisha']);
+
+function _riesgoInferirSexoPorNombre(nombreCompleto) {
+  if (!nombreCompleto) return null;
+  const primer = String(nombreCompleto).trim().split(/\s+/)[0]
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // quita tildes para comparar
+  if (!primer || primer.length < 2) return null;
+  if (_NOMBRES_FEMENINOS.has(primer)) return 'F';
+  if (_NOMBRES_MASCULINOS.has(primer)) return 'M';
+  if (_EXCEP_FEM_TERMINA_O.has(primer)) return 'F';
+  if (_EXCEP_MASC_TERMINA_A.has(primer)) return 'M';
+  // Última regla, solo si el nombre no estaba en ninguna lista de arriba
+  if (/a$/.test(primer)) return 'F';
+  if (/o$/.test(primer)) return 'M';
+  return null; // nombre ambiguo o desconocido: no se adivina
+}
+
 // ===== Extrae edad/sexo/peso/talla/laboratorios de una nota en texto libre =====
 // Solo detecta valores que llevan unidad explícita (evita adivinar con números sueltos).
-function _riesgoParsearNota(texto) {
+function _riesgoParsearNota(texto, nombre) {
   const t = (texto || '');
   const datos = {};
 
@@ -3508,6 +3660,12 @@ function _riesgoParsearNota(texto) {
     if (/\bla\s+(paciente|adolescente|menor|bebé|usuaria)\b/i.test(t)) datos.sexo = 'F';
     else if (/\bel\s+(paciente|adolescente|menor|bebé|usuario)\b/i.test(t)) datos.sexo = 'M';
   }
+  // Respaldo final: si la nota no reveló el sexo con ninguna palabra explícita, se intenta
+  // inferir por el nombre propio de la persona (campo "Nombre", dato separado de la nota).
+  if (!datos.sexo && nombre) {
+    const sexoPorNombre = _riesgoInferirSexoPorNombre(nombre);
+    if (sexoPorNombre) datos.sexo = sexoPorNombre;
+  }
 
   // Embarazo (afecta el umbral de hemoglobina)
   datos.embarazada = /\b(embaraz\w*|gestante)\b/i.test(t);
@@ -3523,48 +3681,150 @@ function _riesgoParsearNota(texto) {
     if (sg >= 20 && sg <= 42) datos.semanasGestacion = sg;
   }
 
-  // Peso: "16 kg", "16kg", "16.5 kg", "16 kgs", "16 kg.", y abreviatura rápida "16k" (sin la g)
-  m = t.match(/(\d+(?:[.,]\d+)?)\s*kgs?\.?(?:\s|$|[.,;)])/i);
-  if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
+  // ════════════════════════════════════════════════════════════════
+  // PESO: tolerancia a espacios decimales y múltiples patrones
+  // ════════════════════════════════════════════════════════════════
+  // Patrones soportados:
+  // "59.5 kg", "59, 5 kg", "59. 5 kg", "peso 59.5 kg", "se toma peso 59.5 kg",
+  // "reporta 59.5 kgs", "pesa 59.5", "pso: 59.5", "p: 59.5", "pt 59.5"
+  
+  // Patrón 1: número con decimales (tolerancia a espacios) + unidad kg
+  m = t.match(/(\d+)\s*[.,]\s*(\d+)\s*kgs?\.?(?:\s|$|[.,;)])/i);
+  if (m) {
+    datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
+  }
+  // Patrón 2: número entero o decimal normal + unidad kg
   else {
-    m = t.match(/(\d+(?:[.,]\d+)?)\s*k\.?(?:\s|$|[.,;)])/i);
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*kgs?\.?(?:\s|$|[.,;)])/i);
     if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
   }
+  // Patrón 3: frases como "se toma/tomó peso", "reporta peso", "el peso es"
   if (datos.pesoKg == null) {
-    // Peso en libras: "110 libras", "110 lb", "110 lbs" → se convierte a kg (báscula en libras).
-    // Si no se convierte aquí, el número en libras se usaría tal cual como si fueran kg,
-    // dando un IMC muy por encima del real.
-    m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:libras?|lbs?)\.?(?:\s|$|[.,;)])/i);
-    if (m) datos.pesoKg = Math.round(parseFloat(m[1].replace(',', '.')) * 0.453592 * 10) / 10;
-  }
-  if (datos.pesoKg == null) {
-    // Respaldo: la palabra "peso"/"pesa" ya deja claro qué es el número, aunque no traiga
-    // ninguna unidad ("Peso: 65", "pesa 65"). Solo se acepta si el número cae en un rango
-    // humano plausible (evita capturar por error una edad, hora, etc.).
-    m = t.match(/\bpes[oa]\w*\b\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+    m = t.match(/(?:se\s+(?:toma|tomó|tomo)|se\s+determina|se\s+registra|reporta|se\s+encuentra)\s+(?:peso|pso)?[\s:]*(\d+)\s*[.,]\s*(\d+)\s*kgs?/i);
     if (m) {
-      const v = parseFloat(m[1].replace(',', '.'));
-      if (v >= 1.5 && v <= 400) datos.pesoKg = v;
+      datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
+    } else {
+      m = t.match(/(?:se\s+(?:toma|tomó|tomo)|se\s+determina|se\s+registra|reporta|se\s+encuentra)\s+(?:peso|pso)?[\s:]*(\d+(?:[.,]\d+)?)\s*kgs?/i);
+      if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
     }
   }
-
-  // Talla: "108 cm", "108 cms", "170 centímetros", "1.08 m", "1,08 m", "1.08 mts", "1.08 mts.", "1.70 metros"
-  m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:cms?|cent[ií]metros?)\.?(?:\s|$|[.,;)])/i);
-  if (m) datos.tallaCm = parseFloat(m[1].replace(',', '.'));
-  else {
-    m = t.match(/(\d+[.,]\d+)\s*(?:mts?|metros?)\.?(?:\s|$|[.,;)])/i);
-    if (m) datos.tallaCm = Math.round(parseFloat(m[1].replace(',', '.')) * 100 * 10) / 10;
+  // Patrón 4: abreviaturas y variaciones "psa", "pso", "pt", "p."
+  if (datos.pesoKg == null) {
+    m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+)\s*[.,]\s*(\d+)\b/i);
+    if (m) datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
+    else {
+      m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+      if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
+    }
   }
-  if (datos.tallaCm == null) {
-    // Respaldo: "talla"/"mide"/"estatura"/"altura" sin unidad, ya sea ANTES del número
-    // ("mide 170", "altura: 1.70") o DESPUÉS ("1.70 metros de estatura", "170 de talla").
-    // Si el número trae decimales y es menor a 3, se asume que está en metros; si no, cm.
-    m = t.match(/\b(?:talla|mide|estatura|altura)\w*\b\s*(?:es\s*de|de|es|:)?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
-    if (!m) m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:metros?|cm|cms)?\s*(?:de\s+)?(?:talla|estatura|altura)\w*\b/i);
+  // Patrón 5: "pesa/peso" con número (ej. "pesa 59.5", "peso de 65 kg")
+  if (datos.pesoKg == null) {
+    m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+)\s*[.,]\s*(\d+)/i);
     if (m) {
-      const v = parseFloat(m[1].replace(',', '.'));
-      if (v > 0 && v < 3) { if (v >= 0.3) datos.tallaCm = v * 100; }
-      else if (v >= 30 && v <= 250) datos.tallaCm = v;
+      datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
+    } else {
+      m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (v >= 1.5 && v <= 400) datos.pesoKg = v;
+      }
+    }
+  }
+  // Patrón 6: Peso en libras (conversión a kg)
+  if (datos.pesoKg == null) {
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:libras?|lb\.?s?|lbs?)\.?(?:\s|$|[.,;)])/i);
+    if (m) datos.pesoKg = Math.round(parseFloat(m[1].replace(',', '.')) * 0.453592 * 10) / 10;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // TALLA: tolerancia a espacios decimales y múltiples patrones
+  // ════════════════════════════════════════════════════════════════
+  // Patrones soportados:
+  // "139 cm", "1.39 m", "1,39 m", "1. 39 m", "talla 139 cm", "se toma talla 139",
+  // "mide 139 cm", "estatura 1.39 m", "altura: 1.39", "tall: 139", "t: 139", "tal 139",
+  // "139 cms", "139 centímetros", "1.39 metros", "1.39 mts"
+  
+  // Patrón 1: número en metros con decimales (tolerancia a espacios) + unidad metro
+  m = t.match(/(\d+)\s*[.,]\s*(\d+)\s*(?:mts?|metros?)\.?(?:\s|$|[.,;)])/i);
+  if (m) {
+    const valorMetros = parseFloat(m[1] + '.' + m[2]);
+    if (valorMetros > 0 && valorMetros < 3) datos.tallaCm = Math.round(valorMetros * 100 * 10) / 10;
+  }
+  // Patrón 2: número en cm + unidad cm
+  else {
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:cms?|cent[ií]metros?)\.?(?:\s|$|[.,;)])/i);
+    if (m) datos.tallaCm = parseFloat(m[1].replace(',', '.'));
+  }
+  // Patrón 3: número en metros sin tolerancia a espacios (ej. 1.39m)
+  if (datos.tallaCm == null) {
+    m = t.match(/(\d+[.,]\d+)\s*(?:mts?|metros?)\.?(?:\s|$|[.,;)])/i);
+    if (m) {
+      const valorMetros = parseFloat(m[1].replace(',', '.'));
+      if (valorMetros > 0 && valorMetros < 3) datos.tallaCm = Math.round(valorMetros * 100 * 10) / 10;
+    }
+  }
+  // Patrón 4: frases como "se toma/tomó talla", "se registra talla", "se determina estatura"
+  if (datos.tallaCm == null) {
+    m = t.match(/(?:se\s+(?:toma|tomó|tomo)|se\s+determina|se\s+registra|se\s+encuentra)\s+(?:talla|tall|estatura|altura)[\s:]*(\d+)\s*[.,]\s*(\d+)\s*(?:cm|mts?)?/i);
+    if (m) {
+      const valorNum = parseFloat(m[1] + '.' + m[2]);
+      if (valorNum >= 30 && valorNum <= 250) datos.tallaCm = valorNum;
+      else if (valorNum > 0 && valorNum < 3) datos.tallaCm = Math.round(valorNum * 100 * 10) / 10;
+    } else {
+      m = t.match(/(?:se\s+(?:toma|tomó|tomo)|se\s+determina|se\s+registra|se\s+encuentra)\s+(?:talla|tall|estatura|altura)[\s:]*(\d+(?:[.,]\d+)?)\s*(?:cm|mts?)?/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (v >= 30 && v <= 250) datos.tallaCm = v;
+        else if (v > 0 && v < 3) datos.tallaCm = Math.round(v * 100 * 10) / 10;
+      }
+    }
+  }
+  // Patrón 5: "mide/talla/estatura/altura" seguida de número (ej. "mide 139 cm", "altura: 1.39 m")
+  if (datos.tallaCm == null) {
+    m = t.match(/\b(?:talla|mide|estatura|altura)\w*\b\s*(?:es\s*de|de|es|:)?\s*[:\-]?\s*(\d+)\s*[.,]\s*(\d+)/i);
+    if (m) {
+      const valorNum = parseFloat(m[1] + '.' + m[2]);
+      if (valorNum >= 30 && valorNum <= 250) datos.tallaCm = valorNum;
+      else if (valorNum > 0 && valorNum < 3) datos.tallaCm = Math.round(valorNum * 100 * 10) / 10;
+    } else {
+      m = t.match(/\b(?:talla|mide|estatura|altura)\w*\b\s*(?:es\s*de|de|es|:)?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (v >= 30 && v <= 250) datos.tallaCm = v;
+        else if (v > 0 && v < 3) datos.tallaCm = Math.round(v * 100 * 10) / 10;
+      }
+    }
+  }
+  // Patrón 6: número seguido de "de talla/estatura/altura" (ej. "139 de talla", "1.39 m de estatura")
+  if (datos.tallaCm == null) {
+    m = t.match(/(\d+)\s*[.,]\s*(\d+)\s*(?:de\s+)?(?:talla|estatura|altura|tall)\b/i);
+    if (m) {
+      const valorNum = parseFloat(m[1] + '.' + m[2]);
+      if (valorNum >= 30 && valorNum <= 250) datos.tallaCm = valorNum;
+      else if (valorNum > 0 && valorNum < 3) datos.tallaCm = Math.round(valorNum * 100 * 10) / 10;
+    } else {
+      m = t.match(/(\d+(?:[.,]\d+)?)\s*(?:de\s+)?(?:talla|estatura|altura|tall)\b/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (v >= 30 && v <= 250) datos.tallaCm = v;
+        else if (v > 0 && v < 3) datos.tallaCm = Math.round(v * 100 * 10) / 10;
+      }
+    }
+  }
+  // Patrón 7: abreviaturas cortas "tal", "t.", "tl", "tal:" 
+  if (datos.tallaCm == null) {
+    m = t.match(/\b(?:tal|tl|t\.)\s*[:\-]?\s*(\d+)\s*[.,]\s*(\d+)/i);
+    if (m) {
+      const valorNum = parseFloat(m[1] + '.' + m[2]);
+      if (valorNum >= 30 && valorNum <= 250) datos.tallaCm = valorNum;
+      else if (valorNum > 0 && valorNum < 3) datos.tallaCm = Math.round(valorNum * 100 * 10) / 10;
+    } else {
+      m = t.match(/\b(?:tal|tl|t\.)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (v >= 30 && v <= 250) datos.tallaCm = v;
+        else if (v > 0 && v < 3) datos.tallaCm = Math.round(v * 100 * 10) / 10;
+      }
     }
   }
 
@@ -3635,8 +3895,8 @@ function _riesgoParsearEdadCampo(texto) {
 // ya resuelta desde el campo "Edad" dedicado (más confiable que buscarla en el texto libre).
 // Devuelve una etiqueta corta lista para anteponer al prompt de la IA, o null si no hay
 // datos suficientes/confiables para evaluar nada.
-function riesgoEvaluarNota(texto, edadMesesCampo) {
-  const d = _riesgoParsearNota(texto);
+function riesgoEvaluarNota(texto, edadMesesCampo, nombre) {
+  const d = _riesgoParsearNota(texto, nombre);
   if (edadMesesCampo != null) d.edadMeses = edadMesesCampo;
   const partes = [];
 
@@ -3707,10 +3967,10 @@ function _riesgoValorParaZ(L, M, S, z) {
 // A partir del texto de Edad + Hallazgos (o nota) de un registro, determina qué indicadores
 // nutricionales aplican (Peso/Edad, Talla/Edad, IMC/Edad en menores; IMC en adultos) y con
 // qué valor. Devuelve null si no hay datos suficientes (sexo, edad, peso o talla).
-function _riesgoDatosGrafica(edadTexto, notaTexto) {
+function _riesgoDatosGrafica(edadTexto, notaTexto, nombreTexto) {
   const edadCronologica = _riesgoParsearEdadCampo(edadTexto);
   if (edadCronologica == null) return null;
-  const d = _riesgoParsearNota(notaTexto);
+  const d = _riesgoParsearNota(notaTexto, nombreTexto);
   const edadMeses = _riesgoAplicarEdadCorregida(edadCronologica, d.semanasGestacion);
   const seCorrigio = d.semanasGestacion != null && d.semanasGestacion < 37 && edadMeses !== edadCronologica;
   
@@ -3779,9 +4039,9 @@ function _riesgoClaveIdentidad(vivienda, nombre) {
 async function _riesgoGuardarHistorialPeso(reg) {
   try {
     if (!reg || !reg.nombre || !reg.fecha) return;
-    const datos = _riesgoDatosGrafica(reg.edad || '', reg.hallazgos || '');
+    const datos = _riesgoDatosGrafica(reg.edad || '', reg.hallazgos || '', reg.nombre || '');
     if (!datos) return; // sin edad/sexo/peso-talla detectables, no hay nada que archivar
-    const dParse = _riesgoParsearNota(reg.hallazgos || '');
+    const dParse = _riesgoParsearNota(reg.hallazgos || '', reg.nombre || '');
     if (dParse.pesoKg == null && dParse.tallaCm == null) return;
 
     const docId = _docIdPromotor();
@@ -4129,7 +4389,7 @@ function abrirGraficaNutricional(regId) {
   const r = registros.find(x => String(x.id) === String(regId));
   if (!r) return;
 
-  const datos = _riesgoDatosGrafica(r.edad || '', r.hallazgos || '');
+  const datos = _riesgoDatosGrafica(r.edad || '', r.hallazgos || '', r.nombre || '');
   if (!datos) { toast('⚠️ No hay suficientes datos (edad, sexo, peso o talla) en este registro para graficar', 'error'); return; }
 
   _riesgoAbrirGraficaConDatos(datos, r.nombre || 'Persona', r.vivienda || '');
@@ -4144,7 +4404,9 @@ function abrirGraficaNutricional(regId) {
 function _puedeGraficar(prefijo) {
   const edad = document.getElementById(`${prefijo}-edad`).value;
   const hallazgos = document.getElementById(`${prefijo}-hallazgos`).value;
-  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '');
+  const nombreEl = document.getElementById(`${prefijo}-nombre`);
+  const nombre = nombreEl ? nombreEl.value : '';
+  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '', nombre || '');
   return datos != null;
 }
 
@@ -4163,7 +4425,7 @@ function abrirGraficaNutricionalForm(prefijo) {
   const vivEl = document.getElementById(`${prefijo}-vivienda`);
   const vivienda = vivEl ? vivEl.value : '';
 
-  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '');
+  const datos = _riesgoDatosGrafica(edad || '', hallazgos || '', nombre || '');
   if (!datos) { toast('⚠️ Escribe la Edad y, en Hallazgos, el sexo + peso y/o talla (ver la Guía ℹ️) para poder graficar', 'error'); return; }
 
   _riesgoAbrirGraficaConDatos(datos, nombre || 'Persona', vivienda || '');
@@ -4457,6 +4719,10 @@ function _riesgoActualizarGrafica(indicadorId) {
     }
     function cerrarModal(id) {
       document.getElementById(id).classList.remove('show');
+    }
+
+    function abrirGuiaUsuario() {
+      document.getElementById('modal-guia').classList.add('show');
     }
 
     function toggleGuiaNutri(prefijo) {
@@ -4757,7 +5023,7 @@ function _riesgoActualizarGrafica(indicadorId) {
       // tablas oficiales OMS, a partir de valores CON UNIDAD explícita en la nota
       // (ej. "16 kg", "108 cm", "Hb 13.5") y la edad ya escrita en el campo dedicado.
       const edadMesesDetectada = _riesgoParsearEdadCampo(edad);
-      const etiquetaRiesgo = riesgoEvaluarNota(notasCompletas, edadMesesDetectada);
+      const etiquetaRiesgo = riesgoEvaluarNota(notasCompletas, edadMesesDetectada, nombre);
       let refuerzoRiesgo = "";
       if (etiquetaRiesgo) {
         refuerzoRiesgo = `\n${etiquetaRiesgo}\nEsta clasificación fue calculada matemáticamente contra tablas oficiales OMS (no la inventes ni la contradigas): incorpórala de forma natural y parafraseada dentro de "Hallazgos en la Visita" (ej. "con un peso adecuado para su edad" o "con anemia leve según su hemoglobina"), sin citarla entre corchetes ni mencionar que fue "calculada" o "automática".`;
@@ -5291,7 +5557,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     function tarjetaRegistro(r, sinViv) {
-      const _tieneGrafica = !!_riesgoDatosGrafica(r.edad || '', r.hallazgos || '');
+      const _tieneGrafica = !!_riesgoDatosGrafica(r.edad || '', r.hallazgos || '', r.nombre || '');
       return `
       <div class="record-card${sinViv ? ' sin-viv' : ''}">
         <div class="record-header">
@@ -6466,7 +6732,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       try {
         if (!window.parent || typeof window.parent.riesgoEvaluarNota !== 'function') return null;
         var edadMeses = window.parent._riesgoParsearEdadCampo(it.edad);
-        return window.parent.riesgoEvaluarNota(it.notasCompletas, edadMeses);
+        return window.parent.riesgoEvaluarNota(it.notasCompletas, edadMeses, it.nombre);
       } catch (e) { return null; }
     }
 
