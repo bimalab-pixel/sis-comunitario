@@ -12,7 +12,7 @@ const PRECACHE_URLS = [
   './calculadora_materna.html',
   './mef.html',
   './visita_domiciliar.html',
-  './RegistroDiario_Promotor.html'
+  './RegistroDiario_Promotor.html',
   './MapaSanitario.html'
 ];
 
