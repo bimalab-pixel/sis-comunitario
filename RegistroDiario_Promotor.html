@@ -2194,6 +2194,12 @@
             <button class="modal-close-x" onclick="cerrarModal('modal-grafica-nutri')">✕</button>
             <button class="btn-fullscreen-grafica" id="btnFullscreenGrafica" onclick="toggleFullscreenGrafica()" title="Ver en pantalla completa">⛶</button>
             <h3 id="graficaNutriTitulo">📊 Evaluación Nutricional</h3>
+    <div id="graficaFichaClinica" style="display:none; background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; margin:8px 0 12px; font-size:13px; line-height:1.7;">
+      <div><b>🪪 Nombre:</b> <span id="fichaClinicaNombre">—</span></div>
+      <div><b>🎂 Edad:</b> <span id="fichaClinicaEdad">—</span></div>
+      <div><b>⚖️ Peso:</b> <span id="fichaClinicaPeso">—</span></div>
+      <div><b>📋 Estado nutricional:</b> <span id="fichaClinicaClasificacion" style="font-weight:700;">—</span></div>
+    </div>
             <div id="graficaNutriAvisoPrematuro" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; border-radius:8px; padding:.5rem .7rem; margin-bottom:10px; font-size:.78rem; line-height:1.5;"></div>
             <div id="graficaNutriSelectorWrap" style="margin-bottom:10px;"></div>
             <canvas id="graficaNutriCanvas" width="500" height="300" style="width:100%; height:auto; display:block; background:#fff; border:1px solid var(--border); border-radius:8px;"></canvas>
@@ -3462,33 +3468,60 @@ function _riesgoClasificar(z, cortes) {
   return cortes[cortes.length - 1].texto;
 }
 
+// Terminología y puntos de corte oficiales de MINSAL El Salvador ("Lineamientos técnicos para
+// la atención nutricional y manejo ambulatorio de las personas con malnutrición en el ciclo de
+// vida", Acuerdo N°2827, 2022 — Tabla 2: Índices de evaluación nutricional según edad).
 const CORTES_PESO_EDAD = [
-  { max: -3, texto: 'Bajo peso severo' },
-  { max: -2, texto: 'Bajo peso' },
+  { max: -3, texto: 'Desnutrición severa' },
+  { max: -2, texto: 'Desnutrición' },
   { max: 2,  texto: 'Normal' },
-  { texto: 'Peso alto para la edad' }
+  { texto: 'Peso alto para la edad' } // MINSAL no define esta categoría en Peso/Edad; se usa peso/talla o IMC para sobrepeso/obesidad
 ];
+// Talla/Edad (Longitud/Edad) para 0 a menor de 5 años: normal hasta +2 DE
 const CORTES_TALLA_EDAD = [
-  { max: -3, texto: 'Talla muy baja (retraso de crecimiento severo)' },
-  { max: -2, texto: 'Talla baja para la edad' },
+  { max: -3, texto: 'Retardo severo en el crecimiento' },
+  { max: -2, texto: 'Retardo en el crecimiento' },
   { max: 2,  texto: 'Normal' },
-  { texto: 'Talla alta para la edad' }
+  { texto: 'Talla alta' }
 ];
+// Talla/Edad para 5 a 19 años: MINSAL corre el límite de "Normal" hasta +3 DE (no +2)
+const CORTES_TALLA_EDAD_5_19 = [
+  { max: -3, texto: 'Retardo severo en el crecimiento' },
+  { max: -2, texto: 'Retardo en el crecimiento' },
+  { max: 3,  texto: 'Normal' },
+  { texto: 'Talla alta' }
+];
+// Peso/Talla para 2 a menor de 5 años (aproximado aquí con IMC/Edad de 0-5, misma referencia OMS)
 const CORTES_IMC_0_5 = [
-  { max: -3, texto: 'Emaciación severa' },
-  { max: -2, texto: 'Emaciación' },
-  { max: 1,  texto: 'Normal' },
-  { max: 2,  texto: 'Riesgo de sobrepeso' },
+  { max: -3, texto: 'Desnutrición severa' },
+  { max: -2, texto: 'Desnutrición' },
+  { max: 2,  texto: 'Normal' },
   { max: 3,  texto: 'Sobrepeso' },
   { texto: 'Obesidad' }
 ];
+// IMC/Edad para 5 a 19 años
 const CORTES_IMC_5_19 = [
-  { max: -3, texto: 'Delgadez severa' },
-  { max: -2, texto: 'Delgadez' },
+  { max: -3, texto: 'Desnutrición severa' },
+  { max: -2, texto: 'Desnutrición' },
   { max: 1,  texto: 'Normal' },
   { max: 2,  texto: 'Sobrepeso' },
   { texto: 'Obesidad' }
 ];
+
+// Clasificación de IMC en adultos, según MINSAL El Salvador. Se separa la persona adulta mayor
+// (60 años o más) porque usa puntos de corte distintos a los del adulto de 20-59 años.
+function _riesgoClasificarIMCAdulto(imc, edadMeses) {
+  if (edadMeses != null && edadMeses >= 720) { // 60 años o más
+    if (imc <= 23) return 'Desnutrición';
+    if (imc < 28) return 'Normal';
+    if (imc < 32) return 'Sobrepeso';
+    return 'Obesidad';
+  }
+  if (imc < 18.5) return 'Peso bajo';
+  if (imc < 25) return 'Normal';
+  if (imc < 30) return 'Sobrepeso';
+  return 'Obesidad';
+}
 
 // Evalúa Peso/Edad, Talla/Edad e IMC/Edad. edadMeses y sexo ('M'|'F') deben venir detectados con certeza.
 function riesgoCrecimiento(edadMeses, sexo, pesoKg, tallaCm) {
@@ -3511,7 +3544,7 @@ function riesgoCrecimiento(edadMeses, sexo, pesoKg, tallaCm) {
   } else if (edadMeses <= 228) {
     if (tallaCm != null) {
       const lms = _riesgoLMS(sexo === 'M' ? _OMS_HFA519_M : _OMS_HFA519_F, 61, edadMeses);
-      if (lms) res.tallaEdad = _riesgoClasificar(_riesgoZ(lms[0], lms[1], lms[2], tallaCm), CORTES_TALLA_EDAD);
+      if (lms) res.tallaEdad = _riesgoClasificar(_riesgoZ(lms[0], lms[1], lms[2], tallaCm), CORTES_TALLA_EDAD_5_19);
     }
     if (imc != null) {
       const lms = _riesgoLMS(sexo === 'M' ? _OMS_BMIFA519_M : _OMS_BMIFA519_F, 61, edadMeses);
@@ -3519,11 +3552,7 @@ function riesgoCrecimiento(edadMeses, sexo, pesoKg, tallaCm) {
     }
   } else if (imc != null) {
     // Adulto: IMC con puntos de corte fijos OMS (no requiere tabla por edad)
-    let texto;
-    if (imc < 18.5) texto = 'Bajo peso';
-    else if (imc < 25) texto = 'Normal';
-    else if (imc < 30) texto = 'Sobrepeso';
-    else texto = 'Obesidad';
+    const texto = _riesgoClasificarIMCAdulto(imc, edadMeses);
     res.imcAdulto = texto;
   }
   return res;
@@ -3710,23 +3739,33 @@ function _riesgoParsearNota(texto, nombre) {
   }
   // Patrón 4: abreviaturas y variaciones "psa", "pso", "pt", "p."
   if (datos.pesoKg == null) {
-    m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+)\s*[.,]\s*(\d+)\b/i);
-    if (m) datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
-    else {
-      m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
-      if (m) datos.pesoKg = parseFloat(m[1].replace(',', '.'));
-    }
-  }
-  // Patrón 5: "pesa/peso" con número (ej. "pesa 59.5", "peso de 65 kg")
-  if (datos.pesoKg == null) {
-    m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+)\s*[.,]\s*(\d+)/i);
+    m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+)\s*[.,]\s*(\d+)\s*(libras?|lb\.?s?|lbs?)?\b/i);
     if (m) {
-      datos.pesoKg = parseFloat(m[1] + '.' + m[2]);
+      const v = parseFloat(m[1] + '.' + m[2]);
+      datos.pesoKg = m[3] ? Math.round(v * 0.453592 * 10) / 10 : v;
     } else {
-      m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+(?:[.,]\d+)?)\b/i);
+      m = t.match(/\b(?:psa|pso|pt|p\.)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*(libras?|lb\.?s?|lbs?)?\b/i);
       if (m) {
         const v = parseFloat(m[1].replace(',', '.'));
-        if (v >= 1.5 && v <= 400) datos.pesoKg = v;
+        datos.pesoKg = m[2] ? Math.round(v * 0.453592 * 10) / 10 : v;
+      }
+    }
+  }
+  // Patrón 5: "pesa/peso" con número (ej. "pesa 59.5", "peso de 65 kg", "pesa 155 libras")
+  if (datos.pesoKg == null) {
+    m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+)\s*[.,]\s*(\d+)\s*(libras?|lb\.?s?|lbs?)?/i);
+    if (m) {
+      const v = parseFloat(m[1] + '.' + m[2]);
+      datos.pesoKg = m[3] ? Math.round(v * 0.453592 * 10) / 10 : v;
+    } else {
+      m = t.match(/\bpes(?:a|o)\w*\b\s*(?:de\s+)?[:\-]?\s*(\d+(?:[.,]\d+)?)\s*(libras?|lb\.?s?|lbs?)?\b/i);
+      if (m) {
+        const v = parseFloat(m[1].replace(',', '.'));
+        if (m[2]) {
+          datos.pesoKg = Math.round(v * 0.453592 * 10) / 10;
+        } else if (v >= 1.5 && v <= 400) {
+          datos.pesoKg = v;
+        }
       }
     }
   }
@@ -3847,16 +3886,17 @@ function _riesgoParsearNota(texto, nombre) {
   return datos;
 }
 
-// Corrección de edad por prematurez (recomendación OMS/AIEPI): un bebé nacido antes de las
-// 37 semanas de gestación debe evaluarse en las curvas de crecimiento usando su EDAD
-// CORREGIDA (la que tendría si hubiera nacido a las 40 semanas), no la edad cronológica —
-// de lo contrario aparece como "bajo peso/talla" cuando en realidad va bien para su
-// desarrollo real. La corrección se aplica hasta los 24 meses de edad corregida, que es
-// el límite que recomiendan la OMS y el esquema AIEPI; después de esa edad ya no se corrige.
+// Corrección de edad por prematurez: un bebé nacido antes de las 37 semanas de gestación
+// debe evaluarse en las curvas de crecimiento usando su EDAD CORREGIDA (la que tendría si
+// hubiera nacido a las 40 semanas), no la edad cronológica — de lo contrario aparece como
+// "bajo peso/talla" cuando en realidad va bien para su desarrollo real. Según los
+// Lineamientos técnicos de MINSAL El Salvador (evaluación nutricional en el ciclo de vida), la
+// corrección se aplica hasta los TRES AÑOS de edad corregida (no 24 meses, como en otras
+// referencias tipo AIEPI/OMS genéricas); después de esa edad ya no se corrige.
 function _riesgoAplicarEdadCorregida(edadMeses, semanasGestacion) {
   if (edadMeses == null || semanasGestacion == null) return edadMeses;
   if (semanasGestacion >= 37) return edadMeses; // no fue prematuro
-  if (edadMeses >= 24) return edadMeses; // ya no aplica la corrección pasados los 24 meses
+  if (edadMeses >= 36) return edadMeses; // ya no aplica la corrección pasados los 3 años (MINSAL)
   const semanasFaltantes = 40 - semanasGestacion;
   const correccionMeses = semanasFaltantes / 4.345;
   return Math.max(0, Math.round((edadMeses - correccionMeses) * 10) / 10);
@@ -3871,8 +3911,11 @@ function _riesgoParsearEdadCampo(texto) {
   // Formato combinado primero (ej. "1 año 2 meses", "2 años 6 meses"), porque si se
   // buscara "meses" o "años" por separado, el patrón de "meses" se dispararía primero
   // y perdería la parte de "años".
-  let m = t.match(/(\d+)\s*añ\w*\s*(\d+)\s*mes\w*/i);
-  if (m) return parseInt(m[1], 10) * 12 + parseInt(m[2], 10);
+  // Tolera coma entre "año(s)" y los meses (ej. "1 año, 6 meses"), y admite decimales en
+  // ambas partes (ej. "1.5 años 2 meses"). El [\s,]* entre los dos números evita que una
+  // coma de puntuación rompa la detección y se pierda la parte de los años.
+  let m = t.match(/(\d+(?:[.,]\d+)?)\s*añ\w*[\s,]*(\d+(?:[.,]\d+)?)\s*mes\w*/i);
+  if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12 + parseFloat(m[2].replace(',', '.')));
   m = t.match(/(\d+(?:[.,]\d+)?)\s*mes/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
   m = t.match(/(\d+(?:[.,]\d+)?)\s*añ/i);
@@ -3886,6 +3929,9 @@ function _riesgoParsearEdadCampo(texto) {
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12);
   m = t.match(/^(\d+(?:[.,]\d+)?)\s*m\.?$/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
+  // Abreviaturas combinadas: "45a 3m" (45 años 3 meses)
+  m = t.match(/^(\d+(?:[.,]\d+)?)\s*a\.?\s+(\d+(?:[.,]\d+)?)\s*m\.?$/i);
+  if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12 + parseFloat(m[2].replace(',', '.')));
   m = t.match(/^(\d+(?:[.,]\d+)?)$/); // número solo, sin unidad → se asume años
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 12);
   return null;
@@ -3905,7 +3951,7 @@ function riesgoEvaluarNota(texto, edadMesesCampo, nombre) {
 
   if (edadParaEvaluar != null && d.sexo && (d.pesoKg != null || d.tallaCm != null)) {
     const r = riesgoCrecimiento(edadParaEvaluar, d.sexo, d.pesoKg, d.tallaCm);
-    if (seCorrigio) partes.push(`Nació prematuro a las ${d.semanasGestacion} semanas de gestación; por eso su edad corregida (${edadParaEvaluar} meses, en vez de su edad cronológica de ${d.edadMeses} meses) es la que se usó para evaluar su crecimiento, tal como recomienda la OMS/AIEPI para prematuros menores de 24 meses de edad corregida`);
+    if (seCorrigio) partes.push(`Nació prematuro a las ${d.semanasGestacion} semanas de gestación; por eso su edad corregida (${edadParaEvaluar} meses, en vez de su edad cronológica de ${d.edadMeses} meses) es la que se usó para evaluar su crecimiento, tal como indica MINSAL El Salvador para prematuros menores de 3 años de edad corregida`);
     if (r.pesoEdad) partes.push('Peso/Edad: ' + r.pesoEdad);
     if (r.tallaEdad) partes.push('Talla/Edad: ' + r.tallaEdad);
     if (r.imcEdad) partes.push('IMC/Edad: ' + r.imcEdad);
@@ -3949,7 +3995,7 @@ function _riesgoTablaIndicador(indicador, edadMeses, sexo) {
   }
   if (indicador === 'tallaEdad') {
     if (edadMeses <= 60) return { tabla: sexo === 'M' ? _OMS_LHFA_M : _OMS_LHFA_F, mesInicio: 0, unidad: 'cm', cortes: CORTES_TALLA_EDAD };
-    return { tabla: sexo === 'M' ? _OMS_HFA519_M : _OMS_HFA519_F, mesInicio: 61, unidad: 'cm', cortes: CORTES_TALLA_EDAD };
+    return { tabla: sexo === 'M' ? _OMS_HFA519_M : _OMS_HFA519_F, mesInicio: 61, unidad: 'cm', cortes: CORTES_TALLA_EDAD_5_19 };
   }
   if (indicador === 'imcEdad') {
     if (edadMeses <= 60) return { tabla: sexo === 'M' ? _OMS_BMIFA05_M : _OMS_BMIFA05_F, mesInicio: 0, unidad: 'kg/m²', cortes: CORTES_IMC_0_5 };
@@ -4008,8 +4054,31 @@ function _riesgoDatosGrafica(edadTexto, notaTexto, nombreTexto) {
   return {
     edadMeses, sexo: d.sexo, disponibles,
     edadCronologica: seCorrigio ? edadCronologica : null,
-    semanasGestacion: seCorrigio ? d.semanasGestacion : null
+    semanasGestacion: seCorrigio ? d.semanasGestacion : null,
+    nombre: nombreTexto || null,
+    pesoKg: d.pesoKg != null ? d.pesoKg : null
   };
+}
+
+// Ficha clínica corta (nombre, edad, peso y clasificación nutricional) que se muestra en el
+// modal de la gráfica. _riesgoRenderFichaClinica llena la parte fija (no cambia al alternar
+// entre indicadores); _riesgoActualizarFichaClasificacion actualiza solo el estado nutricional,
+// que sí depende de qué indicador esté seleccionado en ese momento (Peso/Edad, Talla/Edad,
+// IMC/Edad o IMC de adulto).
+function _riesgoRenderFichaClinica(datos, edadTexto) {
+  const ficha = document.getElementById('graficaFichaClinica');
+  if (!ficha) return;
+  const elNombre = document.getElementById('fichaClinicaNombre');
+  const elEdad = document.getElementById('fichaClinicaEdad');
+  const elPeso = document.getElementById('fichaClinicaPeso');
+  if (elNombre) elNombre.textContent = datos.nombre || 'Esta persona';
+  if (elEdad) elEdad.textContent = _riesgoFormatearEdad(datos.edadMeses, datos.edadCronologica) || edadTexto || '—';
+  if (elPeso) elPeso.textContent = (datos.pesoKg != null) ? `${datos.pesoKg} kg` : 'No especificado en la nota';
+  ficha.style.display = 'block';
+}
+function _riesgoActualizarFichaClasificacion(texto) {
+  const el = document.getElementById('fichaClinicaClasificacion');
+  if (el) el.textContent = texto || '—';
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -4106,22 +4175,16 @@ function _riesgoColorCategoria(texto) {
 // CORTES_*), pensada para el promotor en campo: qué significa, y qué hacer a continuación.
 // Esto es apoyo educativo/orientativo, no reemplaza el criterio del personal de salud.
 const _riesgoConsejos = {
-  'Bajo peso severo': { urgencia: 'alta', texto: 'Puede indicar desnutrición aguda. Se recomienda referencia URGENTE a la unidad de salud para evaluación médica. Investigar signos de alarma (edema, letargo, rechazo a la alimentación). Reforzar consejería en frecuencia y calidad de las comidas. Repetir control de peso en máximo 1-2 semanas.' },
-  'Bajo peso': { urgencia: 'media', texto: 'Reforzar consejería sobre frecuencia, cantidad y calidad de los alimentos según la edad. Verificar esquema de vacunación y desparasitación al día. Investigar causas recientes (destete, enfermedades, acceso a alimentos). Repetir control en 3-4 semanas.' },
+  'Desnutrición severa': { urgencia: 'alta', texto: 'Puede indicar desnutrición aguda o crónica severa. Se recomienda referencia URGENTE a la unidad de salud para evaluación médica/nutricional. Investigar signos de alarma (edema, letargo, rechazo a la alimentación). Reforzar consejería en frecuencia y calidad de las comidas. Repetir control en máximo 1-2 semanas.' },
+  'Desnutrición': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación y posible suplementación nutricional. Reforzar consejería sobre frecuencia, cantidad y calidad de los alimentos según la edad. Verificar esquema de vacunación y desparasitación al día. Repetir control en 3-4 semanas.' },
   'Peso alto para la edad': { urgencia: 'media', texto: 'Revisar hábitos alimentarios (frecuencia, tamaño de porciones, azúcares/ultraprocesados) y nivel de actividad física. Vigilar la tendencia en los próximos controles para descartar sobrepeso.' },
 
-  'Talla muy baja (retraso de crecimiento severo)': { urgencia: 'alta', texto: 'Sugiere desnutrición crónica prolongada (retraso de crecimiento). Se recomienda referencia a la unidad de salud para evaluación integral. Investigar antecedentes de bajo peso al nacer, prematurez o infecciones repetidas. Reforzar la alimentación complementaria adecuada para la edad.' },
-  'Talla baja para la edad': { urgencia: 'media', texto: 'Vigilar la tendencia de crecimiento en los próximos controles. Reforzar consejería nutricional y revisar frecuencia de enfermedades infecciosas (diarreas, parasitosis) que puedan estar afectando el crecimiento.' },
-  'Talla alta para la edad': { urgencia: 'baja', texto: 'Generalmente no representa un riesgo por sí sola. Continuar con el seguimiento habitual; puede estar relacionado con antecedentes familiares de talla.' },
+  'Retardo severo en el crecimiento': { urgencia: 'alta', texto: 'Sugiere desnutrición crónica prolongada (retraso de crecimiento). Se recomienda referencia a la unidad de salud para evaluación integral. Investigar antecedentes de bajo peso al nacer, prematurez o infecciones repetidas. Reforzar la alimentación complementaria adecuada para la edad.' },
+  'Retardo en el crecimiento': { urgencia: 'media', texto: 'Vigilar la tendencia de crecimiento en los próximos controles. Reforzar consejería nutricional y revisar frecuencia de enfermedades infecciosas (diarreas, parasitosis) que puedan estar afectando el crecimiento.' },
+  'Talla alta': { urgencia: 'baja', texto: 'Generalmente no representa un riesgo por sí sola. Continuar con el seguimiento habitual; puede estar relacionado con antecedentes familiares de talla.' },
 
-  'Emaciación severa': { urgencia: 'alta', texto: 'Es una emergencia nutricional (desnutrición aguda severa). Se recomienda referencia INMEDIATA a la unidad de salud. Buscar signos de alarma (edema bilateral en pies, delgadez extrema, pérdida de apetito) y manejar según el protocolo AIEPI vigente.' },
-  'Emaciación': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación y posible suplementación nutricional. Reforzar consejería en alimentación. Repetir control de peso/talla en 1-2 semanas para ver la evolución.' },
-  'Riesgo de sobrepeso': { urgencia: 'media', texto: 'Educar sobre alimentación saludable (porciones, frecuencia, reducir azúcares/ultraprocesados) y fomentar actividad física apropiada para la edad. Vigilar la tendencia en los próximos controles.' },
   'Sobrepeso': { urgencia: 'media', texto: 'Reforzar consejería en alimentación saludable y fomentar actividad física diaria apropiada para la edad. Repetir control en 4-6 semanas para ver evolución.' },
-  'Obesidad': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación integral (descartar comorbilidades). Reforzar consejería nutricional intensiva junto con la familia, ya que suele requerir cambios en todo el entorno alimentario del hogar.' },
-
-  'Delgadez severa': { urgencia: 'alta', texto: 'Puede indicar desnutrición aguda. Se recomienda referencia URGENTE a la unidad de salud para evaluación médica y posible manejo nutricional especializado.' },
-  'Delgadez': { urgencia: 'media', texto: 'Reforzar consejería nutricional (calidad y frecuencia de las comidas). Investigar causas (apetito, enfermedades recientes, hábitos alimentarios). Repetir control en 3-4 semanas.' }
+  'Obesidad': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación integral (descartar comorbilidades). Reforzar consejería nutricional intensiva junto con la familia, ya que suele requerir cambios en todo el entorno alimentario del hogar.' }
 };
 const _riesgoConsejoNormal = 'Está dentro de los parámetros normales para su edad y sexo. Continuar con la alimentación actual, la lactancia materna si aplica, y los controles de crecimiento según el calendario habitual.';
 
@@ -4136,7 +4199,8 @@ function _riesgoObtenerConsejo(clasificacionTexto) {
 // ("Bajo peso", "Normal", "Sobrepeso", "Obesidad"), el consejo correcto para un adulto es
 // distinto al de un menor (no aplica vacunación, lactancia, ni desparasitación infantil).
 const _riesgoConsejosAdulto = {
-  'Bajo peso': { urgencia: 'media', texto: 'Puede deberse a ingesta alimentaria insuficiente, una condición de salud subyacente, o pérdida de peso reciente. Indagar apetito, enfermedades crónicas y acceso a alimentos. Si hay pérdida de peso reciente no intencionada, se recomienda referencia a la unidad de salud para evaluación.' },
+  'Peso bajo': { urgencia: 'media', texto: 'Puede deberse a ingesta alimentaria insuficiente, una condición de salud subyacente, o pérdida de peso reciente. Indagar apetito, enfermedades crónicas y acceso a alimentos. Si hay pérdida de peso reciente no intencionada, se recomienda referencia a la unidad de salud para evaluación.' },
+  'Desnutrición': { urgencia: 'alta', texto: 'En la persona adulta mayor, el bajo peso se asocia a mayor riesgo de fragilidad, sarcopenia y complicaciones. Se recomienda referencia a la unidad de salud para evaluación nutricional. Indagar apetito, dificultad para masticar/tragar, enfermedades crónicas, medicamentos y acceso a alimentos. Reforzar consejería sobre frecuencia y calidad de las comidas.' },
   'Sobrepeso': { urgencia: 'media', texto: 'Reforzar consejería en alimentación saludable (reducir azúcares, ultraprocesados y tamaño de porciones) y fomentar actividad física regular apropiada para su condición. Vigilar la tendencia en los próximos controles.' },
   'Obesidad': { urgencia: 'alta', texto: 'Se recomienda referencia a la unidad de salud para evaluación integral, ya que aumenta el riesgo de hipertensión, diabetes y enfermedad cardiovascular. Reforzar consejería nutricional y fomentar actividad física progresiva según tolerancia.' }
 };
@@ -4318,7 +4382,7 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
 
 // Para adultos no hay curva por edad (la OMS usa puntos de corte fijos): se dibuja una
 // escala horizontal de colores con el IMC de la persona marcado encima.
-function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
+function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor, esAdultoMayor) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
@@ -4331,10 +4395,16 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
   ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left'; ctx.font = `bold ${13 * esc}px sans-serif`;
   ctx.fillText('IMC — Adulto', pad.l, 16 * esc);
   ctx.fillStyle = '#64748b'; ctx.font = `${10.5 * esc}px sans-serif`;
-  ctx.fillText('Puntos de corte fijos de la OMS (no varían por edad ni sexo)', pad.l, 30 * esc);
+  ctx.fillText(esAdultoMayor ? 'Puntos de corte MINSAL para adulto mayor (60 años o más)' : 'Puntos de corte MINSAL para adultos de 20 a 59 años', pad.l, 30 * esc);
 
-  const zonas = [
-    { hasta: 18.5, color: '#eab308', texto: 'Bajo peso' },
+  const marcas = esAdultoMayor ? [15, 23, 28, 32, 40] : [15, 18.5, 25, 30, 35, 40];
+  const zonas = esAdultoMayor ? [
+    { hasta: 23, color: '#eab308', texto: 'Desnutrición' },
+    { hasta: 28, color: '#16a34a', texto: 'Normal' },
+    { hasta: 32, color: '#f97316', texto: 'Sobrepeso' },
+    { hasta: maxIMC, color: '#ef4444', texto: 'Obesidad' }
+  ] : [
+    { hasta: 18.5, color: '#eab308', texto: 'Peso bajo' },
     { hasta: 25, color: '#16a34a', texto: 'Normal' },
     { hasta: 30, color: '#f97316', texto: 'Sobrepeso' },
     { hasta: maxIMC, color: '#ef4444', texto: 'Obesidad' }
@@ -4358,7 +4428,7 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor) {
   ctx.fillText(imcValor.toFixed(1), px, barY - 16 * esc);
 
   ctx.fillStyle = '#64748b'; ctx.font = `${10 * esc}px sans-serif`;
-  [15, 18.5, 25, 30, 35, 40].forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24 * esc); });
+  marcas.forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24 * esc); });
 }
 
 let _riesgoGraficaDatosActual = null;
@@ -4474,6 +4544,7 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   const edadFormato = _riesgoFormatearEdad(datos.edadMeses, datos.edadCronologica);
   const tituloCompleto = edadFormato ? `📊 Evaluación Nutricional — ${nombre} (${edadFormato})` : `📊 Evaluación Nutricional — ${nombre}`;
   document.getElementById('graficaNutriTitulo').textContent = tituloCompleto;
+  _riesgoRenderFichaClinica(datos, '');
 
   // Siempre arranca en tamaño normal, aunque la vez anterior se haya cerrado en pantalla completa.
   const box = document.getElementById('modal-grafica-nutri-box');
@@ -4493,7 +4564,7 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
       <div style="margin-top:4px;">
         <b>¿Por qué se hace esto?</b> Un bebé prematuro nace antes de completar su desarrollo, así que es normal y esperado que pese y mida menos que un bebé nacido a término de la misma edad cronológica.
         Comparar a este bebé contra la curva de su edad cronológica lo marcaría como "bajo peso" o "talla baja" aunque en realidad esté creciendo bien para su desarrollo real.
-        La OMS y el esquema AIEPI recomiendan usar la edad corregida hasta los 24 meses; después de esa edad ya no se corrige.
+        Según MINSAL El Salvador, la edad corregida se usa hasta los 3 años de edad; después de esa edad ya no se corrige.
       </div>`;
   } else {
     avisoPrematuro.style.display = 'none';
@@ -4545,12 +4616,10 @@ function _riesgoActualizarGrafica(indicadorId) {
   }
 
   if (item.id === 'imcAdulto') {
-    _riesgoDibujarEscalaIMCAdulto(canvas, item.valor);
-    let clasifAdulto;
-    if (item.valor < 18.5) clasifAdulto = 'Bajo peso';
-    else if (item.valor < 25) clasifAdulto = 'Normal';
-    else if (item.valor < 30) clasifAdulto = 'Sobrepeso';
-    else clasifAdulto = 'Obesidad';
+    const esAdultoMayor = datos.edadMeses != null && datos.edadMeses >= 720;
+    _riesgoDibujarEscalaIMCAdulto(canvas, item.valor, esAdultoMayor);
+    const clasifAdulto = _riesgoClasificarIMCAdulto(item.valor, datos.edadMeses);
+    _riesgoActualizarFichaClasificacion(clasifAdulto);
 
     let tarjetaConsejoAdulto = '';
     const consejoAdulto = _riesgoObtenerConsejoAdulto(clasifAdulto);
@@ -4569,10 +4638,14 @@ function _riesgoActualizarGrafica(indicadorId) {
         </div>`;
     }
 
-    resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — <b>${clasifAdulto}</b> (puntos de corte fijos de la OMS para adultos, no varían por edad).${tarjetaConsejoAdulto}`;
+    const notaCorte = esAdultoMayor
+      ? 'puntos de corte MINSAL para adulto mayor de 60 años: Desnutrición ≤23, Normal 23-28, Sobrepeso 28-32, Obesidad ≥32'
+      : 'puntos de corte MINSAL para adultos de 20 a 59 años';
+    resumen.innerHTML = `<b>IMC:</b> ${item.valor} kg/m² — <b>${clasifAdulto}</b> (${notaCorte}).${tarjetaConsejoAdulto}`;
   } else {
     const r = _riesgoDibujarCurvaEdad(canvas, item.id, datos.edadMeses, datos.sexo, item.valor, historialPuntos, datos.edadCronologica);
     if (r) {
+      _riesgoActualizarFichaClasificacion(r.clasificacion);
       const leyenda = r.cortes.map(function(c) {
         return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;white-space:nowrap;">
                   <span style="width:9px;height:9px;border-radius:50%;background:${_riesgoColorCategoria(c.texto).linea};display:inline-block;"></span>${c.texto}
