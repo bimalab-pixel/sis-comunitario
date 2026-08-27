@@ -238,6 +238,23 @@
             background: rgba(255,255,255,0.15);
         }
 
+        .icon-btn-volver {
+            animation: parpadeoVolver 1.2s ease-in-out infinite;
+        }
+
+        @keyframes parpadeoVolver {
+            0%, 100% {
+                background: rgba(255,255,255,0.05);
+                box-shadow: none;
+                transform: scale(1);
+            }
+            50% {
+                background: rgba(255,215,0,0.55);
+                box-shadow: 0 0 10px 3px rgba(255,215,0,0.7);
+                transform: scale(1.1);
+            }
+        }
+
         header.topbar h1 {
             font-size: 1.25rem;
             font-weight: 500;
@@ -2527,7 +2544,7 @@
 <body>
     <!-- Topbar -->
     <header class="topbar">
-        <button class="icon-btn-topbar" onclick="location.href='index.html'" aria-label="Volver al menú">←</button>
+        <button class="icon-btn-topbar icon-btn-volver" onclick="location.href='index.html'" aria-label="Volver al menú">←</button>
         <button class="icon-btn-topbar" onclick="toggleDrawer()" aria-label="Menú">☰</button>
         <h1 id="topbarTitle">Dashboard</h1>
         <div class="topbar-actions">
@@ -2763,7 +2780,7 @@
                                 <input type="number" id="edadCorregida" step="0.1" placeholder="Auto-calculada" readonly>
                             </div>
                         </div>
-                        <p style="font-size:0.85rem; color:var(--muted); margin:0;">La edad corregida se ajusta hasta los 24 meses usando: Edad cronológica - (40 - semanas de prematuridad)</p>
+                        <p style="font-size:0.85rem; color:var(--muted); margin:0;">La edad corregida se ajusta hasta los 3 años (36 meses) usando: Edad cronológica - (40 - semanas de prematuridad)</p>
                     </div>
 
                     <div class="form-row">
@@ -3176,6 +3193,59 @@
             return meses + diffDias / diasEnMesRef;
         }
 
+        // Aplica el ajuste por prematurez (edad corregida) a una edad cronológica
+        // en meses ya calculada. Se centraliza aquí para que guardarMedicion(),
+        // recalcularEdadEvaluacionMediciones() y la reparación de datos antiguos
+        // (repararEdadesEvaluacionDesactualizadas()) usen EXACTAMENTE la misma
+        // fórmula — antes cada una tenía su propia copia, y era fácil que
+        // quedaran desincronizadas entre sí.
+        function edadEvaluacionDesdeMeses(edadMeses, esPrematuro, semanasPretermino) {
+            if (esPrematuro && semanasPretermino && edadMeses <= 36) {
+                const semanasFaltantes = Math.max(0, 40 - semanasPretermino);
+                const ajusteMeses = semanasFaltantes / 4.345;
+                return Math.max(0, edadMeses - ajusteMeses);
+            }
+            return edadMeses;
+        }
+
+        // Recalcula edadEvaluacion para TODAS las mediciones de una persona,
+        // usando su fecha de nacimiento ACTUAL. Necesario después de corregir
+        // una fecha de nacimiento mal digitada: sin esto, las mediciones ya
+        // guardadas quedaban con la edad "congelada" calculada con la fecha
+        // VIEJA, y la gráfica, las pestañas de indicador y la clasificación
+        // seguían usando esa edad desactualizada aunque la ficha ya mostrara
+        // la edad correcta.
+        function recalcularEdadEvaluacionMediciones(persona) {
+            DB.mediciones.forEach(m => {
+                if (m.personaId !== persona.id) return;
+                const edadMeses = edadEnMesesDecimal(persona.fechaNacimiento, m.fecha);
+                m.edadEvaluacion = edadEvaluacionDesdeMeses(edadMeses, m.esPrematuro, m.semanasPretermino);
+            });
+        }
+
+        // Reparación única e idempotente que corre al cargar la app: recalcula
+        // edadEvaluacion de TODAS las mediciones existentes contra la fecha de
+        // nacimiento ACTUAL de cada persona. Esto arregla mediciones que ya
+        // habían quedado con una edad congelada de ANTES de este arreglo (ej.
+        // una fecha de nacimiento corregida de 2025 a 2024 en una versión
+        // anterior de la app, cuando todavía no se recalculaba nada), sin que
+        // el promotor tenga que volver a editar la fecha para dispararlo. En
+        // datos ya correctos esto no cambia nada.
+        function repararEdadesEvaluacionDesactualizadas() {
+            let corregidas = 0;
+            DB.mediciones.forEach(m => {
+                const persona = DB.personas.find(p => p.id === m.personaId);
+                if (!persona) return;
+                const edadMeses = edadEnMesesDecimal(persona.fechaNacimiento, m.fecha);
+                const edadEvaluacionCorrecta = edadEvaluacionDesdeMeses(edadMeses, m.esPrematuro, m.semanasPretermino);
+                if (m.edadEvaluacion == null || Math.abs(m.edadEvaluacion - edadEvaluacionCorrecta) > 0.05) {
+                    m.edadEvaluacion = edadEvaluacionCorrecta;
+                    corregidas++;
+                }
+            });
+            if (corregidas > 0) guardarDatos();
+        }
+
         // Interpola linealmente una tabla LMS indexada por mes, comenzando en 'mesInicio'
         // (0 para tablas 0-5 años, 61 para tablas 5-19 años "Growth Reference 2007").
         function lmsPorMesRango(tabla, mesInicio, mesEdad) {
@@ -3482,9 +3552,10 @@
             if (meses < 24) return ['wfa', 'lhfa'];
             // Umbral EXACTO de 60 meses (5 años). edadEnMesesDecimal() calcula
             // por días exactos (no aproximado), así que no hace falta ningún
-            // margen — un margen de 0.5 meses dejaba a un niño de exactamente
-            // 5 años (o unos días más) todavía clasificado como 2-<5 años.
-            if (meses <= 60) return ['wfa', 'lhfa', 'pt'];
+            // margen. A los 60 meses EXACTOS (5 años cumplidos) ya se pasa al
+            // grupo 5-19 años — "2 a menor de 5 años" excluye el día del
+            // quinto cumpleaños.
+            if (meses < 60) return ['wfa', 'lhfa', 'pt'];
             if (meses < 240) return ['lhfa', 'imc'];
             return ['imcAdulto'];
         }
@@ -3619,12 +3690,7 @@
                 return;
             }
 
-            let edadEvaluacion = edadMeses;
-            if (esPrematuro && semanasNacimiento && edadMeses <= 36) {
-                const semanasFaltantes = Math.max(0, 40 - semanasNacimiento);
-                const ajusteMeses = semanasFaltantes / 4.345;
-                edadEvaluacion = Math.max(0, edadMeses - ajusteMeses);
-            }
+            let edadEvaluacion = edadEvaluacionDesdeMeses(edadMeses, esPrematuro, semanasNacimiento);
 
             const persona = {
                 id: '__simPed__',
@@ -4254,8 +4320,8 @@
                 return resultado;
             }
             
-            // 2 A MENOR DE 5 AÑOS (24-60 meses): Peso/Edad + Talla/Edad + Peso/Talla (Tabla 2, Acuerdo 2827)
-            if (meses >= 24 && meses <= 60) {
+            // 2 A MENOR DE 5 AÑOS (24-<60 meses): Peso/Edad + Talla/Edad + Peso/Talla (Tabla 2, Acuerdo 2827)
+            if (meses >= 24 && meses < 60) {
                 const zpe = zPesoEdad(medicion.peso, meses, persona.sexo);
                 const pe = { ...clasificarPE(zpe), z: zpe, indicador: 'Peso/Edad' };
                 
@@ -4282,8 +4348,8 @@
                 return resultado;
             }
             
-            // NIÑOS Y ADOLESCENTES 5-19 AÑOS (61-228 meses): Talla/Edad + IMC/Edad (Tabla 2, Acuerdo 2827)
-            if (meses > 60 && meses < 240 && medicion.talla) {
+            // NIÑOS Y ADOLESCENTES 5-19 AÑOS (60-228 meses, desde el día del 5° cumpleaños): Talla/Edad + IMC/Edad (Tabla 2, Acuerdo 2827)
+            if (meses >= 60 && meses < 240 && medicion.talla) {
                 const zte = zTallaEdad(medicion.talla, meses, persona.sexo);
                 const te = { ...clasificarTE(zte, true), z: zte, indicador: 'Talla/Edad' };
                 
@@ -4349,6 +4415,7 @@
                 DB.config = parsed.config || {};
             }
             calcularEdadesAutomaticas();
+            repararEdadesEvaluacionDesactualizadas();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -4685,6 +4752,7 @@
             if (personaEditandoId) {
                 const persona = DB.personas.find(p => p.id === personaEditandoId);
                 if (persona) {
+                    const fechaNacimientoAnterior = persona.fechaNacimiento;
                     persona.nombre = document.getElementById('nombre').value;
                     persona.sexo = document.getElementById('sexo').value;
                     persona.fechaNacimiento = document.getElementById('fechaNacimiento').value;
@@ -4699,6 +4767,16 @@
                     persona.esPrematuro = esPrematuro;
                     if (esPrematuro) {
                         persona.semanasGestacionales = parseInt(document.getElementById('semanasGestacionales').value) || null;
+                    }
+
+                    // Si la fecha de nacimiento cambió (ej. corrección de un dato mal
+                    // digitado), las mediciones ya guardadas de esta persona quedaron
+                    // con su "edadEvaluacion" congelada calculada con la fecha VIEJA.
+                    // Sin este recálculo, la gráfica, las pestañas de indicador y la
+                    // clasificación seguían usando esa edad desactualizada aunque la
+                    // ficha ya mostrara la edad correcta.
+                    if (fechaNacimientoAnterior !== persona.fechaNacimiento) {
+                        recalcularEdadEvaluacionMediciones(persona);
                     }
                     
                     guardarDatos();
@@ -5107,12 +5185,7 @@
             // Manejar prematuro
             const esPrematuro = document.querySelector('input[name="esPrematuro"]:checked').value === 'si';
             const semanasNacimiento = esPrematuro ? parseInt(document.getElementById('semanasPretermino').value) : null;
-            let edadEvaluacion = edadMeses;
-            if (esPrematuro && semanasNacimiento && edadMeses <= 36) {
-                const semanasFaltantes = Math.max(0, 40 - semanasNacimiento);
-                const ajusteMeses = semanasFaltantes / 4.345;
-                edadEvaluacion = Math.max(0, edadMeses - ajusteMeses);
-            }
+            const edadEvaluacion = edadEvaluacionDesdeMeses(edadMeses, esPrematuro, semanasNacimiento);
 
             const medicion = {
                 id: medicionEditandoId || Date.now().toString(),
@@ -5186,12 +5259,14 @@
             const semanasFaltantes = Math.max(0, 40 - semanas);
             const ajusteMeses = semanasFaltantes / 4.345; // Semanas a meses
             
-            // La edad corregida se usa solo hasta 24 meses
-            if (edadMeses <= 24) {
+            // La edad corregida se usa hasta los 3 años (36 meses) — mismo corte
+            // que aplica guardarMedicion() vía edadEvaluacionDesdeMeses(), para que
+            // esta vista previa nunca contradiga lo que realmente se va a guardar.
+            if (edadMeses <= 36) {
                 const edadCorregida = Math.max(0, edadMeses - ajusteMeses);
                 document.getElementById('edadCorregida').value = edadCorregida.toFixed(1);
             } else {
-                document.getElementById('edadCorregida').value = edadMeses.toFixed(1) + ' (>24 meses, sin ajuste)';
+                document.getElementById('edadCorregida').value = edadMeses.toFixed(1) + ' (>36 meses, sin ajuste)';
             }
         }
 
@@ -5920,7 +5995,7 @@
 
         function ventanaParaMeses(meses) {
             if (meses == null || isNaN(meses) || meses < 24) return 'g1';
-            if (meses <= 60) return 'g2';
+            if (meses < 60) return 'g2';
             return 'g3';
         }
 
@@ -5976,7 +6051,7 @@
                 ? (ultima.edadEvaluacion != null ? ultima.edadEvaluacion : edadEnMesesDecimal(persona.fechaNacimiento, ultima.fecha))
                 : calcularEdadEnMeses(persona.fechaNacimiento);
             if (meses < 24) return ['wfa', 'lhfa'];
-            if (meses <= 60) return ['wfa', 'lhfa', 'pt'];
+            if (meses < 60) return ['wfa', 'lhfa', 'pt'];
             if (meses < 240) return ['lhfa', 'imc'];
             // Adultos y adultos mayores (20+ años): no usan indicadores OMS
             // pediátricos (lhfa/imc con Z-score), sino IMC clasificado por
@@ -6041,7 +6116,7 @@
                             <span class="alert-icon">${icono}</span>
                             <div>
                                 <strong>${nombreInd}: ${d.label}</strong>
-                                <p>Z = ${d.z.toFixed(2)} · Clasificación OMS/MINSAL 2022${clasificacion.meses <= 60 ? ' (0-5 años)' : ' (5-19 años)'}</p>
+                                <p>Z = ${d.z.toFixed(2)} · Clasificación OMS/MINSAL 2022${clasificacion.meses < 60 ? ' (0-5 años)' : ' (5-19 años)'}</p>
                             </div>
                         </div>
                     `;
@@ -6566,6 +6641,15 @@
             const formatearTickX = indicador === 'pt' ? (v => v.toFixed(0)) : formatearEdadEje;
             let xTicks = [];
             for (let m = Math.ceil(xMin / pasoX) * pasoX; m <= xMax; m += pasoX) xTicks.push(m);
+            // El inicio de la ventana visible (p. ej. 60 meses = "5a" al entrar al grupo
+            // 5-19 años, o 24 meses = "2a" al entrar a 2-<5 años) no siempre cae justo en
+            // la cuadrícula del paso normal, así que puede faltar su etiqueta en el borde
+            // izquierdo (p. ej. el eje empieza directo en "6a" en vez de "5a"). Se agrega
+            // explícitamente, salvo que ya haya una marca muy cerca (para no encimar
+            // etiquetas cuando el hueco es chico).
+            if (indicador !== 'pt' && (!xTicks.length || (xTicks[0] - xMin) > pasoX * 0.35)) {
+                xTicks.unshift(xMin);
+            }
             // El mes 228 (19 años exactos) es el límite oficial de las tablas OMS
             // (Growth Reference 2007). Con el paso normal de 24 meses esa marca no
             // siempre cae en la cuadrícula (p. ej. ...16a, 18a, salta a 20a), así que
@@ -7214,7 +7298,7 @@
                             `}
                         </strong>
                         ${dInd ? `<div style="color:${colInd.texto}; font-size:0.85rem; margin-top:2px;">Z = ${dInd.z.toFixed(2)}</div>` : ''}
-                        <div style="color:${colInd.texto}; font-size:0.85rem; margin-top:2px;">Clasificación OMS/MINSAL 2022${c.meses != null && c.meses <= 60 ? ' (0-5 años)' : (c.meses != null && c.meses < 240 ? ' (5-19 años)' : '')}</div>
+                        <div style="color:${colInd.texto}; font-size:0.85rem; margin-top:2px;">Clasificación OMS/MINSAL 2022${c.meses != null && c.meses < 60 ? ' (0-5 años)' : (c.meses != null && c.meses < 240 ? ' (5-19 años)' : '')}</div>
                     </div>
                 `;
             }
@@ -7236,29 +7320,7 @@
 
             const mediciones = obtenerMedicionesPersona(persona.id);
             if (mediciones.length > 0) {
-                tablaZ.innerHTML = `
-                    <div class="table-container z-table-wrap">
-                        <table>
-                            <thead>
-                                <tr><th>Fecha</th><th>Edad</th><th>Peso</th><th>Talla</th><th>Z Peso/Edad</th><th>Z Talla/Edad</th><th>Z Peso-Talla / IMC-Edad</th></tr>
-                            </thead>
-                            <tbody>
-                                ${mediciones.map(m => {
-                                    const cm = evaluarEstadoNutricional(persona, m);
-                                    return `<tr>
-                                        <td>${formatearFechaSV(m.fecha)}</td>
-                                        <td>${cm.esOMS ? formatearEdadEje(cm.meses) : '—'}</td>
-                                        <td>${m.peso}</td>
-                                        <td>${m.talla || '—'}</td>
-                                        <td>${cm.esOMS && cm.detalle.pe ? cm.detalle.pe.z.toFixed(2) : '—'}</td>
-                                        <td>${cm.esOMS && cm.detalle.te ? cm.detalle.te.z.toFixed(2) : '—'}</td>
-                                        <td>${cm.esOMS && cm.detalle.pt ? cm.detalle.pt.z.toFixed(2) : '—'}</td>
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+                tablaZ.innerHTML = generarTablaMediciones(persona, mediciones);
                 btnWrap.innerHTML = `<button class="btn btn-secondary" style="width:100%;" onclick="abrirModalTabla()">📋 Ver historial de mediciones (${mediciones.length})</button>`;
             } else {
                 tablaZ.innerHTML = '';
@@ -7273,6 +7335,73 @@
         function cerrarModalTabla(e) {
             if (e && e.target.id !== 'modalTablaMediciones') return;
             document.getElementById('modalTablaMediciones').classList.remove('show');
+        }
+
+        // Genera el HTML de la tabla de historial de mediciones de una persona.
+        // Se usa en TODOS los lugares donde se muestra este historial (pantalla
+        // de curva completa y ficha de la persona) para que las columnas y
+        // botones sean siempre los mismos, sin importar desde dónde se abra.
+        function generarTablaMediciones(persona, mediciones) {
+            const indicadoresPermitidos = indicadoresParaPersona(persona);
+            const mesesActualesTabla = edadEnMesesDecimal(persona.fechaNacimiento);
+            const mapeoLabels = {
+                'wfa': 'Z Peso/Edad',
+                'lhfa': `Z ${etiquetaCompactaIndicador('lhfa', mesesActualesTabla)}`,
+                'pt': 'Z Peso/Talla',
+                'imc': 'IMC / Z (IMC/E)',
+                'imcAdulto': 'IMC'
+            };
+            const encabezadosIndicadores = indicadoresPermitidos.map(ind => `<th>${mapeoLabels[ind]}</th>`).join('');
+
+            return `
+                <div class="table-container z-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Edad</th>
+                                <th>Peso (kg)</th>
+                                <th>Talla (cm)</th>
+                                ${encabezadosIndicadores}
+                                <th style="width: 100px;" class="col-acciones-fija">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${mediciones.map(m => {
+                                const c = evaluarEstadoNutricional(persona, m);
+                                const celdas = indicadoresPermitidos.map(ind => {
+                                    let valor = '—';
+                                    if (ind === 'wfa' && c.esOMS && c.detalle && c.detalle.pe) valor = c.detalle.pe.z.toFixed(2);
+                                    else if (ind === 'lhfa' && c.esOMS && c.detalle && c.detalle.te) valor = c.detalle.te.z.toFixed(2);
+                                    else if (ind === 'pt' && c.esOMS && c.detalle && c.detalle.pt && c.detalle.pt.indicador === 'Peso/Talla') valor = c.detalle.pt.z.toFixed(2);
+                                    else if (ind === 'imc' && c.esOMS && c.detalle && c.detalle.pt && c.detalle.pt.indicador === 'IMC/Edad') {
+                                        const zScore = c.detalle.pt.z.toFixed(2);
+                                        valor = `${c.imc?.toFixed(1) || '—'} (Z: ${zScore})`;
+                                    }
+                                    else if (ind === 'imcAdulto' && !c.esOMS && c.imc != null) {
+                                        valor = `${c.imc.toFixed(1)} (${c.estado})`;
+                                    }
+                                    return `<td><span class="estado-badge estado-${c.clase}">${valor}</span></td>`;
+                                }).join('');
+
+                                return `
+                                    <tr>
+                                        <td>${formatearFechaSV(m.fecha)}</td>
+                                        <td>${c.esOMS ? formatearEdadDesdeMeses(c.meses) : '—'}</td>
+                                        <td>${m.peso}</td>
+                                        <td>${m.talla || '—'}</td>
+                                        ${celdas}
+                                        <td style="text-align:center; gap:0.4rem; display:flex; justify-content:center;" class="col-acciones-fija">
+                                            <button class="table-icon-btn" onclick="event.stopPropagation(); cerrarModal(); cerrarModalTabla(); abrirEditorMedicion('${m.id}')" title="Editar medición">✏️</button>
+                                            <button class="table-icon-btn" onclick="event.stopPropagation(); eliminarMedicion('${m.id}')" title="Eliminar medición" style="color:#dc2626;">🗑️</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function cambiarMiniChart(personaId, indicador, btn) {
@@ -7499,66 +7628,10 @@
             }
 
             if (mediciones.length > 0) {
-                const indicadoresPermitidos = indicadoresParaPersona(persona);
-                const mesesActualesTabla = edadEnMesesDecimal(persona.fechaNacimiento);
-                const mapeoLabels = {
-                    'wfa': 'Z Peso/Edad',
-                    'lhfa': `Z ${etiquetaCompactaIndicador('lhfa', mesesActualesTabla)}`,
-                    'pt': 'Z Peso/Talla',
-                    'imc': 'IMC / Z (IMC/E)',
-                    'imcAdulto': 'IMC'
-                };
-                
-                const encabezadosIndicadores = indicadoresPermitidos.map(ind => `<th>${mapeoLabels[ind]}</th>`).join('');
-                
                 html += `
                     <div style="margin-top: 1.5rem;">
                         <h4 style="color: var(--primary); margin-bottom: 1rem;">📋 ${mediciones.length > 1 ? 'Historial Completo' : 'Medición Registrada'}</h4>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Peso (kg)</th>
-                                        <th>Talla (cm)</th>
-                                        ${encabezadosIndicadores}
-                                        <th style="width: 100px;" class="col-acciones-fija">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${mediciones.map(m => {
-                                        const c = evaluarEstadoNutricional(persona, m);
-                                        const celdas = indicadoresPermitidos.map(ind => {
-                                            let valor = '—';
-                                            if (ind === 'wfa' && c.esOMS && c.detalle && c.detalle.pe) valor = c.detalle.pe.z.toFixed(2);
-                                            else if (ind === 'lhfa' && c.esOMS && c.detalle && c.detalle.te) valor = c.detalle.te.z.toFixed(2);
-                                            else if (ind === 'pt' && c.esOMS && c.detalle && c.detalle.pt && c.detalle.pt.indicador === 'Peso/Talla') valor = c.detalle.pt.z.toFixed(2);
-                                            else if (ind === 'imc' && c.esOMS && c.detalle && c.detalle.pt && c.detalle.pt.indicador === 'IMC/Edad') {
-                                                const zScore = c.detalle.pt.z.toFixed(2);
-                                                valor = `${c.imc?.toFixed(1) || '—'} (Z: ${zScore})`;
-                                            }
-                                            else if (ind === 'imcAdulto' && !c.esOMS && c.imc != null) {
-                                                valor = `${c.imc.toFixed(1)} (${c.estado})`;
-                                            }
-                                            return `<td><span class="estado-badge estado-${c.clase}">${valor}</span></td>`;
-                                        }).join('');
-                                        
-                                        return `
-                                            <tr>
-                                                <td>${formatearFechaSV(m.fecha)}</td>
-                                                <td>${m.peso}</td>
-                                                <td>${m.talla || '—'}</td>
-                                                ${celdas}
-                                                <td style="text-align:center; gap:0.4rem; display:flex; justify-content:center;" class="col-acciones-fija">
-                                                    <button class="table-icon-btn" onclick="event.stopPropagation(); cerrarModal(); abrirEditorMedicion('${m.id}')" title="Editar medición">✏️</button>
-                                                    <button class="table-icon-btn" onclick="event.stopPropagation(); eliminarMedicion('${m.id}')" title="Eliminar medición" style="color:#dc2626;">🗑️</button>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
+                        ${generarTablaMediciones(persona, mediciones)}
                     </div>
                 `;
             }
