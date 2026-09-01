@@ -359,6 +359,9 @@
         .btn.secondary{background:var(--white);border:1.5px solid var(--border);color:var(--navy2)}.btn.secondary:hover{background:var(--light2)}
         .btn.gold{background:var(--gold);color:#fff}.btn.gold:hover{filter:brightness(1.1)}
 
+        /* ══════════════ SECCIÓN IA OCULTABLE (5 toques en el logo de inicio) ══════════════ */
+        .rdps-ia-oculto{display:none !important;}
+
         /* ══════════════ BOTÓN MÁGICO — Generar con IA ══════════════ */
         .btn-magic{
           position:relative;overflow:hidden;
@@ -1158,7 +1161,7 @@
 ════════════════════════════ -->
 <div class="screen active" id="screen-home">
     <div class="home-header">
-        <div class="home-logo">
+        <div class="home-logo" id="rdps-toque-secreto-ia" onclick="rdpsToqueSecretoIA()" style="cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
                 <rect x="9" y="3" width="6" height="4" rx="2"/>
@@ -1205,7 +1208,7 @@
         <!-- Menú -->
         <div class="menu-section-label">Acciones</div>
 
-        <button class="menu-btn" onclick="abrirGuiaUsuario()">
+        <button class="menu-btn rdps-ia-oculto" id="rdps-guia-usuario-btn" onclick="abrirGuiaUsuario()">
             <div class="menu-btn-icon" style="background:#7c3aed">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
             </div>
@@ -1298,9 +1301,10 @@
         <input type="file" id="file-import" accept=".json" style="display:none" onchange="importarJSON(event)">
 
         <!-- Firebase -->
+        <div class="rdps-ia-oculto" id="rdps-nube-seccion">
         <div class="menu-section-label" style="margin-top:.6rem">Nube ☁️</div>
 
-        <button class="menu-btn" onclick="subirNube()">
+        <button class="menu-btn" id="btnSubirNube" onclick="abrirConfirmacionSubir()">
             <div class="menu-btn-icon firebase">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M20 21H4a2 2 0 01-2-2 7 7 0 017-7h6a7 7 0 017 7 2 2 0 01-2 2z"/></svg>
             </div>
@@ -1311,7 +1315,7 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
-        <button class="menu-btn" onclick="bajarNube()">
+        <button class="menu-btn" id="btnBajarNube" onclick="abrirConfirmacionBajar()">
             <div class="menu-btn-icon firebase">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="7 16 12 21 17 16"/><line x1="12" y1="21" x2="12" y2="9"/><path d="M20 3H4a2 2 0 00-2 2 7 7 0 007 7h6a7 7 0 007-7 2 2 0 00-2-2z"/></svg>
             </div>
@@ -1322,6 +1326,7 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
         <div class="firebase-status" id="firebase-status">Firebase: no conectado aún</div>
+        </div>
 
         <!-- Navegación -->
         <div class="menu-section-label" style="margin-top:.6rem">Navegación</div>
@@ -1359,7 +1364,7 @@
             Inicio
         </button>
         <span class="topbar-title" id="nuevo-titulo">Nueva Visita</span>
-        <button class="topbar-btn secondary" onclick="abrirGuiaUsuario()" title="Guía del Usuario" style="flex-shrink:0;">📘 Guía</button>
+        <button class="topbar-btn secondary rdps-ia-oculto" id="rdps-guia-usuario-topbar" onclick="abrirGuiaUsuario()" title="Guía del Usuario" style="flex-shrink:0;">📘 Guía</button>
     </div>
 
     <div class="scroller">
@@ -1457,7 +1462,7 @@
                         <textarea id="r-acciones" placeholder="Describa las acciones tomadas o intervenciones realizadas..."></textarea>
                     </div>
 
-                    <div class="sp">
+                    <div class="sp rdps-ia-oculto" id="rdps-ia-seccion-nueva">
                         <div class="f-group" style="margin-bottom:.5rem">
                             <label>🎛️ Nivel de Detalle para la IA</label>
                             <select id="r-nivel-ia">
@@ -1964,6 +1969,7 @@
                     <label>Municipio / Distrito</label>
                     <input type="text" id="cfg-municipio" placeholder="Ej: Coatepeque"/>
                 </div>
+                <div class="rdps-ia-oculto" id="rdps-ia-seccion-config">
                 <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
                 <div class="profile-field">
                     <label>🤖 Proveedor de IA para el Botón Mágico</label>
@@ -1981,6 +1987,7 @@
                     <label>Modelo</label>
                     <select id="cfg-ia-modelo" onchange="onModalModeloChangeRDPS()" style="width:100%;padding:.55rem .6rem;border-radius:8px;border:1px solid var(--border);font-size:.85rem"></select>
                     <input type="text" id="cfg-ia-modelo-custom" style="width:100%;margin-top:.4rem;padding:.5rem .6rem;border-radius:8px;border:1px solid var(--border);font-size:.8rem;display:none" placeholder="Escribe el ID exacto del modelo"/>
+                </div>
                 </div>
             </div>
             <button class="profile-save-btn" onclick="guardarConfiguracion()">
@@ -2043,9 +2050,37 @@
                 💡 Ejemplo completo: <i>"Se identificó niña de 3 años con un peso de 13 kg y una talla de 90 cm"</i> — con eso el sistema ya puede dibujar la gráfica OMS y clasificar el estado nutricional, sin necesidad de internet ni de generar con IA. También funciona con espacios: <i>"peso de 13 . 5 kg"</i> o <i>"talla de 1 . 50 m"</i>.
             </p>
 
+            <h4 style="font-size:.95rem;color:var(--success, #0d9488);margin:1.1rem 0 .4rem;border-top:1px solid var(--border);padding-top:.9rem;">📋 Ver Historial de Mediciones</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0 0 .5rem;">
+                Cuando presionas <b>"📊 Ver estado nutricional"</b> y se abre la gráfica, ahora aparece un botón <b>"📋 Ver Historial"</b> en la parte inferior. Al tocarlo:
+            </p>
+            <ul style="font-size:.85rem;line-height:1.8;margin:0 0 .5rem;padding-left:1.2rem;">
+                <li><b>Ver todas las mediciones anteriores</b> de esa persona (peso, talla, edad, IMC en cada fecha).</li>
+                <li><b>Funciona sin internet</b> — los datos se guardan automáticamente en tu teléfono después del primer acceso.</li>
+                <li><b>Comparar tendencias</b> — puedes ver cómo cambió el peso, talla e IMC a lo largo del tiempo.</li>
+                <li><b>Indicador de estado</b>: 🌐 "Datos en tiempo real" si trae de Firebase, o 📱 "Datos en caché offline" si está usando datos guardados localmente.</li>
+            </ul>
+            <p style="font-size:.85rem;line-height:1.6;margin:0; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:.6rem .7rem;">
+                💡 Ejemplo: Marta ha sido registrada 5 veces desde junio. Al hacer clic en "Ver Historial", ves una tabla con las 5 mediciones, mostrando cómo su peso subió de 12 kg a 13.5 kg en 2 meses.
+            </p>
+
             <h4 style="font-size:.95rem;color:var(--navy2);margin:1.1rem 0 .4rem;">✨ Generar con IA</h4>
             <p style="font-size:.85rem;line-height:1.6;margin:0;">
                 Configura tu clave API gratuita en "Mi Perfil" (⚙️). Luego, escribe la idea básica en Hallazgos y presiona "✨ Generar Informe Profesional": la IA redacta Hallazgos y Acciones en formato oficial, y respeta la evaluación nutricional ya calculada localmente (sin internet) contra las tablas OMS.
+            </p>
+
+            <h4 style="font-size:.95rem;color:var(--navy2);margin:1.1rem 0 .4rem;border-top:1px solid var(--border);padding-top:.9rem;">☁️ Sincronización Segura — Subir / Bajar de la Nube</h4>
+            <p style="font-size:.85rem;line-height:1.6;margin:0 0 .5rem;">
+                Los botones <b>"☁️ Subir a la Nube"</b> y <b>"☁️ Bajar de la Nube"</b> ahora piden <b>confirmación antes de ejecutarse</b> para evitar sincronizaciones accidentales:
+            </p>
+            <ul style="font-size:.85rem;line-height:1.8;margin:0 0 .5rem;padding-left:1.2rem;">
+                <li><b>Al tocar el botón</b>, aparece una ventana que confirma la acción y muestra cuántos registros y viviendas se van a sincronizar.</li>
+                <li><b>Puedes cancelar</b> sin hacer nada, o confirmar con <b>"Subir Ahora"</b> / <b>"Bajar Ahora"</b>.</li>
+                <li><b>Durante la sincronización</b>, los botones se deshabilitan (se ven más opacos) para evitar múltiples sincronizaciones simultáneas.</li>
+                <li><b>Protección contra clicks accidentales</b>: es imposible hacer dos sincronizaciones al mismo tiempo.</li>
+            </ul>
+            <p style="font-size:.85rem;line-height:1.6;margin:0; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; padding:.6rem .7rem;">
+                💡 <b>Subir a la Nube</b>: Guarda una copia de seguridad de todos tus registros en Firebase. Úsalo regularmente para no perder datos. | <b>Bajar de la Nube</b>: Restaura datos desde Firebase y combina con lo que ya tienes. Los datos más recientes siempre prevalecen.
             </p>
 
             <div style="text-align:right; margin-top:1.1rem;">
@@ -2162,7 +2197,7 @@
                     <button type="button" id="btn-grafica-e" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('e')" disabled>📊 Ver estado nutricional (sin internet)</button>
                 </div>
                 <div class="f-group sp"><label>Acciones Ejecutadas</label><textarea id="e-acciones"></textarea></div>
-                <div class="f-group sp" style="margin-bottom:.3rem">
+                <div class="f-group sp rdps-ia-oculto" id="rdps-ia-seccion-editar-nivel" style="margin-bottom:.3rem">
                     <label>🎛️ Nivel de Detalle para la IA</label>
                     <select id="e-nivel-ia">
                         <option value="resumido">⚡ Resumido / Directo (frases breves)</option>
@@ -2170,7 +2205,7 @@
                         <option value="detallado">🔍 Extenso / Detallado</option>
                     </select>
                 </div>
-                <div class="f-group sp">
+                <div class="f-group sp rdps-ia-oculto" id="rdps-ia-seccion-editar-btn">
                     <button type="button" class="btn-magic" id="btn-magic-ia-edit" onclick="generarConIA('e')" style="width:100%">
                         <span id="btn-magic-ia-edit-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
                     </button>
@@ -2204,6 +2239,29 @@
             <div id="graficaNutriSelectorWrap" style="margin-bottom:10px;"></div>
             <canvas id="graficaNutriCanvas" width="500" height="300" style="width:100%; height:auto; display:block; background:#fff; border:1px solid var(--border); border-radius:8px;"></canvas>
             <div id="graficaNutriResumen" style="margin-top:10px; font-size:13px; color:var(--text); line-height:1.5;"></div>
+            <div style="margin-top:12px; display:flex; gap:8px;">
+                <button class="btn secondary" id="btn-ver-historial" onclick="toggleHistorialTabla()" style="flex:1;">📋 Ver Historial</button>
+            </div>
+            <div id="graficaNutriHistorial" style="margin-top:15px; display:none; background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px; max-height:300px; overflow-y:auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="margin:0; color:var(--text); font-size:13px;">📊 Historial de Mediciones</h4>
+                    <span id="indicadorHistorialOnline" style="font-size:11px; font-weight:600; padding:2px 6px; border-radius:4px; background:rgba(11,138,114,0.1);">—</span>
+                </div>
+                <table id="tablaHistorial" style="width:100%; border-collapse:collapse; font-size:12px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--border); background:var(--light2);">
+                            <th style="padding:6px; text-align:left; font-weight:700;">N°</th>
+                            <th style="padding:6px; text-align:center; font-weight:700;">Fecha</th>
+                            <th style="padding:6px; text-align:center; font-weight:700;">Edad</th>
+                            <th style="padding:6px; text-align:center; font-weight:700;">Peso (kg)</th>
+                            <th style="padding:6px; text-align:center; font-weight:700;">Talla (cm)</th>
+                            <th style="padding:6px; text-align:center; font-weight:700;">IMC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorialBody">
+                    </tbody>
+                </table>
+            </div>
             <div class="modal-btns">
                 <button class="btn secondary" onclick="cerrarModal('modal-grafica-nutri')">Cerrar</button>
             </div>
@@ -2258,8 +2316,26 @@
     </div>
 </div>
 
-<!-- Modal visualización completa -->
-<div id="modal-fullpreview">
+<!-- Modal de confirmación para sincronización -->
+<div class="modal-bg" id="modal-confirmar-sync" onclick="cerrarConfirmacionSync()">
+    <div class="modal-box" style="max-width:420px" onclick="event.stopPropagation()">
+        <div class="modal-box-inner">
+            <h3 id="sync-titulo" style="margin-top:0">Confirmar sincronización</h3>
+            <p id="sync-mensaje" style="color:var(--text); font-size:14px; line-height:1.6; margin:1rem 0;">
+                ¿Deseas proceder con esta acción?
+            </p>
+            <div style="background:var(--light2); border:1px solid var(--border); border-radius:8px; padding:10px; margin:1rem 0; font-size:12px; color:var(--muted);">
+                <div id="sync-detalles">Esta acción puede tardar unos segundos.</div>
+            </div>
+            <div class="modal-btns">
+                <button class="btn secondary" onclick="cerrarConfirmacionSync()">Cancelar</button>
+                <button class="btn primary" id="btn-confirmar-sync" onclick="ejecutarSync()">Continuar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-bg" id="modal-fullpreview">
     <div class="fullprev-box">
         <div class="fullprev-topbar">
             <h3 id="fullprev-titulo">Vista Previa — Reporte</h3>
@@ -2330,7 +2406,39 @@
 
       actualizarHome();
       renderListado();
+      rdpsAplicarVisibilidadIA();
     });
+
+    // ══════════════ INTERRUPTOR SECRETO — mostrar/ocultar funciones de IA ══════════════
+    // 5 toques en "MINSAL — El Salvador" (pantalla de inicio) activan o bloquean
+    // todo lo relacionado a IA: botones "Generar Informe Profesional" y la
+    // configuración de clave API / modelo en Mi Perfil.
+    const RDPS_IA_VISIBLE_KEY = 'rdps_ia_funciones_visibles';
+    let _rdpsToques = 0;
+    let _rdpsToquesTimer = null;
+
+    function rdpsToqueSecretoIA() {
+      _rdpsToques++;
+      clearTimeout(_rdpsToquesTimer);
+      _rdpsToquesTimer = setTimeout(() => { _rdpsToques = 0; }, 1500);
+      if (_rdpsToques >= 5) {
+        _rdpsToques = 0;
+        clearTimeout(_rdpsToquesTimer);
+        const activarAhora = localStorage.getItem(RDPS_IA_VISIBLE_KEY) !== '1';
+        localStorage.setItem(RDPS_IA_VISIBLE_KEY, activarAhora ? '1' : '0');
+        rdpsAplicarVisibilidadIA();
+        toast(activarAhora ? '🔓 Funciones de IA activadas' : '🔒 Funciones de IA ocultas', 'success');
+      }
+    }
+
+    function rdpsAplicarVisibilidadIA() {
+      const visible = localStorage.getItem(RDPS_IA_VISIBLE_KEY) === '1';
+      ['rdps-ia-seccion-nueva','rdps-ia-seccion-editar-nivel','rdps-ia-seccion-editar-btn','rdps-ia-seccion-config','rdps-guia-usuario-btn','rdps-nube-seccion','rdps-guia-usuario-topbar']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.toggle('rdps-ia-oculto', !visible);
+        });
+    }
 
     // ── NAVEGACIÓN ──
     function irA(screenId) {
@@ -4140,23 +4248,79 @@ async function _riesgoGuardarHistorialPeso(reg) {
   }
 }
 
-// Trae el historial completo de una persona desde la nube. Devuelve [] si no hay nada,
-// no hay internet, o no hay perfil configurado (nunca lanza error hacia quien lo llama).
+// Trae el historial completo de una persona desde la nube O desde caché local.
+// Prioridad: Firebase → localStorage (caché) → []
+// Devuelve siempre un array, nunca lanza error.
 async function _riesgoObtenerHistorialPeso(vivienda, nombre) {
   try {
     const docId = _docIdPromotor();
-    if (!docId) return [];
+    if (!docId) return _riesgoObtenerHistorialDelCache(vivienda, nombre);
+    
     const clave = _riesgoClaveIdentidad(vivienda, nombre);
-    if (!clave) return [];
+    if (!clave) return _riesgoObtenerHistorialDelCache(vivienda, nombre);
+    
     const fbOk = await _cargarFirebase();
-    if (!fbOk) return [];
+    if (!fbOk) return _riesgoObtenerHistorialDelCache(vivienda, nombre);
+    
     const db = initFirebase();
     const ref = doc(db, 'rdps', docId, 'historialCrecimiento', clave);
     const snap = await getDoc(ref);
-    if (!snap.exists()) return [];
-    return (snap.data().mediciones || []).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+    
+    let mediciones = [];
+    if (snap.exists()) {
+      mediciones = (snap.data().mediciones || []).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+      // Guardar en caché para acceso offline
+      _riesgoGuardarHistorialEnCache(vivienda, nombre, mediciones);
+      // Marcar que es dato en tiempo real (no caché)
+      mediciones._esEnLinea = true;
+    } else {
+      // No hay datos en Firebase, intentar caché
+      mediciones = _riesgoObtenerHistorialDelCache(vivienda, nombre);
+    }
+    return mediciones;
   } catch (e) {
-    console.warn('No se pudo cargar el historial de peso desde la nube:', e);
+    console.warn('No se pudo cargar el historial de peso desde la nube, intentando caché:', e);
+    return _riesgoObtenerHistorialDelCache(vivienda, nombre);
+  }
+}
+
+// Guarda el historial en localStorage para acceso offline
+function _riesgoGuardarHistorialEnCache(vivienda, nombre, mediciones) {
+  try {
+    const clave = _riesgoClaveIdentidad(vivienda, nombre);
+    if (!clave) return;
+    const keyCache = 'rdps_historial_' + clave;
+    localStorage.setItem(keyCache, JSON.stringify({
+      vivienda: vivienda,
+      nombre: nombre,
+      mediciones: mediciones,
+      guardadoEn: new Date().toISOString()
+    }));
+  } catch (e) {
+    console.warn('No se pudo guardar caché del historial:', e);
+  }
+}
+
+// Obtiene el historial del caché local (localStorage)
+function _riesgoObtenerHistorialDelCache(vivienda, nombre) {
+  try {
+    const clave = _riesgoClaveIdentidad(vivienda, nombre);
+    if (!clave) return [];
+    const keyCache = 'rdps_historial_' + clave;
+    const cached = localStorage.getItem(keyCache);
+    if (cached) {
+      const datos = JSON.parse(cached);
+      // Marcar que es dato en caché (no en línea)
+      if (datos.mediciones) {
+        datos.mediciones._esEnLinea = false;
+        datos.mediciones._fechaCaché = datos.guardadoEn;
+        return datos.mediciones;
+      }
+      return datos.mediciones || [];
+    }
+    return [];
+  } catch (e) {
+    console.warn('No se pudo obtener caché del historial:', e);
     return [];
   }
 }
@@ -4454,6 +4618,106 @@ function toggleFullscreenGrafica() {
   if (_riesgoGraficaIndicadorActual) _riesgoActualizarGrafica(_riesgoGraficaIndicadorActual);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// MOSTRAR/OCULTAR HISTORIAL DE MEDICIONES
+// ══════════════════════════════════════════════════════════════════
+let _historialVisible = false;
+
+function toggleHistorialTabla() {
+  const contenedor = document.getElementById('graficaNutriHistorial');
+  const btn = document.getElementById('btn-ver-historial');
+  _historialVisible = !_historialVisible;
+  
+  if (_historialVisible) {
+    contenedor.style.display = 'block';
+    btn.textContent = '📋 Ocultar Historial';
+    btn.style.background = 'var(--teal2)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--teal2)';
+  } else {
+    contenedor.style.display = 'none';
+    btn.textContent = '📋 Ver Historial';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
+function _riesgoLlenarTablaHistorial(historial) {
+  const tbody = document.getElementById('tablaHistorialBody');
+  tbody.innerHTML = '';
+  
+  if (!Array.isArray(historial) || historial.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:10px; text-align:center; color:var(--muted);">No hay registros históricos disponibles</td></tr>';
+    return;
+  }
+  
+  // Verificar si es datos en línea o caché
+  const esEnLinea = historial._esEnLinea === true;
+  const fechaCaché = historial._fechaCaché;
+  
+  // Mostrar indicador de estado
+  const indicadorEl = document.getElementById('indicadorHistorialOnline');
+  if (indicadorEl) {
+    if (esEnLinea) {
+      indicadorEl.innerHTML = '🌐 Datos en tiempo real (actualizado hoy)';
+      indicadorEl.style.color = '#0b8a72';
+    } else {
+      const fechaCache = fechaCaché ? new Date(fechaCaché).toLocaleDateString('es-SV') : 'desconocida';
+      indicadorEl.innerHTML = `📱 Datos en caché offline (del ${fechaCache})`;
+      indicadorEl.style.color = '#e67e22';
+    }
+  }
+  
+  historial.forEach(function(registro, index) {
+    const fila = document.createElement('tr');
+    fila.style.borderBottom = '1px solid var(--border)';
+    fila.style.transition = 'background 0.2s';
+    
+    fila.addEventListener('mouseenter', function() {
+      fila.style.background = 'rgba(11, 138, 114, 0.05)';
+    });
+    fila.addEventListener('mouseleave', function() {
+      fila.style.background = '';
+    });
+    
+    const fecha = registro.fecha ? new Date(registro.fecha).toLocaleDateString('es-SV') : '—';
+    const peso = registro.pesoKg ? registro.pesoKg.toFixed(1) : '—';
+    const talla = registro.tallaCm ? registro.tallaCm.toFixed(1) : '—';
+    
+    let imc = '—';
+    if (registro.pesoKg && registro.tallaCm) {
+      imc = (Math.round((registro.pesoKg / Math.pow(registro.tallaCm / 100, 2)) * 10) / 10).toFixed(1);
+    }
+    
+    const edadMeses = registro.edadMeses;
+    let edadTexto = '—';
+    if (edadMeses != null) {
+      if (edadMeses < 1) {
+        edadTexto = Math.round(edadMeses * 30) + ' d';
+      } else if (edadMeses < 12) {
+        edadTexto = (Math.round(edadMeses * 10) / 10).toFixed(1) + ' m';
+      } else {
+        const años = Math.floor(edadMeses / 12);
+        const meses_rest = Math.round(edadMeses % 12);
+        edadTexto = años + ' a';
+        if (meses_rest > 0) edadTexto += ' ' + meses_rest + ' m';
+      }
+    }
+    
+    fila.innerHTML = `
+      <td style="padding:6px; text-align:left;">${index + 1}</td>
+      <td style="padding:6px; text-align:center;">${fecha}</td>
+      <td style="padding:6px; text-align:center;">${edadTexto}</td>
+      <td style="padding:6px; text-align:center; font-weight:500;">${peso}</td>
+      <td style="padding:6px; text-align:center; font-weight:500;">${talla}</td>
+      <td style="padding:6px; text-align:center; font-weight:500; color:var(--teal2);">${imc}</td>
+    `;
+    
+    tbody.appendChild(fila);
+  });
+}
+
 // Se llama desde el botón 📊 de cada tarjeta de "Ver Registros", usando el id del registro.
 function abrirGraficaNutricional(regId) {
   const r = registros.find(x => String(x.id) === String(regId));
@@ -4552,6 +4816,15 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   box.classList.remove('fullscreen');
   canvas.width = 500; canvas.height = 300;
   document.getElementById('btnFullscreenGrafica').textContent = '⛶';
+  
+  // Reinicializar estado del historial
+  _historialVisible = false;
+  document.getElementById('graficaNutriHistorial').style.display = 'none';
+  document.getElementById('btn-ver-historial').textContent = '📋 Ver Historial';
+  document.getElementById('btn-ver-historial').style.background = '';
+  document.getElementById('btn-ver-historial').style.color = '';
+  document.getElementById('btn-ver-historial').style.borderColor = '';
+  _riesgoLlenarTablaHistorial([]); // Mostrar "sin datos" hasta que cargue
 
   const avisoPrematuro = document.getElementById('graficaNutriAvisoPrematuro');
   if (datos.edadCronologica != null) {
@@ -4595,6 +4868,7 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   _riesgoObtenerHistorialPeso(datos.vivienda, datos.nombre).then(function(hist) {
     if (_riesgoGraficaDatosActual !== datos) return; // el usuario ya cerró/cambió de gráfica
     datos.historial = hist;
+    _riesgoLlenarTablaHistorial(hist); // Llenar tabla de historial
     if (_riesgoGraficaIndicadorActual) _riesgoActualizarGrafica(_riesgoGraficaIndicadorActual);
   });
 }
@@ -7215,6 +7489,86 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
          rdps/{docId}/familias/{vivId}   → un doc por vivienda del catálogo
        Solo sube lo que cambió (nuevo o más reciente que la nube).
     ══════════════════════════════════════════════════════════════ */
+    // ══════════════════════════════════════════════════════════════
+    // CONFIRMACIÓN DE SINCRONIZACIÓN (PROTECCIÓN CONTRA CLICKS ACCIDENTALES)
+    // ══════════════════════════════════════════════════════════════
+    let _syncEnProgreso = false;
+    let _tipoSyncPendiente = null; // 'subir' o 'bajar'
+
+    function abrirConfirmacionSubir() {
+      if (_syncEnProgreso) {
+        toast('⏳ Ya hay una sincronización en progreso. Por favor espera…', 'warn');
+        return;
+      }
+      _tipoSyncPendiente = 'subir';
+      const modal = document.getElementById('modal-confirmar-sync');
+      document.getElementById('sync-titulo').textContent = '☁️ Subir datos a la Nube';
+      document.getElementById('sync-mensaje').textContent = 
+        `Se subirán todos tus registros y catálogo de familias a Firebase.`;
+      document.getElementById('sync-detalles').textContent = 
+        `${registros.length} registros · ${(getCatalogo() || []).length} viviendas`;
+      document.getElementById('btn-confirmar-sync').textContent = 'Subir Ahora';
+      document.getElementById('btn-confirmar-sync').style.background = 'var(--success)';
+      modal.classList.add('show');
+    }
+
+    function abrirConfirmacionBajar() {
+      if (_syncEnProgreso) {
+        toast('⏳ Ya hay una sincronización en progreso. Por favor espera…', 'warn');
+        return;
+      }
+      _tipoSyncPendiente = 'bajar';
+      const modal = document.getElementById('modal-confirmar-sync');
+      document.getElementById('sync-titulo').textContent = '☁️ Bajar datos de la Nube';
+      document.getElementById('sync-mensaje').textContent = 
+        `Se traerán los datos de Firebase y se combinarán con tus datos locales.`;
+      document.getElementById('sync-detalles').textContent = 
+        `Los datos más recientes siempre ganan.`;
+      document.getElementById('btn-confirmar-sync').textContent = 'Bajar Ahora';
+      document.getElementById('btn-confirmar-sync').style.background = 'var(--teal2)';
+      modal.classList.add('show');
+    }
+
+    function cerrarConfirmacionSync() {
+      document.getElementById('modal-confirmar-sync').classList.remove('show');
+      _tipoSyncPendiente = null;
+    }
+
+    async function ejecutarSync() {
+      if (!_tipoSyncPendiente) return;
+      
+      const tipo = _tipoSyncPendiente;
+      cerrarConfirmacionSync();
+      
+      // Proteger contra ejecución múltiple
+      if (_syncEnProgreso) return;
+      _syncEnProgreso = true;
+      
+      // Deshabilitar botones durante sync
+      const btnSubir = document.getElementById('btnSubirNube');
+      const btnBajar = document.getElementById('btnBajarNube');
+      if (btnSubir) { btnSubir.style.opacity = '0.5'; btnSubir.disabled = true; }
+      if (btnBajar) { btnBajar.style.opacity = '0.5'; btnBajar.disabled = true; }
+      
+      try {
+        if (tipo === 'subir') {
+          await subirNube();
+        } else if (tipo === 'bajar') {
+          await bajarNube();
+        }
+      } catch (e) {
+        console.error('Error en sync:', e);
+      } finally {
+        // Reactivar botones
+        _syncEnProgreso = false;
+        if (btnSubir) { btnSubir.style.opacity = '1'; btnSubir.disabled = false; }
+        if (btnBajar) { btnBajar.style.opacity = '1'; btnBajar.disabled = false; }
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // SUBIR A LA NUBE
+    // ══════════════════════════════════════════════════════════════
     async function subirNube() {
       try {
         const docId = _docIdPromotor();
@@ -8621,6 +8975,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       cerrarFullPreview, imprimirDesdeFullPreview,
       copiarTabla, copiarCSV, imprimirDesdePreview,
       subirNube, bajarNube,
+      abrirConfirmacionSubir, abrirConfirmacionBajar, cerrarConfirmacionSync, ejecutarSync,
       // Catálogo de familias - expuesto más abajo
       exportarCatalogoExcel: ()=>{}, // legacy — reemplazado por copiarCatalogoTabla
       copiarCatalogoTabla,
@@ -8638,7 +8993,9 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
       seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado,
       // Validación botón nutrición
-      _puedeGraficar, _actualizarBtnGrafica
+      _puedeGraficar, _actualizarBtnGrafica,
+      // Historial de mediciones
+      toggleHistorialTabla
     });
 
     // ══════════════════════════════════════════
