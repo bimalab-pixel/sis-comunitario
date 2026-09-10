@@ -83,6 +83,16 @@
         .topbar-btn.primary{background:var(--grad);color:#fff}.topbar-btn.primary:hover{opacity:.9}
         .topbar-btn.teal{background:var(--teal2);color:#fff}.topbar-btn.teal:hover{background:var(--teal)}
         .topbar-btn.indigo{background:var(--indigo2);color:#fff}.topbar-btn.indigo:hover{background:var(--indigo)}
+        .topbar-menu-wrap{position:relative;flex-shrink:0}
+        .topbar-btn.menu-toggle{background:var(--light2);color:var(--purple2);padding:.4rem .58rem}
+        .topbar-btn.menu-toggle:hover{background:var(--border)}
+        .topbar-btn.menu-toggle svg{width:15px;height:15px}
+        .topbar-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--white);border-radius:12px;box-shadow:0 10px 28px rgba(92,26,110,.22);border:1px solid var(--border);padding:.4rem;min-width:196px;display:none;flex-direction:column;gap:.1rem;z-index:60}
+        .topbar-menu.show{display:flex}
+        .topbar-menu-item{display:flex;align-items:center;gap:.6rem;padding:.5rem .55rem;border:none;background:none;border-radius:9px;font-family:inherit;font-size:.8rem;font-weight:700;color:var(--text);cursor:pointer;text-align:left;width:100%;transition:background .15s}
+        .topbar-menu-item:hover{background:var(--light2)}
+        .tmi-icon{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+        .tmi-icon svg{width:13px;height:13px}
         .btn.indigo{background:var(--grad-indigo);color:#fff}.btn.indigo:hover{opacity:.9}
 
         /* Modal historial por categoría de paciente */
@@ -510,6 +520,17 @@
         .list-folder-body{background:var(--white);max-height:0;overflow:hidden;transition:max-height .35s ease}
         .list-folder.open .list-folder-body{max-height:9999px}
         .list-folder-empty{padding:1rem;text-align:center;color:var(--muted);font-size:.78rem}
+        .list-folder-group-empty{border-radius:13px;margin-bottom:.58rem;overflow:hidden;box-shadow:var(--shadow-sm);border:1.5px dashed var(--border);background:var(--white)}
+        .list-folder-group-header{display:flex;align-items:center;gap:.6rem;padding:.62rem .88rem;cursor:pointer;user-select:none}
+        .list-folder-group-header:hover{background:var(--light2)}
+        .lfg-title{flex:1;font-weight:800;font-size:.8rem;color:var(--muted)}
+        .lfg-badge{background:var(--light2);color:var(--muted);font-size:.63rem;font-weight:800;padding:3px 9px;border-radius:20px;flex-shrink:0}
+        .lfg-chevron{color:var(--muted);flex-shrink:0;transition:transform .25s}
+        .lfg-chevron svg{width:14px;height:14px}
+        .list-folder-group-empty.open .lfg-chevron{transform:rotate(90deg)}
+        .list-folder-group-body{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 .5rem}
+        .list-folder-group-empty.open .list-folder-group-body{max-height:9999px;padding-bottom:.5rem}
+        .list-folder-group-body .list-folder{box-shadow:none;border:1px solid var(--border)}
 
         .search-results-header{padding:.9rem 1rem !important;background:#f3e5f5;border-bottom:2px solid #e1bee7;font-size:.85rem;font-weight:700;color:#7b2d8b;display:flex;align-items:center;gap:.4rem}
         .list-results{display:flex;flex-direction:column}
@@ -675,8 +696,14 @@
         .hist-personal{font-size:.62rem;color:var(--muted);margin-top:.35rem;padding-top:.3rem;border-top:1px dashed var(--border);}
         .hist-btn-add{display:flex;align-items:center;gap:.4rem;width:100%;padding:.5rem .75rem;background:var(--light2);border:1.5px dashed var(--purple3);border-radius:9px;color:var(--purple2);font-family:inherit;font-size:.76rem;font-weight:800;cursor:pointer;transition:all .2s;justify-content:center;margin-top:.75rem;}
         .hist-btn-add:hover{background:var(--light);border-color:var(--purple2);}
+        .fpa-btn{display:flex;align-items:center;gap:.55rem;padding:.75rem .9rem;border-radius:11px;border:none;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap;transition:opacity .2s;width:100%;}
+        .fpa-btn:hover{opacity:.88}
+        .fpa-btn svg{width:16px;height:16px;flex-shrink:0}
+        .fpa-btn.fpa-hist{background:var(--grad-indigo);color:#fff}
+        .fpa-btn.fpa-add{background:var(--grad);color:#fff}
+        .fpa-btn.fpa-edit{background:var(--grad-teal);color:#fff}
         /* Modal historial manual */
-        #hist-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;display:none;align-items:flex-end;justify-content:center;}
+        #hist-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;display:none;align-items:flex-end;justify-content:center;}
         #hist-modal-bg.open{display:flex;}
         #cat-hist-modal-bg.open{display:flex;}
         #hist-modal{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:1.3rem 1.1rem 2rem;}
@@ -741,6 +768,11 @@
             <div class="menu-btn-text"><div class="mbt">Nueva paciente</div><div class="mbs">Ficha completa MEF</div></div>
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </button>
+        <button class="menu-btn" onclick="openQuickSeguimientoModal()">
+            <div class="menu-btn-icon" style="background:rgba(0,150,136,.32)"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+            <div class="menu-btn-text"><div class="mbt">Registrar seguimiento</div><div class="mbs">Selecciona paciente y tipo de atención</div></div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </button>
         <button class="menu-btn" onclick="goTo('screen-list')">
             <div class="menu-btn-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
             <div class="menu-btn-text"><div class="mbt">Ver todas las pacientes</div><div class="mbs">Listado con filtros e impresión</div></div>
@@ -769,11 +801,6 @@
         <button class="menu-btn" onclick="openPFListado()">
             <div class="menu-btn-icon" style="background:rgba(194,24,91,.32)"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
             <div class="menu-btn-text"><div class="mbt">Seguimiento PF</div><div class="mbs">Planificación familiar · métodos y citas</div></div>
-            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-        </button>
-        <button class="menu-btn" onclick="openQuickSeguimientoModal()">
-            <div class="menu-btn-icon" style="background:rgba(0,150,136,.32)"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
-            <div class="menu-btn-text"><div class="mbt">Registrar seguimiento</div><div class="mbs">Selecciona paciente y tipo de atención</div></div>
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </button>
         <button class="menu-btn" onclick="openArchivoModal()">
@@ -818,11 +845,30 @@
         <div class="topbar-title">Pacientes MEF</div>
         <div class="topbar-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="search-input" placeholder="Buscar nombre o DUI…" oninput="renderList()"/></div>
         <button class="topbar-btn primary" onclick="goTo('screen-form','new')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Nueva</span></button>
-        <button class="topbar-btn" style="background:linear-gradient(135deg,#1b5e20,#43a047);color:#fff" onclick="document.getElementById('import-excel-input').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg><span>Importar Excel</span></button>
         <input type="file" id="import-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportExcelFile(event)"/>
-        <button class="topbar-btn teal" onclick="printListado()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Imprimir</span></button>
-        <button class="topbar-btn" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc);color:#fff" onclick="openListadoPreview()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver listado</span></button>
-        <button class="topbar-btn" style="background:linear-gradient(135deg,#00796b,#26a69a);color:#fff" onclick="openVacPreview()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="3" y2="21"/><line x1="9" y1="15" x2="5" y2="19"/><path d="M20 4l-6 6"/><path d="M14 4l6 6"/><path d="M8 10l6 6"/><line x1="8" y1="10" x2="14" y2="16"/><path d="M10 8l-2 2 6 6 2-2"/></svg><span>Vacunas</span></button>
+        <div class="topbar-menu-wrap">
+            <button class="topbar-btn menu-toggle" id="list-menu-btn" onclick="toggleListMenu(event)" aria-label="Más opciones">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <div class="topbar-menu" id="list-menu-dropdown">
+                <button class="topbar-menu-item" onclick="closeListMenu();document.getElementById('import-excel-input').click()">
+                    <span class="tmi-icon" style="background:linear-gradient(135deg,#1b5e20,#43a047)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></span>
+                    <span>Importar Excel</span>
+                </button>
+                <button class="topbar-menu-item" onclick="closeListMenu();printListado()">
+                    <span class="tmi-icon" style="background:linear-gradient(135deg,#00796b,#26a69a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
+                    <span>Imprimir</span>
+                </button>
+                <button class="topbar-menu-item" onclick="closeListMenu();openListadoPreview()">
+                    <span class="tmi-icon" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+                    <span>Ver listado</span>
+                </button>
+                <button class="topbar-menu-item" onclick="closeListMenu();openVacPreview()">
+                    <span class="tmi-icon" style="background:linear-gradient(135deg,#00796b,#26a69a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="3" y2="21"/><line x1="9" y1="15" x2="5" y2="19"/><path d="M20 4l-6 6"/><path d="M14 4l6 6"/><path d="M8 10l6 6"/><line x1="8" y1="10" x2="14" y2="16"/><path d="M10 8l-2 2 6 6 2-2"/></svg></span>
+                    <span>Vacunas</span>
+                </button>
+            </div>
+        </div>
     </div>
     <div class="list-tabs">
         <button class="list-tab active" id="tab-pacientes" onclick="switchListTab('pacientes')">
@@ -1300,15 +1346,18 @@
 <!-- MODALES -->
 
 <!-- ════ MODAL VISTA PREVIA FICHA MEF ════ -->
-<div id="ficha-preview-bg" onclick="if(event.target===this)closeFichaPreview()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9700;align-items:flex-start;justify-content:center;overflow:hidden;">
-    <div style="background:#fff;width:100%;height:100%;display:flex;flex-direction:column;">
-        <div style="flex-shrink:0;display:flex;align-items:center;gap:.6rem;padding:.75rem 1rem;background:linear-gradient(135deg,#5c1a6e,#c2185b);">
+<div id="ficha-preview-bg" onclick="if(event.target===this)closeFichaPreview()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9700;align-items:center;justify-content:center;overflow:hidden;padding:1rem;">
+    <div style="background:#fff;width:100%;max-width:380px;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);">
+        <div style="display:flex;align-items:center;gap:.6rem;padding:1rem 1.1rem;background:linear-gradient(135deg,#5c1a6e,#c2185b);">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px;flex-shrink:0"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span id="ficha-preview-name" style="font-size:.9rem;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ficha MEF</span>
-            <button id="ficha-preview-print-btn" style="display:flex;align-items:center;gap:.4rem;padding:.38rem .85rem;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:8px;color:#fff;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
-            <button onclick="closeFichaPreview()" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);border-radius:8px;color:#fff;font-size:1.1rem;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>
+            <span id="ficha-preview-name" style="font-size:.92rem;font-weight:800;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ficha MEF</span>
+            <button onclick="closeFichaPreview()" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);border-radius:8px;color:#fff;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>
         </div>
-        <iframe id="ficha-preview-iframe" style="flex:1;width:100%;border:none;background:#f5f5f5;"></iframe>
+        <div id="ficha-preview-actions" style="display:flex;flex-direction:column;gap:.55rem;padding:1.1rem;">
+            <button class="fpa-btn fpa-hist" onclick="fichaPreviewHistorial()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Historial de seguimientos</button>
+            <button class="fpa-btn fpa-add" onclick="fichaPreviewRegistrar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar seguimiento</button>
+            <button class="fpa-btn fpa-edit" onclick="fichaPreviewEditar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar ficha</button>
+        </div>
     </div>
 </div>
 
@@ -1426,7 +1475,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 
 
     function loadRecords(){try{records=JSON.parse(localStorage.getItem(LS_KEY))||[];}catch(e){records=[];}}
-    function saveRecords(){localStorage.setItem(LS_KEY,JSON.stringify(records));if(typeof window!=='undefined')window.records=records;}
+    function saveRecords(){localStorage.setItem(LS_KEY,JSON.stringify(records));if(typeof window!=='undefined')window.records=records;if(typeof window!=='undefined'&&window.queueAutoSync)window.queueAutoSync();}
 
     /* ═══ NAV ═══ */
     let currentScreen='screen-home',_navHistory=[];
@@ -2769,8 +2818,8 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),700); }
     }
 
-    function printFicha(id){
-      const r=records.find(x=>x.id===id);if(!r)return;
+    function _buildFichaHTML(id, includeHistorial){
+      const r=records.find(x=>x.id===id);if(!r)return '';
       const profile=loadProfile();
       const ucsf=profile.ucsf||'UDS';
       const personal=profile.nombre||'Personal de salud';
@@ -2936,8 +2985,13 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>'
         +'<title>Ficha MEF &middot; '+esc(r.nombre||'')+'</title>'
         +'<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>'
-        +'<style>'+css+'</style></head><body>'+p1+p2+'</body></html>';
+        +'<style>'+css+'</style></head><body>'+p1+(includeHistorial?p2:'')+'</body></html>';
 
+      return html;
+    }
+    function printFicha(id){
+      const html=_buildFichaHTML(id,true);
+      if(!html)return;
       const w=window.open('','_blank','width=820,height=950');
       if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),700);}
     }
@@ -2957,7 +3011,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       const pf=r.nextDate?formatDateShort(r.nextDate):'—';
       return `<div class="lf-item">
         <div class="lf-item-num">${String(r.num||0).padStart(2,'0')}</div>
-        <div class="lf-item-info" onclick="openRecord('${r.id}')">
+        <div class="lf-item-info" onclick="openFichaPreview('${r.id}')">
           <div class="lf-item-name">${escHtml(r.nombre||'—')}</div>
           <div class="lf-item-meta">${meta} · Próx.PF: ${pf}</div>
           ${tags?`<div class="lf-item-tags">${tags}</div>`:''}
@@ -3106,7 +3160,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
           +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
           +     'Ver tarjeta'
           +   '</button>'
-          +   '<button class="vb-action-btn" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);color:#880e4f" onclick="openRecord(\''+r.id+'\')">'
+          +   '<button class="vb-action-btn" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);color:#880e4f" onclick="openFichaPreview(\''+r.id+'\')">'
           +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'
           +     'Ver ficha MEF'
           +   '</button>'
@@ -3181,6 +3235,8 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       ];
 
       var html='';
+      var emptyHtml='';
+      var emptyCount=0;
       folderDefs.forEach(function(fd){
         var recs=active.filter(fd.filter);
         recs=_applySort(recs,_listSort);
@@ -3189,8 +3245,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
           ?'<div class="list-folder-empty">Sin pacientes en esta categoría</div>'
           :recs.map(function(r){return lfItemHTML(r);}).join('');
 
-        var autoOpen='';
-        html+='<div class="list-folder '+autoOpen+'" id="lf-'+fd.key+'" style="--lf-grad:'+fd.grad+'">'
+        var block='<div class="list-folder" id="lf-'+fd.key+'" style="--lf-grad:'+fd.grad+'">'
           +'<div class="list-folder-header" data-fkey="'+fd.key+'">'
           +'<div class="list-folder-icon">'+fd.icon+'</div>'
           +'<div class="list-folder-text">'
@@ -3202,13 +3257,40 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
           +'</div>'
           +'<div class="list-folder-body">'+bodyHTML+'</div>'
           +'</div>';
+
+        if(fd.key==='all'||recs.length>0){html+=block;}
+        else{emptyHtml+=block;emptyCount++;}
       });
+      if(emptyCount>0){
+        html+='<div class="list-folder-group-empty" id="lf-empty-group">'
+          +'<div class="list-folder-group-header" onclick="toggleEmptyFolderGroup()">'
+          +'<span class="lfg-title">Otras categorías</span>'
+          +'<span class="lfg-badge">'+emptyCount+' sin datos</span>'
+          +'<div class="lfg-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>'
+          +'</div>'
+          +'<div class="list-folder-group-body" id="lf-empty-body">'+emptyHtml+'</div>'
+          +'</div>';
+      }
       cont.innerHTML=html;
+    }
+    function toggleEmptyFolderGroup(){
+      document.getElementById('lf-empty-group')?.classList.toggle('open');
     }
     function printFichaActual(){
       if(editingId) printFicha(editingId);
       else showToast('Guarda la ficha primero para imprimir','error');
     }
+    function toggleListMenu(e){
+      if(e) e.stopPropagation();
+      document.getElementById('list-menu-dropdown')?.classList.toggle('show');
+    }
+    function closeListMenu(){
+      document.getElementById('list-menu-dropdown')?.classList.remove('show');
+    }
+    document.addEventListener('click',function(e){
+      var dd=document.getElementById('list-menu-dropdown');
+      if(dd && dd.classList.contains('show') && !e.target.closest('.topbar-menu-wrap')){dd.classList.remove('show');}
+    });
     function toggleListFolder(key){
       document.getElementById('lf-'+key)?.classList.toggle('open');
     }
@@ -3279,18 +3361,29 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     }
 
     /* ═══ IMPRIMIR ═══ */
-    /* ════ VISTA PREVIA FICHA MEF (iframe) ════ */
+    /* ════ MENÚ RÁPIDO DE PACIENTE (Historial / Registrar / Editar) ════ */
     function openFichaPreview(id){
       const r=records.find(x=>x.id===id);if(!r)return;
+      _fichaPreviewId=id;
       document.getElementById('ficha-preview-name').textContent=r.nombre||'Ficha MEF';
-      document.getElementById('ficha-preview-print-btn').onclick=()=>printFicha(id);
-      const origOpen=window.open;let capturedHTML='';
-      window.open=()=>({document:{write(h){capturedHTML=h;},close(){}}});
-      printFicha(id);window.open=origOpen;
-      if(capturedHTML){const d=document.getElementById('ficha-preview-iframe').contentDocument||document.getElementById('ficha-preview-iframe').contentWindow.document;d.open();d.write(capturedHTML);d.close();}
       document.getElementById('ficha-preview-bg').style.display='flex';
     }
     function closeFichaPreview(){document.getElementById('ficha-preview-bg').style.display='none';}
+    let _fichaPreviewId=null;
+    function fichaPreviewHistorial(){
+      if(!_fichaPreviewId)return;
+      openHistorialPreview(_fichaPreviewId);
+    }
+    function fichaPreviewRegistrar(){
+      if(!_fichaPreviewId)return;
+      closeFichaPreview();
+      window.openHistModalForId(_fichaPreviewId);
+    }
+    function fichaPreviewEditar(){
+      if(!_fichaPreviewId)return;
+      closeFichaPreview();
+      openRecord(_fichaPreviewId);
+    }
 
     /* ════ VISTA PREVIA HISTORIAL (iframe) ════ */
     function openHistorialPreview(id){
@@ -3574,14 +3667,15 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
           const proxCell=`<span style="color:#c62828;font-weight:800">${fmt(r.nextDate)}</span>`;
           const rb=rowIdx%2===1?'background:#fff5f8':'background:#fff';
           rowIdx++;
-          const cells=[i+1,escHtml(r.nombre||'—'),r.edad?r.edad+' a':'—',escHtml(r.direccion||'—'),escHtml(METODO_LABELS[m]||m),...abastos,proxCell];
-          bodyRows+=`<tr style="${rb};page-break-inside:avoid;break-inside:avoid">${cells.map((c,ci)=>`<td class="pfl-td" style="${td(COLS[ci].dx)}">${c}</td>`).join('')}</tr>`;
+          const nombreCell=`${escHtml(r.nombre||'—')} <svg viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="3" stroke-linecap="round" style="width:11px;height:11px;vertical-align:-1px;margin-left:2px;opacity:.55"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+          const cells=[i+1,nombreCell,r.edad?r.edad+' a':'—',escHtml(r.direccion||'—'),escHtml(METODO_LABELS[m]||m),...abastos,proxCell];
+          bodyRows+=`<tr onclick="registrarAbastoDesdeListado('${r.id}')" style="${rb};page-break-inside:avoid;break-inside:avoid;cursor:pointer">${cells.map((c,ci)=>`<td class="pfl-td" style="${td(COLS[ci].dx)}">${c}</td>`).join('')}</tr>`;
         });
       });
       const colgroup=`<colgroup>${COLS.map(c=>`<col style="width:${c.w}">`).join('')}</colgroup>`;
       const theadHtml=`<thead style="display:table-header-group"><tr>${COLS.map(c=>`<th class="pfl-th" style="${th(c.tx)}">${c.l}</th>`).join('')}</tr></thead>`;
       let sections=planifican.length
-        ? `<div class="pfl-table-wrap"><table class="pfl-table">${colgroup}${theadHtml}<tbody>${bodyRows}</tbody></table></div>`
+        ? `<div class="pf-tap-hint" style="font-size:.68rem;color:#9e6070;margin-bottom:.4rem;display:flex;align-items:center;gap:.3rem"><svg viewBox="0 0 24 24" fill="none" stroke="#c2185b" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;flex-shrink:0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Toca una paciente para registrar su abasto</div><div class="pfl-table-wrap"><table class="pfl-table">${colgroup}${theadHtml}<tbody>${bodyRows}</tbody></table></div>`
         : '<div style="text-align:center;padding:2rem;color:#9e9e9e;font-size:.88rem">No hay pacientes con método de planificación registrado.</div>';
 
       const footer=`<div style="font-size:.62rem;color:#9e6070;margin-top:.5rem;border-top:1.5px solid #f48fb1;padding-top:.4rem;display:flex;justify-content:space-between"><span>Planificación Familiar · MINSAL El Salvador · ${escHtml(ucsf)}</span><span>Total: ${planifican.length} pacientes · ${todayStr}</span></div>`;
@@ -3592,6 +3686,11 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       document.getElementById('pf-listado-bg').style.display='flex';
     }
     function closePFListado(){document.getElementById('pf-listado-bg').style.display='none';}
+    let _pfListadoWasOpen=false;
+    function registrarAbastoDesdeListado(id){
+      _pfListadoWasOpen=true;
+      window.openHistModalForId(id);
+    }
 
     function openTarjetaPreview(id){
       const r=records.find(x=>x.id===id);if(!r)return;
@@ -4504,6 +4603,10 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         saveBtn.onclick = saveHistEntry;
       }
     }
+    function closeHistModalUser(){
+      closeHistModal();
+      _pfListadoWasOpen=false;
+    }
     function hmSelVacuna(id, label, color, bg){
       document.getElementById('hm-vacuna-sel').value = id;
       // Actualizar chips visualmente
@@ -4841,13 +4944,21 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       r.historial.push(entry);
       r.updatedAt = new Date().toISOString();
       saveRecords();
+      const msg = camposActualizados.length
+        ? '✓ Seguimiento registrado · Actualizado: ' + camposActualizados.join(', ')
+        : '✓ Seguimiento registrado en historial';
+
+      if(_pfListadoWasOpen){
+        _pfListadoWasOpen=false;
+        renderPFListado();
+        showToast(msg);
+        return;
+      }
+
       loadFormFromRecord(r);
       // Reabrir historial (loadFormFromRecord lo cierra) y refrescar con los datos nuevos
       document.getElementById('hist-section').classList.add('open');
       renderHistAcc(r.historial);
-      const msg = camposActualizados.length
-        ? '✓ Seguimiento registrado · Actualizado: ' + camposActualizados.join(', ')
-        : '✓ Seguimiento registrado en historial';
       _showPostSeguimientoModal(msg, r.id);
     }
 
@@ -5552,7 +5663,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         <div style="flex-shrink:0;display:flex;align-items:center;gap:.6rem;padding:.75rem 1rem;background:linear-gradient(135deg,#880e4f,#c2185b);">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
             <span style="font-size:.95rem;font-weight:800;color:#fff;flex:1">Seguimiento Planificación Familiar</span>
-            <button onclick="closePFListado();setTimeout(()=>{const w=window.open('','_blank','width=1200,height=800');if(w){const h=document.getElementById('pf-listado-body').innerHTML;w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content=&quot;width=device-width, initial-scale=1&quot;><link href=https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap rel=stylesheet><style>@page{margin:10mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}html,body{width:100%;margin:0}body{font-family:Nunito,sans-serif;font-size:10.5px;color:#2d1a3a;padding:0}.pfl-table-wrap{overflow:visible!important;border:none!important}.pfl-table{table-layout:fixed!important;width:100%!important;min-width:0!important}thead{display:table-header-group}tr{page-break-inside:avoid;break-inside:avoid}.pfl-th{padding:4px 3px!important;font-size:9px!important;font-weight:800;text-transform:uppercase;border:1px solid #f48fb1;white-space:normal!important;overflow-wrap:break-word;word-break:break-word;line-height:1.15;background:#880e4f!important;color:#fff!important}.pfl-td{padding:4px 5px!important;font-size:10px!important;border:1px solid #f8bbd0;overflow-wrap:break-word;word-break:break-word}.pfl-group{padding:5px 8px!important;font-size:10px!important}span{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>'+h+'</body></html>');w.document.close();setTimeout(()=>w.print(),700);}},100)" style="display:flex;align-items:center;gap:.4rem;padding:.38rem .85rem;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:8px;color:#fff;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
+            <button onclick="closePFListado();setTimeout(()=>{const w=window.open('','_blank','width=1200,height=800');if(w){const h=document.getElementById('pf-listado-body').innerHTML;w.document.write('<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content=&quot;width=device-width, initial-scale=1&quot;><link href=https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap rel=stylesheet><style>@page{margin:10mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}html,body{width:100%;margin:0}body{font-family:Nunito,sans-serif;font-size:10.5px;color:#2d1a3a;padding:0}.pfl-table-wrap{overflow:visible!important;border:none!important}.pfl-table{table-layout:fixed!important;width:100%!important;min-width:0!important}thead{display:table-header-group}tr{page-break-inside:avoid;break-inside:avoid}.pfl-th{padding:4px 3px!important;font-size:9px!important;font-weight:800;text-transform:uppercase;border:1px solid #f48fb1;white-space:normal!important;overflow-wrap:break-word;word-break:break-word;line-height:1.15;background:#880e4f!important;color:#fff!important}.pfl-td{padding:4px 5px!important;font-size:10px!important;border:1px solid #f8bbd0;overflow-wrap:break-word;word-break:break-word}.pfl-group{padding:5px 8px!important;font-size:10px!important}.pf-tap-hint{display:none!important}span{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>'+h+'</body></html>');w.document.close();setTimeout(()=>w.print(),700);}},100)" style="display:flex;align-items:center;gap:.4rem;padding:.38rem .85rem;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:8px;color:#fff;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:14px;height:14px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir</button>
             <button onclick="closePFListado()" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);border-radius:8px;color:#fff;font-size:1.1rem;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0">✕</button>
         </div>
         <div style="flex:1;overflow:auto;background:#fff5f8;padding:.9rem 1rem 2rem;">
@@ -5600,7 +5711,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 </div>
 
 <!-- ════ MODAL HISTORIAL MANUAL ════ -->
-<div id="hist-modal-bg" onclick="if(event.target===this)closeHistModal()">
+<div id="hist-modal-bg" onclick="if(event.target===this)closeHistModalUser()">
     <div id="hist-modal">
         <div class="hm-title">📋 Registrar seguimiento</div>
 
@@ -5680,7 +5791,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Guardar entrada
             </button>
-            <button class="btn secondary" onclick="closeHistModal()">Cancelar</button>
+            <button class="btn secondary" onclick="closeHistModalUser()">Cancelar</button>
         </div>
     </div>
 </div>
@@ -5852,14 +5963,122 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 <!-- ════ FIREBASE MODULE ════ -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     const firebaseConfig={apiKey:"AIzaSyCDEW_xLoF34GvnCbPOD3XrEPImK36KWgA",authDomain:"planificacion-familiar-88065.firebaseapp.com",projectId:"planificacion-familiar-88065",storageBucket:"planificacion-familiar-88065.firebasestorage.app",messagingSenderId:"999785369114",appId:"1:999785369114:web:d2bdd68b4e5cc97badcba3"};
     const app=initializeApp(firebaseConfig);const db=getFirestore(app);
     function userKey(nombre){return(nombre||'sin_nombre').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'sin_nombre';}
     function setCS(msg,type){const el=document.getElementById('cloud-status');if(!el)return;el.className='cloud-status'+(type?' '+type:'');el.innerHTML=msg;}
     function setCSBtns(d){['btn-upload','btn-download'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=d;});}
-    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{await setDoc(doc(db,'usuarios_pf',k),{records:lr,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:lr.length});setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
-    window.confirmDownload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}const k=userKey(p.nombre);const lm=lr.length>0?'Este dispositivo tiene <strong>'+lr.length+' fichas locales</strong> que serán reemplazadas.':'El dispositivo está vacío.';window.showModal&&window.showModal('Bajar de la nube','Espacio: <em>usuarios_pf/'+k+'</em><br><br>'+lm+'<br><br>¿Continuar?',async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Descargando…','loading');try{const snap=await getDoc(doc(db,'usuarios_pf',k));if(!snap.exists()){setCS('⚠ No encontré tus datos en la nube.','err');window.showToast&&window.showToast('⚠ Sin datos en la nube','error');setCSBtns(false);return;}const data=snap.data();const cr=data.records||[];if(!cr.length){setCS('⚠ Nube vacía.','err');setCSBtns(false);return;}localStorage.setItem('minsal_pf_v2',JSON.stringify(cr));if(window.reloadFromStorage)window.reloadFromStorage();const ua=data.updatedAt?new Date(data.updatedAt).toLocaleString('es-SV'):'—';setCS('✓ '+cr.length+' fichas descargadas · Subido: '+ua,'ok');window.showToast&&window.showToast('✓ '+cr.length+' fichas descargadas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al bajar','error');}finally{setCSBtns(false);}});};
+    // La nube guarda 'records' como mapa {id: ficha} para poder actualizar una sola
+    // ficha sin reescribir todas; esto también lee el formato antiguo (array) por compatibilidad.
+    function recordsToArray(data){const r=data&&data.records;if(!r)return[];return Array.isArray(r)?r:Object.values(r);}
+
+    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{const map={};lr.forEach(r=>{if(r&&r.id)map[r.id]=r;});await setDoc(doc(db,'usuarios_pf',k),{records:map,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:lr.length});_acResetSnapshot();setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
+    window.confirmDownload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}const k=userKey(p.nombre);const lm=lr.length>0?'Este dispositivo tiene <strong>'+lr.length+' fichas locales</strong> que serán reemplazadas.':'El dispositivo está vacío.';window.showModal&&window.showModal('Bajar de la nube','Espacio: <em>usuarios_pf/'+k+'</em><br><br>'+lm+'<br><br>¿Continuar?',async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Descargando…','loading');try{const snap=await getDoc(doc(db,'usuarios_pf',k));if(!snap.exists()){setCS('⚠ No encontré tus datos en la nube.','err');window.showToast&&window.showToast('⚠ Sin datos en la nube','error');setCSBtns(false);return;}const data=snap.data();const cr=recordsToArray(data);if(!cr.length){setCS('⚠ Nube vacía.','err');setCSBtns(false);return;}localStorage.setItem('minsal_pf_v2',JSON.stringify(cr));if(window.reloadFromStorage)window.reloadFromStorage();_acResetSnapshot();const ua=data.updatedAt?new Date(data.updatedAt).toLocaleString('es-SV'):'—';setCS('✓ '+cr.length+' fichas descargadas · Subido: '+ua,'ok');window.showToast&&window.showToast('✓ '+cr.length+' fichas descargadas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al bajar','error');}finally{setCSBtns(false);}});};
+
+    /* ══ SINCRONIZACIÓN AUTOMÁTICA INCREMENTAL ══
+       Cada vez que se guarda un cambio local (saveRecords), se detecta QUÉ ficha
+       cambió y se sube SOLO esa ficha a Firebase (records.<id>), no toda la base.
+       Sin internet, el cambio queda pendiente y se reintenta solo al reconectar. */
+    const AC_PENDING_KEY='minsal_pf_sync_pending';
+    let _acSnapshot={};   // id -> JSON de la última versión ya sincronizada/conocida
+    let _acChanged={};    // id -> ficha pendiente de subir
+    let _acDeleted={};    // id -> true, pendiente de borrar en la nube
+    let _acTimer=null;
+    let _acBusy=false;
+
+    function _acProfileKey(){
+      const p=window.loadProfile?window.loadProfile():{};
+      return p&&p.nombre?userKey(p.nombre):null;
+    }
+    function _acPersistPending(){
+      try{localStorage.setItem(AC_PENDING_KEY,JSON.stringify({changed:Object.keys(_acChanged),deleted:Object.keys(_acDeleted)}));}catch(e){}
+    }
+    // Reconstruye el snapshot con el estado actual (tras subir/bajar todo manualmente)
+    function _acResetSnapshot(){
+      _acSnapshot={};
+      (window.records||[]).forEach(r=>{if(r&&r.id)_acSnapshot[r.id]=JSON.stringify(r);});
+      _acChanged={};_acDeleted={};_acPersistPending();
+    }
+    function _acScheduleFlush(delay){
+      clearTimeout(_acTimer);
+      _acTimer=setTimeout(_acFlush,delay==null?1500:delay);
+    }
+    async function _acFlush(){
+      if(_acBusy)return;
+      const k=_acProfileKey();
+      if(!k)return; // perfil sin configurar todavía: no sincroniza
+      const changedIds=Object.keys(_acChanged);
+      const deletedIds=Object.keys(_acDeleted);
+      if(!changedIds.length && !deletedIds.length)return;
+      if(!navigator.onLine){setCS('☁ '+(changedIds.length+deletedIds.length)+' cambio(s) pendientes · sin internet','');return;}
+      _acBusy=true;
+      setCS('<span class="cspin">↻</span>&nbsp;Sincronizando '+(changedIds.length+deletedIds.length)+' cambio(s)…','loading');
+      const upd={updatedAt:new Date().toISOString(),count:(window.records||[]).length};
+      changedIds.forEach(id=>{upd['records.'+id]=_acChanged[id];});
+      deletedIds.forEach(id=>{upd['records.'+id]=deleteField();});
+      const ref=doc(db,'usuarios_pf',k);
+      try{
+        await updateDoc(ref,upd);
+      }catch(err){
+        // El documento aún no existe en la nube: crearlo con lo pendiente
+        try{
+          const p=window.loadProfile();
+          const base={};changedIds.forEach(id=>{base[id]=_acChanged[id];});
+          await setDoc(ref,{records:base,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:upd.updatedAt,count:upd.count},{merge:true});
+        }catch(err2){
+          _acBusy=false;
+          setCS('✗ No se pudo sincronizar: '+(err2.message||'sin conexión'),'err');
+          return;
+        }
+      }
+      changedIds.forEach(id=>delete _acChanged[id]);
+      deletedIds.forEach(id=>delete _acDeleted[id]);
+      _acPersistPending();
+      _acBusy=false;
+      setCS('✓ Sincronizado automáticamente · '+new Date().toLocaleTimeString('es-SV'),'ok');
+    }
+    // Punto de entrada: lo llama saveRecords() cada vez que algo cambia localmente
+    window.queueAutoSync=function(){
+      const k=_acProfileKey();
+      if(!k)return;
+      const list=window.records||[];
+      const currentIds=new Set();
+      list.forEach(r=>{
+        if(!r||!r.id)return;
+        currentIds.add(r.id);
+        const json=JSON.stringify(r);
+        if(_acSnapshot[r.id]!==json){
+          _acSnapshot[r.id]=json;
+          _acChanged[r.id]=r;
+          delete _acDeleted[r.id];
+        }
+      });
+      Object.keys(_acSnapshot).forEach(id=>{
+        if(!currentIds.has(id)){
+          delete _acSnapshot[id];
+          delete _acChanged[id];
+          _acDeleted[id]=true;
+        }
+      });
+      _acPersistPending();
+      _acScheduleFlush();
+    };
+    // Al recuperar conexión, reintentar de inmediato lo pendiente
+    window.addEventListener('online',()=>_acScheduleFlush(200));
+    // Al cargar: snapshot inicial y retomar pendientes de la sesión anterior (si quedó sin internet)
+    (function _acInit(){
+      try{
+        const saved=JSON.parse(localStorage.getItem(AC_PENDING_KEY)||'{}');
+        (saved.changed||[]).forEach(id=>{
+          const r=(window.records||[]).find(x=>x.id===id);
+          if(r)_acChanged[id]=r;
+        });
+        (saved.deleted||[]).forEach(id=>{_acDeleted[id]=true;});
+      }catch(e){}
+      (window.records||[]).forEach(r=>{if(r&&r.id)_acSnapshot[r.id]=JSON.stringify(r);});
+      if(Object.keys(_acChanged).length||Object.keys(_acDeleted).length)_acScheduleFlush(2500);
+    })();
 </script>
 
 <!-- ════ MODAL POST-SEGUIMIENTO ════ -->
