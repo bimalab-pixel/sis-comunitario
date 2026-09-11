@@ -65,7 +65,7 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
   line-height:1.15;letter-spacing:-.01em;margin-bottom:.4rem;
 }
 .home-title em{font-style:italic;color:var(--emerald)}
-.home-sub{font-size:.78rem;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase}
+.home-sub{font-size:.78rem;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
 
 /* Stats row */
 .home-stats{
@@ -170,6 +170,18 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem}
 .scroller::-webkit-scrollbar{width:4px}
 .scroller::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.mapa-info-bar{
+  flex-shrink:0;background:var(--mist);border-bottom:1px solid var(--border);
+  padding:.5rem 1rem;display:flex;align-items:center;gap:.6rem;cursor:pointer;
+}
+.mapa-info-bar .info-txt{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:.72rem;font-weight:700;color:var(--forest);letter-spacing:.01em;
+}
+.mapa-info-bar .info-edit{
+  flex-shrink:0;font-size:.68rem;font-weight:700;color:var(--muted);
+  border:1.5px solid var(--border);border-radius:7px;padding:.22rem .5rem;background:#fff;
+}
 
 /* ═══════════════════════════════════════
    CATÁLOGO DE VIVIENDAS
@@ -553,16 +565,34 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
   display:flex;align-items:center;gap:.5rem;
 }
 .stats-body{padding:.85rem 1rem}
-.edad-row{
-  display:flex;align-items:center;gap:.5rem;
-  padding:.38rem 0;border-bottom:1px solid #f0f0f0;font-size:.77rem;
+.edad-list-scroll{max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px}
+.edad-table{width:100%;border-collapse:collapse;font-size:.76rem;table-layout:fixed}
+.edad-table col.c-rango{width:38%}
+.edad-table col.c-num{width:14%}
+.edad-table col.c-total{width:19%}
+.edad-table col.c-pct{width:15%}
+.edad-table thead th{
+  position:sticky;top:0;z-index:2;
+  background:linear-gradient(135deg,var(--ink),var(--ink2));color:#fff;
+  padding:.5rem .35rem;text-align:center;font-weight:700;font-size:.68rem;
+  text-transform:uppercase;letter-spacing:.04em;
 }
-.edad-row:last-child{border-bottom:none}
-.edad-label{flex:1;color:var(--text);font-weight:600;font-size:.8rem}
-.edad-n{min-width:28px;text-align:right;font-weight:800;font-size:.85rem;color:var(--ink)}
-.edad-bar-wrap{flex:2;background:var(--mist2);border-radius:20px;height:7px;overflow:hidden}
-.edad-bar-inner{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--teal),var(--emerald));transition:width .5s ease}
-.edad-pct{min-width:38px;text-align:right;color:var(--muted);font-size:.72rem}
+.edad-table thead th:first-child{text-align:left;padding-left:.6rem}
+.edad-table tbody td{
+  padding:.42rem .35rem;border-bottom:1px solid #f0f0f0;
+  text-align:center;font-variant-numeric:tabular-nums;color:var(--text);
+}
+.edad-table tbody tr:last-child td{border-bottom:none}
+.edad-table tbody tr:nth-child(even){background:#fafbfc}
+.edad-r-label{text-align:left!important;font-weight:600;padding-left:.6rem!important;background-repeat:no-repeat!important;background-size:var(--w,0%) 100%!important;background-image:linear-gradient(rgba(20,150,130,.13),rgba(20,150,130,.13))}
+.edad-r-total{font-weight:800;color:var(--ink)}
+.edad-r-pct{color:var(--muted);font-size:.7rem}
+.edad-r-footer{display:flex;position:sticky;bottom:-1px;border-top:2px solid var(--emerald);background:var(--mist)}
+.edad-r-footer > div{box-sizing:border-box;padding:.5rem .35rem;text-align:center;font-weight:800;color:var(--ink);font-size:.75rem}
+.edad-r-footer > div:first-child{width:38%;text-align:left;padding-left:.6rem;letter-spacing:.02em}
+.edad-r-footer > div:nth-child(2),.edad-r-footer > div:nth-child(3){width:14%}
+.edad-r-footer > div:nth-child(4){width:19%}
+.edad-r-footer > div:nth-child(5){width:15%;font-weight:700;color:var(--muted)}
 
 /* ═══════════════════════════════════════
    MODALES
@@ -984,7 +1014,7 @@ td.err{color:var(--red);font-weight:700}
       </svg>
     </div>
     <h1 class="home-title">Mapa <em>Sanitario</em></h1>
-    <div class="home-sub">MINSAL · Promotor de Salud · El Salvador</div>
+    <div class="home-sub" id="home-sub" onclick="abrirModalEncabezado()">MINSAL · Promotor de Salud · El Salvador</div>
   </div>
 
   <!-- Sync bar Firebase -->
@@ -1135,6 +1165,10 @@ td.err{color:var(--red);font-weight:700}
       Inicio
     </button>
     <span class="topbar-title">🗺️ Mapa Sanitario Poblacional</span>
+  </div>
+  <div class="mapa-info-bar" onclick="abrirModalEncabezado()">
+    <span class="info-txt" id="mapa-info-txt">Toca para configurar cantón, promotor y unidad de salud</span>
+    <span class="info-edit">✏️ Editar</span>
   </div>
   <div class="scroller">
 
@@ -1539,6 +1573,32 @@ td.err{color:var(--red);font-weight:700}
   </div>
 </div>
 
+<div class="modal-bg" id="modal-encabezado" onclick="event.stopPropagation()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close-x" onclick="cerrarModal('modal-encabezado')">✕</button>
+    <h3>📍 Datos del Encabezado</h3>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">
+      Esta información se muestra en la pantalla de inicio y en el mapa.
+    </p>
+    <div class="f-group">
+      <label>Cantón / Zona</label>
+      <input type="text" id="enc-canton" placeholder="Ej: Cantón Las Piletas" maxlength="60" autocomplete="off"/>
+    </div>
+    <div class="f-group">
+      <label>Promotor de Salud</label>
+      <input type="text" id="enc-promotor" placeholder="Ej: Moisés López" maxlength="60" autocomplete="off"/>
+    </div>
+    <div class="f-group">
+      <label>Unidad de Salud</label>
+      <input type="text" id="enc-unidad" placeholder="Ej: UCSF Venecia" maxlength="60" autocomplete="off"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn cancel" onclick="cerrarModal('modal-encabezado')">Cancelar</button>
+      <button class="btn save" onclick="guardarEncabezado()">✅ Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ════════════════════════════════════════════
@@ -1698,7 +1758,7 @@ function actualizarHome(){
   document.getElementById('hs-per').textContent=pers;
   document.getElementById('hs-geo').textContent=geo;
 }
-window.addEventListener('DOMContentLoaded',()=>{ actualizarHome(); _actualizarSyncUI(); });
+window.addEventListener('DOMContentLoaded',()=>{ actualizarHome(); _actualizarSyncUI(); aplicarEncabezado(); });
 
 // ── CATÁLOGO ──
 let _editVivId=null;
@@ -2432,15 +2492,35 @@ document.addEventListener('webkitfullscreenchange',()=>{
 
 // ── ESTADÍSTICAS EDAD ──
 const GRUPOS_EDAD=[
-  {label:'0 – 4 años',  test:m=>m>=0&&m<60},
-  {label:'5 – 7 años',  test:m=>m>=60&&m<96},
-  {label:'8 – 9 años',  test:m=>m>=96&&m<120},
-  {label:'10 años',     test:m=>m>=120&&m<132},
-  {label:'11 años',     test:m=>m>=132&&m<144},
-  {label:'12 – 17 años',test:m=>m>=144&&m<216},
-  {label:'18 – 49 años',test:m=>m>=216&&m<600},
-  {label:'50 – 59 años',test:m=>m>=600&&m<720},
-  {label:'60 a más',    test:m=>m>=720},
+  {label:'< 1 año',        test:m=>m>=0&&m<12},
+  {label:'1 año',          test:m=>m>=12&&m<24},
+  {label:'2 años',         test:m=>m>=24&&m<36},
+  {label:'3 años',         test:m=>m>=36&&m<48},
+  {label:'4 años',         test:m=>m>=48&&m<60},
+  {label:'5 años',         test:m=>m>=60&&m<72},
+  {label:'6 años',         test:m=>m>=72&&m<84},
+  {label:'7 años',         test:m=>m>=84&&m<96},
+  {label:'8 años',         test:m=>m>=96&&m<108},
+  {label:'9 años',         test:m=>m>=108&&m<120},
+  {label:'10 años',        test:m=>m>=120&&m<132},
+  {label:'11 años',        test:m=>m>=132&&m<144},
+  {label:'12 años',        test:m=>m>=144&&m<156},
+  {label:'13 años',        test:m=>m>=156&&m<168},
+  {label:'14 años',        test:m=>m>=168&&m<180},
+  {label:'15 años',        test:m=>m>=180&&m<192},
+  {label:'16 años',        test:m=>m>=192&&m<204},
+  {label:'17 años',        test:m=>m>=204&&m<216},
+  {label:'18 años',        test:m=>m>=216&&m<228},
+  {label:'19 años',        test:m=>m>=228&&m<240},
+  {label:'20 a 24 años',   test:m=>m>=240&&m<300},
+  {label:'25 a 29 años',   test:m=>m>=300&&m<360},
+  {label:'30 a 34 años',   test:m=>m>=360&&m<420},
+  {label:'35 a 39 años',   test:m=>m>=420&&m<480},
+  {label:'40 a 44 años',   test:m=>m>=480&&m<540},
+  {label:'45 a 49 años',   test:m=>m>=540&&m<600},
+  {label:'50 a 54 años',   test:m=>m>=600&&m<660},
+  {label:'55 a 59 años',   test:m=>m>=660&&m<720},
+  {label:'60 años a más',  test:m=>m>=720},
 ];
 function mesesPersona(p){
   if(p.fnac){const f=new Date(p.fnac+'T00:00:00');if(!isNaN(f)){const h=new Date();const ms=(h.getFullYear()-f.getFullYear())*12+(h.getMonth()-f.getMonth());return Math.max(0,ms);}}
@@ -2450,6 +2530,8 @@ function renderStats(){
   const cat=getCatalogo();
   let sin=0,med=0,alt=0,total=0,mef=0,fem=0,masc=0,nd=0;
   const conteo=GRUPOS_EDAD.map(()=>0);
+  const conteoM=GRUPOS_EDAD.map(()=>0);
+  const conteoF=GRUPOS_EDAD.map(()=>0);
   cat.forEach(v=>{
     const r=v.riesgo||'ninguno';
     if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
@@ -2459,7 +2541,12 @@ function renderStats(){
       if(sx==='F')fem++;else if(sx==='M')masc++;else nd++;
       const m=mesesPersona(p);
       if(m!==null){
-        GRUPOS_EDAD.forEach((g,i)=>{if(g.test(m))conteo[i]++;});
+        GRUPOS_EDAD.forEach((g,i)=>{
+          if(g.test(m)){
+            conteo[i]++;
+            if(sx==='M')conteoM[i]++;else if(sx==='F')conteoF[i]++;
+          }
+        });
         // MEF: mujeres con fecha de nac entre 18 y 49 años (216–599 meses)
         if(sx==='F' && m>=216 && m<600) mef++;
       }
@@ -2497,15 +2584,26 @@ function renderStats(){
   </div>`:'';
 
   const maxN=Math.max(...conteo,1);
-  tablaEl.innerHTML= sexoHtml + mefHtml + GRUPOS_EDAD.map((g,i)=>{
-    const n=conteo[i],pct=total>0?((n/total)*100).toFixed(1):'0.0',w=Math.round((n/maxN)*100);
-    return `<div class="edad-row">
-      <span class="edad-label">${g.label}</span>
-      <span class="edad-n">${n}</span>
-      <div class="edad-bar-wrap"><div class="edad-bar-inner" style="width:${w}%"></div></div>
-      <span class="edad-pct">${pct}%</span>
-    </div>`;
+  const filasHtml=GRUPOS_EDAD.map((g,i)=>{
+    const n=conteo[i],nm=conteoM[i],nf=conteoF[i];
+    const pct=total>0?((n/total)*100).toFixed(1):'0.0',w=Math.round((n/maxN)*100);
+    return `<tr>
+      <td class="edad-r-label" style="--w:${w}%">${g.label}</td>
+      <td>${nm}</td>
+      <td>${nf}</td>
+      <td class="edad-r-total">${n}</td>
+      <td class="edad-r-pct">${pct}%</td>
+    </tr>`;
   }).join('');
+  const totM=conteoM.reduce((a,b)=>a+b,0),totF=conteoF.reduce((a,b)=>a+b,0),totN=conteo.reduce((a,b)=>a+b,0);
+  tablaEl.innerHTML= sexoHtml + mefHtml + `<div class="edad-list-scroll">
+    <table class="edad-table">
+      <colgroup><col class="c-rango"><col class="c-num"><col class="c-num"><col class="c-total"><col class="c-pct"></colgroup>
+      <thead><tr><th>Rango</th><th>M</th><th>F</th><th>Total</th><th>%</th></tr></thead>
+      <tbody>${filasHtml}</tbody>
+    </table>
+    <div class="edad-r-footer"><div>TOTAL GENERAL</div><div>${totM}</div><div>${totF}</div><div>${totN}</div><div>100%</div></div>
+  </div>`;
 }
 
 // ── IMPORTAR EXCEL ──
@@ -3206,6 +3304,48 @@ function guardarUID(){
   cerrarModal('modal-uid');
   _actualizarSyncUI();
   toast('✅ Código guardado: '+val,'success');
+}
+
+// ── DATOS DE ENCABEZADO (cantón, promotor, unidad de salud) ──
+const LS_HEADER = 'mapa_san_encabezado';
+function getHeaderInfo(){
+  try{ return JSON.parse(localStorage.getItem(LS_HEADER)||'{}'); }
+  catch(e){ return {}; }
+}
+function abrirModalEncabezado(){
+  const h=getHeaderInfo();
+  document.getElementById('enc-canton').value=h.canton||'';
+  document.getElementById('enc-promotor').value=h.promotor||'';
+  document.getElementById('enc-unidad').value=h.unidad||'';
+  document.getElementById('modal-encabezado').classList.add('show');
+  setTimeout(()=>document.getElementById('enc-canton').focus(),80);
+}
+function guardarEncabezado(){
+  const h={
+    canton: document.getElementById('enc-canton').value.trim(),
+    promotor: document.getElementById('enc-promotor').value.trim(),
+    unidad: document.getElementById('enc-unidad').value.trim(),
+  };
+  localStorage.setItem(LS_HEADER, JSON.stringify(h));
+  cerrarModal('modal-encabezado');
+  aplicarEncabezado();
+  toast('✅ Datos guardados','success');
+}
+function aplicarEncabezado(){
+  const h=getHeaderInfo();
+  const homeSub=document.getElementById('home-sub');
+  if(homeSub){
+    const partes=[h.unidad,h.promotor,h.canton].filter(Boolean);
+    homeSub.textContent = partes.length ? partes.join(' · ') : 'MINSAL · Promotor de Salud · El Salvador';
+  }
+  const mapaTxt=document.getElementById('mapa-info-txt');
+  if(mapaTxt){
+    const piezas=[];
+    if(h.canton) piezas.push('📍 '+h.canton);
+    if(h.promotor) piezas.push('🧑\u200d⚕️ '+h.promotor);
+    if(h.unidad) piezas.push('🏥 '+h.unidad);
+    mapaTxt.textContent = piezas.length ? piezas.join('   ·   ') : 'Toca para configurar cantón, promotor y unidad de salud';
+  }
 }
 
 function _actualizarSyncUI(){
