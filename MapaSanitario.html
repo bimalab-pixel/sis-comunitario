@@ -1057,14 +1057,6 @@ td.err{color:var(--red);font-weight:700}
 
     <div class="msec-label" style="margin-top:.6rem">Datos</div>
 
-    <button class="mbtn" onclick="sincronizarDesdeRD()">
-      <div class="mbtn-ico" style="background:rgba(0,150,136,.35)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h.01M7 12h10M7 15.5h6"/></svg>
-      </div>
-      <div class="mbtn-text"><div class="mbt">Sincronizar catálogo RD</div><div class="mbs" id="mbtn-rd-sub">Jalar familias desde Registro Diario</div></div>
-      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
-    </button>
-
     <button class="mbtn" onclick="abrirImportarExcel()">
       <div class="mbtn-ico amber">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -3500,109 +3492,6 @@ async function bajarNube(){
 
 // _actualizarSyncUI se llama desde el DOMContentLoaded unificado arriba
 
-// ═══════════════════════════════════════════════════
-// SYNC CATÁLOGO DESDE REGISTRO DIARIO
-// Lee rdps_catalogo (RegistroDiario_Promotor) y lo
-// fusiona en mapa_san_catalogo preservando coords,
-// riesgo manual y demás campos propios de MapaSanitario.
-// ═══════════════════════════════════════════════════
-function sincronizarDesdeRD(){
-  // 1. Leer catálogo fuente (Registro Diario)
-  let rdCat;
-  try {
-    rdCat = JSON.parse(localStorage.getItem('rdps_catalogo') || '[]');
-  } catch(e) {
-    toast('Error al leer rdps_catalogo','error'); return;
-  }
-
-  if(!rdCat.length){
-    toast('⚠️ rdps_catalogo está vacío o no existe en este dispositivo','error',4000);
-    return;
-  }
-
-  // 2. Catálogo actual de MapaSanitario
-  const msCat = getCatalogo();
-
-  // Índice por id y por número de vivienda (para merge por número cuando los ids difieren)
-  const msById  = new Map(msCat.map(v=>[v.id, v]));
-  const msByNum = new Map(msCat.map(v=>[String(v.vivienda).trim(), v]));
-
-  let nuevas=0, actualizadas=0;
-  const tsNow = new Date().toISOString();
-
-  rdCat.forEach(rdViv => {
-    const numKey = String(rdViv.vivienda||'').trim();
-    // Buscar por id exacto primero; si no, por número de vivienda
-    const existing = msById.get(rdViv.id) || msByNum.get(numKey);
-
-    if(existing){
-      // ── Merge de personas: deduplicar por id Y por nombre+fnac ──
-      const perMap = new Map((existing.personas||[]).map(p=>[p.id,p]));
-      // Índice secundario por nombre+fnac para detectar duplicados cuando los ids difieren
-      const perByNombre = new Map(
-        (existing.personas||[]).map(p=>[
-          (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'')).trim(), p
-        ])
-      );
-      (rdViv.personas||[]).forEach(p=>{
-        const nameKey = (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'')).trim();
-        if(perMap.has(p.id)){
-          // Misma persona por id: enriquecer si RD tiene más datos
-          const curr = perMap.get(p.id);
-          if(!curr.fnac && p.fnac) perMap.set(p.id, {...curr,...p});
-          else if(p.nombre && !curr.nombre) perMap.set(p.id, {...curr, nombre:p.nombre});
-        } else if(nameKey && nameKey !== '|' && perByNombre.has(nameKey)){
-          // Misma persona por nombre+fnac pero id distinto: enriquecer sin duplicar
-          const curr = perByNombre.get(nameKey);
-          if(!curr.fnac && p.fnac) perMap.set(curr.id, {...curr,...p});
-        } else {
-          // Persona genuinamente nueva
-          perMap.set(p.id, p);
-        }
-      });
-      existing.personas = Array.from(perMap.values());
-      existing.actualizadoEn = tsNow;
-      // Reactivar si estaba marcada deshabitada y ahora recibió integrantes
-      _reactivarSiTienePersonas(existing);
-      // Recalcular riesgo automático solo si no fue sobreescrito manualmente
-      if(!existing._riesgoManual) recalcRiesgoVivienda(existing);
-      // Asegurar que el id del RD esté mapeado si se encontró por número
-      if(!msById.has(rdViv.id)) msById.set(rdViv.id, existing);
-      actualizadas++;
-    } else {
-      // ── Nueva vivienda: importar con riesgo auto calculado ──
-      const nuevaViv = {
-        id: rdViv.id || ('viv_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),
-        vivienda: rdViv.vivienda,
-        personas: (rdViv.personas||[]).map(p=>({...p})),
-        riesgo: 'ninguno',
-        _riesgoManual: false,
-        actualizadoEn: tsNow
-        // lat/lng: no se copian — se georreferencian desde el mapa
-      };
-      recalcRiesgoVivienda(nuevaViv);
-      msCat.push(nuevaViv);
-      msById.set(nuevaViv.id, nuevaViv);
-      msByNum.set(numKey, nuevaViv);
-      nuevas++;
-    }
-  });
-
-  saveCatalogo(msCat);
-  actualizarHome();
-  if(document.getElementById('screen-catalogo').classList.contains('active')) renderCatalogo();
-  if(_mapaZona) renderMarcadores(_filtroMapa);
-
-  // Actualizar subtítulo del botón
-  const sub = document.getElementById('mbtn-rd-sub');
-  if(sub){
-    const ahora = new Date().toLocaleString('es-SV',{hour12:false,
-      year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-    sub.textContent = 'Último sync: '+ahora;
-  }
-
-  toast(`✅ RD→MS: ${nuevas} nuevas, ${actualizadas} actualizadas`,'success',3500);
-}
 
 </script>
 </body>
