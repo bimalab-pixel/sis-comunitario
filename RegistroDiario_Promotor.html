@@ -385,6 +385,17 @@
         .btn-magic:disabled{filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
         .btn-magic-hint{display:none;font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
 
+        /* ══════════════ BOTÓN INFORME MINSAL (visita domiciliar) ══════════════ */
+        .btn-informe-minsal{
+          width:100%;padding:.8rem 1rem;border:1.5px solid #0b8a72;border-radius:10px;
+          font-family:inherit;font-size:.82rem;font-weight:700;
+          color:#0b8a72;background:#f0fdf9;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;gap:.4rem;
+          transition:background .15s ease,filter .15s ease;
+        }
+        .btn-informe-minsal:hover{background:#dcfcf3}
+        .btn-informe-minsal:active{filter:brightness(.95)}
+
         .lbl-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
         .btn-guia-nutri{
           background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:.66rem;font-weight:700;
@@ -601,15 +612,6 @@
             padding-top:.55rem;margin-top:.4rem;gap:.4rem;
           }
           #modal-preview .modal-btns .btn{flex:1;justify-content:center;font-size:.75rem}
-
-          /* Modal editar: sheet desde abajo */
-          #modal-editar .modal-box{
-            padding:1.1rem;border-radius:16px 16px 0 0;
-            max-width:100%;width:100%;
-          }
-          #modal-editar .fg.c2{grid-template-columns:1fr}
-          #modal-editar .fg.c2 .sp{grid-column:1}
-          #modal-editar .modal-btns .btn{flex:1;justify-content:center}
 
           /* Modal config: sheet desde abajo */
           #modal-config .modal-box{
@@ -1219,7 +1221,7 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
-        <button class="menu-btn" onclick="irA('screen-nuevo')">
+        <button class="menu-btn" onclick="limpiarFormulario(false); irA('screen-nuevo')">
             <div class="menu-btn-icon teal">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
             </div>
@@ -1359,9 +1361,9 @@
 ════════════════════════════ -->
 <div class="screen" id="screen-nuevo">
     <div class="topbar">
-        <button class="back-btn" onclick="irA('screen-home')">
+        <button class="back-btn" id="btn-nuevo-back" onclick="irA('screen-home')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
-            Inicio
+            <span id="btn-nuevo-back-texto">Inicio</span>
         </button>
         <span class="topbar-title" id="nuevo-titulo">Nueva Visita</span>
         <button class="topbar-btn secondary rdps-ia-oculto" id="rdps-guia-usuario-topbar" onclick="abrirGuiaUsuario()" title="Guía del Usuario" style="flex-shrink:0;">📘 Guía</button>
@@ -1460,6 +1462,12 @@
                     <div class="f-group sp">
                         <label>Acciones Ejecutadas</label>
                         <textarea id="r-acciones" placeholder="Describa las acciones tomadas o intervenciones realizadas..."></textarea>
+                    </div>
+
+                    <div class="f-group sp">
+                        <button type="button" class="btn-informe-minsal rdps-ia-oculto" id="btn-informe-minsal-r" onclick="abrirInformeVisitaMINSAL('r')">
+                            <span id="btn-informe-minsal-r-texto">🏥 Generar Informe de Visita Domiciliar (MINSAL)</span>
+                        </button>
                     </div>
 
                     <div class="sp rdps-ia-oculto" id="rdps-ia-seccion-nueva">
@@ -2148,7 +2156,25 @@
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
       </button>
-      <!-- Opción 3: volver al inicio -->
+      <!-- Opción 3: seguir en esta visita (por si falta algún detalle) -->
+      <button onclick="continuarEnEstaVisita()"
+        style="width:100%;display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;
+               background:var(--light);border:2px solid var(--border);border-radius:12px;
+               cursor:pointer;font-family:inherit;text-align:left;margin-bottom:.6rem;
+               transition:all .2s;color:var(--text);">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(14,92,68,.12);
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy2)" stroke-width="2" width="22" height="22">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.9rem;color:var(--navy);">Seguir en esta visita</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">Ya está guardada — por si falta algún detalle</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <!-- Opción 4: volver al inicio -->
       <button onclick="siguienteIrInicio()"
         style="width:100%;padding:.6rem;background:transparent;border:1.5px solid var(--border);
                border-radius:10px;cursor:pointer;font-family:inherit;font-size:.8rem;
@@ -2159,70 +2185,7 @@
   </div>
 </div>
 
-<!-- ════════════════════════════
-     MODAL: EDITAR REGISTRO
-════════════════════════════ -->
-<div class="modal-bg" id="modal-editar" onclick="cerrarModal('modal-editar')">
-    <div class="modal-box" style="max-width:460px" onclick="event.stopPropagation()">
-        <div class="modal-box-inner" style="position:relative">
-            <button class="modal-close-x" onclick="cerrarModal('modal-editar')">✕</button>
-            <h3>✏️ Editar Visita</h3>
-            <div class="fg c2" style="gap:.7rem;margin-top:1rem">
-                <div class="f-group"><label>Fecha</label><input type="date" id="e-fecha"/></div>
-                <div class="f-group"><label>Hora</label><input type="time" id="e-hora"/></div>
-                <div class="f-group"><label>No. Vivienda</label><input type="text" id="e-vivienda"/></div>
-                <div class="f-group"><label>Edad</label><input type="text" id="e-edad" placeholder="Ej: 25, 1 año, 6 meses"/></div>
-                <div class="f-group sp"><label>Nombre del Usuario *</label><input type="text" id="e-nombre"/></div>
-                <div class="f-group sp">
-                    <div class="lbl-row">
-                        <label style="margin:0">Hallazgos</label>
-                        <button type="button" class="btn-guia-nutri" onclick="toggleGuiaNutri('e')">ℹ️ Guía para evaluación nutricional</button>
-                    </div>
-                    <div class="guia-nutri-box" id="guia-nutri-e">
-                        📊 Para que el sistema detecte automáticamente el peso/talla/IMC contra las tablas OMS, escribe estos datos <b>con su unidad</b> dentro de Hallazgos:
-                        <ul>
-                            <li><b>Sexo:</b> <code>niño</code> / <code>niña</code> (o <code>varón</code> / <code>mujer</code> en adultos). Si no escribes ninguna de estas palabras, el sistema intenta reconocer el sexo por el <b>nombre propio</b> de la persona.</li>
-                            <li><b>Peso:</b> <code>16 kg</code>, <code>16k</code>, <code>110 libras</code>/<code>lb</code>, o incluso <code>peso: 16</code> sin unidad</li>
-                            <li><b>Talla:</b> <code>108 cm</code>/<code>cms</code>/<code>centímetros</code>, <code>1.08 m</code>/<code>mts</code>/<code>metros</code>, o <code>mide</code>/<code>altura</code>/<code>estatura: 108</code> sin unidad</li>
-                            <li><b>Hemoglobina:</b> <code>Hb 13.5</code></li>
-                            <li><b>Presión arterial:</b> <code>120/80</code></li>
-                            <li><b>Glucosa:</b> <code>glucosa 130</code></li>
-                            <li><b>Temperatura:</b> <code>38.5°C</code></li>
-                            <li><b>Embarazo:</b> escribe <code>embarazada</code> o <code>gestante</code></li>
-                                <li><b>Prematuro:</b> escribe <code>nació a las 32 semanas</code> o <code>prematuro de 32 semanas</code> — el sistema calcula sola la edad corregida</li>
-                        </ul>
-                        En el campo <b>Edad</b>: <code>5 años</code>, <code>6 meses</code>, <code>1 año 2 meses</code>, <code>15 días</code>, o abreviado <code>45a</code> / <code>8m</code> (un número solo se asume en años).
-                    </div>
-                    <textarea id="e-hallazgos"></textarea>
-                    <button type="button" id="btn-grafica-e" class="btn-ver-grafica-form" onclick="abrirGraficaNutricionalForm('e')" disabled>📊 Ver estado nutricional (sin internet)</button>
-                </div>
-                <div class="f-group sp"><label>Acciones Ejecutadas</label><textarea id="e-acciones"></textarea></div>
-                <div class="f-group sp rdps-ia-oculto" id="rdps-ia-seccion-editar-nivel" style="margin-bottom:.3rem">
-                    <label>🎛️ Nivel de Detalle para la IA</label>
-                    <select id="e-nivel-ia">
-                        <option value="resumido">⚡ Resumido / Directo (frases breves)</option>
-                        <option value="balanceado" selected>⚖️ Balanceado (recomendado)</option>
-                        <option value="detallado">🔍 Extenso / Detallado</option>
-                    </select>
-                </div>
-                <div class="f-group sp rdps-ia-oculto" id="rdps-ia-seccion-editar-btn">
-                    <button type="button" class="btn-magic" id="btn-magic-ia-edit" onclick="generarConIA('e')" style="width:100%">
-                        <span id="btn-magic-ia-edit-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
-                    </button>
-                    <div class="btn-magic-hint">Escribe la idea básica en "Hallazgos" y la IA la redacta en formato oficial.</div>
-                </div>
-            </div>
-            <div class="modal-btns">
-                <button class="btn secondary" onclick="cerrarModal('modal-editar')">Cancelar</button>
-                <button class="btn save" onclick="guardarEdicion()">Guardar cambios</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- ════════════════════════════
-     MODAL: GRÁFICA NUTRICIONAL (curvas OMS)
-════════════════════════════ -->
 <div class="modal-bg" id="modal-grafica-nutri" onclick="cerrarModal('modal-grafica-nutri')">
     <div class="modal-box" id="modal-grafica-nutri-box" onclick="event.stopPropagation()">
         <div class="modal-box-inner" style="position:relative">
@@ -2350,6 +2313,20 @@
     </div>
 </div>
 
+<div class="modal-bg" id="modal-informe-minsal">
+    <div class="fullprev-box">
+        <div class="fullprev-topbar">
+            <h3>Informe de Visita Domiciliar — MINSAL</h3>
+            <button class="fp-print" onclick="imprimirInformeVisitaMINSAL()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir
+            </button>
+            <button class="fp-close" onclick="cerrarInformeVisitaMINSAL()">✕ Cerrar</button>
+        </div>
+        <iframe class="fullprev-iframe" id="informe-minsal-iframe"></iframe>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -2385,6 +2362,7 @@
     let registros = JSON.parse(localStorage.getItem('rdps_registros') || '[]');
     let perfil    = JSON.parse(localStorage.getItem('rdps_perfil')    || '{}');
     let _editId   = null;
+    let _modoEdicionListado = false; // true solo si se llegó a la pantalla vía "Editar" desde el listado
     let _previewHTML = '';
 
     // ── PAGINACIÓN LISTADO ──
@@ -2433,7 +2411,7 @@
 
     function rdpsAplicarVisibilidadIA() {
       const visible = localStorage.getItem(RDPS_IA_VISIBLE_KEY) === '1';
-      ['rdps-ia-seccion-nueva','rdps-ia-seccion-editar-nivel','rdps-ia-seccion-editar-btn','rdps-ia-seccion-config','rdps-guia-usuario-btn','rdps-nube-seccion','rdps-guia-usuario-topbar']
+      ['rdps-ia-seccion-nueva','rdps-ia-seccion-config','rdps-guia-usuario-btn','rdps-nube-seccion','rdps-guia-usuario-topbar','btn-informe-minsal-r']
         .forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.toggle('rdps-ia-oculto', !visible);
@@ -3990,6 +3968,40 @@ function _riesgoParsearNota(texto, nombre) {
   // Temperatura: "38.5°C", "38,5 grados", "T: 38.5"
   m = t.match(/(\d{2}(?:[.,]\d+)?)\s*(?:°c|grados|º c|ºc)/i);
   if (m) datos.temperaturaC = parseFloat(m[1].replace(',', '.'));
+
+  // ════════════════════════════════════════════════════════════════
+  // FC — Frecuencia cardiaca: acepta "FC", "pulso", "frecuencia cardiaca/cardíaca",
+  // "latidos", "lpm" (rango fisiológico válido 30-220 lpm)
+  // ════════════════════════════════════════════════════════════════
+  // Patrón 1: nombre completo "frecuencia cardiaca/cardíaca de 80", "frecuencia cardiaca: 80 lpm"
+  m = t.match(/frecuencia\s+card[ií]ac\w*\b[^\d]{0,20}?(\d{2,3})/i);
+  // Patrón 2: abreviatura "FC" (con límite de palabra para no confundir con otras siglas)
+  if (!m) m = t.match(/\bfc\b\s*[:\-]?\s*(?:de\s+)?(\d{2,3})/i);
+  // Patrón 3: "pulso"
+  if (!m) m = t.match(/\bpulso\b\s*[:\-]?\s*(?:de\s+)?(\d{2,3})/i);
+  // Patrón 4: "latidos (por minuto)" o número seguido de "lpm"
+  if (!m) m = t.match(/(\d{2,3})\s*(?:lpm|latidos(?:\s*por\s*minuto)?)\b/i);
+  if (m) {
+    const v = parseInt(m[1], 10);
+    if (v >= 30 && v <= 220) datos.fcLpm = v;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // FR — Frecuencia respiratoria: acepta "FR", "respiraciones", "frecuencia respiratoria",
+  // "rpm" (rango fisiológico válido 8-80 rpm)
+  // ════════════════════════════════════════════════════════════════
+  // Patrón 1: nombre completo "frecuencia respiratoria de 18", "frecuencia respiratoria: 18 rpm"
+  m = t.match(/frecuencia\s+respirator\w*\b[^\d]{0,20}?(\d{1,3})/i);
+  // Patrón 2: abreviatura "FR"
+  if (!m) m = t.match(/\bfr\b\s*[:\-]?\s*(?:de\s+)?(\d{1,3})/i);
+  // Patrón 3: "respiraciones" / "respira"
+  if (!m) m = t.match(/\brespir(?:a|aciones)\w*\b\s*[:\-]?\s*(?:de\s+)?(\d{1,3})/i);
+  // Patrón 4: número seguido de "rpm" o "respiraciones por minuto"
+  if (!m) m = t.match(/(\d{1,3})\s*(?:rpm|respiraciones(?:\s*por\s*minuto)?)\b/i);
+  if (m) {
+    const v = parseInt(m[1], 10);
+    if (v >= 8 && v <= 80) datos.frRpm = v;
+  }
 
   return datos;
 }
@@ -5569,7 +5581,16 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       if (id) {
         const idx = registros.findIndex(r => r.id === id);
-        if (idx >= 0) registros[idx] = reg;
+        if (idx >= 0) {
+          // Al editar, NO reemplazar el registro completo: eso borraría las firmas
+          // y el informeCampos guardados por la ficha MINSAL, y reiniciaría la fecha
+          // de creación original. Se fusiona en vez de sobrescribir.
+          const original = registros[idx];
+          reg.creado = original.creado || reg.creado;
+          registros[idx] = Object.assign({}, original, reg);
+        } else {
+          registros.push(reg);
+        }
       } else {
         registros.push(reg);
       }
@@ -5577,6 +5598,17 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       actualizarHome();
       _riesgoGuardarHistorialPeso(reg).catch(() => {});
+
+      if (_modoEdicionListado) {
+        // Modo edición (venía del listado, no del flujo de "Nueva Visita"):
+        // guardamos y regresamos directo al listado, sin el modal de "siguiente acción".
+        _editId = null;
+        _modoEdicionListado = false;
+        limpiarFormulario(false);
+        toast('✅ Registro actualizado', 'success');
+        irA('screen-list');
+        return;
+      }
 
       if (modoOtra) {
         // Guardar vivienda/fecha/hora para continuar con la misma familia
@@ -5651,6 +5683,11 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         document.getElementById('btn-sel-pac-titulo').textContent = 'Seleccionar paciente';
         document.getElementById('btn-sel-pac-sub').textContent    = 'Buscar en catálogo de viviendas';
         document.getElementById('btn-sel-pac-chip').textContent   = 'Catálogo';
+        // Restaurar botón "Atrás" a su comportamiento normal (por si veníamos de editar)
+        const btnBack = document.getElementById('btn-nuevo-back');
+        btnBack.onclick = () => irA('screen-home');
+        document.getElementById('btn-nuevo-back-texto').textContent = 'Inicio';
+        _modoEdicionListado = false;
       }
       // Deshabilitar botón de nutrición después de limpiar
       _actualizarBtnGrafica('r');
@@ -5683,6 +5720,18 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       limpiarFormulario(false);
       toast('✅ Visita guardada correctamente', 'success');
       irA('screen-home');
+    }
+
+    // Opción: el registro ya se guardó, pero el usuario quiere seguir
+    // completando/corrigiendo esta misma visita sin salir de la pantalla.
+    function continuarEnEstaVisita() {
+      document.getElementById('modal-siguiente').classList.remove('show');
+      if (_ultimoRegistro) {
+        // A partir de ahora el formulario queda "enganchado" a este registro:
+        // el próximo "Guardar registro" actualizará esta misma visita en vez de crear una nueva.
+        document.getElementById('edit-id').value = _ultimoRegistro.id;
+      }
+      toast('📝 Puedes seguir completando esta visita', 'success');
     }
 
     // ── AUTOCOMPLETE VIVIENDA ──
@@ -5749,35 +5798,38 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       const r = registros.find(x => x.id === id);
       if (!r) return;
       _editId = id;
-      document.getElementById('e-fecha').value     = r.fecha     || '';
-      document.getElementById('e-hora').value      = r.hora      || '';
-      document.getElementById('e-vivienda').value  = r.vivienda  || '';
-      document.getElementById('e-nombre').value    = r.nombre    || '';
-      document.getElementById('e-edad').value      = r.edad      || '';
-      document.getElementById('e-hallazgos').value = r.hallazgos || '';
-      document.getElementById('e-acciones').value  = r.acciones  || '';
-      document.getElementById('modal-editar').classList.add('show');
-      // Validar botón de nutrición con los datos cargados
-      setTimeout(() => _actualizarBtnGrafica('e'), 50);
-    }
+      _modoEdicionListado = true;
+      _iaResetCache();
+      _modoOtraPersona = null;
 
-    function guardarEdicion() {
-      const r = registros.find(x => x.id === _editId);
-      if (!r) return;
-      r.fecha     = document.getElementById('e-fecha').value;
-      r.hora      = document.getElementById('e-hora').value;
-      r.vivienda  = document.getElementById('e-vivienda').value.trim();
-      r.nombre    = document.getElementById('e-nombre').value.trim();
-      r.edad      = document.getElementById('e-edad').value;
-      r.hallazgos = document.getElementById('e-hallazgos').value.trim();
-      r.acciones  = document.getElementById('e-acciones').value.trim();
-      r.actualizadoEn = new Date().toISOString();
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
-      _riesgoGuardarHistorialPeso(r).catch(() => {});
-      cerrarModal('modal-editar');
-      actualizarHome();
-      renderListado();
-      toast('✅ Registro actualizado', 'success');
+      // Precargar el formulario de pantalla completa (mismo usado para "Nueva Visita")
+      document.getElementById('edit-id').value     = r.id;
+      document.getElementById('r-fecha').value     = r.fecha     || '';
+      document.getElementById('r-hora').value      = r.hora      || '';
+      document.getElementById('r-vivienda').value  = r.vivienda  || '';
+      document.getElementById('r-nombre').value    = r.nombre    || '';
+      document.getElementById('r-edad').value      = r.edad      || '';
+      document.getElementById('r-hallazgos').value = r.hallazgos || '';
+      document.getElementById('r-acciones').value  = r.acciones  || '';
+
+      // Textos de la pantalla en modo edición
+      document.getElementById('nuevo-titulo').textContent      = '✏️ Editar Visita';
+      document.getElementById('form-header-title').textContent = 'Editar Visita Domiciliaria';
+      document.getElementById('form-header-sub').textContent   = 'Modifique los campos que necesite y guarde los cambios';
+
+      // En modo edición no aplica elegir del catálogo ni el banner de "otra persona"
+      document.getElementById('btn-sel-pac').style.display = 'none';
+      document.getElementById('pac-seleccionado-banner').classList.remove('show');
+      document.getElementById('banner-otra-persona').classList.remove('show');
+
+      // El botón "Atrás" debe descartar los cambios (limpiar el modo edición) y regresar al listado
+      const btnBack = document.getElementById('btn-nuevo-back');
+      btnBack.onclick = () => { limpiarFormulario(false); irA('screen-list'); };
+      document.getElementById('btn-nuevo-back-texto').textContent = 'Volver';
+
+      irA('screen-nuevo');
+      // Validar botón de nutrición con los datos cargados
+      setTimeout(() => _actualizarBtnGrafica('r'), 50);
     }
 
     function eliminarRegistro(id) {
@@ -6170,6 +6222,896 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           win.print();
         }, 500);
       };
+    }
+
+    // ════════════════════════════════════
+    // INFORME DE VISITA DOMICILIAR (MINSAL) — se llena con los datos ya
+    // escritos en el formulario de Nueva Visita / Editar Registro.
+    // ════════════════════════════════════
+    let _informeVisitaMinsalHTML = '';
+    let _infRegistroIdActual = null; // id del registro al que pertenece la ficha abierta (para guardar sus firmas)
+
+    function _infEsc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function _infHora12(hhmm) {
+      if (!hhmm) return '';
+      const [hStr, mStr] = hhmm.split(':');
+      let h = parseInt(hStr, 10);
+      const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+      h = h % 12; if (h === 0) h = 12;
+      return `${h}:${mStr} ${ampm}`;
+    }
+
+    // Intenta separar, dentro del texto de "Acciones Ejecutadas", la(s) frase(s)
+    // que ya expresan el acuerdo/compromiso pactado con la persona, para
+    // prellenar la sección 5 del informe por separado (si no encuentra nada,
+    // deja esa sección en blanco para completarla a mano).
+    // "Huella" de los datos centrales del registro diario (nombre, hallazgos, acciones,
+    // fecha, hora, vivienda). Se guarda junto con los campos de la ficha MINSAL cada vez
+    // que se edita algo en ella. Si al reabrir la ficha la huella actual ya NO coincide
+    // con la guardada, significa que el registro diario de esa visita cambió mientras
+    // tanto — en ese caso se descartan el objetivo y los nombres de firma guardados y se
+    // vuelven a calcular con la información nueva, en vez de mostrar datos desactualizados.
+    function _infHuellaRegistro(nombre, hallazgos, acciones, fecha, hora, vivienda) {
+      return [nombre, hallazgos, acciones, fecha, hora, vivienda]
+        .map(function (v) { return (v == null ? '' : String(v)).trim(); })
+        .join('§§');
+    }
+
+    // La tabla de signos vitales se guarda como JSON (texto), no como array anidado,
+    // porque Firestore no admite un array dentro de otro array como valor de campo.
+    // Esta función también acepta el formato viejo (array directo), por si el dato ya
+    // estaba guardado localmente antes de este cambio.
+    function _infParsearTablaVitales(valor) {
+      if (Array.isArray(valor)) return valor;
+      if (typeof valor === 'string' && valor.trim()) {
+        try {
+          const parsed = JSON.parse(valor);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    function _infExtraerAcuerdo(accionesTexto) {
+      const t = String(accionesTexto || '');
+      if (!t.trim()) return { acciones: '', acuerdo: '' };
+      // Divide en oraciones conservando el punto final
+      const oraciones = t.match(/[^.]+\.?/g) || [t];
+      const esAcuerdo = o => /\bacuerdo\b|\bacuerdos\b|\bse compromete\b|\bcompromiso\b|\bacord[oó]\b|\bqued[oó] como compromiso\b|\bqued[oó]\s+en\b|\bqueda\s+en\b|\bqueda\s+pendiente\b|\baceptar[oó]?\b|\bacept[oó]\b|\basistir[aá]\b|\bacudir[aá]\b|\bpr[oó]xima\s+visita\b|\bcumplir[aá]\b|\bvigilar[aá]\b|\best[aá]\s+de\s+acuerdo\b|\bconvin[oó]\b|\bpactad[oa]\b|\bpact[oó]\b|\bse\s+le\s+orient[oó]\s+y\s+acept[oó]\b/i.test(o);
+      const acuerdoOraciones = oraciones.filter(esAcuerdo).map(o => o.trim()).filter(Boolean);
+      const restoOraciones   = oraciones.filter(o => !esAcuerdo(o)).map(o => o.trim()).filter(Boolean);
+      return {
+        acciones: restoOraciones.join(' ').trim() || t.trim(),
+        acuerdo:  acuerdoOraciones.join(' ').trim()
+      };
+    }
+
+    // Detecta, dentro del texto de Hallazgos, cuál es el primer motivo relevante que
+    // aparece (por posición en el texto) y devuelve su frase correspondiente para el
+    // objetivo. Se usa la posición porque el objetivo debe reflejar lo PRINCIPAL que
+    // motivó la visita (lo primero que se anotó), no una lista de todo lo encontrado
+    // — el resto de hallazgos ya queda documentado en la sección 3 del informe.
+    const _infCandidatosMotivo = [
+      [/diarrea|diarreic[oa]|evacuaciones?\s+l[ií]quidas?|deposiciones?\s+l[ií]quidas?|c[oó]licos?\s+intestinal\w*/i,
+                                                                'dar seguimiento al caso de diarrea'],
+      [/fiebre|febril|calentura|temperatura\s+elevada|hipertermia/i,
+                                                                'valorar el cuadro febril'],
+      [/dificultad\s+(?:para\s+)?respirat\w*|dificultad\s+para\s+respirar|se\s+agita\w*|\btiraje\b|falta\s+de\s+aire|\bahogo\b/i,
+                                                                'valorar la dificultad respiratoria'],
+      [/\btos\b|\bgripe\b|resfriad[oa]|catarro|\bflema\b|congesti[oó]n\s+nasal/i,
+                                                                'valorar el cuadro respiratorio'],
+      [/v[oó]mito\w*|vomita\w*|devuelve\s+(?:la\s+)?comida/i, 'valorar el cuadro de vómitos'],
+      [/ictericia|piel\s+amarill\w*|ojos\s+amarill\w*/i,      'valorar la ictericia neonatal'],
+      [/rechazo\s+(?:al|del)\s+aliment\w*|no\s+quiere\s+comer|no\s+come\s+bien|inapetencia|falta\s+de\s+apetito|poco\s+apetito/i,
+                                                                'valorar el rechazo al alimento'],
+      [/letargia|decaíd[oa]|decaido|decaida|somnolient\w*|poco\s+activ[oa]|hipoactiv\w*/i,
+                                                                'valorar el estado de alerta del paciente'],
+      [/convulsi[oó]n\w*/i,                                    'valorar el cuadro convulsivo'],
+      [/herida\w*|lesi[oó]n\s+en\s+la\s+piel|quemadura\w*|[uú]lcera\w*/i,
+                                                                'dar seguimiento a la herida'],
+      [/infecci[oó]n\w*|infectad[oa]|supuraci[oó]n|\bpus\b/i, 'dar seguimiento al proceso infeccioso'],
+      [/\bdolor\b|le\s+duele|molestia\s+(?:en|al)/i,          'valorar el dolor referido'],
+      [/desnutrici[oó]n|bajo\s+peso|sobrepeso|obesidad|muy\s+delgad[oa]|muy\s+flac[oa]|talla\s+baja|retraso\s+(?:en\s+)?(?:el\s+)?crecimiento/i,
+                                                                'dar seguimiento a la condición nutricional detectada'],
+      [/cr[oó]nic[ao]|diabetes|hipertens\w*|\basma\b|epilepsia|cardiopat[ií]a|insuficiencia\s+renal|hipotiroidismo/i,
+                                                                'dar seguimiento a la enfermedad crónica de la persona'],
+      [/embarazad\w*|gestante|prenatal|en\s+estado|espera\s+beb[eé]|semanas?\s+de\s+gestaci[oó]n|control\s+prenatal/i,
+                                                                'dar seguimiento al embarazo y verificar los signos vitales maternos'],
+      [/pu[eé]rpera|puerperio|posparto|post\s?parto|posnatal|reci[eé]n\s+di[oó]\s+a\s+luz|parto\s+reciente/i,
+                                                                'dar seguimiento a la puérpera durante el puerperio'],
+      [/reci[eé]n\s*nacid\w*|neonato|neonatal|\brn\b/i,       'dar seguimiento al recién nacido'],
+      [/prematur\w*|pret[eé]rmino|bajo\s+peso\s+al\s+nacer|naci[oó]\s+antes\s+de\s+tiempo/i,
+                                                                'dar seguimiento al niño o niña nacido prematuro'],
+      [/signos?\s+de\s+alarma|se[ñn]ales?\s+de\s+peligro|datos?\s+de\s+alarma/i,
+                                                                'orientar sobre los signos de alarma identificados'],
+      [/vacuna\w*|esquema\s+de\s+vacunaci[oó]n|inmunizaci[oó]n|pentavalente|rotavirus|\bbcg\b/i,
+                                                                'revisar el esquema de vacunación'],
+      [/desparasit\w*|antiparasitario|albendazol/i,           'verificar la desparasitación'],
+      [/carnet\s+de\s+control|cita\s+de\s+control|control\s+de\s+ni[ñn]o\s+sano|pr[oó]xima\s+cita|control\s+m[eé]dico|chequeo\s+m[eé]dico|consulta\s+de\s+seguimiento/i,
+                                                                'dar seguimiento al control y la cita programada'],
+      [/adulto\s+mayor|persona\s+mayor|tercera\s+edad|\bancian[oa]\b/i,
+                                                                'dar seguimiento a la persona adulta mayor'],
+      [/discapacidad|capacidades\s+especiales|necesidades\s+especiales/i,
+                                                                'dar seguimiento a la persona con discapacidad'],
+      [/salud\s+bucal|\bdental\b|caries|cepillado\s+dental|enc[ií]as?/i,
+                                                                'revisar la salud bucal'],
+      [/violencia\s+intrafamiliar|maltrato|\babuso\b|\bgolpes\b|agresi[oó]n/i,
+                                                                'valorar una posible situación de violencia y brindar orientación'],
+      [/higiene|saneamiento|\bagua\b|letrina|basura\w*|aguas?\s+(?:negras|grises)|eliminaci[oó]n\s+de\s+excretas/i,
+                                                                'revisar condiciones de higiene y saneamiento del hogar'],
+      [/lactancia|amamant\w*|leche\s+materna/i,               'brindar consejería sobre lactancia materna'],
+      [/planificaci[oó]n\s+familiar|anticoncep\w*|m[eé]todo\s+anticonceptivo|inyecci[oó]n\s+anticonceptiva|dispositivo\s+intrauterino/i,
+                                                                'brindar consejería sobre planificación familiar'],
+      [/\bhierro\b|micronutriente|vitamina\s*a\b|\bzinc\b|sulfato\s+ferroso|\bchispitas\b/i,
+                                                                'verificar la suplementación con micronutrientes'],
+      [/\d+(?:[.,]\d+)?\s*kgs?\b/i,                           'evaluar el estado nutricional de la persona'],
+      [/\d+(?:[.,]\d+)?\s*(?:cms?|mts?|metros?)\b/i,          'evaluar el estado nutricional de la persona'],
+      [/\d{2,3}\s*\/\s*\d{2,3}/,                              'controlar la presión arterial'],
+      [/\bhb\b|hemoglobina/i,                                 'verificar el nivel de hemoglobina'],
+      [/glucosa|glicemia|glucemia/i,                          'controlar el nivel de glucosa'],
+      [/\d{2}(?:[.,]\d+)?\s*(?:°c|grados|ºc)/i,               'verificar la temperatura corporal']
+    ];
+
+    function _infDetectarMotivoPrincipal(texto) {
+      const t = String(texto || '');
+      let mejor = null;
+      for (const [regex, frase] of _infCandidatosMotivo) {
+        const m = regex.exec(t);
+        if (m && (mejor === null || m.index < mejor.index)) mejor = { index: m.index, frase };
+      }
+      return mejor ? mejor.frase : null;
+    }
+
+    // Calcula (sin IA, de forma local) el "Objetivo de la visita": toma como motivo
+    // principal lo PRIMERO relevante que aparece en Hallazgos (ej. si lo primero que
+    // se anotó es una diarrea, el objetivo es dar seguimiento a esa diarrea; si lo
+    // primero es "recién nacido", el objetivo es el recién nacido). El resto de lo
+    // encontrado (signos de alarma, otros datos, etc.) queda documentado en la
+    // sección 3 (Hallazgos), no se repite aquí.
+    function _infCalcularObjetivo(hallazgos, acciones, dv) {
+      const motivo = _infDetectarMotivoPrincipal(hallazgos)
+                  || _infDetectarMotivoPrincipal(acciones)
+                  || 'verificar el estado de salud general de la persona y brindar la consejería correspondiente';
+      return `Realizar visita domiciliaria de seguimiento con el fin de ${motivo}.`;
+    }
+
+    // Genera el "Objetivo de la visita" con el mismo motor de IA (Groq/Gemini/OpenRouter)
+    // ya configurado en Mi Perfil, usando ÚNICAMENTE los Hallazgos y Acciones ya redactados
+    // como contexto (para que el objetivo no se salga de lo que realmente se hizo en la visita).
+    // Si no hay clave API configurada, o la IA falla/no hay internet, devuelve null y quien
+    // llama esta función debe usar _infCalcularObjetivo() como respaldo — el informe nunca
+    // debe quedar bloqueado por falta de conexión.
+    async function _infGenerarObjetivoIA(nombre, hallazgos, acciones) {
+      const proveedorId = rdpsProveedorActual();
+      const proveedor = RDPS_PROVEEDORES[proveedorId];
+      const apiKey = localStorage.getItem(proveedor.keyStorage);
+      if (!apiKey) return null;
+      if (!String(hallazgos || '').trim() && !String(acciones || '').trim()) return null;
+
+      // Sin conexión detectada: no lo intenta siquiera, para no demorar la generación del informe.
+      // El informe sigue generándose de inmediato con el objetivo calculado localmente (sin IA).
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+
+      const modeloIA = localStorage.getItem(proveedor.modeloStorage) || proveedor.modeloDefault;
+
+      const prompt = `
+Eres un asistente para promotores de salud comunitaria en El Salvador (formato oficial MINSAL de informe de visita domiciliar).
+
+Con base ÚNICAMENTE en los "Hallazgos" y las "Acciones ejecutadas" de una visita YA REALIZADA (redactados abajo), escribe el "Objetivo de la visita" que debió plantearse antes de iniciarla.
+
+REGLAS (no negociables):
+1. Debe tener entre 2 y 3 oraciones (aproximadamente 35 a 60 palabras en total) — ni una sola frase telegráfica ni un párrafo largo. Inicia con "Realizar visita domiciliaria de seguimiento con el fin de..." o una construcción equivalente.
+2. Incluye datos CONCRETOS que ya aparezcan en los Hallazgos/Acciones y ayuden a entender el propósito de la visita: por ejemplo la edad o etapa de vida de la persona (recién nacido, embarazo de X semanas, adulto mayor, etc.), la condición o motivo principal, y si aplica, qué se buscaba verificar o reforzar (signos de alarma, signos vitales, cumplimiento de un acuerdo o control anterior). No agregues cifras o datos que no estén ya en el texto proporcionado.
+3. NO inventes ningún diagnóstico, dato, antecedente o acción que no esté explícita o implícitamente contenido en los Hallazgos/Acciones proporcionados. El objetivo debe quedarse estrictamente dentro de ese contexto.
+4. Si hay más de un tema/condición relevante, prioriza el motivo PRINCIPAL de la visita y menciona un segundo tema solo si es claramente relevante; no intentes listar todos los temas menores.
+5. No copies literalmente frases completas de los Hallazgos; sintetiza y contextualiza el propósito de la visita, no te limites a repetir el resultado encontrado.
+6. Responde ÚNICAMENTE con el texto del objetivo, en un solo párrafo (sin saltos de línea), sin comillas, sin explicaciones, sin markdown ni texto adicional antes o después.
+
+Persona: ${nombre || 'No especificada'}
+Hallazgos de la visita: ${hallazgos || '—'}
+Acciones ejecutadas: ${acciones || '—'}
+      `;
+
+      try {
+        const peticion = _rdpsConstruirPeticion(proveedorId, modeloIA, apiKey, prompt, 0.35);
+        // Solo 1 intento y espera corta (8s): esto es un "extra" sobre un informe que ya
+        // funciona sin IA — si la señal está débil o no hay internet, se prefiere continuar
+        // de inmediato con el objetivo calculado localmente antes que dejar al promotor esperando.
+        const response = await llamarIAConReintentoRDPS(peticion.url, peticion.options, 1, 8000);
+        let data = null;
+        try { data = await response.json(); } catch (e) { /* respuesta sin JSON válido */ }
+        if (!response.ok) return null;
+
+        const texto = peticion.extraerTexto(data);
+        if (!texto) return null;
+
+        let objetivo = texto.trim()
+          .replace(/```[a-z]*/gi, '')
+          .replace(/```/g, '')
+          .split('\n')
+          .map(l => l.trim())
+          .filter(Boolean)
+          .join(' ')
+          .replace(/^["'“”]+|["'“”]+$/g, '')
+          .trim();
+
+        if (!objetivo) return null;
+        if (!/[.!?]$/.test(objetivo)) objetivo += '.';
+        return objetivo;
+      } catch (error) {
+        // Sin internet, tiempo agotado, o cualquier otro fallo de red: se resuelve como "sin IA"
+        // y quien llama esta función usa de inmediato el objetivo calculado localmente.
+        console.error('Objetivo con IA no disponible, se usará el cálculo local:', error);
+        return null;
+      }
+    }
+
+    // Guarda (o borra, si dataURLOrNull es null) la firma de un registro ya existente, para que
+    // se conserve aunque se vuelva a editar el registro o se regenere la ficha más adelante.
+    // Si el registro todavía no se ha guardado (sin id), no hay dónde persistirla — se avisa
+    // desde la propia ficha en ese caso.
+    // Guarda el valor de un campo suelto de la ficha (expediente clínico, hora de finalización,
+    // fecha de seguimiento) para que no se pierda al reabrir o regenerar el informe más adelante.
+    function _infGuardarCampoRegistro(campo, valor, huella) {
+      if (!_infRegistroIdActual) return false;
+      const idx = registros.findIndex(r => r.id === _infRegistroIdActual);
+      if (idx < 0) return false;
+      if (!registros[idx].informeCampos) registros[idx].informeCampos = {};
+      registros[idx].informeCampos[campo] = valor;
+      if (huella) registros[idx].informeCampos._huella = huella;
+      registros[idx].actualizadoEn = new Date().toISOString();
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      return true;
+    }
+
+    function _infGuardarFirmaRegistro(campoId, dataURLOrNull) {
+      if (!_infRegistroIdActual) return false;
+      const idx = registros.findIndex(r => r.id === _infRegistroIdActual);
+      if (idx < 0) return false;
+      if (!registros[idx].firmas) registros[idx].firmas = { usuario: null, personal: null };
+      if (campoId === 'firma-usuario') registros[idx].firmas.usuario = dataURLOrNull;
+      else if (campoId === 'firma-personal') registros[idx].firmas.personal = dataURLOrNull;
+      registros[idx].actualizadoEn = new Date().toISOString();
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      return true;
+    }
+
+    async function abrirInformeVisitaMINSAL(prefijo) {
+      const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+      const nombre    = g(`${prefijo}-nombre`);
+      const fecha     = g(`${prefijo}-fecha`);
+      const hora      = g(`${prefijo}-hora`);
+      const edad      = g(`${prefijo}-edad`);
+      const vivienda  = g(`${prefijo}-vivienda`);
+      const hallazgos = g(`${prefijo}-hallazgos`);
+      const acciones  = g(`${prefijo}-acciones`);
+
+      if (!nombre) { toast('⚠️ Escribe el nombre del usuario antes de generar el informe', 'error'); return; }
+
+      // Se identifica a qué registro guardado pertenece esta ficha (si ya existe), para poder
+      // recuperar sus firmas y otros campos guardados, y para poder guardarlos ahora.
+      _infRegistroIdActual = (prefijo === 'e') ? _editId : (document.getElementById('edit-id').value || null);
+      const _regParaFirmas = _infRegistroIdActual ? registros.find(r => r.id === _infRegistroIdActual) : null;
+      const firmasGuardadas = (_regParaFirmas && _regParaFirmas.firmas) || null;
+      const camposGuardados = (_regParaFirmas && _regParaFirmas.informeCampos) || {};
+
+      const datosVitales = _riesgoParsearNota(hallazgos, nombre);
+      const { acciones: accionesSolo, acuerdo } = _infExtraerAcuerdo(acciones);
+
+      // ¿Cambió el registro diario de esta visita desde la última vez que se llenó/guardó
+      // la ficha? Si la huella no coincide, los valores guardados (objetivo y nombres de
+      // firma) quedaron desactualizados y se recalculan con la información actual.
+      const huellaActual = _infHuellaRegistro(nombre, hallazgos, acciones, fecha, hora, vivienda);
+      const huellaCoincide = !!camposGuardados._huella && camposGuardados._huella === huellaActual;
+
+      // El informe se genera SIEMPRE de inmediato con el objetivo calculado localmente
+      // (sin usar IA ni internet en este paso, para no depender de conexión al generarlo).
+      // Ya con el informe abierto, el botón 🔄 dentro de la ficha permite redactar el
+      // objetivo con IA cuando se desee (por ejemplo, una vez que haya señal).
+      const objetivoGuardado = huellaCoincide ? (camposGuardados.objetivo || '').trim() : '';
+      const objetivo = objetivoGuardado
+        ? objetivoGuardado
+        : _infCalcularObjetivo(hallazgos, acciones, datosVitales);
+
+      // Nombres junto a las firmas: si el registro no cambió, se respeta lo que el
+      // promotor haya escrito a mano la última vez; si cambió, se vuelve a proponer el
+      // nombre del usuario / del promotor tal como están ahora.
+      const nombreFirmaUsuarioGuardado  = huellaCoincide ? (camposGuardados.firmaUsuarioNombre  || '').trim() : '';
+      const nombreFirmaPersonalGuardado = huellaCoincide ? (camposGuardados.firmaPersonalNombre || '').trim() : '';
+      const nombreFirmaUsuario  = nombreFirmaUsuarioGuardado  || nombre;
+      const nombreFirmaPersonal = nombreFirmaPersonalGuardado || ((perfil && perfil.nombre) || '');
+
+      // Hallazgos, acciones y acuerdo del informe: si el registro diario no cambió desde
+      // la última edición hecha directamente en la ficha (por ejemplo, una aclaración que
+      // no forma parte del registro diario en sí), se conserva esa edición; si el registro
+      // sí cambió, se vuelve a partir de los datos frescos del registro diario.
+      const hallazgosInforme = (huellaCoincide && camposGuardados.hallazgos) ? camposGuardados.hallazgos : hallazgos;
+      const accionesInforme  = (huellaCoincide && camposGuardados.acciones)  ? camposGuardados.acciones  : accionesSolo;
+      const acuerdoInforme   = (huellaCoincide && camposGuardados.acuerdo)   ? camposGuardados.acuerdo   : acuerdo;
+
+      // Resto de campos editables de la ficha (encabezado y tabla de signos vitales):
+      // mismo criterio — se respeta lo guardado mientras el registro no cambie.
+      const establecimientoMostrar = (huellaCoincide && camposGuardados.establecimiento) ? camposGuardados.establecimiento : ((perfil && perfil.establecimiento) || '');
+      const fechaMostrar      = (huellaCoincide && camposGuardados.fechaMostrar) ? camposGuardados.fechaMostrar : (fecha ? fmtFecha(fecha) : '');
+      const horaInicioMostrar = (huellaCoincide && camposGuardados.horaInicio)   ? camposGuardados.horaInicio   : (hora ? _infHora12(hora) : '');
+      const nombreVivMostrar  = (huellaCoincide && camposGuardados.nombreVivienda) ? camposGuardados.nombreVivienda : (nombre + (vivienda ? ' — Vivienda N° ' + vivienda : ''));
+      const tablaVitalesGuardada = huellaCoincide ? _infParsearTablaVitales(camposGuardados.tablaVitales) : null;
+
+      const datos = {
+        establecimiento: (perfil && perfil.establecimiento) || '',
+        establecimientoMostrar, fechaMostrar, horaInicioMostrar, nombreVivMostrar, tablaVitalesGuardada,
+        fecha, hora, nombre, edad, vivienda,
+        hallazgos: hallazgosInforme,
+        acciones: accionesInforme,
+        acuerdo: acuerdoInforme,
+        objetivo,
+        pesoKg:  datosVitales.pesoKg,
+        paSistolica: datosVitales.paSistolica,
+        paDiastolica: datosVitales.paDiastolica,
+        temperaturaC: datosVitales.temperaturaC,
+        fcLpm: datosVitales.fcLpm,
+        frRpm: datosVitales.frRpm,
+        firmaUsuario: firmasGuardadas ? firmasGuardadas.usuario : null,
+        firmaPersonal: firmasGuardadas ? firmasGuardadas.personal : null,
+        nombreFirmaUsuario, nombreFirmaPersonal,
+        huellaActual,
+        expediente: camposGuardados.expediente || '',
+        horaFin: camposGuardados.horaFin || '',
+        fechaSeguimiento: camposGuardados.fechaSeguimiento || ''
+      };
+
+      _informeVisitaMinsalHTML = htmlInformeVisitaMINSAL(datos);
+      document.getElementById('informe-minsal-iframe').srcdoc = _informeVisitaMinsalHTML;
+      document.getElementById('modal-informe-minsal').classList.add('show');
+    }
+
+    function cerrarInformeVisitaMINSAL() {
+      document.getElementById('modal-informe-minsal').classList.remove('show');
+      document.getElementById('informe-minsal-iframe').srcdoc = '';
+    }
+
+    function imprimirInformeVisitaMINSAL() {
+      // En el WebView del APK, iframe.contentWindow.print() casi nunca llega al
+      // manejador nativo de impresión (ese solo queda enganchado a la ventana
+      // principal o a ventanas abiertas con window.open). Por eso este informe
+      // se imprimía en el navegador de escritorio pero no en la app.
+      // Solución: capturar el HTML actual del iframe (con las ediciones y firmas
+      // ya hechas), convertir las firmas dibujadas en <canvas> a <img> (el
+      // contenido de un canvas no se copia solo con el HTML), y mandarlo por la
+      // MISMA ruta que sí funciona para el Reporte Diario: imprimirHTML(), que
+      // abre una ventana nueva con window.open() y llama win.print() ahí.
+      const iframe = document.getElementById('informe-minsal-iframe');
+      const idoc = iframe && iframe.contentDocument;
+      if (!idoc) { if (_informeVisitaMinsalHTML) imprimirHTML(_informeVisitaMinsalHTML); return; }
+
+      try {
+        const clone = idoc.documentElement.cloneNode(true);
+
+        ['firma-usuario', 'firma-personal'].forEach(function (id) {
+          const origCanvas = idoc.getElementById(id);
+          const cloneCanvas = clone.querySelector('#' + id);
+          if (!origCanvas || !cloneCanvas) return;
+          let dataURL = null;
+          try { dataURL = origCanvas.toDataURL('image/png'); } catch (e) {}
+          // Un canvas vacío sigue devolviendo un PNG transparente válido (no 'data:,'),
+          // así que solo lo tratamos como "sin firmar" si de verdad falló toDataURL.
+          if (dataURL) {
+            const wrap = cloneCanvas.parentNode;
+            wrap.style.position = 'relative';
+            const img = idoc.createElement('img');
+            img.src = dataURL;
+            img.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;';
+            cloneCanvas.replaceWith(img);
+          }
+        });
+
+        const html = '<!DOCTYPE html>' + clone.outerHTML;
+        imprimirHTML(html);
+      } catch (e) {
+        // Respaldo final: copia estática original (sin firmas/ediciones en vivo).
+        if (_informeVisitaMinsalHTML) imprimirHTML(_informeVisitaMinsalHTML);
+      }
+    }
+
+    function htmlInformeVisitaMINSAL(d) {
+      const ta = (v) => v == null ? '' : v; // valor prellenado o vacío para completar a mano
+      const pesoTxt = d.pesoKg != null ? `${d.pesoKg} kg` : '';
+      const taTxt   = (d.paSistolica != null && d.paDiastolica != null) ? `${d.paSistolica}/${d.paDiastolica}` : '';
+      const tTxt    = d.temperaturaC != null ? `${d.temperaturaC}°C` : '';
+      const fcTxt   = d.fcLpm != null ? `${d.fcLpm} lpm` : '';
+      const frTxt   = d.frRpm != null ? `${d.frRpm} rpm` : '';
+
+      // Tabla de signos vitales: si hay una versión guardada (y el registro no cambió
+      // desde entonces, ya filtrado en abrirInformeVisitaMINSAL), se usa esa; si no, se
+      // arma la fila 1 con el nombre de la persona y los signos detectados en hallazgos.
+      const filasGuardadas = Array.isArray(d.tablaVitalesGuardada) ? d.tablaVitalesGuardada : null;
+      const filaVitales1 = (filasGuardadas && filasGuardadas[0]) || [ta(d.nombre), pesoTxt, taTxt, fcTxt, frTxt, tTxt, '', ''];
+      const filaVitales2 = (filasGuardadas && filasGuardadas[1]) || ['', '', '', '', '', '', '', ''];
+
+      return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Informe de Visita Domiciliar</title>
+<style>
+  @page { margin: 1.5cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Georgia, serif; font-size: 12.5px; color:#111; padding: 1.2rem 1.6rem; line-height: 1.5; }
+  .inf-cab-titulos { text-align:center; margin-bottom: 1.1rem; }
+  .inf-cab-titulos p { margin:0; font-size:12px; }
+  .inf-cab-titulos h1 { margin:.3rem 0 0; font-size:14.5px; font-weight:700; }
+  .inf-linea { display:flex; flex-wrap:wrap; gap:.4rem 1.5rem; margin:.5rem 0; }
+  .inf-linea .campo { flex:1; min-width:150px; }
+  .inf-campo-full { margin:.5rem 0; }
+  label.inf-lbl { font-weight:700; }
+  .inf-valor { border-bottom:1px solid #333; display:inline-block; min-width:60px; padding:0 4px 1px; }
+  .inf-valor[contenteditable="true"]:empty:before { content: attr(data-ph); color:#999; }
+  .inf-seccion-titulo { font-weight:700; margin: 1rem 0 .3rem; }
+  table.inf-tabla { width:100%; border-collapse: collapse; margin: .4rem 0 .8rem; font-size:11.5px; }
+  table.inf-tabla th, table.inf-tabla td { border:1px solid #333; padding: 4px 5px; text-align:center; vertical-align: middle; }
+  table.inf-tabla th { font-weight:700; background:#f3f3f3; }
+  table.inf-tabla td[contenteditable="true"] { min-height: 1.2em; }
+  .inf-texto-box { border:1px solid #333; min-height: 90px; padding: 6px 8px; white-space: pre-wrap; }
+  .inf-texto-box.chico { min-height: 55px; }
+  .inf-firma { margin-top: 2.2rem; display:flex; flex-wrap:wrap; gap: 1.4rem; }
+  .inf-firma-pad-wrap { flex: 1; min-width: 260px; }
+  .inf-firma-zona { position:relative; width:100%; max-width:380px; height:95px; cursor:pointer; }
+  .inf-firma-preview { position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none; }
+  .inf-firma-placeholder { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; color:#a3a3a3; font-size:11.5px; font-style:italic; pointer-events:none; }
+  .inf-firma-linea { max-width:380px; border-top:1px solid #333; }
+  .inf-firma-pad-label { margin-top:.35rem; }
+  .inf-firma-borrar { font-family:inherit; font-size:11px; margin-top:.3rem; padding:.25rem .6rem; border:1px solid #999; border-radius:6px; background:#f5f5f5; cursor:pointer; }
+  .inf-toolbar { text-align:center; margin-bottom: 1rem; }
+  .inf-toolbar button { font-family: inherit; font-size: 13px; padding:.5rem 1rem; border-radius:8px; border:1px solid #0b8a72; background:#0b8a72; color:#fff; cursor:pointer; }
+  /* Ventana grande para firmar */
+  .firma-modal-bg { position:fixed; inset:0; background:rgba(10,20,15,.6); display:none; align-items:center; justify-content:center; z-index:999; padding:1rem; }
+  .firma-modal-bg.show { display:flex; }
+  .firma-modal-box { background:#fff; border-radius:12px; padding:1rem; width:100%; max-width:640px; max-height:92vh; display:flex; flex-direction:column; gap:.7rem; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+  .firma-modal-titulo { font-weight:700; font-size:14px; text-align:center; }
+  .firma-modal-canvas-wrap { position:relative; width:100%; height:min(55vh,300px); border:1.5px dashed #b7b7b7; border-radius:8px; background:#fff; overflow:hidden; }
+  .firma-modal-canvas { width:100%; height:100%; display:block; touch-action:none; }
+  .firma-modal-canvas-linea { position:absolute; left:6%; right:6%; bottom:20%; border-top:1px solid #ccc; pointer-events:none; }
+  .firma-modal-botones { display:flex; gap:.6rem; justify-content:flex-end; flex-wrap:wrap; }
+  .fm-btn { font-family:inherit; font-size:13px; padding:.55rem 1.1rem; border-radius:8px; border:1px solid #999; background:#f5f5f5; cursor:pointer; }
+  .fm-guardar { background:#0b8a72; border-color:#0b8a72; color:#fff; font-weight:700; }
+  .inf-btn-regen-objetivo { font-family:inherit; font-size:13px; line-height:1; margin-left:.6rem; padding:.28rem .5rem; border:1px solid #0b8a72; border-radius:6px; background:#eafaf5; color:#0b6a52; cursor:pointer; font-weight:600; vertical-align:middle; }
+  .inf-btn-regen-objetivo:disabled { opacity:.6; cursor:default; }
+  .inf-regen-mensaje { font-size:11px; margin:.2rem 0 .5rem; min-height:1em; }
+  .inf-regen-mensaje.error { color:#c0392b; }
+  .inf-regen-mensaje.ok { color:#0a6a44; }
+  @media print { .inf-toolbar { display:none; } .inf-firma-borrar { display:none; } .firma-modal-bg { display:none !important; } .inf-btn-regen-objetivo { display:none !important; } .inf-regen-mensaje { display:none !important; } body { padding: 0; } }
+</style>
+</head>
+<body>
+
+  <div class="inf-toolbar"><button onclick="if (window.parent && window.parent.imprimirInformeVisitaMINSAL) { window.parent.imprimirInformeVisitaMINSAL(); } else { window.print(); }">🖨️ Imprimir</button></div>
+
+  <div class="inf-cab-titulos">
+    <p>VICEMINISTERIO DE SERVICIOS DE SALUD</p>
+    <p>DIRECCIÓN DE PRIMER NIVEL DE ATENCIÓN</p>
+    <h1>Formato para el informe de visita domiciliar</h1>
+  </div>
+
+  <div class="inf-linea">
+    <div class="campo"><span class="inf-lbl">UCSF:</span> <span class="inf-valor" id="inf-establecimiento-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.establecimientoMostrar))}</span></div>
+    <div class="campo"><span class="inf-lbl">FECHA:</span> <span class="inf-valor" id="inf-fecha-box" contenteditable="true" data-ph="dd/mm/aaaa">${_infEsc(ta(d.fechaMostrar))}</span></div>
+    <div class="campo"><span class="inf-lbl">Expediente clínico N°:</span> <span class="inf-valor" id="inf-expediente-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.expediente))}</span></div>
+  </div>
+
+  <div class="inf-campo-full">
+    <span class="inf-lbl">Nombre de la persona o familia:</span>
+    <span class="inf-valor" id="inf-nombre-vivienda-box" contenteditable="true" style="min-width:60%" data-ph="—">${_infEsc(ta(d.nombreVivMostrar))}</span>
+  </div>
+
+  <div class="inf-linea">
+    <div class="campo"><span class="inf-lbl">Hora de inicio de visita:</span> <span class="inf-valor" id="inf-horainicio-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.horaInicioMostrar))}</span></div>
+    <div class="campo"><span class="inf-lbl">Hora de finalización de visita:</span> <span class="inf-valor" id="inf-horafin-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.horaFin))}</span></div>
+  </div>
+
+  <div class="inf-seccion-titulo">1. Objetivo de la visita.
+    <button type="button" class="inf-btn-regen-objetivo" id="inf-btn-regen-objetivo" onclick="_infRegenerarObjetivo()" title="Regenerar objetivo con IA">🔄</button>
+  </div>
+  <div class="inf-texto-box chico" id="inf-objetivo-box" contenteditable="true" data-ph="Completar..." data-nombre="${_infEsc(ta(d.nombre))}">${_infEsc(ta(d.objetivo))}</div>
+  <div class="inf-regen-mensaje" id="inf-regen-mensaje"></div>
+
+  <div class="inf-seccion-titulo">2. Signos vitales de la persona o miembros de la familia (llenar cuando aplique según objetivo de la visita domiciliar)</div>
+  <table class="inf-tabla" id="inf-tabla-vitales">
+    <thead>
+      <tr>
+        <th style="width:4%">N°</th>
+        <th>Nombre del integrante de la familia con enfermedad o embarazada</th>
+        <th style="width:8%">PESO (kg)</th>
+        <th style="width:8%">TA (tensión arterial)</th>
+        <th style="width:8%">FC (frecuencia cardiaca)</th>
+        <th style="width:8%">FR (frecuencia respiratoria)</th>
+        <th style="width:6%">T°</th>
+        <th style="width:8%">AU (altura uterina)</th>
+        <th style="width:9%">FCF (frecuencia cardiaca fetal)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[0])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[1])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[2])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[3])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[4])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[5])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[6])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales1[7])}</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[0])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[1])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[2])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[3])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[4])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[5])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[6])}</td>
+        <td contenteditable="true">${_infEsc(filaVitales2[7])}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="inf-seccion-titulo">3. Principales hallazgos:</div>
+  <div class="inf-texto-box" id="inf-hallazgos-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.hallazgos))}</div>
+
+  <div class="inf-seccion-titulo">4. Acciones realizadas por el personal de salud (En base a los hallazgos e incluir actividades educativas realizadas, hacer una breve descripción):</div>
+  <div class="inf-texto-box" id="inf-acciones-box" contenteditable="true" data-ph="—">${_infEsc(ta(d.acciones))}</div>
+
+  <div class="inf-seccion-titulo">5. Acuerdos pactados (con la persona o familia)</div>
+  <div class="inf-texto-box chico" id="inf-acuerdo-box" contenteditable="true" data-ph="Completar...">${_infEsc(ta(d.acuerdo))}</div>
+
+  <div class="inf-campo-full">
+    <span class="inf-lbl">6. Fecha de seguimiento:</span>
+    <span class="inf-valor" id="inf-fechaseg-box" contenteditable="true" data-ph="—" style="min-width:40%">${_infEsc(ta(d.fechaSeguimiento))}</span>
+  </div>
+
+  <div class="inf-firma">
+    <div class="inf-firma-pad-wrap">
+      <div class="inf-firma-zona" data-target="firma-usuario" onclick="abrirFirmaModal('firma-usuario')">
+        <canvas class="inf-firma-preview" id="firma-usuario"></canvas>
+        <div class="inf-firma-placeholder" id="firma-usuario-ph">Toque aquí para firmar</div>
+      </div>
+      <div class="inf-firma-linea"></div>
+      <div class="inf-firma-pad-label">Nombre y firma del usuario: <span class="inf-valor" id="inf-firmausuario-nombre-box" contenteditable="true" data-ph="—" style="border-bottom:none">${_infEsc(ta(d.nombreFirmaUsuario))}</span></div>
+      <button type="button" class="inf-firma-borrar" data-target="firma-usuario">🧹 Borrar firma</button>
+    </div>
+    <div class="inf-firma-pad-wrap">
+      <div class="inf-firma-zona" data-target="firma-personal" onclick="abrirFirmaModal('firma-personal')">
+        <canvas class="inf-firma-preview" id="firma-personal"></canvas>
+        <div class="inf-firma-placeholder" id="firma-personal-ph">Toque aquí para firmar</div>
+      </div>
+      <div class="inf-firma-linea"></div>
+      <div class="inf-firma-pad-label">Nombre y firma del personal de salud que realiza la visita: <span class="inf-valor" id="inf-firmapersonal-nombre-box" contenteditable="true" data-ph="—" style="border-bottom:none">${_infEsc(ta(d.nombreFirmaPersonal))}</span></div>
+      <button type="button" class="inf-firma-borrar" data-target="firma-personal">🧹 Borrar firma</button>
+    </div>
+  </div>
+  <div class="inf-regen-mensaje" id="inf-firma-mensaje"></div>
+
+  <!-- Ventana grande para dibujar la firma -->
+  <div class="firma-modal-bg" id="firma-modal-bg">
+    <div class="firma-modal-box">
+      <div class="firma-modal-titulo" id="firma-modal-titulo">Firme en el recuadro</div>
+      <div class="firma-modal-canvas-wrap">
+        <canvas class="firma-modal-canvas" id="firma-modal-canvas"></canvas>
+        <div class="firma-modal-canvas-linea"></div>
+      </div>
+      <div class="firma-modal-botones">
+        <button type="button" class="fm-btn" onclick="limpiarFirmaModal()">🧹 Limpiar</button>
+        <button type="button" class="fm-btn" onclick="cerrarFirmaModal()">Cancelar</button>
+        <button type="button" class="fm-btn fm-guardar" onclick="guardarFirmaModal()">✓ Usar esta firma</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Huella del registro con la que se generó ESTA ficha (ver _infHuellaRegistro en la
+    // ventana principal). Se manda junto con cada campo que se guarda, para que al
+    // reabrir la ficha se pueda saber si el registro diario cambió mientras tanto.
+    var _infHuellaActual = ${JSON.stringify(d.huellaActual || '')};
+
+    // Guarda la firma de cada persona como imagen (dataURL), no como dibujo directo en un cuadro
+    var _firmaImgs = { 'firma-usuario': null, 'firma-personal': null };
+    var _firmaObjetivo = null;
+    var _fmCanvas = null, _fmCtx = null, _fmDibujando = false, _fmX0 = 0, _fmY0 = 0, _fmTieneTrazo = false, _fmEventosListos = false;
+
+    function _ajustarCanvas(canvas, ratio) {
+      var rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * ratio));
+      canvas.height = Math.max(1, Math.round(rect.height * ratio));
+      var ctx = canvas.getContext('2d');
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2.3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#1a1a1a';
+      return ctx;
+    }
+
+    // Firmas guardadas de una vez anterior para este mismo registro (si existen), para que no
+    // se pierdan al reabrir o regenerar la ficha más adelante.
+    var _firmaGuardadaInicial = {
+      'firma-usuario': ${d.firmaUsuario ? JSON.stringify(d.firmaUsuario) : 'null'},
+      'firma-personal': ${d.firmaPersonal ? JSON.stringify(d.firmaPersonal) : 'null'}
+    };
+
+    // Los canvas de vista previa solo muestran la firma ya hecha (transparentes, sin cuadro);
+    // firmar se hace siempre desde la ventana grande.
+    ['firma-usuario', 'firma-personal'].forEach(function(id) {
+      var canvas = document.getElementById(id);
+      if (!canvas) return;
+      var pctx = _ajustarCanvas(canvas, window.devicePixelRatio || 1);
+      var previa = _firmaGuardadaInicial[id];
+      if (previa) {
+        _firmaImgs[id] = previa;
+        var img = new Image();
+        img.onload = function() {
+          var rect = canvas.getBoundingClientRect();
+          pctx.drawImage(img, 0, 0, rect.width, rect.height);
+        };
+        img.src = previa;
+        var ph = document.getElementById(id + '-ph');
+        if (ph) ph.style.display = 'none';
+      }
+    });
+
+    function _fmPosicion(e) {
+      var r = _fmCanvas.getBoundingClientRect();
+      var t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    }
+
+    function _fmIniciarEventos() {
+      if (_fmEventosListos) return;
+      _fmEventosListos = true;
+      _fmCanvas.addEventListener('pointerdown', function(e) {
+        _fmDibujando = true;
+        var p = _fmPosicion(e);
+        _fmX0 = p.x; _fmY0 = p.y;
+        _fmTieneTrazo = true;
+        try { _fmCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        e.preventDefault();
+      });
+      _fmCanvas.addEventListener('pointermove', function(e) {
+        if (!_fmDibujando) return;
+        var p = _fmPosicion(e);
+        _fmCtx.beginPath();
+        _fmCtx.moveTo(_fmX0, _fmY0);
+        _fmCtx.lineTo(p.x, p.y);
+        _fmCtx.stroke();
+        _fmX0 = p.x; _fmY0 = p.y;
+        e.preventDefault();
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(ev) {
+        _fmCanvas.addEventListener(ev, function() { _fmDibujando = false; });
+      });
+    }
+
+    function abrirFirmaModal(id) {
+      _firmaObjetivo = id;
+      _fmCanvas = document.getElementById('firma-modal-canvas');
+      document.getElementById('firma-modal-titulo').textContent =
+        (id === 'firma-usuario') ? 'Firma del usuario' : 'Firma del personal de salud';
+      document.getElementById('firma-modal-bg').classList.add('show');
+      requestAnimationFrame(function() {
+        _fmCtx = _ajustarCanvas(_fmCanvas, window.devicePixelRatio || 1);
+        _fmTieneTrazo = false;
+        _fmIniciarEventos();
+        var previa = _firmaImgs[id];
+        if (previa) {
+          var img = new Image();
+          img.onload = function() {
+            var rect = _fmCanvas.getBoundingClientRect();
+            _fmCtx.drawImage(img, 0, 0, rect.width, rect.height);
+            _fmTieneTrazo = true;
+          };
+          img.src = previa;
+        }
+      });
+    }
+
+    function cerrarFirmaModal() {
+      document.getElementById('firma-modal-bg').classList.remove('show');
+      _firmaObjetivo = null;
+    }
+
+    function limpiarFirmaModal() {
+      if (!_fmCanvas || !_fmCtx) return;
+      var rect = _fmCanvas.getBoundingClientRect();
+      _fmCtx.clearRect(0, 0, rect.width, rect.height);
+      _fmTieneTrazo = false;
+    }
+
+    function _infMostrarMensajeFirma(texto, tipo) {
+      var msg = document.getElementById('inf-firma-mensaje');
+      if (!msg) return;
+      msg.textContent = texto || '';
+      msg.className = 'inf-regen-mensaje' + (tipo ? ' ' + tipo : '');
+      if (texto) {
+        clearTimeout(_infFirmaMsgTimeout);
+        _infFirmaMsgTimeout = setTimeout(function() {
+          msg.textContent = '';
+          msg.className = 'inf-regen-mensaje';
+        }, 5000);
+      }
+    }
+    var _infFirmaMsgTimeout = null;
+
+    // Avisa a la app principal para que guarde (o borre) esta firma en el registro,
+    // así se conserva aunque se cierre la ficha y se vuelva a abrir más adelante.
+    function _infPersistirFirma(id, dataURLOrNull) {
+      if (!window.parent || typeof window.parent._infGuardarFirmaRegistro !== 'function') return;
+      var guardado = window.parent._infGuardarFirmaRegistro(id, dataURLOrNull);
+      if (dataURLOrNull) {
+        _infMostrarMensajeFirma(
+          guardado ? '✅ Firma guardada — se mantendrá al volver a abrir esta ficha' : '⚠️ Guarda primero el registro para conservar esta firma la próxima vez',
+          guardado ? 'ok' : 'error'
+        );
+      }
+    }
+
+    function _borrarFirma(id) {
+      _firmaImgs[id] = null;
+      var canvas = document.getElementById(id);
+      if (canvas) {
+        var ctx = canvas.getContext('2d');
+        var rect = canvas.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+      }
+      var ph = document.getElementById(id + '-ph');
+      if (ph) ph.style.display = '';
+      _infPersistirFirma(id, null);
+    }
+
+    function guardarFirmaModal() {
+      var id = _firmaObjetivo;
+      if (!id || !_fmCanvas) { cerrarFirmaModal(); return; }
+      if (!_fmTieneTrazo) {
+        // No dibujó nada nuevo: equivale a dejar la firma en blanco
+        _borrarFirma(id);
+        cerrarFirmaModal();
+        return;
+      }
+      var dataURL = _fmCanvas.toDataURL('image/png');
+      _firmaImgs[id] = dataURL;
+      var preview = document.getElementById(id);
+      var pctx = preview.getContext('2d');
+      var rect = preview.getBoundingClientRect();
+      pctx.clearRect(0, 0, rect.width, rect.height);
+      var img = new Image();
+      img.onload = function() {
+        pctx.drawImage(img, 0, 0, rect.width, rect.height);
+      };
+      img.src = dataURL;
+      var ph = document.getElementById(id + '-ph');
+      if (ph) ph.style.display = 'none';
+      cerrarFirmaModal();
+      _infPersistirFirma(id, dataURL);
+    }
+
+    var _botonesBorrarFirma = document.querySelectorAll('.inf-firma-borrar');
+    for (var _bi = 0; _bi < _botonesBorrarFirma.length; _bi++) {
+      _botonesBorrarFirma[_bi].addEventListener('click', function(e) {
+        e.stopPropagation();
+        _borrarFirma(this.getAttribute('data-target'));
+      });
+    }
+
+    // Guarda automáticamente (al salir del campo) el expediente clínico, la hora de
+    // finalización y la fecha de seguimiento, para que no se pierdan al reabrir la ficha.
+    function _infCablearCampoPersistente(idElemento, nombreCampo) {
+      var el = document.getElementById(idElemento);
+      if (!el) return;
+      el.addEventListener('blur', function() {
+        if (!window.parent || typeof window.parent._infGuardarCampoRegistro !== 'function') return;
+        window.parent._infGuardarCampoRegistro(nombreCampo, el.textContent.trim(), _infHuellaActual);
+      });
+    }
+    _infCablearCampoPersistente('inf-expediente-box', 'expediente');
+    _infCablearCampoPersistente('inf-horafin-box', 'horaFin');
+    _infCablearCampoPersistente('inf-fechaseg-box', 'fechaSeguimiento');
+    _infCablearCampoPersistente('inf-objetivo-box', 'objetivo');
+    _infCablearCampoPersistente('inf-firmausuario-nombre-box', 'firmaUsuarioNombre');
+    _infCablearCampoPersistente('inf-firmapersonal-nombre-box', 'firmaPersonalNombre');
+    _infCablearCampoPersistente('inf-hallazgos-box', 'hallazgos');
+    _infCablearCampoPersistente('inf-acciones-box', 'acciones');
+    _infCablearCampoPersistente('inf-acuerdo-box', 'acuerdo');
+    _infCablearCampoPersistente('inf-establecimiento-box', 'establecimiento');
+    _infCablearCampoPersistente('inf-fecha-box', 'fechaMostrar');
+    _infCablearCampoPersistente('inf-horainicio-box', 'horaInicio');
+    _infCablearCampoPersistente('inf-nombre-vivienda-box', 'nombreVivienda');
+
+    // Tabla de signos vitales: se guarda completa (las 2 filas) cada vez que se sale de
+    // cualquier celda, en vez de campo por campo.
+    (function () {
+      var tabla = document.getElementById('inf-tabla-vitales');
+      if (!tabla) return;
+      function _infGuardarTablaVitales() {
+        if (!window.parent || typeof window.parent._infGuardarCampoRegistro !== 'function') return;
+        var filas = [];
+        tabla.querySelectorAll('tbody tr').forEach(function (tr) {
+          var fila = [];
+          tr.querySelectorAll('td[contenteditable="true"]').forEach(function (td) {
+            fila.push(td.textContent.trim());
+          });
+          filas.push(fila);
+        });
+        // Se guarda como JSON (texto), no como array anidado: Firestore no admite
+        // un array dentro de otro array como valor de campo directo.
+        window.parent._infGuardarCampoRegistro('tablaVitales', JSON.stringify(filas), _infHuellaActual);
+      }
+      tabla.addEventListener('focusout', function (e) {
+        if (e.target && e.target.tagName === 'TD' && e.target.isContentEditable) {
+          _infGuardarTablaVitales();
+        }
+      });
+    })();
+
+    // Permite volver a redactar SOLO el objetivo con IA (por ejemplo si se generó sin
+    // internet con el cálculo local, y ahora ya hay señal). Actualiza únicamente el
+    // texto del recuadro "Objetivo": no recarga la ficha, así que las firmas ya hechas
+    // y cualquier otro dato editado en el informe se mantienen intactos.
+    function _infMostrarMensajeRegen(texto, tipo) {
+      var msg = document.getElementById('inf-regen-mensaje');
+      if (!msg) return;
+      msg.textContent = texto || '';
+      msg.className = 'inf-regen-mensaje' + (tipo ? ' ' + tipo : '');
+      if (texto) {
+        clearTimeout(_infRegenMsgTimeout);
+        _infRegenMsgTimeout = setTimeout(function() {
+          msg.textContent = '';
+          msg.className = 'inf-regen-mensaje';
+        }, 6000);
+      }
+    }
+    var _infRegenMsgTimeout = null;
+
+    async function _infRegenerarObjetivo() {
+      var btn = document.getElementById('inf-btn-regen-objetivo');
+      var cajaObjetivo = document.getElementById('inf-objetivo-box');
+      var cajaHallazgos = document.getElementById('inf-hallazgos-box');
+      var cajaAcciones = document.getElementById('inf-acciones-box');
+      if (!cajaObjetivo) return;
+
+      if (!window.parent || typeof window.parent._infGenerarObjetivoIA !== 'function') {
+        _infMostrarMensajeRegen('⚠️ No se pudo conectar con la app principal.', 'error');
+        return;
+      }
+
+      var nombre = cajaObjetivo.getAttribute('data-nombre') || '';
+      var hallazgos = cajaHallazgos ? cajaHallazgos.innerText.trim() : '';
+      var acciones = cajaAcciones ? cajaAcciones.innerText.trim() : '';
+
+      var textoOriginal = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Redactando objetivo...'; }
+      _infMostrarMensajeRegen('', '');
+
+      try {
+        var nuevoObjetivo = await window.parent._infGenerarObjetivoIA(nombre, hallazgos, acciones);
+        if (nuevoObjetivo) {
+          cajaObjetivo.textContent = nuevoObjetivo;
+          if (window.parent && typeof window.parent._infGuardarCampoRegistro === 'function') {
+            window.parent._infGuardarCampoRegistro('objetivo', nuevoObjetivo, _infHuellaActual);
+          }
+          _infMostrarMensajeRegen('✅ Objetivo redactado con IA', 'ok');
+        } else {
+          _infMostrarMensajeRegen('⚠️ Sin internet o IA no disponible en este momento. El objetivo actual no se modificó — puedes intentar de nuevo más tarde.', 'error');
+        }
+      } catch (err) {
+        _infMostrarMensajeRegen('⚠️ No se pudo generar el objetivo. Intenta de nuevo.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+      }
+    }
+  <\/script>
+
+</body></html>`;
     }
 
     // ── ESTADÍSTICAS POR GRUPOS DE EDAD ──
@@ -7649,10 +8591,21 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         for (let i = 0; i < toUploadReg.length; i += BATCH_SIZE) {
           const batch = writeBatch(db);
           toUploadReg.slice(i, i + BATCH_SIZE).forEach(r => {
-            batch.set(doc(db, 'rdps', docId, 'registros', String(r.id)), r);
+            // Firestore no admite un array dentro de otro array. Si este registro trae
+            // informeCampos.tablaVitales guardado en el formato viejo (array directo, de
+            // antes de este arreglo), se convierte a texto (JSON) solo para la subida —
+            // sin tocar el dato local — y de paso se deja ya corregido en localStorage.
+            const tv = r.informeCampos && r.informeCampos.tablaVitales;
+            let rParaSubir = r;
+            if (Array.isArray(tv)) {
+              r.informeCampos.tablaVitales = JSON.stringify(tv);
+              rParaSubir = r;
+            }
+            batch.set(doc(db, 'rdps', docId, 'registros', String(r.id)), rParaSubir);
           });
           await batch.commit();
         }
+        localStorage.setItem('rdps_registros', JSON.stringify(registros));
 
         // ── Catálogo de familias (reusar famMetaCloud, sin segunda lectura) ──
         const catalogo = getCatalogo();
@@ -8967,7 +9920,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       generarConIA,
       siguienteMismaVivienda, siguienteNuevaVivienda, siguienteIrInicio,
       vivAutocompletar, seleccionarVivienda, cerrarVivDropdown,
-      editarRegistro, guardarEdicion, eliminarRegistro,
+      editarRegistro, eliminarRegistro,
       renderListado, limpiarFiltros,
       exportarJSON, importarJSON, borrarTodo,
       generarReporteDiario, generarReporteMensual,
@@ -8995,7 +9948,10 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       // Validación botón nutrición
       _puedeGraficar, _actualizarBtnGrafica,
       // Historial de mediciones
-      toggleHistorialTabla
+      toggleHistorialTabla,
+      // Informe de Visita Domiciliar (MINSAL)
+      abrirInformeVisitaMINSAL, cerrarInformeVisitaMINSAL, imprimirInformeVisitaMINSAL,
+      _infGenerarObjetivoIA, _infGuardarFirmaRegistro, _infGuardarCampoRegistro
     });
 
     // ══════════════════════════════════════════
@@ -9076,15 +10032,10 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       if (rEdad) rEdad.addEventListener('input', () => _actualizarBtnGrafica('r'));
       if (rHallazgos) rHallazgos.addEventListener('input', () => _actualizarBtnGrafica('r'));
       
-      // Para formulario de edición (e)
-      const eEdad = document.getElementById('e-edad');
-      const eHallazgos = document.getElementById('e-hallazgos');
-      if (eEdad) eEdad.addEventListener('input', () => _actualizarBtnGrafica('e'));
-      if (eHallazgos) eHallazgos.addEventListener('input', () => _actualizarBtnGrafica('e'));
-      
+      // Para formulario de edición — ya no existe (se usa la pantalla completa "Nueva Visita" para editar)
+
       // Validar estado inicial
       _actualizarBtnGrafica('r');
-      _actualizarBtnGrafica('e');
     });
 
 </script>
