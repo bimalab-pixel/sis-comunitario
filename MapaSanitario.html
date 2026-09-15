@@ -1007,7 +1007,7 @@ td.err{color:var(--red);font-weight:700}
 ════════════════════════════ -->
 <div class="screen active" id="screen-home">
   <div class="home-hero">
-    <div class="home-emblem">
+    <div class="home-emblem" style="cursor:pointer;user-select:none;-webkit-user-select:none;" onclick="cloudIconTap()">
       <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
         <polyline points="9 22 9 12 15 12 15 22"/>
@@ -1018,6 +1018,7 @@ td.err{color:var(--red);font-weight:700}
   </div>
 
   <!-- Sync bar Firebase -->
+  <div class="cloud-toggle-zone">
   <div class="sync-bar" id="sync-bar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sync-ico" width="14" height="14"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .86h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
     <span class="sync-bar-txt" id="sync-txt">Sin conectar — toca Configurar</span>
@@ -1032,6 +1033,7 @@ td.err{color:var(--red);font-weight:700}
         Bajar
       </button>
     </div>
+  </div>
   </div>
 
   <!-- Chips de riesgo -->
@@ -1111,6 +1113,7 @@ td.err{color:var(--red);font-weight:700}
       <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
     </button>
 
+    <div class="cloud-toggle-zone">
     <button class="mbtn" onclick="sincronizar()" id="mbtn-sync" style="display:none">
       <div class="mbtn-ico" style="background:rgba(21,101,192,.35)">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>
@@ -1131,6 +1134,7 @@ td.err{color:var(--red);font-weight:700}
         <span style="color:#6fa8ff">Bajar</span>
         <span style="font-size:.7rem;font-weight:400;opacity:.75;color:white">Nube → Local</span>
       </button>
+    </div>
     </div>
 
     <div class="danger-zone">
@@ -3633,6 +3637,36 @@ async function bajarNube(){
 // _actualizarSyncUI se llama desde el DOMContentLoaded unificado arriba
 
 
+</script>
+<script>
+(function(){
+    var CLOUD_HIDE_KEY = 'ms_cloudOptsHidden';
+    var tapCount = 0, tapTimer = null;
+    function applyState(hide){
+        document.querySelectorAll('.cloud-toggle-zone').forEach(function(zone){
+            zone.style.display = hide ? 'none' : '';
+        });
+    }
+    window.cloudIconTap = function(){
+        tapCount++;
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(function(){ tapCount = 0; }, 1500);
+        if (tapCount >= 5) {
+            tapCount = 0;
+            clearTimeout(tapTimer);
+            var zones = document.querySelectorAll('.cloud-toggle-zone');
+            if (!zones.length) return;
+            var isHidden = zones[0].style.display === 'none';
+            applyState(!isHidden);
+            localStorage.setItem(CLOUD_HIDE_KEY, isHidden ? '0' : '1');
+        }
+    };
+    document.addEventListener('DOMContentLoaded', function(){
+        if (localStorage.getItem(CLOUD_HIDE_KEY) !== '0') {
+            applyState(true);
+        }
+    });
+})();
 </script>
 </body>
 </html>

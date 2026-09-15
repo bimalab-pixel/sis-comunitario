@@ -789,9 +789,21 @@
 
           /* Tabla de signos vitales */
           .vitals-wrap{border:1.5px solid #bbb!important;overflow:visible!important;border-radius:4px!important}
-          .vt{min-width:unset!important}
-          .vt td{padding:.12rem .2rem!important}
-          .vt input{font-size:.82rem!important;padding:.15rem!important}
+          .vt{min-width:unset!important;table-layout:auto!important}
+          .vt td{padding:.18rem .3rem!important;text-align:center!important;vertical-align:middle!important}
+          .vt td.vt-nombre{text-align:left!important}
+          .vt input{display:none!important}
+          .vt .vt-print-val{
+            display:block!important;
+            width:100%!important;
+            font-size:.8rem!important;
+            color:#000!important;
+            text-align:center!important;
+            white-space:nowrap!important;
+            overflow:hidden!important;
+            text-overflow:ellipsis!important;
+          }
+          .vt td.vt-nombre .vt-print-val{text-align:left!important;white-space:normal!important;}
 
           /* Firmas */
           .sig-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
@@ -851,6 +863,7 @@
         }
         .ib-close:hover{background:rgba(255,255,255,.18);color:#fff}
         .print-mirror{display:none}
+        .vt .vt-print-val{display:none}
 
         /* ══════════════ CARPETAS POR PACIENTE ══════════════ */
         .patient-row{
@@ -970,7 +983,7 @@
 ════════════════════════════════════ -->
 <div class="screen active" id="screen-home">
     <div class="home-header">
-        <div class="home-logo">
+        <div class="home-logo" style="cursor:pointer;user-select:none;-webkit-user-select:none;" onclick="cloudIconTap()">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
         <div class="home-title">Hoja de Visita Domiciliar</div>
@@ -1083,6 +1096,7 @@
         </div>
 
         <!-- Cloud sync -->
+        <div id="cloud-toggle-zone">
         <div class="cloud-zone">
             <div class="cloud-zone-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>
@@ -1099,6 +1113,7 @@
                 </button>
             </div>
             <div class="cloud-status" id="cloud-status">Sin actividad reciente</div>
+        </div>
         </div>
 
 
@@ -1743,6 +1758,15 @@
           else m.textContent = '';
         }
       })();
+      // Signos vitales — sincronizar span mirrors para impresión
+      document.querySelectorAll('#vitals-body tr').forEach(tr=>{
+        tr.querySelectorAll('input[data-field]').forEach(inp=>{
+          const span = inp.nextElementSibling;
+          if(span && span.classList.contains('vt-print-val')){
+            span.textContent = inp.value || '';
+          }
+        });
+      });
     }
 
     /* ════════════════ CATEGORÍA DROPDOWN ════════════════ */
@@ -2302,7 +2326,7 @@
       const fields = ['nombre','peso','ta','fc','fr','temp','au','fcf'];
       const ph = ['Nombre…','—','—','—','—','—','—','—'];
       tr.innerHTML = `<td>${vitalRowCount}</td>`
-        + fields.map((f,i)=>`<td${f==='nombre'?' class="vt-nombre"':''}><input class="${f==='nombre'?'ni':''}" type="text" data-field="${f}" value="${escHtml(data[f]||'')}" placeholder="${ph[i]}"/></td>`).join('')
+        + fields.map((f,i)=>`<td${f==='nombre'?' class="vt-nombre"':''}><input class="${f==='nombre'?'ni':''}" type="text" data-field="${f}" value="${escHtml(data[f]||'')}" placeholder="${ph[i]}"/><span class="vt-print-val">${escHtml(data[f]||'')}</span></td>`).join('')
         + `<td><button class="del-row-btn" onclick="removeVitalRow(this)">×</button></td>`;
       document.getElementById('vitals-body').appendChild(tr);
     }
@@ -3587,6 +3611,32 @@
       sigMostrarPreview('per', null);
     }
     var _profileSigMode = false;
+</script>
+<script>
+(function(){
+    var CLOUD_HIDE_KEY = 'vd_cloudOptsHidden';
+    var tapCount = 0, tapTimer = null;
+    window.cloudIconTap = function(){
+        tapCount++;
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(function(){ tapCount = 0; }, 1500);
+        if (tapCount >= 5) {
+            tapCount = 0;
+            clearTimeout(tapTimer);
+            var zone = document.getElementById('cloud-toggle-zone');
+            if (!zone) return;
+            var isHidden = zone.style.display === 'none';
+            zone.style.display = isHidden ? '' : 'none';
+            localStorage.setItem(CLOUD_HIDE_KEY, isHidden ? '0' : '1');
+        }
+    };
+    document.addEventListener('DOMContentLoaded', function(){
+        var zone = document.getElementById('cloud-toggle-zone');
+        if (zone && localStorage.getItem(CLOUD_HIDE_KEY) !== '0') {
+            zone.style.display = 'none';
+        }
+    });
+})();
 </script>
 
 </body>

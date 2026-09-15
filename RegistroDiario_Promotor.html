@@ -1465,7 +1465,7 @@
                     </div>
 
                     <div class="f-group sp">
-                        <button type="button" class="btn-informe-minsal rdps-ia-oculto" id="btn-informe-minsal-r" onclick="abrirInformeVisitaMINSAL('r')">
+                        <button type="button" class="btn-informe-minsal" id="btn-informe-minsal-r" onclick="abrirInformeVisitaMINSAL('r')">
                             <span id="btn-informe-minsal-r-texto">🏥 Generar Informe de Visita Domiciliar (MINSAL)</span>
                         </button>
                     </div>
@@ -2411,11 +2411,16 @@
 
     function rdpsAplicarVisibilidadIA() {
       const visible = localStorage.getItem(RDPS_IA_VISIBLE_KEY) === '1';
-      ['rdps-ia-seccion-nueva','rdps-ia-seccion-config','rdps-guia-usuario-btn','rdps-nube-seccion','rdps-guia-usuario-topbar','btn-informe-minsal-r']
+      ['rdps-ia-seccion-nueva','rdps-ia-seccion-config','rdps-guia-usuario-btn','rdps-nube-seccion','rdps-guia-usuario-topbar']
         .forEach(id => {
           const el = document.getElementById(id);
           if (el) el.classList.toggle('rdps-ia-oculto', !visible);
         });
+      const informeIframe = document.getElementById('informe-minsal-iframe');
+      const regenBtn = informeIframe && informeIframe.contentDocument
+        ? informeIframe.contentDocument.getElementById('inf-btn-regen-objetivo')
+        : null;
+      if (regenBtn) regenBtn.style.display = visible ? '' : 'none';
     }
 
     // ── NAVEGACIÓN ──
@@ -6712,7 +6717,7 @@ Acciones ejecutadas: ${acciones || '—'}
   </div>
 
   <div class="inf-seccion-titulo">1. Objetivo de la visita.
-    <button type="button" class="inf-btn-regen-objetivo" id="inf-btn-regen-objetivo" onclick="_infRegenerarObjetivo()" title="Regenerar objetivo con IA">🔄</button>
+    <button type="button" class="inf-btn-regen-objetivo" id="inf-btn-regen-objetivo" onclick="_infRegenerarObjetivo()" title="Regenerar objetivo con IA" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">🔄</button>
   </div>
   <div class="inf-texto-box chico" id="inf-objetivo-box" contenteditable="true" data-ph="Completar..." data-nombre="${_infEsc(ta(d.nombre))}">${_infEsc(ta(d.objetivo))}</div>
   <div class="inf-regen-mensaje" id="inf-regen-mensaje"></div>
@@ -6830,7 +6835,7 @@ Acciones ejecutadas: ${acciones || '—'}
       ctx.lineWidth = 2.3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#1a1a1a';
+      ctx.strokeStyle = '#1a3d8f';
       return ctx;
     }
 
