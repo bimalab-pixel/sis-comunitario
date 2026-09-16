@@ -1464,12 +1464,6 @@
                         <textarea id="r-acciones" placeholder="Describa las acciones tomadas o intervenciones realizadas..."></textarea>
                     </div>
 
-                    <div class="f-group sp">
-                        <button type="button" class="btn-informe-minsal" id="btn-informe-minsal-r" onclick="abrirInformeVisitaMINSAL('r')">
-                            <span id="btn-informe-minsal-r-texto">🏥 Generar Informe de Visita Domiciliar (MINSAL)</span>
-                        </button>
-                    </div>
-
                     <div class="sp rdps-ia-oculto" id="rdps-ia-seccion-nueva">
                         <div class="f-group" style="margin-bottom:.5rem">
                             <label>🎛️ Nivel de Detalle para la IA</label>
@@ -1483,6 +1477,12 @@
                             <span id="btn-magic-ia-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
                         </button>
                         <div class="btn-magic-hint">Escribe la idea básica en "Hallazgos" y la IA la redacta en formato oficial, en estos mismos campos.</div>
+                    </div>
+
+                    <div class="f-group sp">
+                        <button type="button" class="btn-informe-minsal" id="btn-informe-minsal-r" onclick="abrirInformeVisitaMINSAL('r')">
+                            <span id="btn-informe-minsal-r-texto">🏥 Generar Informe de Visita Domiciliar (MINSAL)</span>
+                        </button>
                     </div>
 
                     <div class="sp" id="banner-otra-persona">
@@ -1499,6 +1499,9 @@
                 <button class="btn save" style="flex:1" onclick="guardarRegistro()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Guardar registro
+                </button>
+                <button class="btn secondary" type="button" title="Convierte a MAYÚSCULAS lo escrito en esta ficha" onclick="convertirFichaMayusculas()">
+                    <span style="font-weight:800">🔠</span> Mayúsculas
                 </button>
                 <button class="btn secondary" onclick="limpiarFormulario()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1977,6 +1980,16 @@
                     <label>Municipio / Distrito</label>
                     <input type="text" id="cfg-municipio" placeholder="Ej: Coatepeque"/>
                 </div>
+                <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
+                <div class="profile-field">
+                    <label style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
+                        <span>🔠 Todo en MAYÚSCULAS</span>
+                        <input type="checkbox" id="cfg-mayusculas" onchange="toggleMayusculasGlobal(this.checked)" style="width:auto;accent-color:var(--navy)"/>
+                    </label>
+                    <p style="font-size:.68rem;color:var(--muted);margin-top:.3rem;line-height:1.4">
+                        Al activarlo, el Registro Diario y el Informe de Visita Domiciliar (MINSAL) — al escribir, generar e imprimir/PDF — se guardan y muestran en MAYÚSCULAS, incluyendo lo ya guardado antes. Es una conversión permanente: desactivarlo después solo detiene la conversión de texto nuevo.
+                    </p>
+                </div>
                 <div class="rdps-ia-oculto" id="rdps-ia-seccion-config">
                 <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
                 <div class="profile-field">
@@ -2317,6 +2330,10 @@
     <div class="fullprev-box">
         <div class="fullprev-topbar">
             <h3>Informe de Visita Domiciliar — MINSAL</h3>
+            <button class="fp-print" title="Convierte todo el informe a MAYÚSCULAS" onclick="convertirInformeAMayusculas()">
+                <span style="font-weight:800">🔠</span>
+                Mayús.
+            </button>
             <button class="fp-print" onclick="imprimirInformeVisitaMINSAL()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                 Imprimir
@@ -2361,6 +2378,62 @@
 
     let registros = JSON.parse(localStorage.getItem('rdps_registros') || '[]');
     let perfil    = JSON.parse(localStorage.getItem('rdps_perfil')    || '{}');
+
+    // ══════════════ MAYÚSCULAS GLOBALES ══════════════
+    // Interruptor guardado en "Mi Perfil" (rdps_mayusculas_activo: '1' = activo).
+    // Cuando está activo: (1) todo texto nuevo que se guarde (Registro Diario e
+    // Informe de Visita Domiciliar MINSAL) se convierte a MAYÚSCULAS antes de guardarse
+    // e imprimirse; (2) al activarlo, TODOS los registros ya guardados se convierten
+    // de una sola vez (acción irreversible: apagar el interruptor después no revierte
+    // lo ya convertido, solo detiene la conversión de texto nuevo).
+    function rdpsMayusculasActivo() {
+      return localStorage.getItem('rdps_mayusculas_activo') === '1';
+    }
+    function _rdpsMay(texto) {
+      if (texto === null || texto === undefined) return texto;
+      return rdpsMayusculasActivo() ? String(texto).toUpperCase() : String(texto);
+    }
+    // Convierte a mayúsculas todos los campos de texto de los registros ya guardados
+    // (Registro Diario) y de sus fichas MINSAL ya generadas (informeCampos), y también
+    // los datos del perfil del promotor. Se usa al activar el interruptor.
+    function _rdpsConvertirTodoAMayusculas() {
+      registros.forEach(r => {
+        ['vivienda','nombre','edad','hallazgos','acciones'].forEach(campo => {
+          if (r[campo]) r[campo] = String(r[campo]).toUpperCase();
+        });
+        if (r.informeCampos) {
+          ['expediente','horaFin','fechaSeguimiento','objetivo','firmaUsuarioNombre',
+           'firmaPersonalNombre','hallazgos','acciones','acuerdo','establecimiento',
+           'fechaMostrar','horaInicio','nombreVivienda'].forEach(campo => {
+            if (r.informeCampos[campo]) r.informeCampos[campo] = String(r.informeCampos[campo]).toUpperCase();
+          });
+        }
+      });
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+
+      if (perfil.comunidad)       perfil.comunidad       = String(perfil.comunidad).toUpperCase();
+      if (perfil.establecimiento) perfil.establecimiento = String(perfil.establecimiento).toUpperCase();
+      if (perfil.municipio)       perfil.municipio       = String(perfil.municipio).toUpperCase();
+      // perfil.nombre ya se guarda siempre en mayúsculas, sin importar este interruptor.
+      localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
+    }
+    function toggleMayusculasGlobal(activar) {
+      if (activar) {
+        const ok = confirm('Esto convertirá a MAYÚSCULAS todos los registros ya guardados (Registro Diario e Informes MINSAL) y no se puede deshacer. ¿Deseas continuar?');
+        if (!ok) {
+          document.getElementById('cfg-mayusculas').checked = false;
+          return;
+        }
+        localStorage.setItem('rdps_mayusculas_activo', '1');
+        _rdpsConvertirTodoAMayusculas();
+        actualizarHome();
+        renderListado();
+        toast('✅ Todo el texto se convirtió a MAYÚSCULAS', 'success');
+      } else {
+        localStorage.setItem('rdps_mayusculas_activo', '0');
+        toast('Se detuvo la conversión a MAYÚSCULAS para el texto nuevo (lo ya convertido no cambia)', 'success');
+      }
+    }
     let _editId   = null;
     let _modoEdicionListado = false; // true solo si se llegó a la pantalla vía "Editar" desde el listado
     let _previewHTML = '';
@@ -5078,6 +5151,7 @@ function _riesgoActualizarGrafica(indicadorId) {
       document.getElementById('cfg-comunidad').value       = perfil.comunidad       || '';
       document.getElementById('cfg-establecimiento').value = perfil.establecimiento  || '';
       document.getElementById('cfg-municipio').value       = perfil.municipio        || '';
+      document.getElementById('cfg-mayusculas').checked    = rdpsMayusculasActivo();
 
       const selectProveedor = document.getElementById('cfg-ia-proveedor');
       selectProveedor.innerHTML = Object.keys(RDPS_PROVEEDORES)
@@ -5105,9 +5179,9 @@ function _riesgoActualizarGrafica(indicadorId) {
       const n = document.getElementById('cfg-nombre').value.trim().toUpperCase();
       if (!n) { toast('⚠️ El nombre es obligatorio', 'error'); return; }
       perfil.nombre          = n;
-      perfil.comunidad       = document.getElementById('cfg-comunidad').value.trim();
-      perfil.establecimiento = document.getElementById('cfg-establecimiento').value.trim();
-      perfil.municipio       = document.getElementById('cfg-municipio').value.trim();
+      perfil.comunidad       = _rdpsMay(document.getElementById('cfg-comunidad').value.trim());
+      perfil.establecimiento = _rdpsMay(document.getElementById('cfg-establecimiento').value.trim());
+      perfil.municipio       = _rdpsMay(document.getElementById('cfg-municipio').value.trim());
       localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
 
       const provId = document.getElementById('cfg-ia-proveedor').value;
@@ -5571,11 +5645,11 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         id:        id || Date.now().toString(),
         fecha,
         hora:      document.getElementById('r-hora').value,
-        vivienda:  document.getElementById('r-vivienda').value.trim(),
-        nombre,
-        edad:      document.getElementById('r-edad').value,
-        hallazgos: document.getElementById('r-hallazgos').value.trim(),
-        acciones:  document.getElementById('r-acciones').value.trim(),
+        vivienda:  _rdpsMay(document.getElementById('r-vivienda').value.trim()),
+        nombre:    _rdpsMay(nombre),
+        edad:      _rdpsMay(document.getElementById('r-edad').value),
+        hallazgos: _rdpsMay(document.getElementById('r-hallazgos').value.trim()),
+        acciones:  _rdpsMay(document.getElementById('r-acciones').value.trim()),
         promotor:  perfil.nombre || '',
         comunidad: perfil.comunidad || '',
         establecimiento: perfil.establecimiento || '',
@@ -5835,6 +5909,23 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       irA('screen-nuevo');
       // Validar botón de nutrición con los datos cargados
       setTimeout(() => _actualizarBtnGrafica('r'), 50);
+    }
+
+    // Convierte a MAYÚSCULAS el contenido ya escrito en la ficha abierta (Nueva Visita o
+    // Editar Visita), sin necesidad de activar el interruptor global de "Mi Perfil".
+    // Es una acción puntual: solo afecta esta ficha, en el momento en que se pulsa el botón.
+    function convertirFichaMayusculas() {
+      const campos = ['r-vivienda', 'r-edad', 'r-nombre', 'r-hallazgos', 'r-acciones'];
+      let huboCambio = false;
+      campos.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+          const mayus = el.value.toUpperCase();
+          if (el.value !== mayus) { el.value = mayus; huboCambio = true; }
+        }
+      });
+      _actualizarBtnGrafica('r');
+      toast(huboCambio ? '🔠 Ficha convertida a MAYÚSCULAS' : 'No hay texto que convertir todavía');
     }
 
     function eliminarRegistro(id) {
@@ -6488,13 +6579,13 @@ Acciones ejecutadas: ${acciones || '—'}
     async function abrirInformeVisitaMINSAL(prefijo) {
       const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
-      const nombre    = g(`${prefijo}-nombre`);
+      const nombre    = _rdpsMay(g(`${prefijo}-nombre`));
       const fecha     = g(`${prefijo}-fecha`);
       const hora      = g(`${prefijo}-hora`);
-      const edad      = g(`${prefijo}-edad`);
-      const vivienda  = g(`${prefijo}-vivienda`);
-      const hallazgos = g(`${prefijo}-hallazgos`);
-      const acciones  = g(`${prefijo}-acciones`);
+      const edad      = _rdpsMay(g(`${prefijo}-edad`));
+      const vivienda  = _rdpsMay(g(`${prefijo}-vivienda`));
+      const hallazgos = _rdpsMay(g(`${prefijo}-hallazgos`));
+      const acciones  = _rdpsMay(g(`${prefijo}-acciones`));
 
       if (!nombre) { toast('⚠️ Escribe el nombre del usuario antes de generar el informe', 'error'); return; }
 
@@ -6573,6 +6664,18 @@ Acciones ejecutadas: ${acciones || '—'}
       _informeVisitaMinsalHTML = htmlInformeVisitaMINSAL(datos);
       document.getElementById('informe-minsal-iframe').srcdoc = _informeVisitaMinsalHTML;
       document.getElementById('modal-informe-minsal').classList.add('show');
+    }
+
+    // Convierte a MAYÚSCULAS todo el contenido editable del informe MINSAL que está
+    // actualmente abierto (encabezado, signos vitales, hallazgos, acciones, acuerdo,
+    // firmas, etc.) y guarda cada campo convertido, igual que si se hubiera editado a mano.
+    function convertirInformeAMayusculas() {
+      const iframe = document.getElementById('informe-minsal-iframe');
+      const win = iframe && iframe.contentWindow;
+      if (win && typeof win._infConvertirTodoMayusculas === 'function') {
+        win._infConvertirTodoMayusculas();
+        toast('🔠 Informe convertido a MAYÚSCULAS');
+      }
     }
 
     function cerrarInformeVisitaMINSAL() {
@@ -7015,7 +7118,14 @@ Acciones ejecutadas: ${acciones || '—'}
       if (!el) return;
       el.addEventListener('blur', function() {
         if (!window.parent || typeof window.parent._infGuardarCampoRegistro !== 'function') return;
-        window.parent._infGuardarCampoRegistro(nombreCampo, el.textContent.trim(), _infHuellaActual);
+        // Si el interruptor de MAYÚSCULAS está activo, cualquier edición manual hecha
+        // aquí dentro del informe también se convierte antes de guardarse.
+        var valor = el.textContent.trim();
+        if (window.parent.rdpsMayusculasActivo && window.parent.rdpsMayusculasActivo()) {
+          valor = valor.toUpperCase();
+          if (el.textContent.trim() !== valor) el.textContent = valor;
+        }
+        window.parent._infGuardarCampoRegistro(nombreCampo, valor, _infHuellaActual);
       });
     }
     _infCablearCampoPersistente('inf-expediente-box', 'expediente');
@@ -7057,6 +7167,50 @@ Acciones ejecutadas: ${acciones || '—'}
         }
       });
     })();
+
+    // Botón "🔠 Mayús." de la barra superior (fuera del iframe): convierte a MAYÚSCULAS
+    // TODOS los campos editables de este informe ya generado (encabezado, tabla de signos
+    // vitales, hallazgos, acciones, acuerdo y nombres junto a las firmas) y guarda cada uno,
+    // igual que si el promotor lo hubiera escrito así a mano.
+    window._infConvertirTodoMayusculas = function () {
+      var camposTexto = {
+        'inf-establecimiento-box': 'establecimiento',
+        'inf-fecha-box': 'fechaMostrar',
+        'inf-expediente-box': 'expediente',
+        'inf-nombre-vivienda-box': 'nombreVivienda',
+        'inf-horainicio-box': 'horaInicio',
+        'inf-horafin-box': 'horaFin',
+        'inf-objetivo-box': 'objetivo',
+        'inf-hallazgos-box': 'hallazgos',
+        'inf-acciones-box': 'acciones',
+        'inf-acuerdo-box': 'acuerdo',
+        'inf-fechaseg-box': 'fechaSeguimiento',
+        'inf-firmausuario-nombre-box': 'firmaUsuarioNombre',
+        'inf-firmapersonal-nombre-box': 'firmaPersonalNombre'
+      };
+      var puedeGuardar = !!(window.parent && typeof window.parent._infGuardarCampoRegistro === 'function');
+      Object.keys(camposTexto).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var valor = el.textContent.trim().toUpperCase();
+        el.textContent = valor;
+        if (puedeGuardar) window.parent._infGuardarCampoRegistro(camposTexto[id], valor, _infHuellaActual);
+      });
+      var tabla = document.getElementById('inf-tabla-vitales');
+      if (tabla) {
+        var filas = [];
+        tabla.querySelectorAll('tbody tr').forEach(function (tr) {
+          var fila = [];
+          tr.querySelectorAll('td[contenteditable="true"]').forEach(function (td) {
+            var v = td.textContent.trim().toUpperCase();
+            td.textContent = v;
+            fila.push(v);
+          });
+          filas.push(fila);
+        });
+        if (puedeGuardar) window.parent._infGuardarCampoRegistro('tablaVitales', JSON.stringify(filas), _infHuellaActual);
+      }
+    };
 
     // Permite volver a redactar SOLO el objetivo con IA (por ejemplo si se generó sin
     // internet con el cálculo local, y ahora ya hay señal). Actualiza únicamente el
@@ -7100,6 +7254,9 @@ Acciones ejecutadas: ${acciones || '—'}
       try {
         var nuevoObjetivo = await window.parent._infGenerarObjetivoIA(nombre, hallazgos, acciones);
         if (nuevoObjetivo) {
+          if (window.parent.rdpsMayusculasActivo && window.parent.rdpsMayusculasActivo()) {
+            nuevoObjetivo = nuevoObjetivo.toUpperCase();
+          }
           cajaObjetivo.textContent = nuevoObjetivo;
           if (window.parent && typeof window.parent._infGuardarCampoRegistro === 'function') {
             window.parent._infGuardarCampoRegistro('objetivo', nuevoObjetivo, _infHuellaActual);
