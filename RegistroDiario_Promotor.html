@@ -6468,11 +6468,29 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     // primero es "recién nacido", el objetivo es el recién nacido). El resto de lo
     // encontrado (signos de alarma, otros datos, etc.) queda documentado en la
     // sección 3 (Hallazgos), no se repite aquí.
+    // Aperturas alternativas para el "Objetivo de la visita", usadas tanto por el cálculo
+    // local (sin IA) como para orientar a la IA, de modo que el informe no siempre empiece
+    // con la misma frase. Todas mantienen el mismo sentido (visita domiciliaria de seguimiento).
+    const _infAperturasObjetivo = [
+      'Realizar visita domiciliaria de seguimiento con el fin de',
+      'Efectuar visita domiciliar de control con el propósito de',
+      'Llevar a cabo una visita domiciliaria de seguimiento para',
+      'Realizar visita de seguimiento en el hogar con el objetivo de',
+      'Ejecutar visita domiciliar con el fin de',
+      'Dar seguimiento mediante visita domiciliaria con el propósito de',
+      'Brindar seguimiento domiciliar con el fin de',
+      'Realizar visita de control en el domicilio con el objetivo de'
+    ];
+
+    function _infAperturaAleatoria() {
+      return _infAperturasObjetivo[Math.floor(Math.random() * _infAperturasObjetivo.length)];
+    }
+
     function _infCalcularObjetivo(hallazgos, acciones, dv) {
       const motivo = _infDetectarMotivoPrincipal(hallazgos)
                   || _infDetectarMotivoPrincipal(acciones)
                   || 'verificar el estado de salud general de la persona y brindar la consejería correspondiente';
-      return `Realizar visita domiciliaria de seguimiento con el fin de ${motivo}.`;
+      return `${_infAperturaAleatoria()} ${motivo}.`;
     }
 
     // Genera el "Objetivo de la visita" con el mismo motor de IA (Groq/Gemini/OpenRouter)
@@ -6494,18 +6512,23 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       const modeloIA = localStorage.getItem(proveedor.modeloStorage) || proveedor.modeloDefault;
 
+      // Se sugiere una apertura distinta en cada llamada (elegida al azar) para que el
+      // objetivo generado no siempre comience con la misma frase, aunque el motivo sea similar.
+      const aperturaSugerida = _infAperturaAleatoria();
+
       const prompt = `
 Eres un asistente para promotores de salud comunitaria en El Salvador (formato oficial MINSAL de informe de visita domiciliar).
 
 Con base ÚNICAMENTE en los "Hallazgos" y las "Acciones ejecutadas" de una visita YA REALIZADA (redactados abajo), escribe el "Objetivo de la visita" que debió plantearse antes de iniciarla.
 
 REGLAS (no negociables):
-1. Debe tener entre 2 y 3 oraciones (aproximadamente 35 a 60 palabras en total) — ni una sola frase telegráfica ni un párrafo largo. Inicia con "Realizar visita domiciliaria de seguimiento con el fin de..." o una construcción equivalente.
-2. Incluye datos CONCRETOS que ya aparezcan en los Hallazgos/Acciones y ayuden a entender el propósito de la visita: por ejemplo la edad o etapa de vida de la persona (recién nacido, embarazo de X semanas, adulto mayor, etc.), la condición o motivo principal, y si aplica, qué se buscaba verificar o reforzar (signos de alarma, signos vitales, cumplimiento de un acuerdo o control anterior). No agregues cifras o datos que no estén ya en el texto proporcionado.
-3. NO inventes ningún diagnóstico, dato, antecedente o acción que no esté explícita o implícitamente contenido en los Hallazgos/Acciones proporcionados. El objetivo debe quedarse estrictamente dentro de ese contexto.
-4. Si hay más de un tema/condición relevante, prioriza el motivo PRINCIPAL de la visita y menciona un segundo tema solo si es claramente relevante; no intentes listar todos los temas menores.
-5. No copies literalmente frases completas de los Hallazgos; sintetiza y contextualiza el propósito de la visita, no te limites a repetir el resultado encontrado.
-6. Responde ÚNICAMENTE con el texto del objetivo, en un solo párrafo (sin saltos de línea), sin comillas, sin explicaciones, sin markdown ni texto adicional antes o después.
+1. Debe tener entre 2 y 3 oraciones (aproximadamente 35 a 60 palabras en total) — ni una sola frase telegráfica ni un párrafo largo.
+2. Para esta ocasión, inicia el texto con esta apertura exacta o una variación natural muy cercana en redacción: "${aperturaSugerida}...". NO uses "Realizar visita domiciliaria de seguimiento con el fin de" salvo que sea justo la apertura indicada aquí — el objetivo es variar el inicio entre informes, nunca repetir siempre la misma frase.
+3. Incluye datos CONCRETOS que ya aparezcan en los Hallazgos/Acciones y ayuden a entender el propósito de la visita: por ejemplo la edad o etapa de vida de la persona (recién nacido, embarazo de X semanas, adulto mayor, etc.), la condición o motivo principal, y si aplica, qué se buscaba verificar o reforzar (signos de alarma, signos vitales, cumplimiento de un acuerdo o control anterior). No agregues cifras o datos que no estén ya en el texto proporcionado.
+4. NO inventes ningún diagnóstico, dato, antecedente o acción que no esté explícita o implícitamente contenido en los Hallazgos/Acciones proporcionados. El objetivo debe quedarse estrictamente dentro de ese contexto.
+5. Si hay más de un tema/condición relevante, prioriza el motivo PRINCIPAL de la visita y menciona un segundo tema solo si es claramente relevante; no intentes listar todos los temas menores.
+6. No copies literalmente frases completas de los Hallazgos; sintetiza y contextualiza el propósito de la visita, no te limites a repetir el resultado encontrado.
+7. Responde ÚNICAMENTE con el texto del objetivo, en un solo párrafo (sin saltos de línea), sin comillas, sin explicaciones, sin markdown ni texto adicional antes o después.
 
 Persona: ${nombre || 'No especificada'}
 Hallazgos de la visita: ${hallazgos || '—'}
@@ -6513,7 +6536,7 @@ Acciones ejecutadas: ${acciones || '—'}
       `;
 
       try {
-        const peticion = _rdpsConstruirPeticion(proveedorId, modeloIA, apiKey, prompt, 0.35);
+        const peticion = _rdpsConstruirPeticion(proveedorId, modeloIA, apiKey, prompt, 0.6);
         // Solo 1 intento y espera corta (8s): esto es un "extra" sobre un informe que ya
         // funciona sin IA — si la señal está débil o no hay internet, se prefiere continuar
         // de inmediato con el objetivo calculado localmente antes que dejar al promotor esperando.
