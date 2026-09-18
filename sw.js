@@ -1,6 +1,6 @@
 // ── SIS Comunitario Service Worker ──
 // Cambia el número de versión para forzar actualización del caché
-const CACHE_NAME = 'sis-comunitario-v6';
+const CACHE_NAME = 'sis-comunitario-v7';
 
 // Archivos a guardar en caché al instalar
 const PRECACHE_URLS = [
