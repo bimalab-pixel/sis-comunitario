@@ -1677,6 +1677,18 @@ function toast(msg,tipo='',dur=2800){
   t.textContent=msg;t.className='toast '+(tipo);t.style.display='block';
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.display='none'},dur);
 }
+// Overlay de "no encontrado" con botón para volver manualmente (sin temporizador)
+function _mostrarNoEncontrada(mensaje,urlVolver,textoBoton){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.2rem';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.7rem 1.4rem;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)">'
+    +'<div style="font-size:2.4rem;margin-bottom:.5rem">⚠️</div>'
+    +'<p style="font-size:.95rem;color:#333;margin:0 0 1.2rem;line-height:1.45">'+mensaje+'</p>'
+    +'<button id="_btnVolverNoEnc" style="background:#1b5e20;color:#fff;border:none;border-radius:10px;padding:.75rem 1.4rem;font-size:.92rem;font-weight:700;cursor:pointer;width:100%">'+textoBoton+'</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  document.getElementById('_btnVolverNoEnc').onclick=()=>{ window.location.href=urlVolver; };
+}
 function cerrarModal(id){document.getElementById(id).classList.remove('show')}
 function abrirModal(id){document.getElementById(id).classList.add('show')}
 
@@ -1725,7 +1737,7 @@ function normalFnacImport(s){
 }
 
 // ── NAVEGACIÓN ──
-function irA(id){
+function irA(id, onDespuesMapa){
   if(id!=='screen-mapa'){
     const w=document.getElementById('mapa-wrapper');
     const b=document.getElementById('btn-fs');
@@ -1739,7 +1751,7 @@ function irA(id){
   document.getElementById(id).classList.add('active');
   if(id==='screen-home') actualizarHome();
   if(id==='screen-catalogo') renderCatalogo();
-  if(id==='screen-mapa') abrirMapa();
+  if(id==='screen-mapa') abrirMapa(onDespuesMapa);
   if(id==='screen-pdi') renderPDI();
 }
 
@@ -1762,7 +1774,55 @@ function actualizarHome(){
   document.getElementById('hs-per').textContent=pers;
   document.getElementById('hs-geo').textContent=geo;
 }
-window.addEventListener('DOMContentLoaded',()=>{ actualizarHome(); _actualizarSyncUI(); aplicarEncabezado(); });
+window.addEventListener('DOMContentLoaded',()=>{ actualizarHome(); _actualizarSyncUI(); aplicarEncabezado(); _procesarDeepLinkVivienda(); });
+
+// ── Enlace directo desde otra app (ej. Registro Diario): MapaSanitario.html?viv=NUMERO ──
+// _origenRegreso: si se llegó desde el Catálogo de Registro Diario ('catalogo'), se usa
+// únicamente para saber a dónde regresar si la vivienda buscada no se encuentra en el mapa.
+// Todos los enlaces de Mapa Sanitario hacia Registro Diario (popup y catálogo) van siempre al Catálogo.
+let _origenRegreso=null;
+function _procesarDeepLinkVivienda(){
+  const params=new URLSearchParams(window.location.search);
+  const numViv=params.get('viv')||params.get('vivienda');
+  const origen=params.get('origen');
+  if(origen) _origenRegreso=origen;
+  if(!numViv) return;
+  // Limpiar el parámetro para que un refresh no vuelva a saltar
+  const url=new URL(window.location.href);
+  url.searchParams.delete('viv'); url.searchParams.delete('vivienda'); url.searchParams.delete('origen');
+  window.history.replaceState({},'',url);
+  verViviendaEnMapa(numViv);
+}
+function verViviendaEnMapa(numViv){
+  const cat=getCatalogo();
+  const viv=cat.find(v=>String(v.vivienda||'').trim()===String(numViv).trim());
+  if(!viv){
+    _mostrarNoEncontrada(
+      'No se encontró la vivienda <strong>'+numViv+'</strong> en Mapa Sanitario.',
+      'RegistroDiario_Promotor.html?viv='+encodeURIComponent(numViv)+(_origenRegreso==='catalogo'?'&origen=catalogo':''),
+      '⬅️ Volver a Registro Diario'
+    );
+    return;
+  }
+  if(!viv.lat||!viv.lng){
+    toast('📍 Vivienda '+numViv+' aún no tiene ubicación GPS registrada','error');
+    irA('screen-catalogo');
+    setTimeout(()=>{const i=document.getElementById('cat-buscar');if(i){i.value=String(numViv);renderCatalogo();}},150);
+    return;
+  }
+  irA('screen-mapa',()=>{
+    _mapaZona.setView([viv.lat,viv.lng],18);
+    const m=_marcadores.find(mk=>mk.__vivId===viv.id);
+    if(m) setTimeout(()=>m.openPopup(),120);
+  });
+}
+
+// Ver esta misma familia en el Catálogo de Registro Diario, desde el Catálogo de Mapa Sanitario.
+// Siempre va al Catálogo (no a "Ver registros"), tenga o no visitas atendidas.
+function verEnRegistroDiario(numVivienda){
+  if(!numVivienda){toast('Esta vivienda no tiene número asignado','error');return;}
+  window.location.href='RegistroDiario_Promotor.html?viv='+encodeURIComponent(numVivienda)+'&origen=catalogo';
+}
 
 // ── CATÁLOGO ──
 let _editVivId=null;
@@ -1858,6 +1918,9 @@ function renderCatalogo(opcs){
         <div class="cat-viv-btns">
           <button class="cat-ico-btn" onclick="abrirEditVivienda('${viv.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="cat-ico-btn" onclick="verEnRegistroDiario('${viv.vivienda}')" title="Ver esta familia en Registro Diario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
           </button>
           <button class="cat-ico-btn" onclick="eliminarVivienda('${viv.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
@@ -2200,7 +2263,7 @@ function cargarLeaflet(){
   });
 }
 
-async function abrirMapa(){
+async function abrirMapa(onListo){
   try{await cargarLeaflet();}catch(e){toast('⚠️ Conexión necesaria para el mapa','error');return;}
   setTimeout(()=>{
     if(!_mapaZona){
@@ -2252,6 +2315,7 @@ async function abrirMapa(){
     renderMarcadores('todos');
     renderMarcadoresPDI();
     renderStats();
+    if(typeof onListo==='function') onListo();
   },180);
 }
 
@@ -2314,12 +2378,15 @@ function renderMarcadores(filtro){
       <div style="font-size:.7em;color:#888;margin-bottom:5px">${viv.origen_ubic==='gps'?'🛰️ GPS':'🖊️ Manual'}</div>
       <button onclick="irA('screen-catalogo');setTimeout(()=>{const i=document.getElementById('cat-buscar');if(i){i.value='${viv.vivienda}';renderCatalogo();}},100)"
         style="background:#0a3d2e;color:#fff;border:none;padding:7px 0;border-radius:7px;font-size:.82em;font-weight:bold;cursor:pointer;width:100%;margin-bottom:4px">📋 Ver Familia</button>
+      <button onclick="window.location.href='RegistroDiario_Promotor.html?viv=${encodeURIComponent(viv.vivienda)}&origen=catalogo'"
+        style="background:#6d28d9;color:#fff;border:none;padding:7px 0;border-radius:7px;font-size:.82em;font-weight:bold;cursor:pointer;width:100%;margin-bottom:4px">📔 Ver en Registro Diario</button>
       <button onclick="iniciarGeoRefMapa('${viv.id}',true)"
         style="background:#1565c0;color:#fff;border:none;padding:6px 0;border-radius:7px;font-size:.78em;font-weight:bold;cursor:pointer;width:100%">📍 Reubicar en mapa</button>
     </div>`;
 
     const m=L.marker([viv.lat,viv.lng],{icon:iconoLeaflet(color, viv.vivienda)})
       .addTo(_mapaZona).bindPopup(popupHTML,{maxWidth:220});
+    m.__vivId=viv.id; m.__vivNum=String(viv.vivienda);
     _marcadores.push(m);
   });
 

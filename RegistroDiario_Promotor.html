@@ -1040,6 +1040,13 @@
         .viv-group-header svg{width:15px;height:15px;flex-shrink:0}
         .viv-group-num{font-weight:700;font-size:.88rem}
         .viv-group-fecha{font-size:.72rem;opacity:.7;margin-left:.2rem}
+        .viv-group-map-btn{
+          background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);
+          color:#fff;border-radius:20px;padding:.15rem .6rem;font-size:.68rem;font-weight:700;
+          cursor:pointer;display:flex;align-items:center;gap:.25rem;transition:background .15s;
+        }
+        .viv-group-map-btn:hover{background:rgba(255,255,255,.3)}
+        .viv-group-map-btn svg{width:11px;height:11px;flex-shrink:0}
         .viv-group-count{
           margin-left:auto;background:rgba(255,255,255,.18);
           border-radius:20px;padding:.12rem .55rem;font-size:.68rem;font-weight:700;
@@ -2458,7 +2465,63 @@
       actualizarHome();
       renderListado();
       rdpsAplicarVisibilidadIA();
+      _procesarDeepLinkVivienda();
     });
+
+    // ── Enlace directo desde MapaSanitario: RegistroDiario_Promotor.html?viv=NUMERO ──
+    function _procesarDeepLinkVivienda() {
+      const params = new URLSearchParams(window.location.search);
+      const numViv = params.get('viv') || params.get('vivienda');
+      if (!numViv) return;
+      const origen = params.get('origen');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('viv'); url.searchParams.delete('vivienda'); url.searchParams.delete('origen');
+      window.history.replaceState({}, '', url);
+      if (origen === 'catalogo') {
+        mostrarViviendaEnCatalogo(numViv);
+      } else {
+        mostrarFamiliaPorVivienda(numViv);
+      }
+    }
+    function _viviendaExisteEnCatalogo(numViv) {
+      return getCatalogo().some(v => String(v.vivienda || '').trim() === String(numViv).trim());
+    }
+    // Vuelta desde el Mapa Sanitario cuando se entró desde el Catálogo (?origen=catalogo)
+    function mostrarViviendaEnCatalogo(numViv) {
+      if (!_viviendaExisteEnCatalogo(numViv)) {
+        _mostrarNoEncontrada(
+          `No se encontró la vivienda <strong>${numViv}</strong> en Registro Diario.`,
+          'MapaSanitario.html?viv=' + encodeURIComponent(numViv),
+          '⬅️ Volver al Mapa Sanitario'
+        );
+        return;
+      }
+      irA('screen-catalogo');
+      const inp = document.getElementById('cat-buscador');
+      if (inp) inp.value = String(numViv);
+      renderCatalogo({ renderCompleto: true });
+      toast(`🏠 Mostrando vivienda ${numViv} en el catálogo`, 'success');
+    }
+    function mostrarFamiliaPorVivienda(numViv) {
+      if (!_viviendaExisteEnCatalogo(numViv)) {
+        _mostrarNoEncontrada(
+          `No se encontró la vivienda <strong>${numViv}</strong> en Registro Diario.`,
+          'MapaSanitario.html?viv=' + encodeURIComponent(numViv),
+          '⬅️ Volver al Mapa Sanitario'
+        );
+        return;
+      }
+      irA('screen-list');
+      document.getElementById('filtro-fecha').value = '';
+      document.getElementById('buscador').value = String(numViv);
+      _listaActual = registros
+        .filter(r => String(r.vivienda || '').trim() === String(numViv).trim())
+        .sort((a,b) => ((b.fecha||'')+(b.hora||'')).localeCompare((a.fecha||'')+(a.hora||'')));
+      _paginaActual = 0;
+      document.getElementById('lista-registros').innerHTML = '';
+      renderListado(false);
+      toast(_listaActual.length ? `🏠 Mostrando la familia de la vivienda ${numViv}` : `La vivienda ${numViv} aún no tiene visitas registradas`, _listaActual.length ? 'success' : 'error');
+    }
 
     // ══════════════ INTERRUPTOR SECRETO — mostrar/ocultar funciones de IA ══════════════
     // 5 toques en "MINSAL — El Salvador" (pantalla de inicio) activan o bloquean
@@ -2558,6 +2621,19 @@
       t.style.display = 'block';
       clearTimeout(t._timer);
       t._timer = setTimeout(() => { t.style.display = 'none'; }, dur);
+    }
+
+    // Overlay de "no encontrado" con botón para volver manualmente (sin temporizador)
+    function _mostrarNoEncontrada(mensaje, urlVolver, textoBoton) {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.2rem';
+      ov.innerHTML = `<div style="background:#fff;border-radius:16px;padding:1.7rem 1.4rem;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)">
+        <div style="font-size:2.4rem;margin-bottom:.5rem">⚠️</div>
+        <p style="font-size:.95rem;color:#333;margin:0 0 1.2rem;line-height:1.45">${mensaje}</p>
+        <button id="_btnVolverNoEnc" style="background:#1b5e20;color:#fff;border:none;border-radius:10px;padding:.75rem 1.4rem;font-size:.92rem;font-weight:700;cursor:pointer;width:100%">${textoBoton}</button>
+      </div>`;
+      document.body.appendChild(ov);
+      document.getElementById('_btnVolverNoEnc').onclick = () => { window.location.href = urlVolver; };
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -6026,6 +6102,10 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="viv-group-num">Vivienda ${g.vivienda}</span>
             <span class="viv-group-fecha">· ${fmtFecha(g.fecha)}</span>
+            <button class="viv-group-map-btn" title="Ver esta vivienda en el Mapa Sanitario" onclick="verEnMapaSanitario('${g.vivienda}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Mapa
+            </button>
             <span class="viv-group-count">${g.items.length} persona${g.items.length>1?'s':''}</span>
           </div>
           <div class="viv-group-body">
@@ -6057,6 +6137,18 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       renderListado(true);
     }
 
+    function verEnMapaSanitario(numVivienda) {
+      if (!numVivienda) { toast('Este registro no tiene número de vivienda asignado', 'error'); return; }
+      window.location.href = 'MapaSanitario.html?viv=' + encodeURIComponent(numVivienda);
+    }
+
+    // Igual que verEnMapaSanitario(), pero marca el origen como "catálogo" para que,
+    // al volver desde el Mapa Sanitario, se regrese aquí (catálogo) y no a "Ver registros".
+    function verEnMapaSanitarioDesdeCatalogo(numVivienda) {
+      if (!numVivienda) { toast('Esta vivienda no tiene número asignado', 'error'); return; }
+      window.location.href = 'MapaSanitario.html?viv=' + encodeURIComponent(numVivienda) + '&origen=catalogo';
+    }
+
     function tarjetaRegistro(r, sinViv) {
       const _tieneGrafica = !!_riesgoDatosGrafica(r.edad || '', r.hallazgos || '', r.nombre || '');
       return `
@@ -6074,6 +6166,9 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           <div class="record-actions">
             ${_tieneGrafica ? `<button class="icon-btn nutri" title="Ver gráfica nutricional" onclick="abrirGraficaNutricional('${r.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+            </button>` : ''}
+            ${r.vivienda && sinViv ? `<button class="icon-btn map" title="Ver en Mapa Sanitario" onclick="verEnMapaSanitario('${r.vivienda}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             </button>` : ''}
             <button class="icon-btn edit" title="Editar" onclick="editarRegistro('${r.id}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -9128,6 +9223,9 @@ Acciones ejecutadas: ${acciones || '—'}
             <div class="cat-viv-btns">
               <button class="cat-ico-btn atender" onclick="atenderFamilia('${viv.id}')" title="Registrar visita a esta familia">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Atender
+              </button>
+              <button class="cat-ico-btn" onclick="verEnMapaSanitarioDesdeCatalogo('${viv.vivienda}')" title="Ver esta vivienda en el Mapa Sanitario">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
               </button>
               <button class="cat-ico-btn" onclick="abrirModalNuevaPersona('${viv.id}')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar

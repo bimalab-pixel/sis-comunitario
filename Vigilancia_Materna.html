@@ -1265,7 +1265,7 @@
             ← Menú Principal
         </a>
     </div>
-    <h1 style="cursor:pointer;user-select:none;-webkit-user-select:none;" onclick="cloudIconTap()">👩‍⚕️ Vigilancia Materna</h1>
+    <h1>👩‍⚕️ Vigilancia Materna</h1>
     <p>Salud Comunitaria Región Occidental</p>
 
     <div id="barra-usuario" style="background-color: #263238; color: #cfd8dc; padding: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #455a64; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -1322,11 +1322,9 @@
                 <span class="dash-icon">🗺️</span>
                 <span class="dash-title">Mapa de Zona</span>
             </div>
-            <div class="cloud-toggle-zone" data-show-display="contents" style="display:contents">
             <div class="dash-card" onclick="abrirLoginSupervisor()" style="border-bottom: 4px solid #333;">
                 <span class="dash-icon">🔒</span>
                 <span class="dash-title">Acceso</span>
-            </div>
             </div>
 
 
@@ -1338,7 +1336,6 @@
             <button class="btn-backup" onclick="document.getElementById('file-input-backup').click()">📥 Restaurar</button>
             <input type="file" id="file-input-backup" accept=".json" style="display: none;" onchange="importarDatos(event)">
         </div>
-        <div class="cloud-toggle-zone">
         <div style="margin: 20px; padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 8px; text-align: center;">
             <h4 style="margin-top:0;">Base de Datos Online</h4>
             <button id="btn-nube-guardar" onclick="guardarEnNube()" style="background: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; margin: 5px; width: 45%;">
@@ -1347,7 +1344,6 @@
             <button id="btn-nube-cargar" onclick="cargarDeNube()" style="background: #2196F3; color: white; padding: 10px; border: none; border-radius: 5px; margin: 5px; width: 45%;">
                 📥 Bajar de Nube
             </button>
-        </div>
         </div>
 
     </div>
@@ -5021,17 +5017,32 @@ function _colorMarcador(p, tipo) {
     return '#f9a825';                               // amarillo puérpera
 }
 
-// Ícono SVG de círculo para Leaflet
+// Ícono SVG de círculo para Leaflet, con destello/onda expansiva animada
 function _iconoLeaflet(color) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-        <circle cx="14" cy="14" r="11" fill="${color}" stroke="white" stroke-width="2.5"/>
-        <circle cx="14" cy="14" r="4" fill="white" opacity="0.8"/>
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" style="overflow:visible;">
+        <style>
+            .destello-onda {
+                transform-origin: 22px 22px;
+                animation: _destelloMapa 2s ease-out infinite;
+                filter: drop-shadow(0 0 3px ${color}) drop-shadow(0 0 6px ${color});
+            }
+            .destello-onda.d2 { animation-delay: 1s; }
+            @keyframes _destelloMapa {
+                0%   { transform: scale(0.4); opacity: 1; }
+                60%  { opacity: 0.55; }
+                100% { transform: scale(2.3); opacity: 0; }
+            }
+        </style>
+        <circle class="destello-onda" cx="22" cy="22" r="11" fill="none" stroke="${color}" stroke-width="3.5"/>
+        <circle class="destello-onda d2" cx="22" cy="22" r="11" fill="none" stroke="${color}" stroke-width="3.5"/>
+        <circle cx="22" cy="22" r="11" fill="${color}" stroke="white" stroke-width="2.5"/>
+        <circle cx="22" cy="22" r="4" fill="white" opacity="0.8"/>
     </svg>`;
     return L.divIcon({
         html: svg,
         className: '',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
         popupAnchor: [0, -16]
     });
 }
@@ -6170,36 +6181,6 @@ function imprimirReporteGeneral() {
 }
 
 
-</script>
-<script>
-(function(){
-    var CLOUD_HIDE_KEY = 'vm_cloudOptsHidden';
-    var tapCount = 0, tapTimer = null;
-    function applyState(hide){
-        document.querySelectorAll('.cloud-toggle-zone').forEach(function(zone){
-            zone.style.display = hide ? 'none' : (zone.dataset.showDisplay || '');
-        });
-    }
-    window.cloudIconTap = function(){
-        tapCount++;
-        clearTimeout(tapTimer);
-        tapTimer = setTimeout(function(){ tapCount = 0; }, 1500);
-        if (tapCount >= 5) {
-            tapCount = 0;
-            clearTimeout(tapTimer);
-            var zones = document.querySelectorAll('.cloud-toggle-zone');
-            if (!zones.length) return;
-            var isHidden = zones[0].style.display === 'none';
-            applyState(!isHidden);
-            localStorage.setItem(CLOUD_HIDE_KEY, isHidden ? '0' : '1');
-        }
-    };
-    document.addEventListener('DOMContentLoaded', function(){
-        if (localStorage.getItem(CLOUD_HIDE_KEY) !== '0') {
-            applyState(true);
-        }
-    });
-})();
 </script>
 </body>
 </html>
