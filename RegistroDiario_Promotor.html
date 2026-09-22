@@ -269,6 +269,28 @@
           box-shadow:0 3px 10px rgba(34,197,94,.55);
           transform:translateY(-1px);
         }
+        /* Control de Entregas (Referencias / Informes de Visita) */
+        .ctrl-tabs{display:flex;gap:.4rem;margin-bottom:.8rem}
+        .ctrl-tab{
+          flex:1;padding:.55rem .5rem;border-radius:10px;border:1.5px solid var(--border);
+          background:var(--white);color:var(--muted);font-family:inherit;font-size:.78rem;font-weight:700;
+          cursor:pointer;transition:all .15s;text-align:center;
+        }
+        .ctrl-tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+        .ctrl-periodo-botones{display:flex;gap:.4rem;margin-bottom:.7rem}
+        .ctrl-periodo-btn{
+          flex:1;padding:.4rem .3rem;border-radius:8px;border:1.5px solid var(--border);
+          background:var(--white);color:var(--muted);font-family:inherit;font-size:.72rem;font-weight:600;
+          cursor:pointer;transition:all .15s;
+        }
+        .ctrl-periodo-btn.active{background:var(--teal2);border-color:var(--teal2);color:#fff}
+        .ctrl-resumen{font-size:.8rem;font-weight:700;color:var(--navy);margin:.2rem 0 .6rem}
+        .ctrl-firma-ok{font-size:.68rem;font-weight:700;color:#166534;background:#dcfce7;padding:.25rem .5rem;border-radius:20px;white-space:nowrap}
+        .ctrl-firma-btn{
+          width:30px;height:30px;border-radius:7px;border:1.5px solid var(--border);
+          background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;
+        }
+        .ctrl-firma-btn:hover{background:var(--gold);border-color:var(--gold)}
         #modal-grafica-nutri .modal-box{max-width:520px;transition:max-width .15s,width .15s}
         #modal-grafica-nutri h3{padding-right:80px;word-wrap:break-word;overflow-wrap:break-word}
         .btn-fullscreen-grafica{
@@ -1283,6 +1305,17 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
+        <button class="menu-btn" onclick="irA('screen-control-entregas')">
+            <div class="menu-btn-icon" style="background:#5b21b6">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2 0 3.85.65 5.35 1.76"/><path d="M21 5l-9 9"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Control de Entregas</div>
+                <div class="mbs">Referencias e Informes — por día o mes</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <!-- Respaldo -->
         <div class="menu-section-label" style="margin-top:.6rem">Datos</div>
 
@@ -1968,6 +2001,65 @@
 
 
 <!-- ════════════════════════════
+     SCREEN: CONTROL DE ENTREGAS (Referencias / Informes)
+════════════════════════════ -->
+<div class="screen" id="screen-control-entregas">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Control de Entregas</span>
+    </div>
+
+    <div class="scroller">
+        <div class="ctrl-tabs">
+            <button type="button" class="ctrl-tab active" id="ctrl-tab-referencia" onclick="_ctrlCambiarTipo('referencia')">📄 Referencias</button>
+            <button type="button" class="ctrl-tab" id="ctrl-tab-informe" onclick="_ctrlCambiarTipo('informe')">🏥 Informes de Visita</button>
+        </div>
+
+        <div class="rep-card">
+            <div class="rep-card-body">
+                <div class="ctrl-periodo-botones">
+                    <button type="button" class="ctrl-periodo-btn active" id="ctrl-periodo-hoy" onclick="_ctrlCambiarPeriodo('hoy')">Hoy</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ctrl-periodo-dia" onclick="_ctrlCambiarPeriodo('dia')">Otra fecha</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ctrl-periodo-mes" onclick="_ctrlCambiarPeriodo('mes')">Por mes</button>
+                </div>
+
+                <div class="rep-fields" id="ctrl-campos-dia" style="display:none">
+                    <div class="f-group">
+                        <label>Fecha</label>
+                        <input type="date" id="ctrl-fecha" onchange="_ctrlRenderLista()"/>
+                    </div>
+                </div>
+
+                <div class="rep-fields" id="ctrl-campos-mes" style="display:none">
+                    <div class="f-group">
+                        <label>Mes</label>
+                        <select id="ctrl-mes" onchange="_ctrlRenderLista()">
+                            <option value="01">Enero</option><option value="02">Febrero</option>
+                            <option value="03">Marzo</option><option value="04">Abril</option>
+                            <option value="05">Mayo</option><option value="06">Junio</option>
+                            <option value="07">Julio</option><option value="08">Agosto</option>
+                            <option value="09">Septiembre</option><option value="10">Octubre</option>
+                            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="f-group">
+                        <label>Año</label>
+                        <input type="number" id="ctrl-anio" min="2020" max="2235" onchange="_ctrlRenderLista()"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ctrl-resumen" id="ctrl-resumen">0 referencias generadas</div>
+        <div id="ctrl-lista"></div>
+    </div>
+</div><!-- /screen-control-entregas -->
+
+
+<!-- ════════════════════════════
      MODAL: CONFIGURACIÓN (perfil estilo Visita Domiciliar)
 ════════════════════════════ -->
 <div class="modal-bg" id="modal-config" onclick="cerrarModal('modal-config')">
@@ -2375,6 +2467,25 @@
     </div>
 </div>
 
+<!-- Modal de firma para el Control de Entregas (firma de recibido, aparte de las
+     firmas propias del Informe/Referencia) -->
+<div class="modal-bg" id="modal-ctrl-firma">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-box-inner" style="position:relative">
+            <button class="modal-close-x" onclick="_ctrlCerrarFirma()">✕</button>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--navy);margin-bottom:.3rem" id="ctrl-firma-titulo">Firma</h3>
+            <p style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem">Pide a la persona que firme aquí, como constancia de que recibió este documento.</p>
+            <div style="border:1.5px solid var(--border);border-radius:10px;height:150px;touch-action:none;background:#fff">
+                <canvas id="ctrl-firma-canvas" style="width:100%;height:100%;display:block"></canvas>
+            </div>
+            <div style="display:flex;gap:.5rem;margin-top:.8rem">
+                <button type="button" class="btn secondary" style="flex:1" onclick="_ctrlLimpiarFirma()">🧹 Limpiar</button>
+                <button type="button" class="btn bprint" style="flex:1" onclick="_ctrlGuardarFirma()">✓ Guardar firma</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -2592,6 +2703,7 @@
       if (target) target.classList.add('active');
       if (screenId === 'screen-list') renderListado();
       if (screenId === 'screen-home') actualizarHome();
+      if (screenId === 'screen-control-entregas') _ctrlRenderLista();
       // Al abrir formulario nuevo (sin edición ni modo otra persona), refrescar fecha/hora actual
       if (screenId === 'screen-nuevo') {
         const esEdicion     = document.getElementById('edit-id').value !== '';
@@ -6803,6 +6915,11 @@ Acciones ejecutadas: ${acciones || '—'}
         fechaSeguimiento: camposGuardados.fechaSeguimiento || ''
       };
 
+      // Deja constancia, para el Control de Entregas, de que a esta persona ya se le
+      // generó un Informe de Visita Domiciliar (y con qué datos), igual que se hace con
+      // la Referencia.
+      _ctrlRegistrarGeneracionInforme(_infRegistroIdActual, datos, huellaActual);
+
       _informeVisitaMinsalHTML = htmlInformeVisitaMINSAL(datos);
       document.getElementById('informe-minsal-iframe').srcdoc = _informeVisitaMinsalHTML;
       document.getElementById('modal-informe-minsal').classList.add('show');
@@ -7737,6 +7854,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
         huellaActual
       };
 
+      // Deja constancia, para el Control de Entregas, de que a esta persona ya se le
+      // generó una Referencia (y con qué datos), sin depender de que el promotor haya
+      // tocado algún campo — así la lista de "Referencias entregadas" siempre tiene con
+      // qué mostrar la ficha, incluso si nadie editó nada a mano.
+      _ctrlRegistrarGeneracionReferencia(_refRegistroIdActual, datos, huellaActual);
+
       _referenciaMinsalHTML = htmlReferenciaMINSAL(datos);
       document.getElementById('referencia-minsal-iframe').srcdoc = _referenciaMinsalHTML;
       document.getElementById('modal-referencia-minsal').classList.add('show');
@@ -8069,6 +8192,365 @@ Notas (Acciones ya escritas): ${accion || '—'}
 </body></html>`;
     }
 
+
+    // ════════════════════════════════════
+    // CONTROL DE ENTREGAS (Referencias / Informes de Visita Domiciliar)
+    // Lleva la cuenta de a quién ya se le generó una Referencia o un Informe, permite ver
+    // esa ficha de nuevo (con los datos tal como quedaron la última vez) y dejar la firma
+    // de la persona como constancia de entrega — todo sin necesidad de internet.
+    // ════════════════════════════════════
+
+    // Guarda (o actualiza) una "foto" de los datos con los que se generó la Referencia de
+    // este registro, y marca la fecha/hora en que se generó por primera vez. Se llama cada
+    // vez que se abre la ficha desde abrirReferenciaMINSAL, tenga o no ediciones a mano.
+    function _ctrlRegistrarGeneracionReferencia(registroId, datos, huella) {
+      if (!registroId) return;
+      const idx = registros.findIndex(r => r.id === registroId);
+      if (idx < 0) return;
+      if (!registros[idx].referenciaCampos) registros[idx].referenciaCampos = {};
+      const c = registros[idx].referenciaCampos;
+      Object.keys(datos).forEach((k) => {
+        if (k === 'huellaActual') return;
+        c[k] = datos[k];
+      });
+      c._huella = huella;
+      if (!registros[idx].referenciaGeneradaEn) registros[idx].referenciaGeneradaEn = new Date().toISOString();
+      registros[idx].referenciaActualizadaEn = new Date().toISOString();
+      registros[idx].actualizadoEn = registros[idx].referenciaActualizadaEn; // para que subirNube() detecte el cambio
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+    }
+
+    // Igual que la anterior, pero para el Informe de Visita Domiciliar. Los nombres de los
+    // campos de "datos" no coinciden 1 a 1 con las claves de informeCampos (ver
+    // _infCablearCampoPersistente), así que aquí sí se mapean explícitamente.
+    function _ctrlRegistrarGeneracionInforme(registroId, datos, huella) {
+      if (!registroId) return;
+      const idx = registros.findIndex(r => r.id === registroId);
+      if (idx < 0) return;
+      if (!registros[idx].informeCampos) registros[idx].informeCampos = {};
+      const c = registros[idx].informeCampos;
+      c.expediente = datos.expediente;
+      c.horaFin = datos.horaFin;
+      c.fechaSeguimiento = datos.fechaSeguimiento;
+      c.objetivo = datos.objetivo;
+      c.firmaUsuarioNombre = datos.nombreFirmaUsuario;
+      c.firmaPersonalNombre = datos.nombreFirmaPersonal;
+      c.hallazgos = datos.hallazgos;
+      c.acciones = datos.acciones;
+      c.acuerdo = datos.acuerdo;
+      c.establecimiento = datos.establecimientoMostrar;
+      c.fechaMostrar = datos.fechaMostrar;
+      c.horaInicio = datos.horaInicioMostrar;
+      c.nombreVivienda = datos.nombreVivMostrar;
+      c._huella = huella;
+      if (!registros[idx].informeGeneradoEn) registros[idx].informeGeneradoEn = new Date().toISOString();
+      registros[idx].informeActualizadoEn = new Date().toISOString();
+      registros[idx].actualizadoEn = registros[idx].informeActualizadoEn; // para que subirNube() detecte el cambio
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+    }
+
+    // Convierte un ISO datetime (que siempre se guarda en UTC, via toISOString) a
+    // "AAAA-MM-DD" en la hora LOCAL del dispositivo — para comparar contra `hoy()` y contra
+    // los selectores de fecha/mes, que también están en hora local.
+    function _ctrlFechaLocalYMD(isoString) {
+      const d = new Date(isoString);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    let _ctrlTipoActual = 'referencia';
+    let _ctrlPeriodoActual = 'hoy';
+
+    function _ctrlCambiarTipo(tipo) {
+      _ctrlTipoActual = tipo;
+      const btnRef = document.getElementById('ctrl-tab-referencia');
+      const btnInf = document.getElementById('ctrl-tab-informe');
+      if (btnRef) btnRef.classList.toggle('active', tipo === 'referencia');
+      if (btnInf) btnInf.classList.toggle('active', tipo === 'informe');
+      _ctrlRenderLista();
+    }
+
+    function _ctrlCambiarPeriodo(periodo) {
+      _ctrlPeriodoActual = periodo;
+      ['hoy', 'dia', 'mes'].forEach((p) => {
+        const btn = document.getElementById('ctrl-periodo-' + p);
+        if (btn) btn.classList.toggle('active', p === periodo);
+      });
+      const campoDia = document.getElementById('ctrl-campos-dia');
+      const campoMes = document.getElementById('ctrl-campos-mes');
+      if (campoDia) campoDia.style.display = (periodo === 'dia') ? '' : 'none';
+      if (campoMes) campoMes.style.display = (periodo === 'mes') ? '' : 'none';
+
+      const fechaEl = document.getElementById('ctrl-fecha');
+      if (periodo === 'dia' && fechaEl && !fechaEl.value) fechaEl.value = hoy();
+
+      const anioEl = document.getElementById('ctrl-anio');
+      const mesEl  = document.getElementById('ctrl-mes');
+      if (periodo === 'mes') {
+        const ahora = new Date();
+        if (anioEl && !anioEl.value) anioEl.value = ahora.getFullYear();
+        if (mesEl  && !mesEl.value)  mesEl.value  = String(ahora.getMonth() + 1).padStart(2, '0');
+      }
+      _ctrlRenderLista();
+    }
+
+    function _ctrlTarjeta(tipo, r) {
+      const campoFecha = (tipo === 'referencia') ? 'referenciaGeneradaEn' : 'informeGeneradoEn';
+      const gen = r[campoFecha];
+      const d = gen ? new Date(gen) : null;
+      const fechaTxt = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '—';
+      const horaTxt  = d ? d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '';
+      const campoFirma = (tipo === 'referencia') ? 'referenciaControlFirma' : 'informeControlFirma';
+      const firmada = !!r[campoFirma];
+      return `
+      <div class="record-card">
+        <div class="record-header">
+          <div style="cursor:pointer;flex:1;min-width:0" onclick="_ctrlVerFicha('${tipo}','${r.id}')">
+            <div class="record-name">${r.nombre || '—'}</div>
+            <div class="record-meta">
+              <span class="badge badge-fecha">📅 ${fechaTxt}</span>
+              ${horaTxt ? `<span class="badge badge-hora">🕐 ${horaTxt}</span>` : ''}
+              ${r.vivienda ? `<span class="badge badge-viv">🏠 Viv. ${r.vivienda}</span>` : ''}
+            </div>
+          </div>
+          <div class="record-actions">
+            ${firmada
+              ? `<span class="ctrl-firma-ok">✅ Firmado</span>`
+              : `<button type="button" class="ctrl-firma-btn" title="Firmar" onclick="event.stopPropagation();_ctrlAbrirFirma('${tipo}','${r.id}')">✍️</button>`}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Rellena la fecha de "generado" para las Referencias/Informes que ya existían ANTES
+    // de que se agregara este Control de Entregas (esos registros tienen referenciaCampos/
+    // informeCampos guardados, pero nunca se les puso referenciaGeneradaEn/informeGeneradoEn
+    // porque esa marca no existía todavía). Se usa la fecha/hora de la visita como mejor
+    // estimado de cuándo se entregó, y si no hay hora, la fecha de la última actualización
+    // del registro, y si tampoco hay eso, ahora mismo. Se corre una sola vez por registro
+    // (si ya tiene la marca, no se toca) y solo guarda si de verdad rellenó algo.
+    let _ctrlMigracionHecha = false;
+    function _ctrlMigrarGeneradosAntiguos() {
+      if (_ctrlMigracionHecha) return;
+      _ctrlMigracionHecha = true;
+      let cambios = false;
+      registros.forEach((r) => {
+        if (r.referenciaCampos && !r.referenciaGeneradaEn) {
+          r.referenciaGeneradaEn = _ctrlMejorFechaEstimada(r);
+          cambios = true;
+        }
+        if (r.informeCampos && !r.informeGeneradoEn) {
+          r.informeGeneradoEn = _ctrlMejorFechaEstimada(r);
+          cambios = true;
+        }
+      });
+      if (cambios) localStorage.setItem('rdps_registros', JSON.stringify(registros));
+    }
+
+    function _ctrlMejorFechaEstimada(r) {
+      if (r.fecha) {
+        const horaValida = /^\d{2}:\d{2}$/.test(r.hora || '') ? r.hora : '12:00';
+        const fechaHora = new Date(`${r.fecha}T${horaValida}:00`);
+        if (!isNaN(fechaHora.getTime())) return fechaHora.toISOString();
+      }
+      if (r.actualizadoEn) return r.actualizadoEn;
+      return new Date().toISOString();
+    }
+
+    function _ctrlRenderLista() {
+      _ctrlMigrarGeneradosAntiguos();
+      const campoFecha = (_ctrlTipoActual === 'referencia') ? 'referenciaGeneradaEn' : 'informeGeneradoEn';
+
+      let fechaObjetivo = null, mesObjetivo = null;
+      if (_ctrlPeriodoActual === 'hoy') {
+        fechaObjetivo = hoy();
+      } else if (_ctrlPeriodoActual === 'dia') {
+        fechaObjetivo = document.getElementById('ctrl-fecha').value || hoy();
+      } else {
+        const ahora = new Date();
+        const anio = document.getElementById('ctrl-anio').value || ahora.getFullYear();
+        const mes  = document.getElementById('ctrl-mes').value  || String(ahora.getMonth() + 1).padStart(2, '0');
+        mesObjetivo = `${anio}-${String(mes).padStart(2, '0')}`;
+      }
+
+      let lista = registros.filter((r) => {
+        const gen = r[campoFecha];
+        if (!gen) return false;
+        const ymd = _ctrlFechaLocalYMD(gen);
+        return mesObjetivo ? (ymd.slice(0, 7) === mesObjetivo) : (ymd === fechaObjetivo);
+      });
+      lista.sort((a, b) => (b[campoFecha] || '').localeCompare(a[campoFecha] || ''));
+
+      const resumenEl = document.getElementById('ctrl-resumen');
+      if (resumenEl) {
+        resumenEl.textContent = (_ctrlTipoActual === 'referencia')
+          ? `${lista.length} referencia${lista.length !== 1 ? 's' : ''} generada${lista.length !== 1 ? 's' : ''}`
+          : `${lista.length} informe${lista.length !== 1 ? 's' : ''} de visita generado${lista.length !== 1 ? 's' : ''}`;
+      }
+
+      const cont = document.getElementById('ctrl-lista');
+      if (!cont) return;
+      if (!lista.length) {
+        cont.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <h3>Sin resultados</h3>
+          <p>No se ha generado ninguna${_ctrlTipoActual === 'referencia' ? ' referencia' : ' informe'} en este período</p>
+        </div>`;
+        return;
+      }
+      cont.innerHTML = lista.map((r) => _ctrlTarjeta(_ctrlTipoActual, r)).join('');
+    }
+
+    // Abre de nuevo, en el mismo visor que ya existe, la Referencia o el Informe tal como
+    // quedaron guardados para esa persona — sin depender de que el formulario de "Nueva
+    // Visita" tenga esos datos cargados en este momento (puede ser de otro día).
+    function _ctrlVerFicha(tipo, id) {
+      const registro = registros.find(r => r.id === id);
+      if (!registro) { toast('⚠️ No se encontró el registro', 'error'); return; }
+
+      if (tipo === 'referencia') {
+        const c = registro.referenciaCampos || {};
+        _refRegistroIdActual = id;
+        const datos = {
+          fechaMostrar: c.fechaMostrar || '', horaMostrar: c.horaMostrar || '',
+          nombreMostrar: c.nombreMostrar || registro.nombre || '', edadMostrar: c.edadMostrar || registro.edad || '',
+          temperaturaMostrar: c.temperaturaMostrar || '', taMostrar: c.taMostrar || '',
+          frMostrar: c.frMostrar || '', pulsoMostrar: c.pulsoMostrar || '',
+          residenciaMostrar: c.residenciaMostrar || '', municipioMostrar: c.municipioMostrar || '',
+          establecimientoRefiere: c.establecimientoRefiere || '', motivoReferencia: c.motivoReferencia || '',
+          accionPromotor: c.accionPromotor || '', nombrePromotor: c.nombrePromotor || '',
+          fechaResp: c.fechaResp || '', horaResp: c.horaResp || '', establecimientoResp: c.establecimientoResp || '',
+          profesionalResp: c.profesionalResp || '', nombreUsuarioResp: c.nombreUsuarioResp || registro.nombre || '',
+          resenaResp: c.resenaResp || '', recomendacionResp: c.recomendacionResp || '',
+          huellaActual: c._huella || ''
+        };
+        _referenciaMinsalHTML = htmlReferenciaMINSAL(datos);
+        document.getElementById('referencia-minsal-iframe').srcdoc = _referenciaMinsalHTML;
+        document.getElementById('modal-referencia-minsal').classList.add('show');
+        return;
+      }
+
+      const c = registro.informeCampos || {};
+      _infRegistroIdActual = id;
+      const datosVitales = _riesgoParsearNota(c.hallazgos || registro.hallazgos || '', registro.nombre || '');
+      const datos = {
+        establecimiento: (perfil && perfil.establecimiento) || '',
+        establecimientoMostrar: c.establecimiento || '',
+        fechaMostrar: c.fechaMostrar || '',
+        horaInicioMostrar: c.horaInicio || '',
+        nombreVivMostrar: c.nombreVivienda || registro.nombre || '',
+        tablaVitalesGuardada: _infParsearTablaVitales(c.tablaVitales),
+        fecha: registro.fecha, hora: registro.hora, nombre: registro.nombre, edad: registro.edad, vivienda: registro.vivienda,
+        hallazgos: c.hallazgos || '', acciones: c.acciones || '', acuerdo: c.acuerdo || '',
+        objetivo: c.objetivo || '',
+        pesoKg: datosVitales.pesoKg, paSistolica: datosVitales.paSistolica, paDiastolica: datosVitales.paDiastolica,
+        temperaturaC: datosVitales.temperaturaC, fcLpm: datosVitales.fcLpm, frRpm: datosVitales.frRpm,
+        firmaUsuario: (registro.firmas && registro.firmas.usuario) || null,
+        firmaPersonal: (registro.firmas && registro.firmas.personal) || null,
+        nombreFirmaUsuario: c.firmaUsuarioNombre || registro.nombre || '',
+        nombreFirmaPersonal: c.firmaPersonalNombre || ((perfil && perfil.nombre) || ''),
+        huellaActual: c._huella || '',
+        expediente: c.expediente || '', horaFin: c.horaFin || '', fechaSeguimiento: c.fechaSeguimiento || ''
+      };
+      _informeVisitaMinsalHTML = htmlInformeVisitaMINSAL(datos);
+      document.getElementById('informe-minsal-iframe').srcdoc = _informeVisitaMinsalHTML;
+      document.getElementById('modal-informe-minsal').classList.add('show');
+    }
+
+    // ── Firma de constancia de entrega (canvas en la ventana principal, NO dentro del
+    // iframe — es un registro aparte de las firmas propias del documento) ──
+    let _ctrlFirmaCanvas = null, _ctrlFirmaCtx = null, _ctrlFirmaDibujando = false;
+    let _ctrlFirmaX0 = 0, _ctrlFirmaY0 = 0, _ctrlFirmaTieneTrazo = false, _ctrlFirmaEventosListos = false;
+    let _ctrlFirmaTipoActual = null, _ctrlFirmaIdActual = null;
+
+    function _ctrlAjustarCanvasFirma(canvas, ratio) {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * ratio));
+      canvas.height = Math.max(1, Math.round(rect.height * ratio));
+      const ctx = canvas.getContext('2d');
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2.3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#1a3d8f';
+      return ctx;
+    }
+
+    function _ctrlFirmaPosicion(e) {
+      const r = _ctrlFirmaCanvas.getBoundingClientRect();
+      const t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    }
+
+    function _ctrlFirmaIniciarEventos() {
+      if (_ctrlFirmaEventosListos) return;
+      _ctrlFirmaEventosListos = true;
+      _ctrlFirmaCanvas.addEventListener('pointerdown', (e) => {
+        _ctrlFirmaDibujando = true;
+        const p = _ctrlFirmaPosicion(e);
+        _ctrlFirmaX0 = p.x; _ctrlFirmaY0 = p.y;
+        _ctrlFirmaTieneTrazo = true;
+        try { _ctrlFirmaCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+        e.preventDefault();
+      });
+      _ctrlFirmaCanvas.addEventListener('pointermove', (e) => {
+        if (!_ctrlFirmaDibujando) return;
+        const p = _ctrlFirmaPosicion(e);
+        _ctrlFirmaCtx.beginPath();
+        _ctrlFirmaCtx.moveTo(_ctrlFirmaX0, _ctrlFirmaY0);
+        _ctrlFirmaCtx.lineTo(p.x, p.y);
+        _ctrlFirmaCtx.stroke();
+        _ctrlFirmaX0 = p.x; _ctrlFirmaY0 = p.y;
+        e.preventDefault();
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => {
+        _ctrlFirmaCanvas.addEventListener(ev, () => { _ctrlFirmaDibujando = false; });
+      });
+    }
+
+    function _ctrlAbrirFirma(tipo, id) {
+      _ctrlFirmaTipoActual = tipo;
+      _ctrlFirmaIdActual = id;
+      const registro = registros.find(r => r.id === id);
+      const titEl = document.getElementById('ctrl-firma-titulo');
+      if (titEl) titEl.textContent = 'Firma de ' + ((registro && registro.nombre) || 'la persona');
+      document.getElementById('modal-ctrl-firma').classList.add('show');
+      requestAnimationFrame(() => {
+        _ctrlFirmaCanvas = document.getElementById('ctrl-firma-canvas');
+        _ctrlFirmaCtx = _ctrlAjustarCanvasFirma(_ctrlFirmaCanvas, window.devicePixelRatio || 1);
+        _ctrlFirmaTieneTrazo = false;
+        _ctrlFirmaEventosListos = false;
+        _ctrlFirmaIniciarEventos();
+      });
+    }
+
+    function _ctrlCerrarFirma() {
+      document.getElementById('modal-ctrl-firma').classList.remove('show');
+      _ctrlFirmaTipoActual = null;
+      _ctrlFirmaIdActual = null;
+    }
+
+    function _ctrlLimpiarFirma() {
+      if (!_ctrlFirmaCanvas || !_ctrlFirmaCtx) return;
+      const rect = _ctrlFirmaCanvas.getBoundingClientRect();
+      _ctrlFirmaCtx.clearRect(0, 0, rect.width, rect.height);
+      _ctrlFirmaTieneTrazo = false;
+    }
+
+    function _ctrlGuardarFirma() {
+      if (!_ctrlFirmaTieneTrazo) { toast('⚠️ Aún no hay firma dibujada', 'error'); return; }
+      const dataURL = _ctrlFirmaCanvas.toDataURL('image/png');
+      const idx = registros.findIndex(r => r.id === _ctrlFirmaIdActual);
+      if (idx < 0) return;
+      const campo = (_ctrlFirmaTipoActual === 'referencia') ? 'referenciaControlFirma' : 'informeControlFirma';
+      registros[idx][campo] = dataURL;
+      registros[idx][campo + 'Fecha'] = new Date().toISOString();
+      registros[idx].actualizadoEn = registros[idx][campo + 'Fecha']; // para que subirNube() detecte el cambio
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      toast('✅ Firma guardada');
+      _ctrlCerrarFirma();
+      _ctrlRenderLista();
+    }
 
     // ── ESTADÍSTICAS POR GRUPOS DE EDAD ──
     // Extrae número de años desde un texto de edad libre (ej: "25", "3 años", "6 meses", "2a 3m")
@@ -10913,7 +11395,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _infGenerarObjetivoIA, _infGuardarFirmaRegistro, _infGuardarCampoRegistro,
       // Referencia Comunitaria (MINSAL)
       abrirReferenciaMINSAL, cerrarReferenciaMINSAL, imprimirReferenciaMINSAL,
-      convertirReferenciaAMayusculas, _refGuardarCampoRegistro, _refGenerarReferenciaIA
+      convertirReferenciaAMayusculas, _refGuardarCampoRegistro, _refGenerarReferenciaIA,
+      // Control de Entregas (Referencias / Informes)
+      _ctrlCambiarTipo, _ctrlCambiarPeriodo, _ctrlRenderLista, _ctrlVerFicha,
+      _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma
     });
 
     // ══════════════════════════════════════════
