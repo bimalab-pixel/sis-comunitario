@@ -2601,6 +2601,7 @@
       renderListado();
       rdpsAplicarVisibilidadIA();
       _procesarDeepLinkVivienda();
+      _ctrlConectarAutoguardado('r');
     });
 
     // ── Enlace directo desde MapaSanitario: RegistroDiario_Promotor.html?viv=NUMERO ──
@@ -5928,6 +5929,116 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       guardarRegistro(true);
     }
 
+    // Si la visita todavía NO se ha guardado (viene de "Nueva Visita" y nunca se tocó
+    // "Guardar Registro"), la guarda automáticamente en este momento, usando los mismos
+    // campos y reglas que el botón "Guardar Registro" — así, si el promotor genera un
+    // Informe o una Referencia y luego sale de la pantalla sin acordarse de guardar, la
+    // visita no se pierde. Si ya existía (edit-id ya tenía valor), no hace nada. Devuelve
+    // el id del registro (nuevo o ya existente), o null si falta un dato obligatorio.
+    function _ctrlAsegurarRegistroGuardado(prefijo) {
+      const idField = document.getElementById('edit-id');
+      const idActual = idField ? idField.value : '';
+      if (idActual) return idActual;
+
+      const nombre = document.getElementById(`${prefijo}-nombre`).value.trim();
+      const fecha  = document.getElementById(`${prefijo}-fecha`).value;
+      if (!nombre) { toast('⚠️ El nombre es obligatorio para guardar la visita', 'error'); return null; }
+      if (!fecha)  { toast('⚠️ La fecha es obligatoria para guardar la visita', 'error'); return null; }
+
+      const nuevoId = Date.now().toString();
+      const reg = {
+        id: nuevoId,
+        fecha,
+        hora:      document.getElementById(`${prefijo}-hora`).value,
+        vivienda:  document.getElementById(`${prefijo}-vivienda`).value.trim(),
+        nombre,
+        edad:      document.getElementById(`${prefijo}-edad`).value,
+        hallazgos: document.getElementById(`${prefijo}-hallazgos`).value.trim(),
+        acciones:  document.getElementById(`${prefijo}-acciones`).value.trim(),
+        promotor:  perfil.nombre || '',
+        comunidad: perfil.comunidad || '',
+        establecimiento: perfil.establecimiento || '',
+        municipio: perfil.municipio || '',
+        creado:    new Date().toISOString(),
+        actualizadoEn: new Date().toISOString()
+      };
+      registros.push(reg);
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      actualizarHome();
+      if (idField) idField.value = nuevoId;
+      toast('💾 Visita guardada automáticamente', 'success');
+      return nuevoId;
+    }
+
+    // Autoguardado silencioso mientras se escribe: cada vez que el promotor termina de
+    // escribir en un campo de "Nueva Visita" (o de "Editar Registro"), se guarda o
+    // actualiza el registro en segundo plano — sin el modal de "siguiente acción" ni el
+    // toast de "guardado exitoso", para no interrumpir mientras sigue llenando la ficha.
+    // No crea nada mientras el nombre esté vacío, para no dejar registros fantasma.
+    function _ctrlAutoguardarAhora(prefijo) {
+      const nombreEl = document.getElementById(`${prefijo}-nombre`);
+      const fechaEl  = document.getElementById(`${prefijo}-fecha`);
+      if (!nombreEl || !fechaEl) return;
+      const nombre = nombreEl.value.trim();
+      const fecha  = fechaEl.value;
+      if (!nombre || !fecha) return; // todavía no hay lo mínimo para guardar algo útil
+
+      const idField  = document.getElementById('edit-id');
+      const idActual = idField ? idField.value : '';
+
+      const reg = {
+        id: idActual || Date.now().toString(),
+        fecha,
+        hora:      document.getElementById(`${prefijo}-hora`).value,
+        vivienda:  document.getElementById(`${prefijo}-vivienda`).value.trim(),
+        nombre,
+        edad:      document.getElementById(`${prefijo}-edad`).value,
+        hallazgos: document.getElementById(`${prefijo}-hallazgos`).value.trim(),
+        acciones:  document.getElementById(`${prefijo}-acciones`).value.trim(),
+        promotor:  perfil.nombre || '',
+        comunidad: perfil.comunidad || '',
+        establecimiento: perfil.establecimiento || '',
+        municipio: perfil.municipio || '',
+        actualizadoEn: new Date().toISOString()
+      };
+
+      const idx = registros.findIndex(r => r.id === reg.id);
+      if (idx >= 0) {
+        // Igual que guardarRegistro(): se fusiona, nunca se reemplaza completo, para no
+        // borrar firmas ni referenciaCampos/informeCampos ya guardados.
+        const original = registros[idx];
+        reg.creado = original.creado || new Date().toISOString();
+        registros[idx] = Object.assign({}, original, reg);
+      } else {
+        reg.creado = new Date().toISOString();
+        registros.push(reg);
+        if (idField) idField.value = reg.id;
+      }
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+    }
+
+    // Debounce corto: espera a que el promotor deje de escribir/cambiar de campo antes de
+    // guardar, para no escribir en localStorage con cada tecla.
+    let _ctrlAutoguardadoTimeout = null;
+    function _ctrlAutoguardar(prefijo) {
+      clearTimeout(_ctrlAutoguardadoTimeout);
+      _ctrlAutoguardadoTimeout = setTimeout(() => _ctrlAutoguardarAhora(prefijo), 500);
+    }
+
+    // Conecta el autoguardado a los campos del formulario de "Nueva Visita" (prefijo "r"):
+    // 'blur' en los de texto (se guarda al salir del campo) y 'change' en fecha/hora
+    // (cuando el selector nativo confirma un valor).
+    function _ctrlConectarAutoguardado(prefijo) {
+      ['nombre', 'edad', 'vivienda', 'hallazgos', 'acciones'].forEach((campo) => {
+        const el = document.getElementById(`${prefijo}-${campo}`);
+        if (el) el.addEventListener('blur', () => _ctrlAutoguardar(prefijo));
+      });
+      ['fecha', 'hora'].forEach((campo) => {
+        const el = document.getElementById(`${prefijo}-${campo}`);
+        if (el) el.addEventListener('change', () => _ctrlAutoguardar(prefijo));
+      });
+    }
+
     // Llamado desde el banner "Otra persona"
     function agregarOtraPersona() {
       const viv   = document.getElementById('r-vivienda').value.trim();
@@ -6842,6 +6953,10 @@ Acciones ejecutadas: ${acciones || '—'}
       const acciones  = _rdpsMay(g(`${prefijo}-acciones`));
 
       if (!nombre) { toast('⚠️ Escribe el nombre del usuario antes de generar el informe', 'error'); return; }
+
+      // Si esta visita aún no se ha guardado, se guarda automáticamente ahora — así nunca
+      // se pierde si el promotor sale de la pantalla sin tocar "Guardar Registro".
+      if (prefijo !== 'e' && !_ctrlAsegurarRegistroGuardado(prefijo)) return;
 
       // Se identifica a qué registro guardado pertenece esta ficha (si ya existe), para poder
       // recuperar sus firmas y otros campos guardados, y para poder guardarlos ahora.
@@ -7800,6 +7915,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
       if (!nombre) { toast('⚠️ Escribe el nombre del usuario antes de generar la referencia', 'error'); return; }
 
+      // Si esta visita aún no se ha guardado, se guarda automáticamente ahora — así nunca
+      // se pierde si el promotor sale de la pantalla sin tocar "Guardar Registro".
+      if (prefijo !== 'e' && !_ctrlAsegurarRegistroGuardado(prefijo)) return;
+
       _refRegistroIdActual = (prefijo === 'e') ? _editId : (document.getElementById('edit-id').value || null);
       const _regParaRef = _refRegistroIdActual ? registros.find(r => r.id === _refRegistroIdActual) : null;
       const camposGuardados = (_regParaRef && _regParaRef.referenciaCampos) || {};
@@ -8214,7 +8333,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         c[k] = datos[k];
       });
       c._huella = huella;
-      if (!registros[idx].referenciaGeneradaEn) registros[idx].referenciaGeneradaEn = new Date().toISOString();
+      if (!registros[idx].referenciaGeneradaEn) registros[idx].referenciaGeneradaEn = _ctrlMejorFechaEstimada(registros[idx]); // hora del registro diario de la visita, no la hora del sistema
       registros[idx].referenciaActualizadaEn = new Date().toISOString();
       registros[idx].actualizadoEn = registros[idx].referenciaActualizadaEn; // para que subirNube() detecte el cambio
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
@@ -8243,7 +8362,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       c.horaInicio = datos.horaInicioMostrar;
       c.nombreVivienda = datos.nombreVivMostrar;
       c._huella = huella;
-      if (!registros[idx].informeGeneradoEn) registros[idx].informeGeneradoEn = new Date().toISOString();
+      if (!registros[idx].informeGeneradoEn) registros[idx].informeGeneradoEn = _ctrlMejorFechaEstimada(registros[idx]); // hora del registro diario de la visita, no la hora del sistema
       registros[idx].informeActualizadoEn = new Date().toISOString();
       registros[idx].actualizadoEn = registros[idx].informeActualizadoEn; // para que subirNube() detecte el cambio
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
@@ -8294,8 +8413,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
 
     function _ctrlTarjeta(tipo, r) {
-      const campoFecha = (tipo === 'referencia') ? 'referenciaGeneradaEn' : 'informeGeneradoEn';
-      const gen = r[campoFecha];
+      const gen = _ctrlMejorFechaEstimada(r);
       const d = gen ? new Date(gen) : null;
       const fechaTxt = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '—';
       const horaTxt  = d ? d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -8316,6 +8434,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
             ${firmada
               ? `<span class="ctrl-firma-ok">✅ Firmado</span>`
               : `<button type="button" class="ctrl-firma-btn" title="Firmar" onclick="event.stopPropagation();_ctrlAbrirFirma('${tipo}','${r.id}')">✍️</button>`}
+            <button type="button" class="ctrl-firma-btn" title="Quitar del Control de Entregas" onclick="event.stopPropagation();_ctrlEliminarEntrada('${tipo}','${r.id}')">🗑️</button>
           </div>
         </div>
       </div>`;
@@ -8357,8 +8476,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
 
     function _ctrlRenderLista() {
-      _ctrlMigrarGeneradosAntiguos();
-      const campoFecha = (_ctrlTipoActual === 'referencia') ? 'referenciaGeneradaEn' : 'informeGeneradoEn';
+      const campoCampos = (_ctrlTipoActual === 'referencia') ? 'referenciaCampos' : 'informeCampos';
 
       let fechaObjetivo = null, mesObjetivo = null;
       if (_ctrlPeriodoActual === 'hoy') {
@@ -8372,13 +8490,17 @@ Notas (Acciones ya escritas): ${accion || '—'}
         mesObjetivo = `${anio}-${String(mes).padStart(2, '0')}`;
       }
 
+      // La fecha usada para filtrar y ordenar SIEMPRE se calcula en vivo desde el registro
+      // diario actual (_ctrlMejorFechaEstimada), no desde una fecha guardada al momento de
+      // generar la ficha — así, si después corriges la fecha de la visita, la Referencia o
+      // el Informe "se mueven" solos al día correcto sin tener que volver a generarlos.
       let lista = registros.filter((r) => {
-        const gen = r[campoFecha];
-        if (!gen) return false;
+        if (!r[campoCampos]) return false;
+        const gen = _ctrlMejorFechaEstimada(r);
         const ymd = _ctrlFechaLocalYMD(gen);
         return mesObjetivo ? (ymd.slice(0, 7) === mesObjetivo) : (ymd === fechaObjetivo);
       });
-      lista.sort((a, b) => (b[campoFecha] || '').localeCompare(a[campoFecha] || ''));
+      lista.sort((a, b) => _ctrlMejorFechaEstimada(b).localeCompare(_ctrlMejorFechaEstimada(a)));
 
       const resumenEl = document.getElementById('ctrl-resumen');
       if (resumenEl) {
@@ -8549,6 +8671,37 @@ Notas (Acciones ya escritas): ${accion || '—'}
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       toast('✅ Firma guardada');
       _ctrlCerrarFirma();
+      _ctrlRenderLista();
+    }
+
+    // Quita del Control de Entregas la Referencia o el Informe de una persona — borra solo
+    // su ficha (campos, firma de constancia) del registro, NO borra el registro diario de
+    // la visita en sí. Pide confirmación porque no se puede deshacer.
+    function _ctrlEliminarEntrada(tipo, id) {
+      const registro = registros.find(r => r.id === id);
+      if (!registro) return;
+      const etiqueta = (tipo === 'referencia') ? 'la Referencia' : 'el Informe de Visita';
+      const pregunta = `¿Quitar ${etiqueta} de "${registro.nombre || 'esta persona'}" del Control de Entregas?\n\nEsto NO borra el registro diario de la visita, solo la ficha generada y su firma. No se puede deshacer.`;
+      if (!confirm(pregunta)) return;
+
+      const idx = registros.findIndex(r => r.id === id);
+      if (idx < 0) return;
+      if (tipo === 'referencia') {
+        delete registros[idx].referenciaCampos;
+        delete registros[idx].referenciaGeneradaEn;
+        delete registros[idx].referenciaActualizadaEn;
+        delete registros[idx].referenciaControlFirma;
+        delete registros[idx].referenciaControlFirmaFecha;
+      } else {
+        delete registros[idx].informeCampos;
+        delete registros[idx].informeGeneradoEn;
+        delete registros[idx].informeActualizadoEn;
+        delete registros[idx].informeControlFirma;
+        delete registros[idx].informeControlFirmaFecha;
+      }
+      registros[idx].actualizadoEn = new Date().toISOString(); // para que subirNube() detecte el cambio
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      toast('🗑️ Se quitó del Control de Entregas');
       _ctrlRenderLista();
     }
 
@@ -11398,7 +11551,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       convertirReferenciaAMayusculas, _refGuardarCampoRegistro, _refGenerarReferenciaIA,
       // Control de Entregas (Referencias / Informes)
       _ctrlCambiarTipo, _ctrlCambiarPeriodo, _ctrlRenderLista, _ctrlVerFicha,
-      _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma
+      _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma, _ctrlEliminarEntrada
     });
 
     // ══════════════════════════════════════════
