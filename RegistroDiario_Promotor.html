@@ -118,22 +118,22 @@
         .scroller::-webkit-scrollbar{width:5px}
         .scroller::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
-        /* ══════════════ HOME SCREEN ══════════════ */
-        #screen-home{background:linear-gradient(160deg,#062a1e 0%,#0a3d2e 45%,#0b6e58 100%);}
+        /* ══════════════ HOME SCREEN (tema claro) ══════════════ */
+        #screen-home{background:var(--light);}
 
         .home-header{
           padding:2.5rem 1.5rem 1.5rem;display:flex;flex-direction:column;align-items:center;
-          flex-shrink:0;
+          flex-shrink:0;position:relative;
         }
         .home-logo{
-          width:72px;height:72px;border-radius:16px;background:rgba(255,255,255,.12);
-          border:2px solid rgba(255,255,255,.28);display:flex;align-items:center;
-          justify-content:center;margin-bottom:1rem;
+          width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg,var(--teal2),var(--navy));
+          border:2px solid var(--border);display:flex;align-items:center;
+          justify-content:center;margin-bottom:1rem;box-shadow:var(--shadow-sm);
         }
         .home-logo svg{width:38px;height:38px}
-        .home-title{font-family:'DM Serif Display',serif;font-size:1.65rem;color:#fff;text-align:center;line-height:1.2}
-        .home-subtitle{font-size:.78rem;color:rgba(255,255,255,.6);margin-top:.4rem;text-align:center;letter-spacing:.04em}
-        .home-org{font-size:.65rem;color:rgba(255,255,255,.45);margin-top:.25rem;text-align:center;text-transform:uppercase;letter-spacing:.1em}
+        .home-title{font-family:'DM Serif Display',serif;font-size:1.65rem;color:var(--navy);text-align:center;line-height:1.2}
+        .home-subtitle{font-size:.78rem;color:var(--muted);margin-top:.4rem;text-align:center;letter-spacing:.04em}
+        .home-org{font-size:.65rem;color:var(--muted);opacity:.8;margin-top:.25rem;text-align:center;text-transform:uppercase;letter-spacing:.1em}
 
         .home-scroller{flex:1;overflow-y:auto;padding:1rem 1.2rem 2rem}
         .home-scroller::-webkit-scrollbar{width:0}
@@ -141,13 +141,13 @@
         /* User bar */
         .home-user-bar{
           display:flex;align-items:center;gap:.7rem;
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+          background:var(--white);border:1px solid var(--border);box-shadow:var(--shadow-sm);
           border-radius:12px;padding:.65rem .9rem;margin-bottom:.7rem;cursor:pointer;
           transition:background .22s, transform .1s;
           -webkit-tap-highlight-color:transparent;
         }
-        .home-user-bar:hover{background:rgba(255,255,255,.14)}
-        .home-user-bar:active{background:rgba(255,255,255,.22);transform:scale(.98);transition:background .05s, transform .05s;}
+        .home-user-bar:hover{background:var(--light2)}
+        .home-user-bar:active{background:var(--light2);transform:scale(.98);transition:background .05s, transform .05s;}
         .user-avatar{
           width:38px;height:38px;border-radius:50%;flex-shrink:0;
           background:linear-gradient(135deg,var(--teal2),var(--navy2));
@@ -156,64 +156,114 @@
           border:2px solid rgba(255,255,255,.25);
         }
         .user-info{flex:1;min-width:0}
-        .user-name{font-weight:700;font-size:.92rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .user-role{font-size:.68rem;color:rgba(255,255,255,.5);margin-top:1px}
-        .user-edit-icon{color:rgba(255,255,255,.35);flex-shrink:0}
+        .user-name{font-weight:700;font-size:.92rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .user-role{font-size:.68rem;color:var(--muted);margin-top:1px}
+        .user-edit-icon{color:var(--muted);flex-shrink:0}
         .user-edit-icon svg{width:15px;height:15px}
 
         /* Stats row on home */
         .home-stats{
           display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;
-          background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.1);
+          background:var(--light2);border:1px solid var(--border);
           border-radius:14px;padding:.7rem;margin-bottom:.9rem;
         }
         .home-stat{
           display:flex;flex-direction:column;align-items:center;justify-content:center;
           padding:.6rem .4rem;border-radius:9px;
-          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+          background:var(--white);border:1px solid var(--border);box-shadow:var(--shadow-sm);
           text-align:center;cursor:default;
         }
-        .home-stat-num{font-family:'DM Serif Display',serif;font-size:1.55rem;color:#fff;line-height:1;font-weight:700}
-        .home-stat-lbl{font-size:.58rem;color:rgba(255,255,255,.55);margin-top:.25rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;line-height:1.2}
-        .home-stat-sub{font-size:.55rem;color:rgba(255,255,255,.38);margin-top:.15rem;font-weight:500;line-height:1.2}
+        .home-stat-num{font-family:'DM Serif Display',serif;font-size:1.55rem;color:var(--navy);line-height:1;font-weight:700}
+        .home-stat-lbl{font-size:.58rem;color:var(--muted);margin-top:.25rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;line-height:1.2}
+        .home-stat-sub{font-size:.55rem;color:var(--muted);opacity:.8;margin-top:.15rem;font-weight:500;line-height:1.2}
 
         /* Menu buttons */
-        .menu-section-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.38);margin-bottom:.55rem;margin-top:.2rem;}
+        .menu-section-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.55rem;margin-top:.2rem;}
         .menu-btn{
           display:flex;align-items:center;gap:.9rem;width:100%;
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);
+          background:var(--white);border:1px solid var(--border);box-shadow:var(--shadow-sm);
           border-radius:12px;padding:.85rem 1rem;margin-bottom:.6rem;
           cursor:pointer;transition:all .22s;text-align:left;font-family:inherit;
-          color:#fff;
+          color:var(--text);
         }
-        .menu-btn:hover,.menu-btn:active{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+        .menu-btn:hover,.menu-btn:active{background:var(--light2);border-color:var(--teal2);transform:translateY(-1px)}
         .menu-btn-icon{
           width:42px;height:42px;border-radius:10px;flex-shrink:0;
           display:flex;align-items:center;justify-content:center;
         }
         .menu-btn-icon svg{width:22px;height:22px}
-        .menu-btn-icon.teal{background:rgba(13,158,143,.28);}
-        .menu-btn-icon.navy{background:rgba(26,67,128,.35);}
-        .menu-btn-icon.gold{background:rgba(200,146,42,.28);}
-        .menu-btn-icon.red{background:rgba(231,76,60,.28);}
+        .menu-btn-icon.teal{background:var(--teal);}
+        .menu-btn-icon.navy{background:var(--navy);}
+        .menu-btn-icon.gold{background:var(--gold);}
+        .menu-btn-icon.red{background:#c0392b;}
         .menu-btn-text{flex:1;min-width:0}
         .menu-btn-text .mbt{font-weight:700;font-size:.95rem;line-height:1.2}
-        .menu-btn-text .mbs{font-size:.75rem;color:rgba(255,255,255,.55);margin-top:2px}
-        .menu-btn-arrow{opacity:.45;flex-shrink:0}
-        .menu-btn-arrow svg{width:18px;height:18px}
+        .menu-btn-text .mbs{font-size:.75rem;color:var(--muted);margin-top:2px}
+        .menu-btn-arrow{opacity:.6;flex-shrink:0}
+        .menu-btn-arrow svg{width:18px;height:18px;stroke:var(--muted)}
 
         /* Danger zone */
         .danger-zone{
           margin-top:1rem;padding:.9rem 1rem;border-radius:12px;
-          background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);
+          background:#fdecea;border:1px solid #f3b8b0;
         }
-        .danger-zone p{font-size:.75rem;color:rgba(255,255,255,.55);margin-bottom:.65rem;}
+        .danger-zone p{font-size:.75rem;color:#8a3a32;margin-bottom:.65rem;}
         .clear-btn{
-          width:100%;padding:.52rem;background:rgba(192,57,43,.25);border:1px solid rgba(192,57,43,.5);
-          color:#e07b72;border-radius:8px;font-family:inherit;font-size:.8rem;font-weight:700;
+          width:100%;padding:.52rem;background:#fbdad6;border:1px solid #e8a49a;
+          color:#a93226;border-radius:8px;font-family:inherit;font-size:.8rem;font-weight:700;
           cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;
         }
         .clear-btn:hover{background:rgba(192,57,43,.4);color:#fff}
+
+        /* ══════════════ HOME SCREEN — TEMA OSCURO (solo esta pantalla) ══════════════ */
+        #screen-home.tema-oscuro{background:linear-gradient(160deg,#062a1e 0%,#0a3d2e 45%,#0b6e58 100%);}
+        #screen-home.tema-oscuro .home-logo{background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.28);box-shadow:none;}
+        #screen-home.tema-oscuro .home-title{color:#fff;}
+        #screen-home.tema-oscuro .home-subtitle{color:rgba(255,255,255,.6);}
+        #screen-home.tema-oscuro .home-org{color:rgba(255,255,255,.45);opacity:1;}
+        #screen-home.tema-oscuro .home-user-bar{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);box-shadow:none;}
+        #screen-home.tema-oscuro .home-user-bar:hover{background:rgba(255,255,255,.14)}
+        #screen-home.tema-oscuro .home-user-bar:active{background:rgba(255,255,255,.22)}
+        #screen-home.tema-oscuro .user-name{color:#fff;}
+        #screen-home.tema-oscuro .user-role{color:rgba(255,255,255,.5);}
+        #screen-home.tema-oscuro .user-edit-icon{color:rgba(255,255,255,.35);}
+        #screen-home.tema-oscuro .home-stats{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.1);}
+        #screen-home.tema-oscuro .home-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);box-shadow:none;}
+        #screen-home.tema-oscuro .home-stat-num{color:#fff;}
+        #screen-home.tema-oscuro .home-stat-lbl{color:rgba(255,255,255,.55);}
+        #screen-home.tema-oscuro .home-stat-sub{color:rgba(255,255,255,.38);opacity:1;}
+        #screen-home.tema-oscuro .menu-section-label{color:rgba(255,255,255,.38);}
+        #screen-home.tema-oscuro .menu-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:#fff;box-shadow:none;}
+        #screen-home.tema-oscuro .menu-btn:hover,#screen-home.tema-oscuro .menu-btn:active{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);}
+        #screen-home.tema-oscuro .menu-btn-icon.teal{background:rgba(13,158,143,.28);}
+        #screen-home.tema-oscuro .menu-btn-icon.navy{background:rgba(26,67,128,.35);}
+        #screen-home.tema-oscuro .menu-btn-icon.gold{background:rgba(200,146,42,.28);}
+        #screen-home.tema-oscuro .menu-btn-icon.red{background:rgba(231,76,60,.28);}
+        #screen-home.tema-oscuro .menu-btn-icon.firebase{background:rgba(255,160,0,.22);}
+        #screen-home.tema-oscuro .menu-btn-text .mbs{color:rgba(255,255,255,.55);}
+        #screen-home.tema-oscuro .menu-btn-arrow{opacity:.45;}
+        #screen-home.tema-oscuro .menu-btn-arrow svg{stroke:#fff;}
+        #screen-home.tema-oscuro .danger-zone{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);}
+        #screen-home.tema-oscuro .danger-zone p{color:rgba(255,255,255,.55);}
+        #screen-home.tema-oscuro .clear-btn{background:rgba(192,57,43,.25);border:1px solid rgba(192,57,43,.5);color:#e07b72;}
+        #screen-home.tema-oscuro .firebase-status{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1);}
+        #screen-home.tema-oscuro .firebase-status.ok{background:rgba(0,184,156,.2);color:#7effd9;border-color:rgba(0,184,156,.3);}
+        #screen-home.tema-oscuro .firebase-status.err{background:rgba(192,57,43,.2);color:#ffaaaa;border-color:rgba(192,57,43,.3);}
+
+        /* Botón de alternar tema (sol/luna) en Inicio */
+        .home-tema-toggle{
+          position:absolute;top:1rem;right:1rem;width:38px;height:38px;border-radius:50%;
+          border:1.5px solid var(--border);background:var(--white);color:var(--navy2);
+          display:flex;align-items:center;justify-content:center;cursor:pointer;
+          box-shadow:var(--shadow-sm);transition:all .2s;-webkit-tap-highlight-color:transparent;
+        }
+        .home-tema-toggle svg{width:18px;height:18px}
+        .home-tema-toggle:hover{background:var(--light2)}
+        #screen-home.tema-oscuro .home-tema-toggle{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff;box-shadow:none;}
+        #screen-home.tema-oscuro .home-tema-toggle:hover{background:rgba(255,255,255,.2)}
+        .home-tema-toggle .icon-sol{display:none}
+        #screen-home.tema-oscuro .home-tema-toggle .icon-luna{display:none}
+        #screen-home.tema-oscuro .home-tema-toggle .icon-sol{display:block}
 
         /* ══════════════ LIST SCREEN ══════════════ */
         .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.7rem;margin-bottom:1rem}
@@ -1040,7 +1090,16 @@
           border:1.5px solid var(--teal2);border-radius:10px;
           padding:.65rem .9rem;align-items:center;gap:.7rem;
         }
-        #banner-otra-persona.show{display:flex}
+        #banner-otra-persona.show{display:flex;flex-wrap:wrap}
+        #bop-detalle{display:none !important}
+        #bop-lista{
+          display:none;flex-basis:100%;margin:.15rem 0 0;padding:.5rem .2rem 0;
+          border-top:1px dashed var(--teal2);list-style:none;
+          font-size:.82rem;color:var(--navy);
+        }
+        #bop-lista.open{display:block}
+        #bop-lista li{padding:.22rem 0;display:flex;gap:.45rem;align-items:baseline}
+        #bop-lista li .bop-n{color:var(--teal);font-weight:700;min-width:1.2rem}
         .bop-ico{font-size:1.3rem;flex-shrink:0}
         .bop-txt{flex:1;min-width:0;font-size:.78rem;color:var(--navy)}
         .bop-txt strong{display:block;font-size:.82rem;color:var(--navy2)}
@@ -1084,14 +1143,14 @@
         .record-card.sin-viv{border-radius:10px;margin-bottom:.5rem}
 
         /* ══ BOTONES FIREBASE ══ */
-        .menu-btn-icon.firebase{background:rgba(255,160,0,.22);}
+        .menu-btn-icon.firebase{background:#d9860a;}
         .firebase-status{
           font-size:.7rem;text-align:center;padding:.35rem .7rem;border-radius:20px;
-          background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);margin-top:.35rem;
-          border:1px solid rgba(255,255,255,.1);
+          background:var(--light2);color:var(--muted);margin-top:.35rem;
+          border:1px solid var(--border);
         }
-        .firebase-status.ok{background:rgba(0,184,156,.2);color:#7effd9;border-color:rgba(0,184,156,.3)}
-        .firebase-status.err{background:rgba(192,57,43,.2);color:#ffaaaa;border-color:rgba(192,57,43,.3)}
+        .firebase-status.ok{background:rgba(0,184,156,.15);color:#0a6a55;border-color:rgba(0,184,156,.4)}
+        .firebase-status.err{background:rgba(192,57,43,.12);color:#a93226;border-color:rgba(192,57,43,.35)}
     </style>
     <style>
         /* ══════════════ BANNER DE INSTALACIÓN PWA ══════════════ */
@@ -1192,6 +1251,10 @@
 ════════════════════════════ -->
 <div class="screen active" id="screen-home">
     <div class="home-header">
+        <button type="button" class="home-tema-toggle" id="btn-tema-home" onclick="_rdpsToggleTemaHome()" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema claro/oscuro">
+            <svg class="icon-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            <svg class="icon-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
         <div class="home-logo" id="rdps-toque-secreto-ia" onclick="rdpsToqueSecretoIA()" style="cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -1537,6 +1600,8 @@
                             <strong id="bop-titulo">Vivienda — personas registradas hoy</strong>
                             <span id="bop-detalle">Puedes agregar otra persona de esta misma vivienda</span>
                         </div>
+                        <button type="button" class="bop-btn" id="bop-btn-ver" onclick="_bopVerListado()">Ver</button>
+                        <ul id="bop-lista"></ul>
                     </div>
                 </div>
             </div>
@@ -2602,7 +2667,19 @@
       rdpsAplicarVisibilidadIA();
       _procesarDeepLinkVivienda();
       _ctrlConectarAutoguardado('r');
+      _rdpsAplicarTemaHome();
     });
+
+    // ── TEMA CLARO/OSCURO (solo pantalla de Inicio) ──
+    function _rdpsAplicarTemaHome(){
+      const activo = localStorage.getItem('rdps_tema_home_oscuro') === '1';
+      document.getElementById('screen-home').classList.toggle('tema-oscuro', activo);
+    }
+    function _rdpsToggleTemaHome(){
+      const home = document.getElementById('screen-home');
+      const oscuroAhora = home.classList.toggle('tema-oscuro');
+      localStorage.setItem('rdps_tema_home_oscuro', oscuroAhora ? '1' : '0');
+    }
 
     // ── Enlace directo desde MapaSanitario: RegistroDiario_Promotor.html?viv=NUMERO ──
     function _procesarDeepLinkVivienda() {
@@ -5887,6 +5964,14 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         registros.push(reg);
       }
 
+      // Deja fijado el id de este registro en el campo oculto y cancela cualquier
+      // autoguardado pendiente (disparado por el "blur" del último campo justo antes
+      // de tocar "Guardar"): si no se hace esto, ese autoguardado disparado 500ms
+      // después no encuentra id, cree que es una visita nueva y crea un duplicado
+      // con los mismos datos.
+      document.getElementById('edit-id').value = reg.id;
+      clearTimeout(_ctrlAutoguardadoTimeout);
+
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       actualizarHome();
       _riesgoGuardarHistorialPeso(reg).catch(() => {});
@@ -6182,18 +6267,63 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     function actualizarBannerVivienda(viv, fecha) {
-      if (!viv) { document.getElementById('banner-otra-persona').classList.remove('show'); return; }
+      if (!viv) { document.getElementById('banner-otra-persona').classList.remove('show'); _bopCerrarLista(); return; }
       const personas = registros.filter(r => r.vivienda === viv && r.fecha === fecha);
       const banner = document.getElementById('banner-otra-persona');
       if (personas.length > 0) {
         document.getElementById('bop-titulo').textContent =
           `Vivienda ${viv} — ${personas.length} persona${personas.length>1?'s':''} registrada${personas.length>1?'s':''} hoy`;
-        document.getElementById('bop-detalle').textContent =
-          personas.map(p => p.nombre).join(', ');
+        document.getElementById('bop-detalle').textContent = ''; // los nombres solo se ven al pulsar "Ver"
         banner.classList.add('show');
+        banner.dataset.viv = viv;
+        banner.dataset.fecha = fecha;
+        _bopRenderLista(); // mantiene la lista al día si está desplegada
       } else {
         banner.classList.remove('show');
+        _bopCerrarLista();
       }
+    }
+
+    // Botón "Ver" del banner "Otra persona": despliega/oculta una lista simple con los
+    // nombres de las personas atendidas en esta vivienda SOLO en la fecha de la ficha.
+    function _bopNombresDelDia() {
+      const b = document.getElementById('banner-otra-persona');
+      const viv = b.dataset.viv || '', fecha = b.dataset.fecha || '';
+      if (!viv) return [];
+      return registros
+        .filter(r => r.vivienda === viv && r.fecha === fecha)
+        .sort((a, b2) => (a.hora || '').localeCompare(b2.hora || ''))
+        .map(r => r.nombre || '(sin nombre)');
+    }
+
+    function _bopRenderLista() {
+      const ul = document.getElementById('bop-lista');
+      if (!ul.classList.contains('open')) return;
+      ul.innerHTML = '';
+      _bopNombresDelDia().forEach((nom, i) => {
+        const li = document.createElement('li');
+        const n = document.createElement('span'); n.className = 'bop-n'; n.textContent = (i + 1) + '.';
+        const t = document.createElement('span'); t.textContent = nom;
+        li.appendChild(n); li.appendChild(t); ul.appendChild(li);
+      });
+    }
+
+    function _bopCerrarLista() {
+      const ul = document.getElementById('bop-lista');
+      if (!ul) return;
+      ul.classList.remove('open');
+      document.getElementById('bop-btn-ver').textContent = 'Ver';
+      document.getElementById('bop-detalle').style.display = '';
+    }
+
+    function _bopVerListado() {
+      const ul = document.getElementById('bop-lista');
+      const abrir = !ul.classList.contains('open');
+      if (!abrir) { _bopCerrarLista(); return; }
+      ul.classList.add('open');
+      document.getElementById('bop-btn-ver').textContent = 'Ocultar';
+      document.getElementById('bop-detalle').style.display = 'none'; // evita repetir los nombres
+      _bopRenderLista();
     }
 
     function editarRegistro(id) {
@@ -6223,6 +6353,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       document.getElementById('btn-sel-pac').style.display = 'none';
       document.getElementById('pac-seleccionado-banner').classList.remove('show');
       document.getElementById('banner-otra-persona').classList.remove('show');
+      _bopCerrarLista();
 
       // El botón "Atrás" debe descartar los cambios (limpiar el modo edición) y regresar al listado
       const btnBack = document.getElementById('btn-nuevo-back');
