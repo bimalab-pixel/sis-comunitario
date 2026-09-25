@@ -3025,7 +3025,11 @@
   thead{display:table-header-group}
   .firma{margin-top:34px;display:flex;justify-content:space-around;text-align:center}
   .firma div{border-top:1px solid #000;width:40%;padding-top:3px}
+  .hp-print-bar{position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:.6rem;background:#0f766e;color:#fff;padding:.6rem .9rem;margin:0 0 10px;font-size:12px;border-radius:0 0 8px 8px}
+  .hp-print-bar button{margin-left:auto;background:#fff;color:#0f766e;border:none;border-radius:6px;padding:.45rem 1rem;font-weight:700;font-size:12px;cursor:pointer}
+  @media print{.hp-print-bar{display:none!important}}
 </style></head><body>
+  <div class="hp-print-bar"><b>👁️ Vista previa — revisa el documento completo y luego imprime</b><button onclick="window.print()">🖨️ Imprimir</button></div>
   <h1>Registros diarios por persona</h1>
   <div class="sub">Orden cronológico · Generado: ${_hpEsc(generado)}</div>
   ${_hpEncabezadoPersona(regs, '<b>Registros:</b> ' + regs.length)}
@@ -3035,7 +3039,7 @@
   </table>
   <div class="firma"><div>${_hpEsc(perfil.nombre || 'Promotor de salud')}<br>Promotor de salud</div><div>Sello / revisión</div></div>
 </body></html>`;
-      imprimirHTML(html);
+      imprimirHTML(html, false);
     }
 
     // Mismos datos que arma _ctrlVerFicha() para abrir la ficha guardada de un registro.
@@ -3122,7 +3126,11 @@ html, body { margin: 0; padding: 0 !important; background: #fff; }
 .hoja { width: 185.9mm; height: 247mm; overflow: hidden; position: relative; break-after: page; page-break-after: always; }
 .hoja:last-child { break-after: auto; page-break-after: auto; }
 .hoja-in { transform-origin: 0 0; box-sizing: border-box; font-family: 'Times New Roman', Georgia, serif; font-size: 12.5px; color: #111; line-height: 1.5; }
+.hp-print-bar{position:sticky;top:0;z-index:99;display:flex;align-items:center;gap:.6rem;background:#0f766e;color:#fff;padding:.6rem .9rem;margin-bottom:12px;font-size:13px;font-family:Arial,Helvetica,sans-serif;border-radius:0 0 8px 8px}
+.hp-print-bar button{margin-left:auto;background:#fff;color:#0f766e;border:none;border-radius:6px;padding:.45rem 1rem;font-weight:700;font-size:13px;cursor:pointer}
+@media print{.hp-print-bar{display:none!important}}
 </style></head><body>
+<div class="hp-print-bar"><b>👁️ Vista previa — revisa ${lista.length === 1 ? 'la hoja' : 'las ' + lista.length + ' hojas'} y luego imprime</b><button onclick="window.print()">🖨️ Imprimir</button></div>
 ${hojas}
 <script>
 (function () {
@@ -3143,7 +3151,7 @@ ${hojas}
 })();
 <\/script>
 </body></html>`;
-      imprimirHTML(doc);
+      imprimirHTML(doc, false);
     }
 
     function irA(screenId) {
@@ -7166,7 +7174,10 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     }
 
     // ── IMPRIMIR: abre ventana nueva con el HTML del reporte ──
-    function imprimirHTML(html) {
+    // autoPrint=false abre la ventana y deja el documento visible para revisarlo
+    // completo antes de imprimir (el documento trae su propio botón "🖨️ Imprimir").
+    function imprimirHTML(html, autoPrint) {
+      if (autoPrint === undefined) autoPrint = true;
       const win = window.open('', '_blank', 'width=900,height=700');
       if (!win) {
         toast('⚠️ Permite las ventanas emergentes para imprimir', 'error');
@@ -7175,12 +7186,16 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       win.document.open();
       win.document.write(html);
       win.document.close();
-      win.onload = function() {
-        setTimeout(() => {
-          win.focus();
-          win.print();
-        }, 500);
-      };
+      if (autoPrint) {
+        win.onload = function() {
+          setTimeout(() => {
+            win.focus();
+            win.print();
+          }, 500);
+        };
+      } else {
+        win.onload = function() { win.focus(); };
+      }
     }
 
     // ════════════════════════════════════
