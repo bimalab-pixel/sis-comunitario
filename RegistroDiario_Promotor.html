@@ -417,7 +417,7 @@
           outline:none;transition:all .2s;width:100%;
         }
         .f-group input:focus,.f-group textarea:focus,.f-group select:focus{border-color:var(--teal2);background:#fff}
-        .f-group textarea{resize:none;min-height:75px;line-height:1.55}
+        .f-group textarea{resize:none;min-height:75px;line-height:1.55;overflow:hidden}
 
         .form-actions{
           display:flex;flex-wrap:wrap;gap:.55rem;padding:.9rem 1.3rem;
@@ -1092,6 +1092,30 @@
         }
         #banner-otra-persona.show{display:flex;flex-wrap:wrap}
         #bop-detalle{display:none !important}
+        /* Historial por persona */
+        .hp-resumen{background:var(--light);border:1.5px solid var(--border);border-radius:12px;padding:.8rem .9rem;margin:.2rem 0 .7rem}
+        .hp-resumen h3{margin:0 0 .25rem;font-size:1rem;color:var(--navy);word-break:break-word}
+        .hp-resumen .hp-sub{font-size:.75rem;color:var(--muted);font-weight:600;line-height:1.5}
+        .hp-cifras{display:flex;gap:.4rem;margin-top:.6rem}
+        .hp-cifra{flex:1;background:#fff;border:1.5px solid var(--border);border-radius:9px;text-align:center;padding:.45rem .2rem;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+        .hp-cifra b{display:block;font-size:1.15rem;color:var(--teal)}
+        .hp-cifra span{font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase}
+        .hp-cifra.activa{background:var(--teal);border-color:var(--teal)}
+        .hp-cifra.activa b,.hp-cifra.activa span{color:#fff}
+        .hp-titulo-vista{font-size:.78rem;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.03em;margin:.2rem 0 .5rem}
+        .hp-acciones{display:flex;gap:.4rem;margin:.55rem 0 .2rem}
+        .hp-acciones button{flex:1;padding:.55rem;border-radius:9px;border:1.5px solid var(--teal);background:var(--teal);color:#fff;font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
+        .hp-linea{position:relative;margin-left:.55rem;padding-left:.9rem;border-left:3px solid var(--teal2)}
+        .hp-item{position:relative;background:#fff;border:1.5px solid var(--border);border-radius:11px;padding:.6rem .7rem;margin:0 0 .6rem}
+        .hp-item::before{content:'';position:absolute;left:-1.4rem;top:.9rem;width:.7rem;height:.7rem;border-radius:50%;background:var(--teal);border:2px solid #fff}
+        .hp-fecha{font-size:.74rem;font-weight:700;color:var(--navy);margin-bottom:.3rem}
+        .hp-txt{font-size:.8rem;color:var(--text);white-space:pre-wrap;word-break:break-word;margin:.15rem 0}
+        .hp-docs{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.45rem}
+        .hp-doc{padding:.35rem .6rem;border-radius:8px;border:1.5px solid var(--teal);background:var(--light);color:var(--navy);font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer}
+        .hp-sug{display:block;width:100%;text-align:left;padding:.5rem .6rem;margin:.25rem 0;border:1.5px solid var(--border);border-radius:9px;background:#fff;font-family:inherit;cursor:pointer}
+        .hp-sug b{display:block;font-size:.85rem;color:var(--navy)}
+        .hp-sug span{font-size:.7rem;color:var(--muted);font-weight:600}
+        .hp-vacio{text-align:center;color:var(--muted);font-size:.82rem;padding:1.2rem .5rem}
         #bop-lista{
           display:none;flex-basis:100%;margin:.15rem 0 0;padding:.5rem .2rem 0;
           border-top:1px dashed var(--teal2);list-style:none;
@@ -1375,6 +1399,17 @@
             <div class="menu-btn-text">
                 <div class="mbt">Control de Entregas</div>
                 <div class="mbs">Referencias e Informes — por día o mes</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
+        <button class="menu-btn" onclick="irA('screen-historial')">
+            <div class="menu-btn-icon" style="background:#0e5c44">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Historial por Persona</div>
+                <div class="mbs">Visitas, informes y referencias — informe especial</div>
             </div>
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
@@ -2123,6 +2158,31 @@
     </div>
 </div><!-- /screen-control-entregas -->
 
+<!-- ════════════════════════════
+     SCREEN: HISTORIAL POR PERSONA
+════════════════════════════ -->
+<div class="screen" id="screen-historial">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Historial por Persona</span>
+    </div>
+    <div class="scroller">
+        <div class="rep-card">
+            <div class="rep-card-body">
+                <div class="f-group">
+                    <label>Buscar persona</label>
+                    <input type="text" id="hp-buscar" placeholder="Escribe nombre o apellido…" oninput="_hpBuscar()" autocomplete="off"/>
+                </div>
+                <div id="hp-sugerencias"></div>
+            </div>
+        </div>
+        <div id="hp-resultado"></div>
+    </div>
+</div><!-- /screen-historial -->
+
 
 <!-- ════════════════════════════
      MODAL: CONFIGURACIÓN (perfil estilo Visita Domiciliar)
@@ -2773,6 +2833,319 @@
     }
 
     // ── NAVEGACIÓN ──
+    // ════════════════════════════════════
+    // HISTORIAL POR PERSONA — informe especial cronológico (para auditoría).
+    // Reúne, de una misma persona, todos sus registros diarios y, colgados de cada visita,
+    // el Informe de Visita Domiciliar y la Referencia MINSAL que existan. No guarda nada nuevo:
+    // lee de `registros`, así que siempre refleja lo que hay en el dispositivo.
+    // ════════════════════════════════════
+    let _hpClaveActual = '';
+    let _hpVista = 'registros'; // 'registros' | 'informes' | 'referencias' — qué lista se muestra
+
+    function _hpEsc(s) {
+      return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    // Clave de comparación: sin tildes, en mayúsculas y con espacios colapsados,
+    // para que "María  Pérez" y "MARIA PEREZ" cuenten como la misma persona.
+    function _hpNorm(s) {
+      return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+    }
+    function _hpFecha(f) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f || '');
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : (f || '—');
+    }
+    function _hpRegsPersona(clave) {
+      return registros
+        .filter(r => _hpNorm(r.nombre) === clave)
+        .sort((a, b) => _ctrlMejorFechaEstimada(a).localeCompare(_ctrlMejorFechaEstimada(b)));
+    }
+    function _hpResumen(regs) {
+      const fechas = regs.map(r => r.fecha).filter(Boolean).sort();
+      let edad = '';
+      for (let i = regs.length - 1; i >= 0; i--) { if (regs[i].edad) { edad = regs[i].edad; break; } }
+      return {
+        visitas: regs.length,
+        informes: regs.filter(r => r.informeCampos).length,
+        referencias: regs.filter(r => r.referenciaCampos).length,
+        primera: fechas[0] || '', ultima: fechas[fechas.length - 1] || '',
+        viviendas: [...new Set(regs.map(r => r.vivienda).filter(Boolean))],
+        edad
+      };
+    }
+    function _hpDocs(r) {
+      const out = [];
+      if (r.informeCampos)    out.push({ tipo: 'informe',    txt: 'Informe de visita domiciliar', ico: '🏥', firmado: !!r.informeControlFirma });
+      if (r.referenciaCampos) out.push({ tipo: 'referencia', txt: 'Referencia MINSAL',            ico: '📄', firmado: !!r.referenciaControlFirma });
+      return out;
+    }
+
+    function _hpBuscar() {
+      const q = _hpNorm(document.getElementById('hp-buscar').value);
+      const cont = document.getElementById('hp-sugerencias');
+      if (!q) { cont.innerHTML = ''; return; }
+      const tokens = q.split(' ');
+      const mapa = new Map();
+      registros.forEach(r => {
+        const k = _hpNorm(r.nombre);
+        if (!k) return;
+        if (!mapa.has(k)) mapa.set(k, { clave: k, nombre: r.nombre, n: 0, ultima: '' });
+        const p = mapa.get(k); p.n++;
+        if ((r.fecha || '') >= p.ultima) { p.ultima = r.fecha || ''; p.nombre = r.nombre; }
+      });
+      const res = [...mapa.values()].filter(p => tokens.every(t => p.clave.includes(t)))
+        .sort((a, b) => a.clave.localeCompare(b.clave)).slice(0, 20);
+      cont.innerHTML = res.length
+        ? res.map(p => `<button type="button" class="hp-sug" data-k="${_hpEsc(p.clave)}" onclick="_hpSeleccionar(this.dataset.k)"><b>${_hpEsc(p.nombre)}</b><span>${p.n} registro${p.n !== 1 ? 's' : ''} · último: ${_hpFecha(p.ultima)}</span></button>`).join('')
+        : '<div class="hp-vacio">No hay personas con ese nombre</div>';
+    }
+
+    function _hpSeleccionar(clave) {
+      _hpClaveActual = clave;
+      _hpVista = 'registros';
+      const regs = _hpRegsPersona(clave);
+      if (regs.length) document.getElementById('hp-buscar').value = regs[regs.length - 1].nombre;
+      document.getElementById('hp-sugerencias').innerHTML = '';
+      _hpRenderPersona(clave);
+    }
+
+    // Atajo para abrir el historial desde otra pantalla: abrirHistorialPersona('NOMBRE')
+    function abrirHistorialPersona(nombre) {
+      _hpClaveActual = _hpNorm(nombre);
+      _hpVista = 'registros';
+      irA('screen-historial');
+      document.getElementById('hp-buscar').value = nombre || '';
+      document.getElementById('hp-sugerencias').innerHTML = '';
+      _hpRenderPersona(_hpClaveActual);
+    }
+
+    function _hpRefrescar() {
+      if (_hpClaveActual && _hpRegsPersona(_hpClaveActual).length) { _hpRenderPersona(_hpClaveActual); return; }
+      _hpClaveActual = '';
+      document.getElementById('hp-resultado').innerHTML = '<div class="hp-vacio">Busca a una persona para ver todos sus registros, informes de visita y referencias en orden cronológico.</div>';
+    }
+
+    function _hpCambiarVista(v) {
+      _hpVista = v;
+      _hpRenderPersona(_hpClaveActual);
+    }
+
+    function _hpItemsVista(regs) {
+      const cab = (r, i) => {
+        const hora = r.hora ? _infHora12(r.hora) : '';
+        return `<div class="hp-fecha">#${i + 1} · 📅 ${_hpFecha(r.fecha)}${hora ? ' · 🕐 ' + _hpEsc(hora) : ''}${r.vivienda ? ' · 🏠 Viv. ' + _hpEsc(r.vivienda) : ''}${r.edad ? ' · ' + _hpEsc(r.edad) : ''}</div>`;
+      };
+      if (_hpVista === 'registros') {
+        return regs.map((r, i) => `<div class="hp-item">${cab(r, i)}
+          ${r.hallazgos ? `<div class="hp-txt"><b>Hallazgos:</b> ${_hpEsc(r.hallazgos)}</div>` : ''}
+          ${r.acciones ? `<div class="hp-txt"><b>Acciones:</b> ${_hpEsc(r.acciones)}</div>` : ''}
+        </div>`).join('');
+      }
+      const esInf = _hpVista === 'informes';
+      const campo = esInf ? 'informeCampos' : 'referenciaCampos';
+      const tipo  = esInf ? 'informe' : 'referencia';
+      const firma = esInf ? 'informeControlFirma' : 'referenciaControlFirma';
+      const lista = regs.filter(r => r[campo]);
+      if (!lista.length) return `<div class="hp-vacio">Esta persona no tiene ${esInf ? 'informes de visita' : 'referencias'} generados.</div>`;
+      return lista.map((r, i) => `<div class="hp-item">${cab(r, i)}
+        <div class="hp-docs"><button type="button" class="hp-doc" onclick="_ctrlVerFicha('${tipo}','${_hpEsc(r.id)}')">${esInf ? '🏥 Ver informe de visita' : '📄 Ver referencia'}${r[firma] ? ' · ✅ Firmado' : ''}</button></div>
+      </div>`).join('');
+    }
+
+    function _hpRenderPersona(clave) {
+      const cont = document.getElementById('hp-resultado');
+      const regs = _hpRegsPersona(clave);
+      if (!regs.length) { _hpRefrescar(); return; }
+      const s = _hpResumen(regs);
+      const nombre = regs[regs.length - 1].nombre;
+      const titulos = { registros: 'Registros diarios', informes: 'Informes de visita', referencias: 'Referencias' };
+      const nVista = _hpVista === 'registros' ? s.visitas : (_hpVista === 'informes' ? s.informes : s.referencias);
+      const txtImprimir = _hpVista === 'registros' ? '🖨️ Imprimir registros diarios'
+        : (_hpVista === 'informes' ? `🖨️ Imprimir informes (${nVista} hoja${nVista !== 1 ? 's' : ''}, 1 por visita)` : `🖨️ Imprimir referencias (${nVista} hoja${nVista !== 1 ? 's' : ''}, 1 por referencia)`);
+      const btnImprimir = nVista ? `<div class="hp-acciones" style="margin:.1rem 0 .7rem"><button type="button" onclick="_hpImprimirVista()">${txtImprimir}</button></div>` : '';
+      const cifra = (v, n, lbl) => `<button type="button" class="hp-cifra${_hpVista === v ? ' activa' : ''}" onclick="_hpCambiarVista('${v}')"><b>${n}</b><span>${lbl}</span></button>`;
+      cont.innerHTML = `
+        <div class="hp-resumen">
+          <h3>${_hpEsc(nombre)}</h3>
+          <div class="hp-sub">${s.edad ? 'Edad: ' + _hpEsc(s.edad) + '<br>' : ''}${s.viviendas.length ? 'Vivienda' + (s.viviendas.length > 1 ? 's' : '') + ': ' + _hpEsc(s.viviendas.join(', ')) + '<br>' : ''}Del ${_hpFecha(s.primera)} al ${_hpFecha(s.ultima)}</div>
+          <div class="hp-cifras">
+            ${cifra('registros', s.visitas, 'Registros')}
+            ${cifra('informes', s.informes, 'Informes')}
+            ${cifra('referencias', s.referencias, 'Referencias')}
+          </div>
+        </div>
+        <div class="hp-titulo-vista">${titulos[_hpVista]} — orden cronológico</div>
+        ${btnImprimir}
+        <div class="hp-linea">${_hpItemsVista(regs)}</div>`;
+    }
+
+    // Cada botón imprime SOLO su sección: registros diarios (tabla), informes de visita o
+    // referencias (estas dos, en la ficha original MINSAL, una hoja por visita).
+    function _hpImprimirVista() {
+      if (!_hpRegsPersona(_hpClaveActual).length) { toast('⚠️ Selecciona primero a una persona', 'error'); return; }
+      if (_hpVista === 'registros') _hpImprimirRegistros();
+      else _hpImprimirFichas(_hpVista === 'informes' ? 'informe' : 'referencia');
+    }
+
+    function _hpEncabezadoPersona(regs, extra) {
+      const s = _hpResumen(regs);
+      const nombre = regs[regs.length - 1].nombre;
+      return `<div class="box">
+    <b>Persona:</b> ${_hpEsc(nombre)}${s.edad ? ' &nbsp;·&nbsp; <b>Edad:</b> ' + _hpEsc(s.edad) : ''}<br>
+    ${s.viviendas.length ? '<b>Vivienda(s):</b> ' + _hpEsc(s.viviendas.join(', ')) + '<br>' : ''}
+    <b>Período:</b> ${_hpFecha(s.primera)} al ${_hpFecha(s.ultima)} &nbsp;·&nbsp; ${extra}<br>
+    <b>Promotor:</b> ${_hpEsc(perfil.nombre || '—')} &nbsp;·&nbsp; <b>Comunidad:</b> ${_hpEsc(perfil.comunidad || '—')}<br>
+    <b>Establecimiento:</b> ${_hpEsc(perfil.establecimiento || '—')} &nbsp;·&nbsp; <b>Municipio:</b> ${_hpEsc(perfil.municipio || '—')}
+  </div>`;
+    }
+
+    function _hpImprimirRegistros() {
+      const regs = _hpRegsPersona(_hpClaveActual);
+      const nombre = regs[regs.length - 1].nombre;
+      const ahora = new Date();
+      const generado = `${_hpFecha(_ctrlFechaLocalYMD(ahora.toISOString()))} ${ahora.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}`;
+      const filas = regs.map((r, i) => `<tr>
+          <td>${i + 1}</td>
+          <td>${_hpFecha(r.fecha)}<br>${r.hora ? _hpEsc(_infHora12(r.hora)) : ''}</td>
+          <td>${_hpEsc(r.vivienda || '—')}</td>
+          <td class="t">${_hpEsc(r.hallazgos || '—')}</td>
+          <td class="t">${_hpEsc(r.acciones || '—')}</td>
+        </tr>`).join('');
+      const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Registros diarios — ${_hpEsc(nombre)}</title>
+<style>
+  @page{size:letter;margin:14mm}
+  body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11px}
+  h1{font-size:15px;margin:0 0 2px;text-align:center;text-transform:uppercase}
+  .sub{text-align:center;color:#444;margin-bottom:10px}
+  .box{border:1px solid #666;padding:6px 8px;margin-bottom:8px;line-height:1.55}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #666;padding:4px 5px;vertical-align:top;text-align:left}
+  th{background:#e6e6e6}
+  td.t{white-space:pre-wrap;word-break:break-word}
+  tr{page-break-inside:avoid}
+  thead{display:table-header-group}
+  .firma{margin-top:34px;display:flex;justify-content:space-around;text-align:center}
+  .firma div{border-top:1px solid #000;width:40%;padding-top:3px}
+</style></head><body>
+  <h1>Registros diarios por persona</h1>
+  <div class="sub">Orden cronológico · Generado: ${_hpEsc(generado)}</div>
+  ${_hpEncabezadoPersona(regs, '<b>Registros:</b> ' + regs.length)}
+  <table>
+    <thead><tr><th>#</th><th>Fecha / hora</th><th>Viv.</th><th>Hallazgos</th><th>Acciones ejecutadas</th></tr></thead>
+    <tbody>${filas}</tbody>
+  </table>
+  <div class="firma"><div>${_hpEsc(perfil.nombre || 'Promotor de salud')}<br>Promotor de salud</div><div>Sello / revisión</div></div>
+</body></html>`;
+      imprimirHTML(html);
+    }
+
+    // Mismos datos que arma _ctrlVerFicha() para abrir la ficha guardada de un registro.
+    function _hpDatosFicha(tipo, registro) {
+      if (tipo === 'referencia') {
+        const c = registro.referenciaCampos || {};
+        return {
+          fechaMostrar: c.fechaMostrar || '', horaMostrar: c.horaMostrar || '',
+          nombreMostrar: c.nombreMostrar || registro.nombre || '', edadMostrar: c.edadMostrar || registro.edad || '',
+          temperaturaMostrar: c.temperaturaMostrar || '', taMostrar: c.taMostrar || '',
+          frMostrar: c.frMostrar || '', pulsoMostrar: c.pulsoMostrar || '',
+          residenciaMostrar: c.residenciaMostrar || '', municipioMostrar: c.municipioMostrar || '',
+          establecimientoRefiere: c.establecimientoRefiere || '', motivoReferencia: c.motivoReferencia || '',
+          accionPromotor: c.accionPromotor || '', nombrePromotor: c.nombrePromotor || '',
+          fechaResp: c.fechaResp || '', horaResp: c.horaResp || '', establecimientoResp: c.establecimientoResp || '',
+          profesionalResp: c.profesionalResp || '', nombreUsuarioResp: c.nombreUsuarioResp || registro.nombre || '',
+          resenaResp: c.resenaResp || '', recomendacionResp: c.recomendacionResp || '',
+          huellaActual: c._huella || ''
+        };
+      }
+      const c = registro.informeCampos || {};
+      const datosVitales = _riesgoParsearNota(c.hallazgos || registro.hallazgos || '', registro.nombre || '');
+      return {
+        establecimiento: (perfil && perfil.establecimiento) || '',
+        establecimientoMostrar: c.establecimiento || '',
+        fechaMostrar: c.fechaMostrar || '',
+        horaInicioMostrar: c.horaInicio || '',
+        nombreVivMostrar: c.nombreVivienda || registro.nombre || '',
+        tablaVitalesGuardada: _infParsearTablaVitales(c.tablaVitales),
+        fecha: registro.fecha, hora: registro.hora, nombre: registro.nombre, edad: registro.edad, vivienda: registro.vivienda,
+        hallazgos: c.hallazgos || '', acciones: c.acciones || '', acuerdo: c.acuerdo || '',
+        objetivo: c.objetivo || '',
+        pesoKg: datosVitales.pesoKg, paSistolica: datosVitales.paSistolica, paDiastolica: datosVitales.paDiastolica,
+        temperaturaC: datosVitales.temperaturaC, fcLpm: datosVitales.fcLpm, frRpm: datosVitales.frRpm,
+        firmaUsuario: (registro.firmas && registro.firmas.usuario) || null,
+        firmaPersonal: (registro.firmas && registro.firmas.personal) || null,
+        nombreFirmaUsuario: c.firmaUsuarioNombre || registro.nombre || '',
+        nombreFirmaPersonal: c.firmaPersonalNombre || ((perfil && perfil.nombre) || ''),
+        huellaActual: c._huella || '',
+        expediente: c.expediente || '', horaFin: c.horaFin || '', fechaSeguimiento: c.fechaSeguimiento || ''
+      };
+    }
+
+    // Imprime la ficha ORIGINAL (informe de visita domiciliar o referencia) de cada visita,
+    // una hoja carta por visita. Si el contenido no cabe, se reduce (letra incluida) hasta que
+    // entre exacto en una sola hoja, para que el PDF no se corte ni desborde a una segunda página.
+    function _hpImprimirFichas(tipo) {
+      const esInf = tipo === 'informe';
+      const campo = esInf ? 'informeCampos' : 'referenciaCampos';
+      const regs = _hpRegsPersona(_hpClaveActual);
+      const lista = regs.filter(r => r[campo]);
+      if (!lista.length) { toast('⚠️ No hay fichas para imprimir', 'error'); return; }
+      const nombre = regs[regs.length - 1].nombre;
+      let css = '';
+      const hojas = lista.map(r => {
+        const datos = _hpDatosFicha(tipo, r);
+        const html = esInf ? htmlInformeVisitaMINSAL(datos) : htmlReferenciaMINSAL(datos);
+        if (!css) { const m = /<style>([\s\S]*?)<\/style>/.exec(html); css = m ? m[1] : ''; }
+        const ini = html.indexOf('<body>');
+        let fin = html.lastIndexOf('<script');
+        if (fin < ini) fin = html.lastIndexOf('</body>');
+        let cuerpo = html.slice(ini + 6, fin).replace(/ contenteditable="true"/g, '');
+        if (esInf) {
+          // Las firmas se dibujan con un script dentro de la ficha (que aquí no se ejecuta):
+          // se sustituyen los <canvas> por <img> con la firma guardada del registro.
+          const f = r.firmas || {};
+          cuerpo = cuerpo.replace(/<canvas class="inf-firma-preview" id="(firma-usuario|firma-personal)"><\/canvas>/g, (m, id) => {
+            const u = id === 'firma-usuario' ? f.usuario : f.personal;
+            return u ? `<img class="inf-firma-preview" src="${u}" alt="">` : '';
+          });
+        }
+        return `<section class="hoja"><div class="hoja-in">${cuerpo}</div></section>`;
+      }).join('\n');
+
+      const doc = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${esInf ? 'Informes de visita' : 'Referencias'} — ${_hpEsc(nombre)}</title>
+<style>
+${css}
+@page { size: letter; margin: 1.5cm; }
+html, body { margin: 0; padding: 0 !important; background: #fff; }
+.inf-toolbar, .firma-modal-bg, .inf-firma-borrar, .inf-btn-regen-objetivo, .inf-regen-mensaje, .inf-firma-placeholder { display: none !important; }
+.inf-tabla-wrap { overflow: visible; }
+.inf-linea, .inf-campo-full, .inf-header-row, .inf-firma-pad-wrap, table.inf-tabla tr { break-inside: avoid; page-break-inside: avoid; }
+.hoja { width: 185.9mm; height: 247mm; overflow: hidden; position: relative; break-after: page; page-break-after: always; }
+.hoja:last-child { break-after: auto; page-break-after: auto; }
+.hoja-in { transform-origin: 0 0; box-sizing: border-box; font-family: 'Times New Roman', Georgia, serif; font-size: 12.5px; color: #111; line-height: 1.5; }
+</style></head><body>
+${hojas}
+<script>
+(function () {
+  // Ajusta cada hoja: busca la escala más grande con la que todo el contenido cabe en la hoja.
+  // El ancho interno se agranda (ancho/escala) para que el texto se acomode como letra más chica.
+  function ajustar() {
+    var hs = document.querySelectorAll('.hoja');
+    for (var k = 0; k < hs.length; k++) {
+      var h = hs[k], inn = h.firstElementChild, W = h.clientWidth, H = h.clientHeight;
+      var medir = function (s) { inn.style.width = (W / s) + 'px'; inn.style.transform = 'scale(' + s + ')'; return inn.offsetHeight * s; };
+      if (medir(1) <= H) continue;
+      var lo = 0.3, hi = 1;
+      for (var i = 0; i < 16; i++) { var m = (lo + hi) / 2; if (medir(m) <= H) lo = m; else hi = m; }
+      medir(lo);
+    }
+  }
+  window.addEventListener('load', ajustar);
+})();
+<\/script>
+</body></html>`;
+      imprimirHTML(doc);
+    }
+
     function irA(screenId) {
       document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active','slide-out');
@@ -2782,6 +3155,7 @@
       if (screenId === 'screen-list') renderListado();
       if (screenId === 'screen-home') actualizarHome();
       if (screenId === 'screen-control-entregas') _ctrlRenderLista();
+      if (screenId === 'screen-historial') _hpRefrescar();
       // Al abrir formulario nuevo (sin edición ni modo otra persona), refrescar fecha/hora actual
       if (screenId === 'screen-nuevo') {
         const esEdicion     = document.getElementById('edit-id').value !== '';
@@ -5542,6 +5916,14 @@ function _riesgoActualizarGrafica(indicadorId) {
       }
     }
 
+    // Los cuadros de Hallazgos y Acciones Ejecutadas crecen con el texto en vez de
+    // quedar con una barra de desplazamiento interna que solo muestra una parte.
+    function _autoCrecerTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.max(el.scrollHeight, 75) + 'px';
+    }
+
     // ── CRUD ──
     let _modoOtraPersona = null; // { vivienda, fecha, hora }
     let _ultimoRegistro  = null; // último registro guardado (para modal-siguiente)
@@ -5903,6 +6285,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           const accionesFinal  = (accionesIA || '').trim();
           document.getElementById(`${prefijo}-hallazgos`).value = hallazgosFinal;
           document.getElementById(`${prefijo}-acciones`).value  = accionesFinal;
+          _autoCrecerTextarea(document.getElementById(`${prefijo}-hallazgos`));
+          _autoCrecerTextarea(document.getElementById(`${prefijo}-acciones`));
           _iaUltimaSalidaHallazgos = hallazgosFinal; // Para detectar si el usuario edita manualmente después
           _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
           _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
@@ -6140,6 +6524,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       document.getElementById('r-edad').value      = '';
       document.getElementById('r-hallazgos').value = '';
       document.getElementById('r-acciones').value  = '';
+      _autoCrecerTextarea(document.getElementById('r-hallazgos'));
+      _autoCrecerTextarea(document.getElementById('r-acciones'));
 
       if (mantenerVivienda && _modoOtraPersona) {
         document.getElementById('r-vivienda').value = _modoOtraPersona.vivienda;
@@ -6362,7 +6748,11 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       irA('screen-nuevo');
       // Validar botón de nutrición con los datos cargados
-      setTimeout(() => _actualizarBtnGrafica('r'), 50);
+      setTimeout(() => {
+        _actualizarBtnGrafica('r');
+        _autoCrecerTextarea(document.getElementById('r-hallazgos'));
+        _autoCrecerTextarea(document.getElementById('r-acciones'));
+      }, 50);
     }
 
     // Convierte a MAYÚSCULAS el contenido ya escrito en la ficha abierta (Nueva Visita o
@@ -7250,7 +7640,7 @@ Acciones ejecutadas: ${acciones || '—'}
 <html lang="es"><head><meta charset="UTF-8">
 <title>Informe de Visita Domiciliar</title>
 <style>
-  @page { margin: 1.5cm; }
+  @page { size: letter; margin: 1.5cm; }
   * { box-sizing: border-box; }
   body { font-family: 'Times New Roman', Georgia, serif; font-size: 12.5px; color:#111; padding: 1.2rem 1.6rem; line-height: 1.5; }
   .inf-header-row { display:flex; align-items:center; gap:.5rem; margin-bottom: 1.1rem; }
@@ -7813,6 +8203,36 @@ Acciones ejecutadas: ${acciones || '—'}
         if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
       }
     }
+
+
+    // Ajuste automático a UNA SOLA HOJA cuando esta ficha se abre como ventana de
+    // impresión independiente (no dentro del iframe de edición de Nueva Visita / Editar
+    // Registro): mide el contenido y, si no cabe en una hoja carta, lo reduce (la letra
+    // incluida) hasta que entre exacto, para que el informe nunca se corte ni pase a una
+    // segunda hoja. Dentro del iframe de edición no se aplica, así que escribir y firmar
+    // se sigue viendo a tamaño normal.
+    (function () {
+      if (window.self !== window.top) return;
+      function ajustarUnaHoja() {
+        var hijos = Array.prototype.slice.call(document.body.children)
+          .filter(function (el) { return el.tagName !== 'SCRIPT'; });
+        if (!hijos.length) return;
+        var hoja = document.createElement('div');
+        hoja.style.cssText = 'width:185.9mm;height:247mm;overflow:hidden;position:relative;margin:0 auto';
+        document.body.insertBefore(hoja, document.body.firstChild);
+        var inner = document.createElement('div');
+        inner.style.cssText = 'transform-origin:0 0;box-sizing:border-box';
+        hijos.forEach(function (el) { inner.appendChild(el); });
+        hoja.appendChild(inner);
+        var W = hoja.clientWidth, H = hoja.clientHeight;
+        function medir(s) { inner.style.width = (W / s) + 'px'; inner.style.transform = 'scale(' + s + ')'; return inner.offsetHeight * s; }
+        if (medir(1) <= H) return;
+        var lo = 0.3, hi = 1;
+        for (var i = 0; i < 16; i++) { var m = (lo + hi) / 2; if (medir(m) <= H) lo = m; else hi = m; }
+        medir(lo);
+      }
+      window.addEventListener('load', ajustarUnaHoja);
+    })();
   <\/script>
 
 </body></html>`;
@@ -8154,7 +8574,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
 <html lang="es"><head><meta charset="UTF-8">
 <title>Referencia Comunitaria</title>
 <style>
-  @page { margin: 1.5cm; }
+  @page { size: letter; margin: 1.5cm; }
   * { box-sizing: border-box; }
   body { font-family: 'Times New Roman', Georgia, serif; font-size: 12.5px; color:#111; padding: 1.2rem 1.6rem; line-height: 1.5; }
   .inf-header-row { display:flex; align-items:center; gap:.5rem; margin-bottom: 1.1rem; }
@@ -8437,6 +8857,36 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
       }
     }
+
+
+    // Ajuste automático a UNA SOLA HOJA (igual que el Informe de Visita Domiciliar), y
+    // además se anula el salto de página que normalmente separa "Referencia" de
+    // "Respuesta a la Referencia" (aquí van juntas en la misma hoja, reducidas si hace falta).
+    (function () {
+      if (window.self !== window.top) return;
+      var s = document.createElement('style');
+      s.textContent = '.ref-pagina{page-break-after:auto !important;break-after:auto !important}';
+      document.head.appendChild(s);
+      function ajustarUnaHoja() {
+        var hijos = Array.prototype.slice.call(document.body.children)
+          .filter(function (el) { return el.tagName !== 'SCRIPT'; });
+        if (!hijos.length) return;
+        var hoja = document.createElement('div');
+        hoja.style.cssText = 'width:185.9mm;height:247mm;overflow:hidden;position:relative;margin:0 auto';
+        document.body.insertBefore(hoja, document.body.firstChild);
+        var inner = document.createElement('div');
+        inner.style.cssText = 'transform-origin:0 0;box-sizing:border-box';
+        hijos.forEach(function (el) { inner.appendChild(el); });
+        hoja.appendChild(inner);
+        var W = hoja.clientWidth, H = hoja.clientHeight;
+        function medir(s) { inner.style.width = (W / s) + 'px'; inner.style.transform = 'scale(' + s + ')'; return inner.offsetHeight * s; }
+        if (medir(1) <= H) return;
+        var lo = 0.3, hi = 1;
+        for (var i = 0; i < 16; i++) { var m = (lo + hi) / 2; if (medir(m) <= H) lo = m; else hi = m; }
+        medir(lo);
+      }
+      window.addEventListener('load', ajustarUnaHoja);
+    })();
   <\/script>
 
 </body></html>`;
@@ -11034,6 +11484,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
       document.getElementById('r-edad').value      = '';
       document.getElementById('r-hallazgos').value = '';
       document.getElementById('r-acciones').value  = '';
+      _autoCrecerTextarea(document.getElementById('r-hallazgos'));
+      _autoCrecerTextarea(document.getElementById('r-acciones'));
     }
 
     // ══════════════════════════════════════════
@@ -11761,7 +12213,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
       const rEdad = document.getElementById('r-edad');
       const rHallazgos = document.getElementById('r-hallazgos');
       if (rEdad) rEdad.addEventListener('input', () => _actualizarBtnGrafica('r'));
-      if (rHallazgos) rHallazgos.addEventListener('input', () => _actualizarBtnGrafica('r'));
+      if (rHallazgos) rHallazgos.addEventListener('input', () => { _actualizarBtnGrafica('r'); _autoCrecerTextarea(rHallazgos); });
+      const rAccionesInit = document.getElementById('r-acciones');
+      if (rAccionesInit) rAccionesInit.addEventListener('input', () => _autoCrecerTextarea(rAccionesInit));
       
       // Para formulario de edición — ya no existe (se usa la pantalla completa "Nueva Visita" para editar)
 
