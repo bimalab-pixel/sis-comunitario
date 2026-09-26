@@ -992,6 +992,9 @@
         .mlv-edit-btn{background:var(--light2);border:1.5px solid var(--border);color:var(--navy2);border-radius:8px;padding:.3rem .55rem;font-size:.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.28rem;flex-shrink:0;transition:all .18s;font-family:inherit}
         .mlv-edit-btn:hover{background:var(--teal2);color:#fff;border-color:var(--teal2)}
         .mlv-edit-btn svg{width:12px;height:12px}
+        .mlv-map-btn{background:var(--light2);border:1.5px solid var(--border);color:var(--navy2);border-radius:8px;width:2rem;height:2rem;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s}
+        .mlv-map-btn:hover{background:var(--teal2);color:#fff;border-color:var(--teal2)}
+        .mlv-map-btn svg{width:15px;height:15px}
         .mlv-footer{padding:.7rem 1rem;border-top:1.5px solid var(--light2);display:flex;gap:.6rem}
         .mlv-print-btn{flex:1;background:var(--teal2);color:#fff;border:none;
           border-radius:10px;padding:.65rem;font-size:.85rem;font-weight:700;
@@ -11858,6 +11861,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
             <strong>${primer || '<span style="color:var(--muted);font-weight:400;font-style:italic">Sin integrantes</span>'}</strong>
             <span>${total} integrante${total !== 1 ? 's' : ''}</span>
           </div>
+          <button class="mlv-map-btn" onclick="verEnMapaSanitarioDesdeCatalogo('${viv.vivienda}')" title="Ver esta vivienda en el Mapa Sanitario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>
           <button class="mlv-edit-btn" onclick="abrirModalEditarFamilia('${viv.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Editar
