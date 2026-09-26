@@ -394,6 +394,13 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .btn-filtro-mapa.f-gris   {background:#757575;color:#fff;border-color:#757575}
 .btn-filtro-mapa.activa-materna{background:#ad1457;color:#fff;border-color:#ad1457}
 .btn-filtro-mapa.activa-pdi{background:#7b1fa2;color:#fff;border-color:#7b1fa2}
+.btn-filtro-solo{
+  flex-shrink:0;display:none;align-items:center;gap:4px;
+  padding:6px 10px;border-radius:8px;font-size:.72em;font-weight:700;cursor:pointer;
+  border:1.5px solid #ad1457;background:#fff;color:#ad1457;white-space:nowrap;
+}
+.btn-filtro-solo.mostrar{display:flex}
+.btn-filtro-solo.activo{background:#ad1457;color:#fff}
 
 /* Dropdown de filtros de vivienda */
 .filtro-dropdown-wrap{position:relative;flex:1;min-width:0;}
@@ -1241,7 +1248,8 @@ td.err{color:var(--red);font-weight:700}
         </button>
         <div class="filtro-dropdown-panel" id="mf-dropdown-panel"></div>
       </div>
-      <button class="btn-filtro-mapa activa-materna" id="mf-materna" onclick="toggleCapaMaterna()">🤰 Embarazadas / Puérperas</button>
+      <button class="btn-filtro-mapa activa-materna" id="mf-materna" onclick="toggleCapaMaterna()" title="Mostrar u ocultar los puntos de embarazadas/puérperas en el mapa">🤰 Embarazadas / Puérperas</button>
+      <button class="btn-filtro-solo" id="mf-materna-solo" onclick="toggleSoloMaterna()" title="Ver exclusivamente embarazadas y puérperas, ocultando el resto">👁️ Solo</button>
       <button class="btn-filtro-mapa activa-pdi" id="mf-pdi" onclick="toggleCapaPDI()">⭐ Puntos de interés</button>
     </div>
 
@@ -1364,7 +1372,8 @@ td.err{color:var(--red);font-weight:700}
           </button>
           <div class="filtro-dropdown-panel dropup" id="ff-dropdown-panel"></div>
         </div>
-        <button class="btn-filtro-fs activa-materna" id="ff-materna" onclick="toggleCapaMaterna()" style="flex:0 0 auto;padding:5px 9px;">🤰</button>
+        <button class="btn-filtro-fs activa-materna" id="ff-materna" onclick="toggleCapaMaterna()" style="flex:0 0 auto;padding:5px 9px;" title="Mostrar u ocultar embarazadas/puérperas">🤰</button>
+        <button class="btn-filtro-solo" id="ff-materna-solo" onclick="toggleSoloMaterna()" style="flex:0 0 auto;padding:5px 8px;" title="Ver exclusivamente embarazadas y puérperas">👁️</button>
         <button class="btn-filtro-fs activa-pdi" id="ff-pdi" onclick="toggleCapaPDI()" style="flex:0 0 auto;padding:5px 9px;">⭐</button>
       </div>
     </div><!-- /mapa-wrapper -->
@@ -2315,6 +2324,7 @@ function _activarCapasSuperpuestas(){
   _capaMaternaVisible=true; _capaPDIVisible=true;
   ['mf','ff'].forEach(prefix=>{
     const bm=document.getElementById(prefix+'-materna'); if(bm) bm.classList.add('activa-materna');
+    const bs=document.getElementById(prefix+'-materna-solo'); if(bs){ bs.classList.add('mostrar'); bs.classList.remove('activo'); }
     const bp=document.getElementById(prefix+'-pdi');
     if(bp){ bp.classList.add('activa-pdi'); bp.disabled=false; bp.style.opacity=''; bp.style.pointerEvents=''; }
     const dd=document.getElementById(prefix+'-dropdown-btn');
@@ -2414,10 +2424,13 @@ function _vivCumpleDemografico(viv,filtro){
   return (viv.personas||[]).some(p=>{
     const m=mesesPersona(p);
     if(m===null) return false;
+    if(filtro==='ninos2') return m<24;
     if(filtro==='ninos5') return m<60;
+    if(filtro==='ninos12') return m<144;
     if(filtro==='ninos512') return m>=60&&m<144;
     if(filtro==='adolf') return p.sexo==='F'&&m>=144&&m<228;
     if(filtro==='adolm') return p.sexo==='M'&&m>=144&&m<228;
+    if(filtro==='adol') return m>=144&&m<228;
     if(filtro==='adultom') return p.sexo==='M'&&m>=240&&m<720;
     if(filtro==='mujer5059') return p.sexo==='F'&&m>=600&&m<720;
     if(filtro==='mef') return p.sexo==='F'&&m>=216&&m<600;
@@ -2431,12 +2444,11 @@ function renderMarcadores(filtro){
   _filtroMapa=filtro;
   _marcadores.forEach(m=>m.remove()); _marcadores=[];
 
-  // Modo "solo Embarazadas/Puérperas": ocultamos por completo las viviendas
   if(_modoSoloMaterna) return;
 
   const cat=getCatalogo();
   let sinUbic=[],conUbic=0;
-  const esDemografico=(filtro==='ninos5'||filtro==='ninos512'||filtro==='adolf'||filtro==='adolm'||filtro==='adultom'||filtro==='mujer5059'||filtro==='mef'||filtro==='adultomayor');
+  const esDemografico=(filtro==='ninos2'||filtro==='ninos5'||filtro==='ninos12'||filtro==='ninos512'||filtro==='adolf'||filtro==='adolm'||filtro==='adol'||filtro==='adultom'||filtro==='mujer5059'||filtro==='mef'||filtro==='adultomayor');
 
   cat.forEach(viv=>{
     const rk=viv.riesgo||'ninguno';
@@ -2508,10 +2520,13 @@ const FILTROS_VIV=[
   {key:'amarillo',   icon:'🟡', label:'Riesgo Medio'},
   {key:'rojo',       icon:'🔴', label:'Alto Riesgo'},
   {key:'gris',       icon:'⚪', label:'Deshabitadas'},
+  {key:'ninos2',     icon:'🍼', label:'Niños menores de 2 años'},
   {key:'ninos5',     icon:'👶', label:'Niños menores de 5 años'},
+  {key:'ninos12',    icon:'🧒', label:'Niños menores de 12 años'},
   {key:'ninos512',   icon:'🧒', label:'Niños de 5-12 años'},
   {key:'adolf',      icon:'👧', label:'Adolescentes femeninas 12-19 años'},
   {key:'adolm',      icon:'👦', label:'Adolescentes masculinos 12-19 años'},
+  {key:'adol',       icon:'🧑', label:'Adolescentes 12-19 años (todos)'},
   {key:'adultom',    icon:'👨', label:'Adultos masculinos 20-59 años'},
   {key:'mujer5059',  icon:'👩', label:'Mujeres 50-59 años'},
   {key:'mef',        icon:'🌸', label:'Mujeres en Edad Fértil (18-49)'},
@@ -3286,7 +3301,7 @@ function eliminarPDI(pdiId){
 }
 function renderMarcadoresPDI(){
   _pdiMarcadores.forEach(m=>m.remove()); _pdiMarcadores=[];
-  if(!_capaPDIVisible) return;
+  if(!_capaPDIVisible||_modoSoloMaterna) return;
   getPDI().forEach(p=>_renderMarcadorPDI(p));
 }
 function toggleCapaPDI(){
@@ -3463,40 +3478,32 @@ function renderMarcadoresMaterna(){
 }
 
 function toggleCapaMaterna(){
-  _modoSoloMaterna=!_modoSoloMaterna;
-
-  if(_modoSoloMaterna){
-    // Entrando al modo exclusivo: guardamos si Puntos de Interés estaba visible
-    // para poder restaurarlo tal cual al salir, y ocultamos todo lo demás.
-    _capaPDIVisiblePrevia=_capaPDIVisible;
-    _capaMaternaVisible=true;
-    _capaPDIVisible=false;
-  } else {
-    // Saliendo del modo exclusivo: todo vuelve a su estado anterior.
-    _capaMaternaVisible=true;
-    _capaPDIVisible=(_capaPDIVisiblePrevia!==null)?_capaPDIVisiblePrevia:true;
+  _capaMaternaVisible=!_capaMaternaVisible;
+  if(!_capaMaternaVisible && _modoSoloMaterna){
+    _modoSoloMaterna=false;
   }
-
   ['mf','ff'].forEach(prefix=>{
     const btn=document.getElementById(prefix+'-materna');
     if(btn) btn.classList.toggle('activa-materna',_capaMaternaVisible);
-    const btnPdi=document.getElementById(prefix+'-pdi');
-    if(btnPdi){
-      btnPdi.classList.toggle('activa-pdi',_capaPDIVisible);
-      btnPdi.disabled=_modoSoloMaterna;
-      btnPdi.style.opacity=_modoSoloMaterna?'.45':'';
-      btnPdi.style.pointerEvents=_modoSoloMaterna?'none':'';
-    }
-    const dd=document.getElementById(prefix+'-dropdown-btn');
-    if(dd){
-      dd.disabled=_modoSoloMaterna;
-      dd.style.opacity=_modoSoloMaterna?'.45':'';
-      dd.style.pointerEvents=_modoSoloMaterna?'none':'';
+    const btnSolo=document.getElementById(prefix+'-materna-solo');
+    if(btnSolo){
+      btnSolo.classList.toggle('mostrar',_capaMaternaVisible);
+      btnSolo.classList.toggle('activo',_modoSoloMaterna);
     }
   });
-
   if(_mapaZona) renderMarcadores(_filtroMapa);
-  if(_mapaZona) renderMarcadoresPDI();
+  renderMarcadoresMaterna();
+}
+
+function toggleSoloMaterna(){
+  if(!_capaMaternaVisible) return;
+  _modoSoloMaterna=!_modoSoloMaterna;
+  ['mf','ff'].forEach(prefix=>{
+    const btnSolo=document.getElementById(prefix+'-materna-solo');
+    if(btnSolo) btnSolo.classList.toggle('activo',_modoSoloMaterna);
+  });
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  renderMarcadoresPDI();
   renderMarcadoresMaterna();
 }
 
