@@ -2415,6 +2415,11 @@ function _vivCumpleDemografico(viv,filtro){
     const m=mesesPersona(p);
     if(m===null) return false;
     if(filtro==='ninos5') return m<60;
+    if(filtro==='ninos512') return m>=60&&m<144;
+    if(filtro==='adolf') return p.sexo==='F'&&m>=144&&m<228;
+    if(filtro==='adolm') return p.sexo==='M'&&m>=144&&m<228;
+    if(filtro==='adultom') return p.sexo==='M'&&m>=240&&m<720;
+    if(filtro==='mujer5059') return p.sexo==='F'&&m>=600&&m<720;
     if(filtro==='mef') return p.sexo==='F'&&m>=216&&m<600;
     if(filtro==='adultomayor') return m>=720;
     return false;
@@ -2431,7 +2436,7 @@ function renderMarcadores(filtro){
 
   const cat=getCatalogo();
   let sinUbic=[],conUbic=0;
-  const esDemografico=(filtro==='ninos5'||filtro==='mef'||filtro==='adultomayor');
+  const esDemografico=(filtro==='ninos5'||filtro==='ninos512'||filtro==='adolf'||filtro==='adolm'||filtro==='adultom'||filtro==='mujer5059'||filtro==='mef'||filtro==='adultomayor');
 
   cat.forEach(viv=>{
     const rk=viv.riesgo||'ninguno';
@@ -2504,6 +2509,11 @@ const FILTROS_VIV=[
   {key:'rojo',       icon:'🔴', label:'Alto Riesgo'},
   {key:'gris',       icon:'⚪', label:'Deshabitadas'},
   {key:'ninos5',     icon:'👶', label:'Niños menores de 5 años'},
+  {key:'ninos512',   icon:'🧒', label:'Niños de 5-12 años'},
+  {key:'adolf',      icon:'👧', label:'Adolescentes femeninas 12-19 años'},
+  {key:'adolm',      icon:'👦', label:'Adolescentes masculinos 12-19 años'},
+  {key:'adultom',    icon:'👨', label:'Adultos masculinos 20-59 años'},
+  {key:'mujer5059',  icon:'👩', label:'Mujeres 50-59 años'},
   {key:'mef',        icon:'🌸', label:'Mujeres en Edad Fértil (18-49)'},
   {key:'adultomayor',icon:'👴', label:'Adultos Mayores (60+)'},
 ];
