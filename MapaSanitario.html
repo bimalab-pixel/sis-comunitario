@@ -66,6 +66,14 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 }
 .home-title em{font-style:italic;color:var(--emerald)}
 .home-sub{font-size:.78rem;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.home-datetime{
+  display:inline-flex;align-items:center;gap:.4rem;
+  margin:.3rem 0 .6rem;padding:.28rem .7rem;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;font-size:.75rem;color:rgba(255,255,255,.75);
+  letter-spacing:.02em;
+}
+.home-datetime .hd-dot{color:var(--emerald,#2ecc71)}
 
 /* Stats row */
 .home-stats{
@@ -181,6 +189,10 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
 .mapa-info-bar .info-edit{
   flex-shrink:0;font-size:.68rem;font-weight:700;color:var(--muted);
   border:1.5px solid var(--border);border-radius:7px;padding:.22rem .5rem;background:#fff;
+}
+.topbar-datetime{
+  flex-shrink:0;font-size:.68rem;font-weight:600;color:var(--muted);
+  white-space:nowrap;letter-spacing:.01em;
 }
 
 /* ═══════════════════════════════════════
@@ -373,12 +385,43 @@ body{font-family:'Sora',sans-serif;color:var(--text);font-size:15px}
   flex:1;min-width:80px;padding:8px 6px;
   border:2px solid #ccc;background:#fff;border-radius:20px;
   font-size:.77em;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;
+  line-height:1.2;overflow-wrap:break-word;word-break:break-word;hyphens:auto;
 }
 .btn-filtro-mapa.f-todos  {background:var(--ink);color:#fff;border-color:var(--ink)}
 .btn-filtro-mapa.f-verde  {background:#16a34a;color:#fff;border-color:#16a34a}
 .btn-filtro-mapa.f-amarillo{background:#eab308;color:#fff;border-color:#eab308}
 .btn-filtro-mapa.f-rojo   {background:#c62828;color:#fff;border-color:#c62828}
 .btn-filtro-mapa.f-gris   {background:#757575;color:#fff;border-color:#757575}
+.btn-filtro-mapa.activa-materna{background:#ad1457;color:#fff;border-color:#ad1457}
+.btn-filtro-mapa.activa-pdi{background:#7b1fa2;color:#fff;border-color:#7b1fa2}
+
+/* Dropdown de filtros de vivienda */
+.filtro-dropdown-wrap{position:relative;flex:1;min-width:0;}
+.btn-filtro-dropdown{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:8px 12px;border:2px solid var(--ink);background:var(--ink);color:#fff;
+  border-radius:20px;font-size:.79em;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.btn-filtro-dropdown .chev{transition:transform .2s;flex-shrink:0}
+.btn-filtro-dropdown.abierto .chev{transform:rotate(180deg)}
+.filtro-dropdown-panel{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:1400;
+  background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.25);
+  padding:6px;flex-direction:column;gap:3px;max-height:320px;overflow-y:auto;
+}
+.filtro-dropdown-panel.dropup{top:auto;bottom:calc(100% + 6px)}
+.filtro-dropdown-panel.visible{display:flex}
+.filtro-opt{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;
+  border:none;background:#fff;font-size:.81em;font-weight:600;color:#37474f;
+  cursor:pointer;text-align:left;width:100%;transition:background .15s;
+}
+.filtro-opt:hover{background:#f5f5f5}
+.filtro-opt.activo{background:#e0f5ee;color:var(--forest);font-weight:800}
+#filtros-fs{gap:8px!important}
+#filtros-fs .btn-filtro-dropdown{padding:7px 10px;font-size:.74em}
+.btn-filtro-fs.activa-materna{background:#ad1457;color:#fff;border-color:#ad1457}
+.btn-filtro-fs.activa-pdi{background:#7b1fa2;color:#fff;border-color:#7b1fa2}
 
 /* Leyenda */
 .mapa-leyenda{
@@ -1014,6 +1057,7 @@ td.err{color:var(--red);font-weight:700}
       </svg>
     </div>
     <h1 class="home-title">Mapa <em>Sanitario</em></h1>
+    <div class="home-datetime" id="home-datetime"><span class="hd-dot">●</span><span id="home-datetime-txt">—</span></div>
     <div class="home-sub" id="home-sub" onclick="abrirModalEncabezado()">MINSAL · Promotor de Salud · El Salvador</div>
   </div>
 
@@ -1169,6 +1213,7 @@ td.err{color:var(--red);font-weight:700}
       Inicio
     </button>
     <span class="topbar-title">🗺️ Mapa Sanitario Poblacional</span>
+    <span class="topbar-datetime" id="mapa-datetime-txt">—</span>
   </div>
   <div class="mapa-info-bar" onclick="abrirModalEncabezado()">
     <span class="info-txt" id="mapa-info-txt">Toca para configurar cantón, promotor y unidad de salud</span>
@@ -1184,15 +1229,20 @@ td.err{color:var(--red);font-weight:700}
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#c62828"></span>Alto Riesgo</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#757575"></span>Deshabitada</span>
       <span class="leyenda-item"><span class="leyenda-dot" style="background:#9e9e9e;border-style:dashed"></span><span id="leyenda-sin-gps">Sin GPS</span></span>
+      <span class="leyenda-item">🤰 Embarazada (rojo) / 🤱 Puérpera (amarillo) <small style="color:#999">(pastilla roja/verde en el popup = riesgo obstétrico)</small></span>
     </div>
 
     <!-- Filtros -->
     <div class="mapa-filtros">
-      <button class="btn-filtro-mapa f-todos" id="mf-todos"    onclick="filtrarMapa('todos')">🏠 Todos</button>
-      <button class="btn-filtro-mapa"          id="mf-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
-      <button class="btn-filtro-mapa"          id="mf-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
-      <button class="btn-filtro-mapa"          id="mf-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
-      <button class="btn-filtro-mapa"          id="mf-gris"    onclick="filtrarMapa('gris')">⚪ Deshabitadas</button>
+      <div class="filtro-dropdown-wrap">
+        <button class="btn-filtro-dropdown" id="mf-dropdown-btn" onclick="toggleFiltroPanel('mf')" type="button">
+          <span id="mf-dropdown-label">🏠 Todos</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="filtro-dropdown-panel" id="mf-dropdown-panel"></div>
+      </div>
+      <button class="btn-filtro-mapa activa-materna" id="mf-materna" onclick="toggleCapaMaterna()">🤰 Embarazadas / Puérperas</button>
+      <button class="btn-filtro-mapa activa-pdi" id="mf-pdi" onclick="toggleCapaPDI()">⭐ Puntos de interés</button>
     </div>
 
     <!-- Mapa Leaflet -->
@@ -1307,11 +1357,15 @@ td.err{color:var(--red);font-weight:700}
 
       <!-- Barra fullscreen -->
       <div id="filtros-fs">
-        <button class="btn-filtro-fs f-todos"    id="ff-todos"    onclick="filtrarMapa('todos')">🏠 Todos</button>
-        <button class="btn-filtro-fs"             id="ff-verde"   onclick="filtrarMapa('verde')">🟢 Sin Riesgo</button>
-        <button class="btn-filtro-fs"             id="ff-amarillo" onclick="filtrarMapa('amarillo')">🟡 Medio</button>
-        <button class="btn-filtro-fs"             id="ff-rojo"    onclick="filtrarMapa('rojo')">🔴 Alto</button>
-        <button class="btn-filtro-fs"             id="ff-gris"    onclick="filtrarMapa('gris')">⚪ Deshabitadas</button>
+        <div class="filtro-dropdown-wrap">
+          <button class="btn-filtro-dropdown" id="ff-dropdown-btn" onclick="toggleFiltroPanel('ff')" type="button">
+            <span id="ff-dropdown-label">🏠 Todos</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="filtro-dropdown-panel dropup" id="ff-dropdown-panel"></div>
+        </div>
+        <button class="btn-filtro-fs activa-materna" id="ff-materna" onclick="toggleCapaMaterna()" style="flex:0 0 auto;padding:5px 9px;">🤰</button>
+        <button class="btn-filtro-fs activa-pdi" id="ff-pdi" onclick="toggleCapaPDI()" style="flex:0 0 auto;padding:5px 9px;">⭐</button>
       </div>
     </div><!-- /mapa-wrapper -->
 
@@ -2252,6 +2306,21 @@ const LAT0=13.8800, LNG0=-89.5000, ZOOM0=14;
 let _mapaZona=null,_filtroMapa='todos',_marcadores=[];
 let _capas={},_capaActual='osm';
 let _marcGPS=null,_circGPS=null;
+let _capaMaternaVisible=false,_capaPDIVisible=false;
+let _modoSoloMaterna=false,_capaPDIVisiblePrevia=null;
+
+// Activa (o solo sincroniza los botones de) las capas superpuestas de Embarazadas/Puérperas y Puntos de interés
+function _activarCapasSuperpuestas(){
+  _modoSoloMaterna=false; _capaPDIVisiblePrevia=null;
+  _capaMaternaVisible=true; _capaPDIVisible=true;
+  ['mf','ff'].forEach(prefix=>{
+    const bm=document.getElementById(prefix+'-materna'); if(bm) bm.classList.add('activa-materna');
+    const bp=document.getElementById(prefix+'-pdi');
+    if(bp){ bp.classList.add('activa-pdi'); bp.disabled=false; bp.style.opacity=''; bp.style.pointerEvents=''; }
+    const dd=document.getElementById(prefix+'-dropdown-btn');
+    if(dd){ dd.disabled=false; dd.style.opacity=''; dd.style.pointerEvents=''; }
+  });
+}
 
 function cargarLeaflet(){
   if(typeof L!=='undefined') return Promise.resolve();
@@ -2270,7 +2339,8 @@ async function abrirMapa(onListo){
       // Centrar en los puntos existentes si los hay
       const _vivConCoords=getCatalogo().filter(v=>v.lat&&v.lng);
       const _pdiConCoords=getPDI();
-      const _todosCoords=[..._vivConCoords.map(v=>([v.lat,v.lng])),..._pdiConCoords.map(p=>([p.lat,p.lng]))];
+      const _maternaConCoords=[...getEmbarazadasLS(),...getPuerperasLS()].filter(p=>p.lat&&p.lng);
+      const _todosCoords=[..._vivConCoords.map(v=>([v.lat,v.lng])),..._pdiConCoords.map(p=>([p.lat,p.lng])),..._maternaConCoords.map(p=>([p.lat,p.lng]))];
       const _vistaInicial=_todosCoords.length
         ? {bounds:L.latLngBounds(_todosCoords),opts:{padding:[40,40],maxZoom:17}}
         : {center:[LAT0,LNG0],zoom:ZOOM0};
@@ -2311,9 +2381,12 @@ async function abrirMapa(onListo){
       }
 
     } else { _mapaZona.invalidateSize(); }
+    renderFiltroDropdownOptions();
     _filtroMapa='todos'; actualizarBotonesFiltro('todos');
+    _activarCapasSuperpuestas();
     renderMarcadores('todos');
     renderMarcadoresPDI();
+    renderMarcadoresMaterna();
     renderStats();
     if(typeof onListo==='function') onListo();
   },180);
@@ -2335,23 +2408,44 @@ function iconoLeaflet(color, label){
   </svg>`;
   return L.divIcon({html:svg,className:'',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]});
 }
+// Filtros demográficos: ¿algún integrante de la vivienda cumple el criterio?
+function _vivCumpleDemografico(viv,filtro){
+  if(viv.deshabitada) return false;
+  return (viv.personas||[]).some(p=>{
+    const m=mesesPersona(p);
+    if(m===null) return false;
+    if(filtro==='ninos5') return m<60;
+    if(filtro==='mef') return p.sexo==='F'&&m>=216&&m<600;
+    if(filtro==='adultomayor') return m>=720;
+    return false;
+  });
+}
+
 function renderMarcadores(filtro){
   if(!_mapaZona) return;
   _filtroMapa=filtro;
   _marcadores.forEach(m=>m.remove()); _marcadores=[];
 
+  // Modo "solo Embarazadas/Puérperas": ocultamos por completo las viviendas
+  if(_modoSoloMaterna) return;
+
   const cat=getCatalogo();
   let sinUbic=[],conUbic=0;
+  const esDemografico=(filtro==='ninos5'||filtro==='mef'||filtro==='adultomayor');
 
   cat.forEach(viv=>{
     const rk=viv.riesgo||'ninguno';
     const desh=!!viv.deshabitada;
     // Filtrar
-    if(filtro==='gris'&&!desh) return;
-    if(filtro!=='gris'&&filtro!=='todos'&&desh) return;
-    if(filtro==='verde'&&rk!=='ninguno') return;
-    if(filtro==='amarillo'&&rk!=='medio') return;
-    if(filtro==='rojo'&&rk!=='alto') return;
+    if(esDemografico){
+      if(!_vivCumpleDemografico(viv,filtro)) return;
+    } else {
+      if(filtro==='gris'&&!desh) return;
+      if(filtro!=='gris'&&filtro!=='todos'&&desh) return;
+      if(filtro==='verde'&&rk!=='ninguno') return;
+      if(filtro==='amarillo'&&rk!=='medio') return;
+      if(filtro==='rojo'&&rk!=='alto') return;
+    }
 
     const jefe=(viv.personas&&viv.personas.length)?viv.personas[0].nombre:'—';
     const nP=viv.personas?viv.personas.length:0;
@@ -2402,15 +2496,63 @@ function renderMarcadores(filtro){
   }
 }
 
+// Catálogo único de opciones del filtro de viviendas (dropdown)
+const FILTROS_VIV=[
+  {key:'todos',      icon:'🏠', label:'Todos'},
+  {key:'verde',      icon:'🟢', label:'Sin Riesgo'},
+  {key:'amarillo',   icon:'🟡', label:'Riesgo Medio'},
+  {key:'rojo',       icon:'🔴', label:'Alto Riesgo'},
+  {key:'gris',       icon:'⚪', label:'Deshabitadas'},
+  {key:'ninos5',     icon:'👶', label:'Niños menores de 5 años'},
+  {key:'mef',        icon:'🌸', label:'Mujeres en Edad Fértil (18-49)'},
+  {key:'adultomayor',icon:'👴', label:'Adultos Mayores (60+)'},
+];
+
+function renderFiltroDropdownOptions(){
+  ['mf','ff'].forEach(prefix=>{
+    const panel=document.getElementById(prefix+'-dropdown-panel');
+    if(!panel) return;
+    panel.innerHTML=FILTROS_VIV.map(f=>
+      `<button type="button" class="filtro-opt${f.key===_filtroMapa?' activo':''}" data-key="${f.key}" onclick="filtrarMapa('${f.key}')">${f.icon} ${f.label}</button>`
+    ).join('');
+  });
+}
+
+function toggleFiltroPanel(prefix){
+  const btn=document.getElementById(prefix+'-dropdown-btn');
+  const panel=document.getElementById(prefix+'-dropdown-panel');
+  if(!btn||!panel) return;
+  const abrir=!panel.classList.contains('visible');
+  document.querySelectorAll('.filtro-dropdown-panel').forEach(p=>p.classList.remove('visible'));
+  document.querySelectorAll('.btn-filtro-dropdown').forEach(b=>b.classList.remove('abierto'));
+  if(abrir){
+    panel.classList.add('visible'); btn.classList.add('abierto');
+    setTimeout(()=>{
+      function cerrar(e){
+        if(!panel.contains(e.target)&&!btn.contains(e.target)){
+          panel.classList.remove('visible'); btn.classList.remove('abierto');
+          document.removeEventListener('click',cerrar);
+        }
+      }
+      document.addEventListener('click',cerrar);
+    },0);
+  }
+}
+
 function filtrarMapa(t){
-  _filtroMapa=t; actualizarBotonesFiltro(t); renderMarcadores(t);
+  _filtroMapa=t; actualizarBotonesFiltro(t);
+  if(t==='todos') _activarCapasSuperpuestas();
+  renderMarcadores(t); renderMarcadoresMaterna(); renderMarcadoresPDI();
+  document.querySelectorAll('.filtro-dropdown-panel').forEach(p=>p.classList.remove('visible'));
+  document.querySelectorAll('.btn-filtro-dropdown').forEach(b=>b.classList.remove('abierto'));
 }
 function actualizarBotonesFiltro(t){
-  const m={todos:'f-todos',verde:'f-verde',amarillo:'f-amarillo',rojo:'f-rojo',gris:'f-gris'};
-  ['todos','verde','amarillo','rojo','gris'].forEach(k=>{
-    const b1=document.getElementById('mf-'+k),b2=document.getElementById('ff-'+k);
-    if(b1) b1.className='btn-filtro-mapa'+(k===t?' '+m[k]:'');
-    if(b2) b2.className='btn-filtro-fs'+(k===t?' '+m[k]:'');
+  const f=FILTROS_VIV.find(x=>x.key===t)||FILTROS_VIV[0];
+  ['mf','ff'].forEach(prefix=>{
+    const label=document.getElementById(prefix+'-dropdown-label');
+    if(label) label.textContent=f.icon+' '+f.label;
+    const panel=document.getElementById(prefix+'-dropdown-panel');
+    if(panel) panel.querySelectorAll('.filtro-opt').forEach(b=>b.classList.toggle('activo',b.dataset.key===t));
   });
 }
 
@@ -2940,7 +3082,7 @@ function borrarPDI(){
   if(!confirm('⚠️ ¿Borrar todos los puntos de interés?\n\n🔒 La nube NO se toca.')) return;
   localStorage.removeItem(LS_PDI);
   if(typeof renderPDI==='function') renderPDI();
-  if(_mapaZona) renderMarcadores(_filtroMapa);
+  if(_mapaZona){ renderMarcadores(_filtroMapa); renderMarcadoresPDI(); }
   toast('📌 Puntos de interés borrados · La nube permanece intacta','success');
 }
 
@@ -2950,7 +3092,7 @@ function borrarTodo(){
   localStorage.removeItem(LS_PDI);
   actualizarHome();renderCatalogo();
   if(typeof renderPDI==='function') renderPDI();
-  if(_mapaZona) renderMarcadores(_filtroMapa);
+  if(_mapaZona){ renderMarcadores(_filtroMapa); renderMarcadoresPDI(); }
   toast('🗑️ Todo borrado · La nube permanece intacta','success');
 }
 
@@ -3087,6 +3229,13 @@ function _onMapaClickPDI(e){
     creadoEn:new Date().toISOString()
   };
   const arr=getPDI(); arr.push(pdi); savePDI(arr);
+  if(!_capaPDIVisible){
+    _capaPDIVisible=true;
+    ['mf','ff'].forEach(prefix=>{
+      const btn=document.getElementById(prefix+'-pdi');
+      if(btn) btn.classList.add('activa-pdi');
+    });
+  }
   _renderMarcadorPDI(pdi);
   toast(pdi.ico+' '+pdi.nombre+' guardado','success');
   cancelarPDI();
@@ -3127,7 +3276,16 @@ function eliminarPDI(pdiId){
 }
 function renderMarcadoresPDI(){
   _pdiMarcadores.forEach(m=>m.remove()); _pdiMarcadores=[];
+  if(!_capaPDIVisible) return;
   getPDI().forEach(p=>_renderMarcadorPDI(p));
+}
+function toggleCapaPDI(){
+  _capaPDIVisible=!_capaPDIVisible;
+  ['mf','ff'].forEach(prefix=>{
+    const btn=document.getElementById(prefix+'-pdi');
+    if(btn) btn.classList.toggle('activa-pdi',_capaPDIVisible);
+  });
+  renderMarcadoresPDI();
 }
 function renderPDI(){
   const arr=getPDI();
@@ -3148,6 +3306,188 @@ function renderPDI(){
         <div class="pdi-coords">${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}</div>
       </div>
     </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// CAPA: EMBARAZADAS Y PUÉRPERAS (Vigilancia_Materna, mismo localStorage)
+// ═══════════════════════════════════════
+let _maternaMarcadores=[];
+
+// Asegura que cada registro tenga un "id" único (registros antiguos podían no tenerlo).
+// Si falta, se le asigna y se reescribe en localStorage para que quede firme
+// y coincida con lo que luego busca Vigilancia_Materna.html.
+function _asegurarIdsMaterna(arr, key){
+  let cambiado=false;
+  arr.forEach(p=>{
+    if(!p.id){ p.id = Date.now().toString()+Math.random().toString(16).slice(2); cambiado=true; }
+  });
+  if(cambiado){ try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(e){} }
+  return arr;
+}
+function getEmbarazadasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('embarazadas')||'[]'),'embarazadas'); }catch(e){ return []; } }
+function getPuerperasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('puerperas')||'[]'),'puerperas'); }catch(e){ return []; } }
+
+// Guarda un respaldo del id/tipo en localStorage justo antes de navegar,
+// por si la URL pierde el query string durante la navegación (WebView/PWA).
+function abrirFichaEnVigilancia(id, tipo){
+  try{
+    localStorage.setItem('vm_abrir_id', id||'');
+    localStorage.setItem('vm_abrir_tipo', tipo||'');
+  }catch(e){}
+  window.location.href = 'Vigilancia_Materna.html?id='+encodeURIComponent(id||'')+'&tipo='+encodeURIComponent(tipo||'');
+}
+
+// Semanas de gestación aproximadas a partir de la FUR (mismo criterio que Vigilancia_Materna)
+function _semanasGestacionDesdeFur(furISO){
+  if(!furISO) return null;
+  const fur=new Date(furISO+'T00:00:00'); const hoy=new Date();
+  if(isNaN(fur)) return null;
+  const dias=Math.floor((hoy-fur)/86400000);
+  if(dias<0) return null;
+  return {semanas:Math.floor(dias/7), dias:dias%7};
+}
+function _diasPuerperioDesdeFp(fpISO){
+  if(!fpISO) return null;
+  const fp=new Date(fpISO+'T00:00:00'); const hoy=new Date();
+  if(isNaN(fp)) return null;
+  const dias=Math.floor((hoy-fp)/86400000);
+  return dias>=0?dias:null;
+}
+
+// Mismos colores que Vigilancia_Materna: rojo=Embarazada, amarillo=Puérpera (el color va por tipo, no por riesgo)
+function _colorMaterna(tipo){
+  return tipo === 'embarazada' ? '#d32f2f' : '#f9a825';
+}
+
+function _iconoMaterna(tipo){
+  const color = _colorMaterna(tipo);
+  // Mismo ícono (círculo con destello/onda expansiva animada) que usa Vigilancia_Materna
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" style="overflow:visible;">
+        <style>
+            .destello-materna-${tipo} {
+                transform-origin: 22px 22px;
+                animation: _destelloMaterna${tipo} 2s ease-out infinite;
+                filter: drop-shadow(0 0 3px ${color}) drop-shadow(0 0 6px ${color});
+            }
+            .destello-materna-${tipo}.d2 { animation-delay: 1s; }
+            @keyframes _destelloMaterna${tipo} {
+                0%   { transform: scale(0.4); opacity: 1; }
+                60%  { opacity: 0.55; }
+                100% { transform: scale(2.3); opacity: 0; }
+            }
+        </style>
+        <circle class="destello-materna-${tipo}" cx="22" cy="22" r="11" fill="none" stroke="${color}" stroke-width="3.5"/>
+        <circle class="destello-materna-${tipo} d2" cx="22" cy="22" r="11" fill="none" stroke="${color}" stroke-width="3.5"/>
+        <circle cx="22" cy="22" r="11" fill="${color}" stroke="white" stroke-width="2.5"/>
+        <circle cx="22" cy="22" r="4" fill="white" opacity="0.8"/>
+    </svg>`;
+  return L.divIcon({ html: svg, className: '', iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -16] });
+}
+
+function _popupMaterna(p, tipo){
+  const color = _colorMaterna(tipo);
+  const tieneRiesgo = p.riesgo_obstetrico === 'si';
+
+  // Badge de tipo (mismo estilo que Vigilancia_Materna)
+  const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : '🤱 PUÉRPERA';
+  const tipoTextColor = tipo === 'puerpera' ? '#333' : 'white';
+  const tipoBadge = `<span style="display:inline-block;background:${color};color:${tipoTextColor};font-size:0.72em;font-weight:bold;padding:2px 8px;border-radius:10px;letter-spacing:0.3px;margin-bottom:5px;">${tipoLabel}</span>`;
+
+  // Pastilla de riesgo (verde=sin riesgo, rojo=con riesgo)
+  const riesgoPill = `<span style="display:inline-block;background:${tieneRiesgo ? '#d32f2f' : '#2e7d32'};color:white;font-size:0.72em;font-weight:bold;padding:2px 8px;border-radius:10px;letter-spacing:0.3px;margin-bottom:5px;margin-left:4px;">${tieneRiesgo ? '🔴 Con riesgo' : '🟢 Sin riesgo'}</span>`;
+
+  // Estado gestacional / puerperio
+  let estadoInfo = '';
+  if (tipo === 'embarazada' && p.fur) {
+    const g = _semanasGestacionDesdeFur(p.fur);
+    estadoInfo = g ? `📅 ${g.semanas} sem + ${g.dias} días de gestación` : '📅 Gestación en curso';
+  } else if (tipo === 'puerpera' && p.fp) {
+    const d = _diasPuerperioDesdeFp(p.fp);
+    if (d !== null) {
+      const restantes = 42 - d;
+      estadoInfo = `📅 Día ${d} de puerperio${restantes > 0 ? ' · faltan ' + restantes + 'd' : ' · ⚠️ alta'}`;
+    } else {
+      estadoInfo = '📅 Puerperio en curso';
+    }
+  }
+
+  const riesgoTag = tieneRiesgo
+    ? `<div style="background:#fff3e0;border-left:3px solid #d32f2f;padding:3px 6px;border-radius:4px;margin:4px 0;font-size:0.8em;color:#d32f2f;font-weight:bold;">⚠️ ${p.tipo_riesgo || 'Riesgo obstétrico'}</div>`
+    : '';
+
+  const origenTag = p.origen_ubic === 'gps'
+    ? '<span style="color:#2e7d32;font-size:0.75em;">🛰️ GPS</span>'
+    : '<span style="color:#1976d2;font-size:0.75em;">🖊️ Manual</span>';
+
+  return `
+    <div style="min-width:185px;max-width:210px;font-family:sans-serif;padding:2px;">
+        ${tipoBadge}${riesgoPill}<br>
+        <strong style="font-size:0.97em;color:#1a1a1a;">${p.nombre || '—'}</strong>
+        <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
+        ${riesgoTag}
+        <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
+        <div style="margin-bottom:8px;">${origenTag}</div>
+        <button onclick="abrirFichaEnVigilancia('${p.id||''}','${tipo}')"
+            style="width:100%;background:#00796b;color:white;border:none;padding:7px 0;
+                   border-radius:7px;font-size:0.85em;font-weight:bold;cursor:pointer;">
+            📋 Abrir en Vigilancia Materna
+        </button>
+    </div>`;
+}
+
+function renderMarcadoresMaterna(){
+  _maternaMarcadores.forEach(m=>m.remove()); _maternaMarcadores=[];
+  if(!_mapaZona || !_capaMaternaVisible) return;
+  getEmbarazadasLS().forEach(p=>{
+    if(!p.lat||!p.lng) return;
+    const m=L.marker([p.lat,p.lng],{icon:_iconoMaterna('embarazada')})
+      .addTo(_mapaZona).bindPopup(_popupMaterna(p,'embarazada'),{maxWidth:230});
+    _maternaMarcadores.push(m);
+  });
+  getPuerperasLS().forEach(p=>{
+    if(!p.lat||!p.lng) return;
+    const m=L.marker([p.lat,p.lng],{icon:_iconoMaterna('puerpera')})
+      .addTo(_mapaZona).bindPopup(_popupMaterna(p,'puerpera'),{maxWidth:230});
+    _maternaMarcadores.push(m);
+  });
+}
+
+function toggleCapaMaterna(){
+  _modoSoloMaterna=!_modoSoloMaterna;
+
+  if(_modoSoloMaterna){
+    // Entrando al modo exclusivo: guardamos si Puntos de Interés estaba visible
+    // para poder restaurarlo tal cual al salir, y ocultamos todo lo demás.
+    _capaPDIVisiblePrevia=_capaPDIVisible;
+    _capaMaternaVisible=true;
+    _capaPDIVisible=false;
+  } else {
+    // Saliendo del modo exclusivo: todo vuelve a su estado anterior.
+    _capaMaternaVisible=true;
+    _capaPDIVisible=(_capaPDIVisiblePrevia!==null)?_capaPDIVisiblePrevia:true;
+  }
+
+  ['mf','ff'].forEach(prefix=>{
+    const btn=document.getElementById(prefix+'-materna');
+    if(btn) btn.classList.toggle('activa-materna',_capaMaternaVisible);
+    const btnPdi=document.getElementById(prefix+'-pdi');
+    if(btnPdi){
+      btnPdi.classList.toggle('activa-pdi',_capaPDIVisible);
+      btnPdi.disabled=_modoSoloMaterna;
+      btnPdi.style.opacity=_modoSoloMaterna?'.45':'';
+      btnPdi.style.pointerEvents=_modoSoloMaterna?'none':'';
+    }
+    const dd=document.getElementById(prefix+'-dropdown-btn');
+    if(dd){
+      dd.disabled=_modoSoloMaterna;
+      dd.style.opacity=_modoSoloMaterna?'.45':'';
+      dd.style.pointerEvents=_modoSoloMaterna?'none':'';
+    }
+  });
+
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  if(_mapaZona) renderMarcadoresPDI();
+  renderMarcadoresMaterna();
 }
 
 // ═══════════════════════════════════════
@@ -3733,6 +4073,25 @@ async function bajarNube(){
             applyState(true);
         }
     });
+})();
+</script>
+<script>
+(function(){
+    var DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    function pad(n){ return n < 10 ? '0'+n : ''+n; }
+    function actualizarHomeDateTime(){
+        var d = new Date();
+        var texto = DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear() +
+                    ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+        var elHome = document.getElementById('home-datetime-txt');
+        if (elHome) elHome.textContent = texto;
+        var elMapa = document.getElementById('mapa-datetime-txt');
+        if (elMapa) elMapa.textContent = pad(d.getDate()) + '/' + pad(d.getMonth()+1) + '/' + d.getFullYear() + ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+    actualizarHomeDateTime();
+    setInterval(actualizarHomeDateTime, 1000);
 })();
 </script>
 </body>
