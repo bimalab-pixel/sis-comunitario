@@ -3639,5 +3639,56 @@
 })();
 </script>
 
+
+<!-- ══════ Menú flotante de navegación entre apps (SIS Comunitario) ══════ -->
+<style>
+  .sisnav-backdrop{position:fixed;inset:0;z-index:99989;display:none;}
+  .sisnav-backdrop.sisnav-abierto{display:block;}
+  .sisnav-fab{position:fixed;right:12px;bottom:12px;z-index:99990;width:42px;height:42px;
+    border-radius:50%;background:rgba(22,26,34,.88);backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 4px 16px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
+  .sisnav-fab:active{transform:scale(.9);}
+  .sisnav-dots{display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:3px;}
+  .sisnav-dots span{width:4px;height:4px;border-radius:50%;background:#fff;display:block;}
+  .sisnav-menu{position:fixed;right:12px;bottom:60px;z-index:99991;min-width:216px;max-width:260px;
+    background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.24);
+    border:1px solid rgba(0,0,0,.06);padding:6px;opacity:0;transform:translateY(10px) scale(.96);
+    pointer-events:none;transition:opacity .15s ease,transform .15s ease;max-height:70vh;overflow-y:auto;}
+  .sisnav-menu.sisnav-abierto{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+  .sisnav-titulo{font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+    color:#8a94a3;padding:8px 10px 5px;}
+  .sisnav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;
+    text-decoration:none;color:#1b2430;font-size:.85rem;font-weight:600;transition:background .1s;}
+  .sisnav-item:active{background:#eef1f5;}
+  @media (hover:hover){.sisnav-item:hover{background:#f1f3f6;}}
+  .sisnav-item .sisnav-ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
+</style>
+<div class="sisnav-backdrop" id="sisnavBackdrop" onclick="sisnavCerrar()"></div>
+<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones" aria-label="Ver otras aplicaciones">
+  <div class="sisnav-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</button>
+<div class="sisnav-menu" id="sisnavMenu">
+  <div class="sisnav-titulo">Aplicaciones</div>
+  <a class="sisnav-item" href="index.html"><span class="sisnav-ic">🏠</span>Inicio</a>
+  <a class="sisnav-item" href="Vigilancia_Materna.html"><span class="sisnav-ic">👩‍⚕️</span>Vigilancia Materna</a>
+  <a class="sisnav-item" href="calculadora_materna.html"><span class="sisnav-ic">🗓️</span>Calculadora Materna</a>
+  <a class="sisnav-item" href="mef.html"><span class="sisnav-ic">📋</span>Control MEF</a>
+  <a class="sisnav-item" href="RegistroDiario_Promotor.html"><span class="sisnav-ic">📝</span>Registro Diario</a>
+  <a class="sisnav-item" href="MapaSanitario.html"><span class="sisnav-ic">🗺️</span>Mapa Sanitario</a>
+  <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
+</div>
+<script>
+  function sisnavToggle(){
+    document.getElementById('sisnavMenu').classList.toggle('sisnav-abierto');
+    document.getElementById('sisnavBackdrop').classList.toggle('sisnav-abierto');
+  }
+  function sisnavCerrar(){
+    document.getElementById('sisnavMenu').classList.remove('sisnav-abierto');
+    document.getElementById('sisnavBackdrop').classList.remove('sisnav-abierto');
+  }
+</script>
+
 </body>
 </html>
