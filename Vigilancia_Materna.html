@@ -596,6 +596,48 @@
     background: #e8f5e9;
     border-radius: 4px 4px 0 0;
 }
+
+/* Fechas clave destacadas (FUR/FPP en embarazadas, Parto/Fin Puerperio en puérperas) */
+.fechas-clave {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.fecha-clave-box {
+    flex: 1 1 45%;
+    min-width: 150px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+}
+.fecha-clave-box .dato-label { color: rgba(255,255,255,0.9); }
+.fecha-clave-box .dato-valor { color: #fff; font-weight: bold; font-size: 1.05em; }
+.fecha-clave-fur { background: linear-gradient(135deg, #1e88e5, #0d47a1); }
+.fecha-clave-fpp { background: linear-gradient(135deg, #ec407a, #ad1457); }
+.fecha-clave-parto { background: linear-gradient(135deg, #7e57c2, #4527a0); }
+.fecha-clave-finpuerp { background: linear-gradient(135deg, #ff7043, #e64a19); }
+.input-inline-fecha-white {
+    border: none;
+    border-bottom: 2px dashed rgba(255,255,255,0.7);
+    background: transparent;
+    font-size: 1.05em;
+    color: #fff;
+    font-weight: bold;
+    padding: 2px 4px;
+    width: 140px;
+    cursor: pointer;
+    border-radius: 0;
+    font-family: inherit;
+    color-scheme: dark;
+}
+.input-inline-fecha-white:focus {
+    outline: none;
+    border-bottom: 2px solid #fff;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px 4px 0 0;
+}
 @keyframes flashOk {
     0%   { background: #c8e6c9; }
     100% { background: transparent; }
@@ -2659,6 +2701,17 @@ function importarDatos(event) {
                             <span class="dato-sub">${restanteMsg}</span>
                         </div>
 
+                        <div class="fechas-clave">
+                            <div class="fecha-clave-box fecha-clave-fur">
+                                <span class="dato-label">📅 ${furLabel}</span>
+                                <span class="dato-valor">${p.fur ? formatDate(furDate) : 'No registrada'}</span>
+                            </div>
+                            <div class="fecha-clave-box fecha-clave-fpp">
+                                <span class="dato-label">🏁 Fecha Probable de Parto</span>
+                                <span class="dato-valor">${formatDate(fppDate)}</span>
+                            </div>
+                        </div>
+
                         <div class="datos-grid">
                             <div class="dato-item">
                                 <span class="dato-label">Edad Paciente</span>
@@ -2683,17 +2736,6 @@ function importarDatos(event) {
                             <div class="dato-item">
                                 <span class="dato-label">⚠️ Riesgo Obstétrico</span>
                                 <span class="dato-valor" style="${(p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;'}">${(p.riesgo_obstetrico === 'si') ? '⚠️ SÍ — ' + (p.tipo_riesgo || 'No especificado') : '✅ Sin riesgo'}</span>
-                            </div>
-                            <div class="dato-item">
-                                <span class="dato-label">Fecha Probable Parto</span>
-                                <span class="dato-valor" style="color:#d81b60">${formatDate(fppDate)}</span>
-                            </div>
-                            <div class="dato-item">
-                                <span class="dato-label">${furLabel}</span>
-                                <input type="date" class="input-inline-fecha" id="fur-inline-${index}"
-                                    value="${p.fur || ''}"
-                                    onchange="guardarFurInline(${index}, this)"
-                                    title="Editar FUR directamente">
                             </div>
                             <div class="dato-item">
                                 <span class="dato-label">Cálculo Basado en</span>
@@ -2920,6 +2962,17 @@ function importarDatos(event) {
                             <span class="dato-sub">${estadoMsg}</span>
                         </div>
 
+                        <div class="fechas-clave">
+                            <div class="fecha-clave-box fecha-clave-parto">
+                                <span class="dato-label">🤱 Fecha de Parto</span>
+                                <span class="dato-valor">${p.fp ? formatDate(crearFechaLocal(p.fp)) : 'No registrada'}</span>
+                            </div>
+                            <div class="fecha-clave-box fecha-clave-finpuerp">
+                                <span class="dato-label">🏁 Fin de Puerperio (42 días)</span>
+                                <span class="dato-valor">${formatDate(puerperio.finPuerperioDate)}</span>
+                            </div>
+                        </div>
+
                         <div class="datos-grid">
                             <div class="dato-item">
                                 <span class="dato-label">Edad Paciente</span>
@@ -2944,17 +2997,6 @@ function importarDatos(event) {
                             <div class="dato-item">
                                 <span class="dato-label">⚠️ Riesgo Obstétrico</span>
                                 <span class="dato-valor" style="${(p.riesgo_obstetrico === 'si') ? 'color:#c62828;font-weight:bold;' : 'color:#2e7d32;'}">${(p.riesgo_obstetrico === 'si') ? '⚠️ SÍ — ' + (p.tipo_riesgo || 'No especificado') : '✅ Sin riesgo'}</span>
-                            </div>
-                            <div class="dato-item">
-                                <span class="dato-label">Fecha de Parto</span>
-                                <input type="date" class="input-inline-fecha" id="fp-inline-${index}"
-                                    value="${p.fp || ''}"
-                                    onchange="guardarFpInline(${index}, this)"
-                                    title="Editar Fecha de Parto directamente">
-                            </div>
-                            <div class="dato-item">
-                                <span class="dato-label">Fin Puerperio (42 días)</span>
-                                <span class="dato-valor" style="color:#e91e63; font-weight:bold;">${formatDate(puerperio.finPuerperioDate)}</span>
                             </div>
                         </div>
 
@@ -5215,6 +5257,43 @@ function renderizarMarcadores(filtro) {
                 } catch(e) { estadoInfo = '📅 Puerperio en curso'; }
             }
 
+            // Fechas clave destacadas para el popup (FUR/FURUSG + FPP, o Parto + Fin Puerperio)
+            let fechasClaveInfo = '';
+            if (tipo === 'embarazada' && p.fur) {
+                try {
+                    const furD = crearFechaLocal(p.fur);
+                    const fppD = calcularFPP(furD);
+                    const labelFur = (p.metodo === 'FUS') ? 'FURUSG' : 'FUR';
+                    fechasClaveInfo = `
+                        <div style="display:flex;gap:4px;margin:5px 0;">
+                            <div style="flex:1;background:#1e88e5;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
+                                <div style="font-size:0.68em;opacity:0.9;">${labelFur}</div>
+                                <div style="font-size:0.78em;font-weight:bold;">${formatDate(furD)}</div>
+                            </div>
+                            <div style="flex:1;background:#ec407a;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
+                                <div style="font-size:0.68em;opacity:0.9;">FPP</div>
+                                <div style="font-size:0.78em;font-weight:bold;">${formatDate(fppD)}</div>
+                            </div>
+                        </div>`;
+                } catch(e) {}
+            } else if (tipo === 'puerpera' && p.fp) {
+                try {
+                    const fpD = crearFechaLocal(p.fp);
+                    const finPuerpD = calcularPuerperio(fpD).finPuerperioDate;
+                    fechasClaveInfo = `
+                        <div style="display:flex;gap:4px;margin:5px 0;">
+                            <div style="flex:1;background:#7e57c2;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
+                                <div style="font-size:0.68em;opacity:0.9;">Parto</div>
+                                <div style="font-size:0.78em;font-weight:bold;">${formatDate(fpD)}</div>
+                            </div>
+                            <div style="flex:1;background:#ff7043;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
+                                <div style="font-size:0.68em;opacity:0.9;">Fin Puerp.</div>
+                                <div style="font-size:0.78em;font-weight:bold;">${formatDate(finPuerpD)}</div>
+                            </div>
+                        </div>`;
+                } catch(e) {}
+            }
+
             const riesgoTag = p.riesgo_obstetrico === 'si'
                 ? `<div style="background:#fff3e0;border-left:3px solid #d32f2f;padding:3px 6px;border-radius:4px;margin:4px 0;font-size:0.8em;color:#d32f2f;font-weight:bold;">⚠️ ${p.tipo_riesgo || 'Riesgo obstétrico'}</div>`
                 : '';
@@ -5233,6 +5312,7 @@ function renderizarMarcadores(filtro) {
                     <strong style="font-size:0.97em;color:#1a1a1a;">${p.nombre}</strong>
                     ${edadStr ? `<span style="font-size:0.8em;color:#666;"> · ${edadStr}</span>` : ''}
                     <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
+                    ${fechasClaveInfo}
                     ${riesgoTag}
                     <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
                     <div style="font-size:0.75em;color:#888;margin-bottom:2px;">👤 <em>Registrada por:</em> ${p.registrado_por || 'Desconocido'}</div>
@@ -6191,8 +6271,8 @@ function imprimirReporteGeneral() {
     border-radius:50%;background:rgba(22,26,34,.88);backdrop-filter:blur(6px);
     -webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);
     box-shadow:0 4px 16px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
-  .sisnav-fab:active{transform:scale(.9);}
+    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;cursor:grab;touch-action:none;user-select:none;}
+  .sisnav-fab:active{transform:scale(.9);cursor:grabbing;}
   .sisnav-dots{display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:3px;}
   .sisnav-dots span{width:4px;height:4px;border-radius:50%;background:#fff;display:block;}
   .sisnav-menu{position:fixed;right:12px;bottom:60px;z-index:99991;min-width:216px;max-width:260px;
@@ -6209,7 +6289,7 @@ function imprimirReporteGeneral() {
   .sisnav-item .sisnav-ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
 </style>
 <div class="sisnav-backdrop" id="sisnavBackdrop" onclick="sisnavCerrar()"></div>
-<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones" aria-label="Ver otras aplicaciones">
+<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones (mantén presionado para moverlo, doble clic para restaurar)" aria-label="Ver otras aplicaciones">
   <div class="sisnav-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 </button>
 <div class="sisnav-menu" id="sisnavMenu">
@@ -6223,14 +6303,118 @@ function imprimirReporteGeneral() {
   <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
 </div>
 <script>
-  function sisnavToggle(){
-    document.getElementById('sisnavMenu').classList.toggle('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.toggle('sisnav-abierto');
+(function(){
+  var btn = document.getElementById('sisnavBtn');
+  var menu = document.getElementById('sisnavMenu');
+  var backdrop = document.getElementById('sisnavBackdrop');
+  var STORAGE_KEY = 'sisnav_pos::' + (location.pathname.split('/').pop() || 'app');
+  var dragging = false, moved = false, justDragged = false, customized = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function clamp(v, min, max){ return Math.min(Math.max(v, min), max); }
+
+  function setPos(left, top){
+    var w = btn.offsetWidth || 42, h = btn.offsetHeight || 42;
+    left = clamp(left, 6, window.innerWidth - w - 6);
+    top  = clamp(top, 6, window.innerHeight - h - 6);
+    btn.style.left = left + 'px';
+    btn.style.top = top + 'px';
+    btn.style.right = 'auto';
+    btn.style.bottom = 'auto';
   }
-  function sisnavCerrar(){
-    document.getElementById('sisnavMenu').classList.remove('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.remove('sisnav-abierto');
+
+  function savePos(){
+    var r = btn.getBoundingClientRect();
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({x:r.left, y:r.top})); }catch(e){}
   }
+
+  function loadPos(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      var p = JSON.parse(raw);
+      if(typeof p.x === 'number' && typeof p.y === 'number'){ setPos(p.x, p.y); return true; }
+    }catch(e){}
+    return false;
+  }
+
+  function resetPos(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    btn.style.left = ''; btn.style.top = ''; btn.style.right = ''; btn.style.bottom = '';
+    customized = false;
+  }
+
+  function posMenu(){
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var mw = menu.offsetWidth || 230, mh = menu.offsetHeight || 260;
+    var left = r.left, top = r.bottom + 8;
+    if(left + mw > vw - 8) left = Math.max(8, r.right - mw);
+    if(left < 8) left = 8;
+    if(top + mh > vh - 8) top = Math.max(8, r.top - mh - 8);
+    if(top < 8) top = 8;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.right = 'auto';
+    menu.style.bottom = 'auto';
+  }
+
+  window.sisnavToggle = function(){
+    if(justDragged){ justDragged = false; return; }
+    var abrir = !menu.classList.contains('sisnav-abierto');
+    if(abrir) posMenu();
+    menu.classList.toggle('sisnav-abierto', abrir);
+    backdrop.classList.toggle('sisnav-abierto', abrir);
+  };
+  window.sisnavCerrar = function(){
+    menu.classList.remove('sisnav-abierto');
+    backdrop.classList.remove('sisnav-abierto');
+  };
+
+  function onDown(e){
+    var pt = e.touches ? e.touches[0] : e;
+    dragging = true; moved = false;
+    var r = btn.getBoundingClientRect();
+    startX = pt.clientX; startY = pt.clientY;
+    startLeft = r.left; startTop = r.top;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
+  }
+  function onMove(e){
+    if(!dragging) return;
+    var pt = e.touches ? e.touches[0] : e;
+    var dx = pt.clientX - startX, dy = pt.clientY - startY;
+    if(Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    if(moved){
+      if(e.cancelable) e.preventDefault();
+      setPos(startLeft + dx, startTop + dy);
+      if(menu.classList.contains('sisnav-abierto')) window.sisnavCerrar();
+    }
+  }
+  function onUp(){
+    dragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    if(moved){ savePos(); justDragged = true; customized = true; }
+    moved = false;
+  }
+
+  btn.addEventListener('mousedown', onDown);
+  btn.addEventListener('touchstart', onDown, {passive:true});
+  btn.addEventListener('dblclick', function(e){ e.preventDefault(); resetPos(); });
+
+  window.addEventListener('resize', function(){
+    if(!customized) return;
+    var r = btn.getBoundingClientRect();
+    setPos(r.left, r.top);
+  });
+
+  customized = loadPos();
+})();
 </script>
 
 </body>
