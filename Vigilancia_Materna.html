@@ -2272,13 +2272,36 @@ function importarDatos(event) {
         return null;
     }
 
-    // Convierte "DD/MM/YYYY, HH:MM" o fechaFull a Date para ordenar notas
+    // Convierte la fecha de una nota a Date para ordenar. Acepta fechaFull, o texto tipo
+    // "DD/MM/YYYY, HH:MM" y también variantes del teléfono como "23/8/2026, 10:41:22 a. m."
+    // (día/mes de 1 o 2 dígitos, segundos y a. m./p. m. opcionales). Antes solo aceptaba
+    // 2 dígitos y las notas del sistema (que usaban toLocaleString) caían en 1970,
+    // quedando siempre al principio/final sin importar su fecha.
     function parsearFechaNota(nota) {
         if (nota.fechaFull) return new Date(nota.fechaFull);
         if (!nota.fecha) return new Date(0);
-        const m = nota.fecha.match(/(\d{2})\/(\d{2})\/(\d{4})(?:,?\s*(\d{2}):(\d{2}))?/);
-        if (m) return new Date(m[3], m[2]-1, m[1], m[4]||0, m[5]||0);
-        return new Date(0);
+        const m = String(nota.fecha).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s*(\d{1,2}):(\d{2})(?::\d{2})?\s*([ap])?\.?\s*m?\.?)?/i);
+        if (!m) return new Date(0);
+        let hh = parseInt(m[4] || 0, 10);
+        const mm = parseInt(m[5] || 0, 10);
+        if (m[6]) {
+            const pm = m[6].toLowerCase() === 'p';
+            if (pm && hh < 12) hh += 12;
+            if (!pm && hh === 12) hh = 0;
+        }
+        return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10), hh, mm);
+    }
+
+    // Fecha y hora actuales en el mismo formato que usan las notas: "DD/MM/YYYY, HH:MM"
+    // Si se pasa una fecha ISO ("YYYY-MM-DD"), se usa ese día con la hora actual
+    // (igual que las notas escritas a mano con fecha elegida).
+    function fechaHoraNotaActual(fechaISO) {
+        const n = new Date();
+        const p2 = v => String(v).padStart(2, '0');
+        let d = n.getDate(), mo = n.getMonth() + 1, y = n.getFullYear();
+        const m = String(fechaISO || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) { y = parseInt(m[1], 10); mo = parseInt(m[2], 10); d = parseInt(m[3], 10); }
+        return `${p2(d)}/${p2(mo)}/${y}, ${p2(n.getHours())}:${p2(n.getMinutes())}`;
     }
 
     // Estado de orden por paciente: clave "tipo-index" -> 'asc' | 'desc'
@@ -2801,6 +2824,7 @@ function importarDatos(event) {
                         </div>
 
                         <h4 class="seccion-titulo">📝 Notas Clínicas (${p.notas ? p.notas.length : 0})</h4>
+                        ${botonImportarNotasHTML(index, 'embarazada')}
                         <div id="notas-list-emb-${index}">
                             ${renderizarNotas(p, index, 'embarazada')}
                         </div>
@@ -3026,6 +3050,7 @@ function importarDatos(event) {
                         </div>
 
                         <h4 class="seccion-titulo">📝 Notas Clínicas (${p.notas ? p.notas.length : 0})</h4>
+                        ${botonImportarNotasHTML(index, 'puerpera')}
                         <div id="notas-list-puerp-${index}">
                             ${renderizarNotas(p, index, 'puerpera')}
                         </div>
@@ -3103,11 +3128,7 @@ function importarDatos(event) {
 
         // --- 2. ORDENAR NOTAS (Antiguas arriba) ---
         if (p.notas && Array.isArray(p.notas)) {
-            p.notas.sort((a, b) => {
-                const fA = a.fechaFull ? new Date(a.fechaFull) : new Date();
-                const fB = b.fechaFull ? new Date(b.fechaFull) : new Date();
-                return fA - fB;
-            });
+            p.notas.sort((a, b) => parsearFechaNota(a) - parsearFechaNota(b));
         }
 
         listContainerArch.classList.add('consulta-activa');
@@ -3219,6 +3240,7 @@ function importarDatos(event) {
                     </div>
                     ${contenidoEspecifico}
                     <h4 class="seccion-titulo" style="margin-top: 30px;">📝 Historial Completo de Notas</h4>
+                    ${botonImportarNotasHTML(index, 'archivada')}
                     <div style="max-height: none; overflow: visible;">
                         ${renderizarNotas(p, index, 'archivada')}
                     </div>
@@ -3698,6 +3720,11 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         // 3. Procesos secundarios (limpieza automática y configuración de campos)
         // Los envolvemos para que no bloqueen el inicio
         setTimeout(() => {
+            try { corregirFechasNotasEvento(); } catch (e) { console.warn('Corrección de fechas de notas:', e); }
+            try {
+                const nImp = importarVisitasRegistroDiario();
+                if (nImp > 0) alert(`✅ Se agregaron ${nImp} nota(s) clínica(s) a partir de las visitas anteriores de Registro Diario.`);
+            } catch (e) { console.warn('Importación de visitas de Registro Diario:', e); }
             verificarAutoArchivo();
 
             if (document.querySelector('input[name="metodo_calc"]')) {
@@ -3824,7 +3851,7 @@ function confirmarParto() {
     // Agregar nota automática
     const icono = tipo === 'parto' ? "👶" : "🏥";
     nuevaPuerpera.notas.unshift({
-        fecha: new Date().toLocaleString(),
+        fecha: fechaHoraNotaActual(fp), // fecha del parto/aborto elegida en el calendario
         texto: `${icono} EVENTO: Finalizó por ${tipo.toUpperCase()}. Pasa a vigilancia.`,
         etapa: "Sistema"
     });
@@ -3858,6 +3885,235 @@ function cancelarParto() {
 
 
 
+// --- CORRECCIÓN ÚNICA: fechas reales en las notas automáticas del sistema ---
+// Las notas creadas antes de este cambio llevan el día en que la app las generó. Aquí se
+// corrigen con la fecha real:
+//  · "EVENTO: Finalizó por PARTO/ABORTO"  -> fecha del parto/aborto (p.fp), misma hora original
+//  · "SISTEMA: Puerperio finalizado"      -> parto + 42 días, 23:59
+// Cada nota corregida queda marcada (fechaCorregida) para no volver a tocarla, así que si
+// después editas su fecha a mano, se respeta.
+function corregirFechasNotasEvento() {
+    let cambios = 0;
+    const p2 = v => String(v).padStart(2, '0');
+    [['puerperas', puerperas], ['archivadas', archivadas]].forEach(([clave, lista]) => {
+        let tocada = false;
+        (lista || []).forEach(p => {
+            if (!p || !p.fp || !Array.isArray(p.notas)) return;
+            const m = String(p.fp).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return;
+            p.notas.forEach(n => {
+                if (!n || n.fechaCorregida) return;
+                const txt = n.texto || '';
+                let nueva = null;
+
+                if (n.etapa === 'Sistema' && /EVENTO:\s*Finaliz[oó] por (PARTO|ABORTO)/i.test(txt)) {
+                    const orig = parsearFechaNota(n);
+                    const conHora = !isNaN(orig) && orig.getTime() > 0;
+                    const hora = conHora ? `${p2(orig.getHours())}:${p2(orig.getMinutes())}` : '00:00';
+                    nueva = `${m[3]}/${m[2]}/${m[1]}, ${hora}`;
+                } else if (/SISTEMA:\s*Puerperio finalizado/i.test(txt)) {
+                    const fin = calcularFinPuerperio(new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10)));
+                    nueva = `${p2(fin.getDate())}/${p2(fin.getMonth() + 1)}/${fin.getFullYear()}, 23:59`;
+                }
+
+                if (!nueva) return;
+                if (n.fecha !== nueva) { n.fecha = nueva; cambios++; }
+                n.fechaCorregida = true;
+                tocada = true;
+            });
+        });
+        if (tocada) guardarDatos(clave);
+    });
+    return cambios;
+}
+
+// --- IMPORTACIÓN ÚNICA: visitas anteriores de Registro Diario -> notas clínicas ---
+// Al abrir la app por primera vez con esta versión, lee las visitas guardadas en Registro
+// Diario (mismo localStorage) y, por cada una cuyo nombre coincida EXACTO (sin mayúsculas ni
+// tildes) con una paciente, la agrega como nota si su fecha cae dentro de un rango de esa
+// paciente: Embarazo (FUR hasta el día antes del parto/aborto; si sigue embarazada, hasta hoy)
+// o Puerperio (parto hasta 42 días después). La etapa se decide por la fecha de la visita,
+// no por la lista donde está hoy la paciente. Las visitas fuera de rango se omiten.
+// Cada nota guarda origenRegId (id de la visita), igual que la que crea Registro Diario al
+// guardar, así nunca se duplica. Se ejecuta una sola vez (bandera en localStorage).
+function _rdNorm(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function _rdSumarDias(iso, dias) {
+    const [y, mo, d] = iso.split('-').map(Number);
+    const dt = new Date(y, mo - 1, d + dias);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+function _rdRangosPaciente(p, clave) {
+    const iso = v => { const m = String(v || '').match(/^(\d{4}-\d{2}-\d{2})/); return m ? m[1] : null; };
+    const rangos = [];
+    if (clave === 'embarazadas') {
+        const fur = iso(p.fur);
+        if (fur) rangos.push({ etapa: 'Embarazo', ini: fur, fin: null });
+    } else {
+        const fp = iso(p.fp);
+        if (!fp) return rangos;
+        const fur = iso(p.historial_embarazo && p.historial_embarazo.fur);
+        if (fur) rangos.push({ etapa: 'Embarazo', ini: fur, fin: _rdSumarDias(fp, -1) });
+        rangos.push({ etapa: 'Puerperio', ini: fp, fin: _rdSumarDias(fp, 42) });
+    }
+    return rangos;
+}
+function importarVisitasRegistroDiario() {
+    const BANDERA = 'IMPORT_VISITAS_RD_V1';
+    if (localStorage.getItem(BANDERA) === '1') return 0;
+
+    let regs = null;
+    try { regs = JSON.parse(localStorage.getItem('rdps_registros') || 'null'); } catch (e) {}
+    // Si todavía no hay visitas visibles de Registro Diario, no se marca como hecha: reintenta al abrir otra vez.
+    if (!Array.isArray(regs) || regs.length === 0) return 0;
+
+    const listas = { embarazadas, puerperas, archivadas };
+    const claves = Object.keys(listas);
+    const p2 = v => String(v).padStart(2, '0');
+
+    // Ids de visitas que ya tienen nota (para no duplicar)
+    const yaImportados = new Set();
+    claves.forEach(k => (listas[k] || []).forEach(p =>
+        (p.notas || []).forEach(n => { if (n && n.origenRegId) yaImportados.add(String(n.origenRegId)); })));
+
+    const tocadas = new Set();
+    let agregadas = 0;
+
+    regs.forEach(reg => {
+        if (!reg || !reg.id || yaImportados.has(String(reg.id))) return;
+        const fecha = String(reg.fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        const nombre = _rdNorm(reg.nombre);
+        if (!fecha || !nombre) return;
+
+        const h = String(reg.hallazgos || '').replace(/\s+/g, ' ').trim();
+        const a = String(reg.acciones || '').replace(/\s+/g, ' ').trim();
+        const texto = [h, a].filter(Boolean).join('\n\n');
+        if (!texto) return;
+
+        const fechaISO = `${fecha[1]}-${fecha[2]}-${fecha[3]}`;
+        const candidatos = [];
+        claves.forEach(k => (listas[k] || []).forEach(p => {
+            if (_rdNorm(p.nombre) !== nombre) return;
+            _rdRangosPaciente(p, k).forEach(r => {
+                if (r.ini <= fechaISO && (r.fin === null || fechaISO <= r.fin)) candidatos.push({ k, p, etapa: r.etapa });
+            });
+        }));
+        if (candidatos.length !== 1) return; // sin rango que la contenga, o ambiguo: se omite
+
+        // Hora: la de la visita; si no tiene, la hora en que se creó; si no, 12:00
+        let hora = /^\d{2}:\d{2}/.test(reg.hora || '') ? reg.hora.slice(0, 5) : '';
+        if (!hora && reg.creado) {
+            const c = new Date(reg.creado);
+            if (!isNaN(c)) hora = `${p2(c.getHours())}:${p2(c.getMinutes())}`;
+        }
+        if (!hora) hora = '12:00';
+
+        const { k, p, etapa } = candidatos[0];
+        if (!Array.isArray(p.notas)) p.notas = [];
+        p.notas.push({
+            fecha: `${fecha[3]}/${fecha[2]}/${fecha[1]}, ${hora}`,
+            texto,
+            etapa,
+            origen: 'registro_diario',
+            origenRegId: String(reg.id)
+        });
+        tocadas.add(k);
+        agregadas++;
+    });
+
+    tocadas.forEach(k => guardarDatos(k));
+    localStorage.setItem(BANDERA, '1');
+    return agregadas;
+}
+
+// --- IMPORTACIÓN MANUAL POR USUARIA: visitas de Registro Diario -> notas clínicas ---
+// Botón "Importar notas de visitas" en el detalle de cada usuaria. Es independiente de la
+// importación única de arriba y del guardado automático de Registro Diario: no usa la bandera,
+// solo mira a ESTA usuaria, y nunca duplica (cada nota lleva origenRegId).
+function botonImportarNotasHTML(index, tipo) {
+    return `<div style="margin: 0 0 10px 0;">
+        <button type="button" onclick="importarNotasUsuaria(${index}, '${tipo}')"
+            style="background:#3f51b5;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.9em;width:100%;">
+            📥 Importar notas de visitas (Registro Diario)
+        </button>
+    </div>`;
+}
+function importarNotasUsuaria(index, tipo) {
+    const data = getPacientePorIndex(index, tipo);
+    if (!data || !data.paciente) return;
+    const p = data.paciente;
+
+    let regs = null;
+    try { regs = JSON.parse(localStorage.getItem('rdps_registros') || 'null'); } catch (e) {}
+    if (!Array.isArray(regs) || regs.length === 0) {
+        alert('No hay visitas de Registro Diario disponibles en este dispositivo.');
+        return;
+    }
+
+    const rangos = _rdRangosPaciente(p, data.clave);
+    if (rangos.length === 0) {
+        alert('Esta usuaria no tiene FUR/fecha de parto registrada, no se puede ubicar en qué etapa caen sus visitas.');
+        return;
+    }
+
+    // Ids de visitas que ya tienen nota (en cualquier usuaria) para no duplicar
+    const yaImportados = new Set();
+    [embarazadas, puerperas, archivadas].forEach(lista => (lista || []).forEach(q =>
+        (q.notas || []).forEach(n => { if (n && n.origenRegId) yaImportados.add(String(n.origenRegId)); })));
+
+    const nombre = _rdNorm(p.nombre);
+    const p2 = v => String(v).padStart(2, '0');
+    let agregadas = 0, fuera = 0, encontradas = 0;
+
+    regs.forEach(reg => {
+        if (!reg || !reg.id || _rdNorm(reg.nombre) !== nombre) return;
+        if (yaImportados.has(String(reg.id))) return;
+        const fecha = String(reg.fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!fecha) return;
+
+        const h = String(reg.hallazgos || '').replace(/\s+/g, ' ').trim();
+        const a = String(reg.acciones || '').replace(/\s+/g, ' ').trim();
+        const texto = [h, a].filter(Boolean).join('\n\n');
+        if (!texto) return;
+        encontradas++;
+
+        const fechaISO = `${fecha[1]}-${fecha[2]}-${fecha[3]}`;
+        const r = rangos.find(r => r.ini <= fechaISO && (r.fin === null || fechaISO <= r.fin));
+        if (!r) { fuera++; return; }
+
+        let hora = /^\d{2}:\d{2}/.test(reg.hora || '') ? reg.hora.slice(0, 5) : '';
+        if (!hora && reg.creado) {
+            const c = new Date(reg.creado);
+            if (!isNaN(c)) hora = `${p2(c.getHours())}:${p2(c.getMinutes())}`;
+        }
+        if (!hora) hora = '12:00';
+
+        if (!Array.isArray(p.notas)) p.notas = [];
+        p.notas.push({
+            fecha: `${fecha[3]}/${fecha[2]}/${fecha[1]}, ${hora}`,
+            texto,
+            etapa: r.etapa,
+            origen: 'registro_diario',
+            origenRegId: String(reg.id)
+        });
+        agregadas++;
+    });
+
+    if (agregadas > 0) {
+        guardarDatos(data.clave);
+        let msg = `✅ Se importaron ${agregadas} nota(s) de visitas anteriores.`;
+        if (fuera > 0) msg += `\n(${fuera} visita(s) quedaron fuera del rango de embarazo/puerperio y se omitieron.)`;
+        alert(msg);
+        mostrarDetalle(index, tipo);
+    } else if (fuera > 0) {
+        alert(`Se encontraron ${fuera} visita(s) con este nombre, pero sus fechas están fuera del rango de embarazo/puerperio.`);
+    } else {
+        alert('No hay visitas nuevas por importar: todas ya están como notas o no hay visitas con este nombre.');
+    }
+}
+
 // --- FUNCIÓN: AUTO-ARCHIVO (42 Días) ---
 function verificarAutoArchivo() {
     if (!puerperas || puerperas.length === 0) return;
@@ -3876,7 +4132,15 @@ function verificarAutoArchivo() {
             p.tipo = 'puerpera';
             p.fecha_archivo = obtenerFechaLocalISO();
             if(!p.notas) p.notas = [];
-            p.notas.unshift({ fecha: new Date().toLocaleString(), texto: "📦 SISTEMA: Puerperio finalizado (>42 días)." });
+            // La nota lleva la fecha REAL en que terminó el puerperio (parto + 42 días), no el día
+            // en que la app la archivó; se pone al final de ese día (23:59) para que quede
+            // después de cualquier otra nota de esa fecha.
+            const _finPue = calcularFinPuerperio(fp);
+            const _p2 = v => String(v).padStart(2, '0');
+            p.notas.unshift({
+                fecha: `${_p2(_finPue.getDate())}/${_p2(_finPue.getMonth() + 1)}/${_finPue.getFullYear()}, 23:59`,
+                texto: "📦 SISTEMA: Puerperio finalizado (>42 días)."
+            });
 
             archivadas.push(p);
             puerperas.splice(i, 1);
@@ -5997,15 +6261,7 @@ function descargarPDF(index, tipo) {
     doc.write(`<div class="seccion-head">NOTAS Y EVOLUCIÓN COMPLETA</div>`);
 
     if (paciente.notas && paciente.notas.length > 0) {
-        const notasImpresion = [...paciente.notas].sort((a, b) => {
-            const parsear = (n) => {
-                if (n.fechaFull) return new Date(n.fechaFull);
-                if (!n.fecha) return new Date(0);
-                const m = n.fecha.match(/(\d{2})\/(\d{2})\/(\d{4})(?:,?\s*(\d{2}):(\d{2}))?/);
-                return m ? new Date(m[3], m[2]-1, m[1], m[4]||0, m[5]||0) : new Date(0);
-            };
-            return parsear(a) - parsear(b);
-        });
+        const notasImpresion = [...paciente.notas].sort((a, b) => parsearFechaNota(a) - parsearFechaNota(b));
         notasImpresion.forEach(nota => {
             doc.write(`
                 <div class="nota-final">

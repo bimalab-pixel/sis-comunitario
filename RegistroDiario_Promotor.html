@@ -6370,6 +6370,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       localStorage.setItem('rdps_registros', JSON.stringify(registros));
       actualizarHome();
       _riesgoGuardarHistorialPeso(reg).catch(() => {});
+      _vmSincronizarNota(registros.find(r => r.id === reg.id) || reg);
 
       if (_modoEdicionListado) {
         // Modo edición (venía del listado, no del flujo de "Nueva Visita"):
@@ -6403,6 +6404,139 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         }
         document.getElementById('modal-siguiente').classList.add('show');
       }
+    }
+
+    // ── Nota clínica automática en Vigilancia Materna ──────────────────────────
+    // Al guardar una visita, si la persona ya está en Vigilancia Materna (coincidencia EXACTA
+    // de nombre, sin distinguir mayúsculas ni tildes), Hallazgos + Acciones se agregan como UNA
+    // nota clínica (dos párrafos, separados por una línea en blanco) con la fecha del registro.
+    // La etapa (Embarazo / Puerperio) se decide por la FECHA de la visita según los rangos de la
+    // paciente: Embarazo = FUR hasta el día antes del parto/aborto (si sigue embarazada, hasta hoy),
+    // Puerperio = parto hasta 42 días después. Si la fecha no cae en ningún rango, se usa la etapa
+    // de la lista donde está hoy (embarazada/puérpera); las archivadas solo reciben notas dentro de rango.
+    // Es silencioso y no duplica: cada nota guarda el id del registro que la originó (origenRegId),
+    // así que al volver a guardar o editar la visita, la nota se actualiza. Ambas apps comparten
+    // localStorage al estar en el mismo origen; si no, simplemente no hace nada.
+    function _vmNorm(s) {
+      return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+    function _vmSumarDias(iso, dias) {
+      const [y, mo, d] = iso.split('-').map(Number);
+      const dt = new Date(y, mo - 1, d + dias);
+      return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+    function _vmRangos(p, clave) {
+      const iso = v => { const m = String(v || '').match(/^(\d{4}-\d{2}-\d{2})/); return m ? m[1] : null; };
+      const rangos = [];
+      if (clave === 'embarazadas') {
+        const fur = iso(p.fur);
+        if (fur) rangos.push({ etapa: 'Embarazo', ini: fur, fin: null });
+      } else {
+        const fp = iso(p.fp);
+        if (!fp) return rangos;
+        const fur = iso(p.historial_embarazo && p.historial_embarazo.fur);
+        if (fur) rangos.push({ etapa: 'Embarazo', ini: fur, fin: _vmSumarDias(fp, -1) });
+        rangos.push({ etapa: 'Puerperio', ini: fp, fin: _vmSumarDias(fp, 42) });
+      }
+      return rangos;
+    }
+    function _vmEtapaPorFecha(p, clave, fechaISO) {
+      const r = _vmRangos(p, clave).find(r => r.ini <= fechaISO && (r.fin === null || fechaISO <= r.fin));
+      return r ? r.etapa : null;
+    }
+    function _vmSincronizarNota(reg) {
+      try {
+        const claves = ['embarazadas', 'puerperas', 'archivadas'];
+        const etapaLista = { embarazadas: 'Embarazo', puerperas: 'Puerperio', archivadas: null };
+        const listas = {};
+        claves.forEach(k => {
+          let l = null;
+          try { l = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) {}
+          listas[k] = Array.isArray(l) ? l : null;
+        });
+        if (!claves.some(k => listas[k])) return;
+
+        const nombre = _vmNorm(reg.nombre);
+        const h = String(reg.hallazgos || '').replace(/\s+/g, ' ').trim();
+        const a = String(reg.acciones  || '').replace(/\s+/g, ' ').trim();
+        // Hallazgos y Acciones separados por una línea en blanco (la nota se muestra con pre-wrap)
+        const texto = [h, a].filter(Boolean).join('\n\n');
+
+        const m = String(reg.fecha || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        const fechaISO = m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+
+        // Candidatas con ese nombre exacto; la etapa sale de la fecha de la visita
+        let candidatas = [];
+        claves.forEach(k => {
+          if (!listas[k]) return;
+          listas[k].forEach(p => {
+            if (!nombre || _vmNorm(p.nombre) !== nombre) return;
+            const etapaFecha = fechaISO ? _vmEtapaPorFecha(p, k, fechaISO) : null;
+            candidatas.push({ k, p, etapaFecha, etapa: etapaFecha || etapaLista[k] });
+          });
+        });
+        // Archivadas: solo si la fecha cae dentro de un rango suyo
+        candidatas = candidatas.filter(c => c.k !== 'archivadas' || c.etapaFecha);
+
+        // Si hay varias con el mismo nombre, se desempata por el rango que contiene la fecha
+        if (candidatas.length > 1) {
+          const porRango = candidatas.filter(c => c.etapaFecha);
+          if (porRango.length === 1) candidatas = porRango;
+        }
+        // Si sigue habiendo más de una no se adivina: mejor sin nota que en el expediente equivocado.
+        if (texto && candidatas.length > 1) {
+          toast('⚠️ Hay más de una "' + reg.nombre + '" en Vigilancia Materna: no se agregó la nota', 'error');
+        }
+        const destino = (texto && candidatas.length === 1) ? candidatas[0] : null;
+
+        // Fecha del registro (+ su hora, o la hora actual si no tiene)
+        let fechaNota = '';
+        if (m) {
+          let hora = /^\d{2}:\d{2}/.test(reg.hora || '') ? reg.hora.slice(0, 5) : '';
+          if (!hora) {
+            const n = new Date();
+            hora = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+          }
+          fechaNota = `${m[3]}/${m[2]}/${m[1]}, ${hora}`;
+        }
+
+        const cambiadas = new Set();
+
+        // Quita notas de este registro que ya no correspondan (cambió el nombre o se vació el texto)
+        claves.forEach(k => {
+          if (!listas[k]) return;
+          listas[k].forEach(p => {
+            if (!Array.isArray(p.notas)) return;
+            if (destino && p === destino.p) return;
+            const antes = p.notas.length;
+            p.notas = p.notas.filter(n => String(n.origenRegId) !== String(reg.id));
+            if (p.notas.length !== antes) cambiadas.add(k);
+          });
+        });
+
+        if (destino && fechaNota && destino.etapa) {
+          const p = destino.p;
+          if (!Array.isArray(p.notas)) p.notas = [];
+          const existente = p.notas.find(n => String(n.origenRegId) === String(reg.id));
+          if (existente) {
+            existente.fecha = fechaNota;
+            existente.texto = texto;
+            existente.etapa = destino.etapa;
+          } else {
+            p.notas.push({
+              fecha: fechaNota,
+              texto,
+              etapa: destino.etapa,
+              origen: 'registro_diario',
+              origenRegId: String(reg.id)
+            });
+          }
+          cambiadas.add(destino.k);
+        }
+
+        cambiadas.forEach(k => localStorage.setItem(k, JSON.stringify(listas[k])));
+      } catch (e) { console.warn('Nota Vigilancia Materna:', e); }
     }
 
     function guardarYOtraPersona() {
@@ -12254,8 +12388,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
     border-radius:50%;background:rgba(22,26,34,.88);backdrop-filter:blur(6px);
     -webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);
     box-shadow:0 4px 16px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
-  .sisnav-fab:active{transform:scale(.9);}
+    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;cursor:grab;touch-action:none;user-select:none;}
+  .sisnav-fab:active{transform:scale(.9);cursor:grabbing;}
   .sisnav-dots{display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:3px;}
   .sisnav-dots span{width:4px;height:4px;border-radius:50%;background:#fff;display:block;}
   .sisnav-menu{position:fixed;right:12px;bottom:60px;z-index:99991;min-width:216px;max-width:260px;
@@ -12272,7 +12406,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
   .sisnav-item .sisnav-ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
 </style>
 <div class="sisnav-backdrop" id="sisnavBackdrop" onclick="sisnavCerrar()"></div>
-<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones" aria-label="Ver otras aplicaciones">
+<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones (mantén presionado para moverlo, doble clic para restaurar)" aria-label="Ver otras aplicaciones">
   <div class="sisnav-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 </button>
 <div class="sisnav-menu" id="sisnavMenu">
@@ -12286,14 +12420,118 @@ Notas (Acciones ya escritas): ${accion || '—'}
   <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
 </div>
 <script>
-  function sisnavToggle(){
-    document.getElementById('sisnavMenu').classList.toggle('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.toggle('sisnav-abierto');
+(function(){
+  var btn = document.getElementById('sisnavBtn');
+  var menu = document.getElementById('sisnavMenu');
+  var backdrop = document.getElementById('sisnavBackdrop');
+  var STORAGE_KEY = 'sisnav_pos::' + (location.pathname.split('/').pop() || 'app');
+  var dragging = false, moved = false, justDragged = false, customized = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function clamp(v, min, max){ return Math.min(Math.max(v, min), max); }
+
+  function setPos(left, top){
+    var w = btn.offsetWidth || 42, h = btn.offsetHeight || 42;
+    left = clamp(left, 6, window.innerWidth - w - 6);
+    top  = clamp(top, 6, window.innerHeight - h - 6);
+    btn.style.left = left + 'px';
+    btn.style.top = top + 'px';
+    btn.style.right = 'auto';
+    btn.style.bottom = 'auto';
   }
-  function sisnavCerrar(){
-    document.getElementById('sisnavMenu').classList.remove('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.remove('sisnav-abierto');
+
+  function savePos(){
+    var r = btn.getBoundingClientRect();
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({x:r.left, y:r.top})); }catch(e){}
   }
+
+  function loadPos(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      var p = JSON.parse(raw);
+      if(typeof p.x === 'number' && typeof p.y === 'number'){ setPos(p.x, p.y); return true; }
+    }catch(e){}
+    return false;
+  }
+
+  function resetPos(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    btn.style.left = ''; btn.style.top = ''; btn.style.right = ''; btn.style.bottom = '';
+    customized = false;
+  }
+
+  function posMenu(){
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var mw = menu.offsetWidth || 230, mh = menu.offsetHeight || 260;
+    var left = r.left, top = r.bottom + 8;
+    if(left + mw > vw - 8) left = Math.max(8, r.right - mw);
+    if(left < 8) left = 8;
+    if(top + mh > vh - 8) top = Math.max(8, r.top - mh - 8);
+    if(top < 8) top = 8;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.right = 'auto';
+    menu.style.bottom = 'auto';
+  }
+
+  window.sisnavToggle = function(){
+    if(justDragged){ justDragged = false; return; }
+    var abrir = !menu.classList.contains('sisnav-abierto');
+    if(abrir) posMenu();
+    menu.classList.toggle('sisnav-abierto', abrir);
+    backdrop.classList.toggle('sisnav-abierto', abrir);
+  };
+  window.sisnavCerrar = function(){
+    menu.classList.remove('sisnav-abierto');
+    backdrop.classList.remove('sisnav-abierto');
+  };
+
+  function onDown(e){
+    var pt = e.touches ? e.touches[0] : e;
+    dragging = true; moved = false;
+    var r = btn.getBoundingClientRect();
+    startX = pt.clientX; startY = pt.clientY;
+    startLeft = r.left; startTop = r.top;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
+  }
+  function onMove(e){
+    if(!dragging) return;
+    var pt = e.touches ? e.touches[0] : e;
+    var dx = pt.clientX - startX, dy = pt.clientY - startY;
+    if(Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    if(moved){
+      if(e.cancelable) e.preventDefault();
+      setPos(startLeft + dx, startTop + dy);
+      if(menu.classList.contains('sisnav-abierto')) window.sisnavCerrar();
+    }
+  }
+  function onUp(){
+    dragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    if(moved){ savePos(); justDragged = true; customized = true; }
+    moved = false;
+  }
+
+  btn.addEventListener('mousedown', onDown);
+  btn.addEventListener('touchstart', onDown, {passive:true});
+  btn.addEventListener('dblclick', function(e){ e.preventDefault(); resetPos(); });
+
+  window.addEventListener('resize', function(){
+    if(!customized) return;
+    var r = btn.getBoundingClientRect();
+    setPos(r.left, r.top);
+  });
+
+  customized = loadPos();
+})();
 </script>
 
 </body>
