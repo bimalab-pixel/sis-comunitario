@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="storage-shim.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Vigilancia Nutricional - Monitoreo de estado nutricional con curvas de crecimiento OMS">
@@ -8,7 +10,7 @@
     <title>Vigilancia Nutricional</title>
     <link rel="manifest" href="manifest.json">
     <!-- XLSX: carga diferida (build completa) — mismo patrón usado en RegistroDiario_Promotor -->
-    <script>
+    <script type="text/x-deferred">
     window._xlsxReady = false;
     function _cargarXLSX(cb) {
         if (typeof XLSX !== 'undefined') { cb(); return; }
@@ -23,7 +25,7 @@
     <!-- ═══════════════════════════════════════════ FIREBASE: acceso a la nube ═══════════════════════════════════════════
          Proyecto con reglas ABIERTAS (lectura/escritura sin autenticación, sin límite).
          Ver advertencias de seguridad junto a los botones de sincronización en el panel de Configuración. -->
-    <script type="module">
+    <script type="text/x-deferred" data-orig-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
         import {
             getFirestore, doc, setDoc, getDoc, deleteField, serverTimestamp
@@ -3129,7 +3131,7 @@
         </div>
     </div>
 
-    <script>
+    <script type="text/x-deferred">
         // ═══════════════════════════════════════════════════════════════
         // TABLAS OMS (LMS) — Patrones de Crecimiento Infantil 2006
         // Peso/Edad y Talla/Edad: mensual, 0-60 meses. Peso/Talla: cada 0.5cm, 45-120cm.
@@ -8434,7 +8436,7 @@
     </div>
 
     <!-- SCRIPT: Manejo de instalación PWA -->
-    <script>
+    <script type="text/x-deferred">
         let deferredPrompt;
         const banner = document.getElementById('pwa-install-banner');
         const installBtn = document.getElementById('pwa-install-btn');
@@ -8509,8 +8511,8 @@
     border-radius:50%;background:rgba(22,26,34,.88);backdrop-filter:blur(6px);
     -webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16);
     box-shadow:0 4px 16px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
-  .sisnav-fab:active{transform:scale(.9);}
+    cursor:pointer;transition:transform .15s ease;-webkit-tap-highlight-color:transparent;cursor:grab;touch-action:none;user-select:none;}
+  .sisnav-fab:active{transform:scale(.9);cursor:grabbing;}
   .sisnav-dots{display:grid;grid-template-columns:repeat(3,4px);grid-template-rows:repeat(3,4px);gap:3px;}
   .sisnav-dots span{width:4px;height:4px;border-radius:50%;background:#fff;display:block;}
   .sisnav-menu{position:fixed;left:12px;bottom:60px;z-index:99991;min-width:216px;max-width:260px;
@@ -8527,7 +8529,7 @@
   .sisnav-item .sisnav-ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
 </style>
 <div class="sisnav-backdrop" id="sisnavBackdrop" onclick="sisnavCerrar()"></div>
-<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones" aria-label="Ver otras aplicaciones">
+<button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones (mantén presionado para moverlo, doble clic para restaurar)" aria-label="Ver otras aplicaciones">
   <div class="sisnav-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 </button>
 <div class="sisnav-menu" id="sisnavMenu">
@@ -8540,15 +8542,119 @@
   <a class="sisnav-item" href="RegistroDiario_Promotor.html"><span class="sisnav-ic">📝</span>Registro Diario</a>
   <a class="sisnav-item" href="MapaSanitario.html"><span class="sisnav-ic">🗺️</span>Mapa Sanitario</a>
 </div>
-<script>
-  function sisnavToggle(){
-    document.getElementById('sisnavMenu').classList.toggle('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.toggle('sisnav-abierto');
+<script type="text/x-deferred">
+(function(){
+  var btn = document.getElementById('sisnavBtn');
+  var menu = document.getElementById('sisnavMenu');
+  var backdrop = document.getElementById('sisnavBackdrop');
+  var STORAGE_KEY = 'sisnav_pos::' + (location.pathname.split('/').pop() || 'app');
+  var dragging = false, moved = false, justDragged = false, customized = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function clamp(v, min, max){ return Math.min(Math.max(v, min), max); }
+
+  function setPos(left, top){
+    var w = btn.offsetWidth || 42, h = btn.offsetHeight || 42;
+    left = clamp(left, 6, window.innerWidth - w - 6);
+    top  = clamp(top, 6, window.innerHeight - h - 6);
+    btn.style.left = left + 'px';
+    btn.style.top = top + 'px';
+    btn.style.right = 'auto';
+    btn.style.bottom = 'auto';
   }
-  function sisnavCerrar(){
-    document.getElementById('sisnavMenu').classList.remove('sisnav-abierto');
-    document.getElementById('sisnavBackdrop').classList.remove('sisnav-abierto');
+
+  function savePos(){
+    var r = btn.getBoundingClientRect();
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({x:r.left, y:r.top})); }catch(e){}
   }
+
+  function loadPos(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      var p = JSON.parse(raw);
+      if(typeof p.x === 'number' && typeof p.y === 'number'){ setPos(p.x, p.y); return true; }
+    }catch(e){}
+    return false;
+  }
+
+  function resetPos(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    btn.style.left = ''; btn.style.top = ''; btn.style.right = ''; btn.style.bottom = '';
+    customized = false;
+  }
+
+  function posMenu(){
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var mw = menu.offsetWidth || 230, mh = menu.offsetHeight || 260;
+    var left = r.left, top = r.bottom + 8;
+    if(left + mw > vw - 8) left = Math.max(8, r.right - mw);
+    if(left < 8) left = 8;
+    if(top + mh > vh - 8) top = Math.max(8, r.top - mh - 8);
+    if(top < 8) top = 8;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.right = 'auto';
+    menu.style.bottom = 'auto';
+  }
+
+  window.sisnavToggle = function(){
+    if(justDragged){ justDragged = false; return; }
+    var abrir = !menu.classList.contains('sisnav-abierto');
+    if(abrir) posMenu();
+    menu.classList.toggle('sisnav-abierto', abrir);
+    backdrop.classList.toggle('sisnav-abierto', abrir);
+  };
+  window.sisnavCerrar = function(){
+    menu.classList.remove('sisnav-abierto');
+    backdrop.classList.remove('sisnav-abierto');
+  };
+
+  function onDown(e){
+    var pt = e.touches ? e.touches[0] : e;
+    dragging = true; moved = false;
+    var r = btn.getBoundingClientRect();
+    startX = pt.clientX; startY = pt.clientY;
+    startLeft = r.left; startTop = r.top;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onUp);
+  }
+  function onMove(e){
+    if(!dragging) return;
+    var pt = e.touches ? e.touches[0] : e;
+    var dx = pt.clientX - startX, dy = pt.clientY - startY;
+    if(Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+    if(moved){
+      if(e.cancelable) e.preventDefault();
+      setPos(startLeft + dx, startTop + dy);
+      if(menu.classList.contains('sisnav-abierto')) window.sisnavCerrar();
+    }
+  }
+  function onUp(){
+    dragging = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onUp);
+    if(moved){ savePos(); justDragged = true; customized = true; }
+    moved = false;
+  }
+
+  btn.addEventListener('mousedown', onDown);
+  btn.addEventListener('touchstart', onDown, {passive:true});
+  btn.addEventListener('dblclick', function(e){ e.preventDefault(); resetPos(); });
+
+  window.addEventListener('resize', function(){
+    if(!customized) return;
+    var r = btn.getBoundingClientRect();
+    setPos(r.left, r.top);
+  });
+
+  customized = loadPos();
+})();
 </script>
 
 </body>

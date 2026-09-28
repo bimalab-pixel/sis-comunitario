@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="storage-shim.js"></script>
+
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
     <title>Registro Diario — Promotor de Salud</title>
@@ -11,7 +13,7 @@
     <link rel="apple-touch-icon" href="icon-192.png"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-    <script>
+    <script type="text/x-deferred">
     // Registro del Service Worker (habilita instalación y uso offline)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -26,7 +28,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
     <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/></noscript>
     <!-- XLSX: carga diferida — solo se necesita al importar Excel -->
-    <script>
+    <script type="text/x-deferred">
     window._xlsxReady = false;
     function _cargarXLSX(cb) {
       if (typeof XLSX !== 'undefined') { cb(); return; }
@@ -1226,7 +1228,7 @@
       <button id="pwaBtnInstalar" type="button">Instalar</button>
       <button id="pwaBtnCerrar" type="button" aria-label="Cerrar">✕</button>
     </div>
-    <script>
+    <script type="text/x-deferred">
     (function(){
       var eventoDiferido = null;
       var banner = document.getElementById('pwaInstallBanner');
@@ -2620,7 +2622,7 @@
 <!-- ════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════ -->
-<script>
+<script type="text/x-deferred">
     // ── Firebase: carga dinámica solo cuando se necesita (subirNube / bajarNube) ──
     // Las funciones initializeApp, getFirestore, etc. se inyectan en window al cargar
     var initializeApp, getFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, deleteDoc;
@@ -12419,7 +12421,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
   <a class="sisnav-item" href="MapaSanitario.html"><span class="sisnav-ic">🗺️</span>Mapa Sanitario</a>
   <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
 </div>
-<script>
+<script type="text/x-deferred">
 (function(){
   var btn = document.getElementById('sisnavBtn');
   var menu = document.getElementById('sisnavMenu');

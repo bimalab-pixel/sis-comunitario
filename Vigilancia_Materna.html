@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="storage-shim.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vigilancia Materna</title>
@@ -1275,7 +1277,7 @@
 </head>
 <body>
 
-<script>
+<script type="text/x-deferred">
     (function() {
         // Carga inmediata del nombre guardado
         const nombreLocal = localStorage.getItem('MI_NOMBRE_RECURSO');
@@ -1881,7 +1883,7 @@
     <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none; box-shadow:none; font-size:0.7em; margin-top:5px; text-decoration:underline;">Más tarde</button>
 </div>
 
-<script>
+<script type="text/x-deferred">
     // 1. Registro del Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -1926,7 +1928,7 @@
      Firebase y SheetJS se cargan SOLO cuando el usuario
      necesita sincronizar o exportar. La app abre sin internet.
      ============================================================ -->
-<script>
+<script type="text/x-deferred">
     // --- Configuración Firebase (solo datos, no carga scripts aún) ---
     const firebaseConfig = {
       apiKey: "AIzaSyD91mG4x4Av8SEESi8HR0F0-1U5ujXP5hg",
@@ -1984,9 +1986,9 @@
     }
 </script>
 
-<script src="html2pdf.bundle.min.js"></script>
+<script type="text/x-deferred" src="html2pdf.bundle.min.js"></script>
 
-<script>
+<script type="text/x-deferred">
     let BLOQUEO_SUBIDA_GLOBAL = false; // Nueva variable de seguridad
 
 const PIN_SEGURIDAD = "1234"; // Tu PIN de 4 dígitos
@@ -6558,7 +6560,7 @@ function imprimirReporteGeneral() {
   <a class="sisnav-item" href="MapaSanitario.html"><span class="sisnav-ic">🗺️</span>Mapa Sanitario</a>
   <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
 </div>
-<script>
+<script type="text/x-deferred">
 (function(){
   var btn = document.getElementById('sisnavBtn');
   var menu = document.getElementById('sisnavMenu');

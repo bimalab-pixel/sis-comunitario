@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="storage-shim.js"></script>
+
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Mapa Sanitario — Promotor de Salud</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="text/x-deferred" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 /* ═══════════════════════════════════════
@@ -1707,7 +1709,7 @@ td.err{color:var(--red);font-weight:700}
 <!-- ════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════ -->
-<script>
+<script type="text/x-deferred">
 // ── STORAGE ──
 const LS_KEY = 'mapa_san_catalogo';
 const LS_PDI = 'mapa_san_pdi';
@@ -4189,7 +4191,7 @@ async function bajarNube(){
 
 
 </script>
-<script>
+<script type="text/x-deferred">
 (function(){
     var CLOUD_HIDE_KEY = 'ms_cloudOptsHidden';
     var tapCount = 0, tapTimer = null;
@@ -4219,7 +4221,7 @@ async function bajarNube(){
     });
 })();
 </script>
-<script>
+<script type="text/x-deferred">
 (function(){
     var DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
     var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -4278,7 +4280,7 @@ async function bajarNube(){
   <a class="sisnav-item" href="RegistroDiario_Promotor.html"><span class="sisnav-ic">📝</span>Registro Diario</a>
   <a class="sisnav-item" href="CurvasdeCrecimiento.html"><span class="sisnav-ic">📈</span>Curvas de Crecimiento</a>
 </div>
-<script>
+<script type="text/x-deferred">
 (function(){
   var btn = document.getElementById('sisnavBtn');
   var menu = document.getElementById('sisnavMenu');

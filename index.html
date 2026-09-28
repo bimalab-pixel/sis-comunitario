@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="storage-shim.js"></script>
+
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>SIS Comunitario</title>
@@ -455,27 +457,7 @@
         <div class="card-arrow arrow-vigilancia">→</div>
     </a>
 
-    <a class="app-card card-calculadora" href="calculadora_materna.html">
-        <div class="card-icon icon-calculadora">🗓️</div>
-        <div class="card-label">Calculadora Materna</div>
-        <div class="card-sub">Parto, puerperio y componente materno</div>
-        <div class="card-arrow arrow-calculadora">→</div>
-    </a>
-
-    <a class="app-card card-mef" href="mef.html">
-        <div class="card-icon icon-mef">📋</div>
-        <div class="card-label">Control MEF</div>
-        <div class="card-sub">Seguimiento integral de Mujeres en edad Fértil</div>
-        <div class="card-arrow arrow-mef">→</div>
-    </a>
-
-    <a class="app-card card-visita" href="visita_domiciliar.html">
-        <div class="card-icon icon-visita">🏠</div>
-        <div class="card-label">Hoja de Visita Domiciliar</div>
-        <div class="card-sub">Control y seguimiento de casos especiales</div>
-        <div class="card-arrow arrow-visita">→</div>
-    </a>
-
+   
     <a class="app-card card-registro" href="RegistroDiario_Promotor.html">
         <div class="card-icon icon-registro">📝</div>
         <div class="card-label">Registro Diario</div>
@@ -490,10 +472,31 @@
         <div class="card-arrow arrow-mapa">→</div>
     </a>
 
+    <a class="app-card card-visita" href="visita_domiciliar.html">
+        <div class="card-icon icon-visita">🩺</div>
+        <div class="card-label">Hoja de Visita Domiciliar</div>
+        <div class="card-sub">Visitas y firmas del personal</div>
+        <div class="card-arrow arrow-visita">→</div>
+    </a>
+
+    <a class="app-card card-mef" href="mef.html">
+        <div class="card-icon icon-mef">📋</div>
+        <div class="card-label">Control MEF</div>
+        <div class="card-sub">Planificación familiar</div>
+        <div class="card-arrow arrow-mef">→</div>
+    </a>
+
+    <a class="app-card card-calculadora" href="calculadora_materna.html">
+        <div class="card-icon icon-calculadora">🗓️</div>
+        <div class="card-label">Calculadora Materna</div>
+        <div class="card-sub">Fechas y semanas de embarazo</div>
+        <div class="card-arrow arrow-calculadora">→</div>
+    </a>
+
     <a class="app-card card-curvas" href="CurvasdeCrecimiento.html">
         <div class="card-icon icon-curvas">📈</div>
         <div class="card-label">Curvas de Crecimiento</div>
-        <div class="card-sub">Vigilancia nutricional y estado nutricional</div>
+        <div class="card-sub">Seguimiento del niño/a</div>
         <div class="card-arrow arrow-curvas">→</div>
     </a>
 
@@ -538,7 +541,7 @@
   </div>
 </div>
 
-<script>
+<script type="text/x-deferred">
   function abrirEnlaceExterno(url) {
     // Android WebView bloquea window.open('_blank') — usar location.href como fallback
     try {
