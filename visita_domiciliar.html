@@ -572,6 +572,33 @@
         .modal p{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.55}
         .modal-btns{display:flex;gap:.55rem;justify-content:flex-end}
 
+
+        /* ══════════════ IMPORTAR DE REGISTRO DIARIO ══════════════ */
+        #rd-import-bg.show{display:flex}
+        .rdi-box{background:var(--white);border-radius:var(--radius);width:100%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;padding:1.1rem 1.1rem .9rem;box-shadow:0 20px 60px rgba(10,20,40,.28);animation:fadeIn .22s ease}
+        .rdi-box h3{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--navy);margin-bottom:.25rem}
+        .rdi-sub{font-size:.78rem;color:var(--muted);line-height:1.45;margin-bottom:.6rem}
+        .rdi-tools{display:flex;gap:.5rem;align-items:center;margin-bottom:.55rem}
+        .rdi-tools input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:8px;padding:.42rem .65rem;font-family:inherit;font-size:.85rem;background:var(--light);outline:none}
+        .rdi-link{background:none;border:none;color:var(--teal);font-weight:700;font-size:.76rem;font-family:inherit;cursor:pointer;white-space:nowrap;padding:.3rem .2rem}
+        .rdi-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px;min-height:120px}
+        .rdi-row{display:flex;gap:.6rem;align-items:flex-start;padding:.6rem .7rem;border-bottom:1px solid var(--border)}
+        .rdi-row:last-child{border-bottom:none}
+        .rdi-row.dis{opacity:.55}
+        .rdi-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--teal);flex-shrink:0}
+        .rdi-main{flex:1;min-width:0}
+        .rdi-name{font-weight:700;font-size:.88rem;color:var(--navy);overflow-wrap:anywhere}
+        .rdi-meta{font-size:.72rem;color:var(--muted);margin-top:1px}
+        .rdi-badges{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem}
+        .rdi-b{font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--light2);color:var(--navy2)}
+        .rdi-b.ok{background:#dcfce7;color:#166534}.rdi-b.warn{background:#fff1dc;color:#9a5b00}.rdi-b.no{background:#fde7e5;color:#a12a20}
+        .rdi-cat{margin-top:.4rem;width:100%;border:1.5px solid var(--border);border-radius:7px;padding:.3rem .4rem;font-family:inherit;font-size:.78rem;background:#fff;color:var(--text)}
+        .rdi-foot{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;flex-wrap:wrap}
+        .rdi-count{font-size:.76rem;color:var(--muted)}
+        .rdi-btns{display:flex;gap:.5rem;margin-left:auto}
+        .rdi-empty{padding:1.2rem 1rem;font-size:.85rem;color:var(--muted);line-height:1.55}
+        @media print{#rd-import-bg{display:none!important}}
+
         /* ══════════════ TOAST ══════════════ */
         .toast{position:fixed;bottom:1.2rem;right:1.2rem;z-index:999;background:var(--navy);color:#fff;padding:.6rem 1rem;border-radius:8px;font-size:.83rem;font-weight:500;box-shadow:var(--shadow);animation:toastIn .28s ease;pointer-events:none;}
         .toast.success{background:var(--success)}.toast.error{background:var(--danger)}
@@ -812,6 +839,14 @@
           .sig-box label{font-size:.68rem!important}
           .sig-box input{font-size:.88rem!important;display:none!important}
           .sig-line{height:44px!important}
+
+          /* ── Ajuste a UNA sola hoja por visita ── */
+          .form-card{zoom:var(--pf-zoom,1)!important;box-shadow:none!important;margin:0!important;max-width:none!important;width:100%!important;overflow:visible!important;border-radius:0!important}
+          .form-header,.fs-title,.vitals-wrap,.sig-grid,.sig-box,.vt tr{break-inside:avoid!important;page-break-inside:avoid!important}
+          .fs-title{break-after:avoid!important;page-break-after:avoid!important}
+          html,body{margin:0!important;padding:0!important;background:#fff!important}
+          #screen-form{background:#fff!important}
+          .toast{display:none!important}
 
           /* ── Ocultar banner PWA en impresión ── */
           #install-banner{display:none!important}
@@ -1063,6 +1098,17 @@
             <div class="menu-btn-text">
                 <div class="mbt">Carpetas por paciente</div>
                 <div class="mbs">Todas las visitas agrupadas por persona</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </button>
+
+        <button class="menu-btn" onclick="rdAbrirImportar()">
+            <div class="menu-btn-icon gold">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Importar de Registro Diario</div>
+                <div class="mbs">Traer fichas ya hechas, con sus firmas</div>
             </div>
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         </button>
@@ -1573,6 +1619,27 @@
 <!-- ════ FIN PAD ════ -->
 
 <!-- Modal de confirmación general -->
+<!-- ══════ Importar fichas desde Registro Diario ══════ -->
+<div class="modal-bg" id="rd-import-bg" onclick="if(event.target===this)rdCerrarImportar()">
+  <div class="rdi-box">
+    <h3>Importar de Registro Diario</h3>
+    <p class="rdi-sub" id="rdi-sub"></p>
+    <div class="rdi-tools" id="rdi-tools">
+      <input type="search" id="rdi-buscar" placeholder="Buscar por nombre…" oninput="rdFiltrarLista()"/>
+      <button type="button" class="rdi-link" onclick="rdMarcarNuevas()">Marcar nuevas</button>
+      <button type="button" class="rdi-link" onclick="rdMarcarNinguna()">Ninguna</button>
+    </div>
+    <div class="rdi-list" id="rdi-list"></div>
+    <div class="rdi-foot">
+      <span id="rdi-count" class="rdi-count"></span>
+      <div class="rdi-btns">
+        <button type="button" class="btn secondary" onclick="rdCerrarImportar()">Cerrar</button>
+        <button type="button" class="btn save" id="rdi-go" onclick="rdImportarSeleccion()">Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-bg">
     <div class="modal">
         <h3 id="modal-title">¿Confirmar?</h3>
@@ -2009,8 +2076,12 @@
       }
 
       // Normaliza para comparar: quita tildes y pasa a minúsculas
+      // Además ignora el sufijo "— Vivienda N° 7" que traen las fichas importadas de Registro
+      // Diario, para que todas las visitas de una misma persona queden en una sola carpeta
+      // (junto con las que se crearon a mano solo con el nombre).
       function normalizeName(s){
         return (s||'').trim()
+          .replace(/\s*[—–-]\s*viv(?:ienda|\.)?\s*(?:n\s*[°º.o]*\s*)?[\w\/-]*\s*$/i,'')
           .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
           .toLowerCase()
           .replace(/\s+/g,' ');
@@ -2024,7 +2095,8 @@
         const key  = normalizeName(raw);
         if(!groups[key]){
           groups[key]  = [];
-          dispName[key] = raw;   // guarda el nombre original para mostrar
+          // nombre a mostrar en la carpeta: sin el sufijo "— Vivienda N° X" (cada ficha conserva el suyo)
+          dispName[key] = raw.replace(/\s*[—–-]\s*viv(?:ienda|\.)?\s*(?:n\s*[°º.o]*\s*)?[\w\/-]*\s*$/i,'').trim() || raw;
         }
         groups[key].push(r);
       });
@@ -2462,7 +2534,284 @@
       }, 50);
     }
 
-    function printForm(){ syncAllMirrors(); window.print(); }
+    /* ════════════════ AJUSTE A UNA SOLA HOJA (impresión / PDF) ════════════════ */
+    // Mide la ficha con las reglas de @media print y reduce el tamaño del texto lo justo
+    // para que toda la visita quepa en una hoja carta, sin pasar a una segunda página.
+    function fitPrintOnePage(){
+      try{
+        const card = document.querySelector('#screen-form .form-card');
+        const scr  = document.getElementById('screen-form');
+        if(!card || !scr) return;
+        let st = document.getElementById('pf-measure-style');
+        if(!st){
+          let css = '';
+          for(const sh of document.styleSheets){
+            let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
+            for(const r of rules){
+              if(r.type === CSSRule.MEDIA_RULE && /(^|[\s,])print([\s,]|$)/.test(r.media.mediaText)){
+                for(const ir of r.cssRules){ if(ir.type !== CSSRule.PAGE_RULE) css += ir.cssText + '\n'; }
+              }
+            }
+          }
+          st = document.createElement('style'); st.id = 'pf-measure-style'; st.disabled = true;
+          st.textContent = css; document.head.appendChild(st);
+        }
+        // Área útil de una hoja carta: (279.4 − 24) mm de alto y (215.9 − 28) mm de ancho, a 96 dpi
+        const PX = 96/25.4, availH = (279.4-24)*PX - 10, printW = (215.9-28)*PX;
+        const prevW = scr.style.width;
+        st.disabled = false;
+        scr.style.setProperty('width', printW+'px', 'important');
+        let best = 0.45;
+        for(let z = 1; z >= 0.45; z = Math.round((z-0.02)*100)/100){
+          card.style.setProperty('--pf-zoom', z);
+          if(card.getBoundingClientRect().height <= availH){ best = z; break; }
+        }
+        card.style.setProperty('--pf-zoom', best);
+        st.disabled = true;
+        scr.style.width = prevW;
+      }catch(e){ console.warn('fitPrintOnePage', e); }
+    }
+    window.addEventListener('beforeprint', ()=>{ try{ syncAllMirrors(); fitPrintOnePage(); }catch(e){} });
+
+    function printForm(){ syncAllMirrors(); fitPrintOnePage(); window.print(); }
+
+    /* ════════════════ IMPORTAR DESDE REGISTRO DIARIO ════════════════
+       Registro Diario y esta app comparten el almacenamiento cuando corren dentro de
+       SIS Comunitario, así que las fichas se leen directo de 'rdps_registros'. Esta app
+       nunca escribe en los datos de Registro Diario: solo lee y copia. */
+    const RD_KEY_REGS = 'rdps_registros', RD_KEY_PERFIL = 'rdps_perfil';
+    const RD_CATEGORIAS = ['','Embarazada','Puérpera','Recién Nacido','Niño 0-12 años','Adulto 20-59 años','Adulto Mayor +60 años'];
+
+    function rdLeerRegistros(){ try{ const v=JSON.parse(localStorage.getItem(RD_KEY_REGS)||'null'); return Array.isArray(v)?v:null; }catch(e){ return null; } }
+    function rdLeerPerfil(){ try{ return JSON.parse(localStorage.getItem(RD_KEY_PERFIL)||'{}')||{}; }catch(e){ return {}; } }
+    function rdNorm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+
+    // "29/09/2026", "29-9-2026" o "2026-09-29"  →  "2026-09-29"
+    function rdParseFecha(txt){
+      const t=String(txt||'').trim(); if(!t) return '';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+      const m=t.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/);
+      if(m){ const d=+m[1], mo=+m[2]; if(d>=1&&d<=31&&mo>=1&&mo<=12) return m[3]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+      return '';
+    }
+    // "8:30 a.m.", "3:05 PM" o "15:05"  →  "08:30" / "15:05"
+    function rdParseHora(txt){
+      const t=String(txt||'').trim().toLowerCase(); if(!t) return '';
+      let m=t.match(/(\d{1,2})\s*[:.h]\s*(\d{2})\s*([ap])\.?\s*m\.?/);
+      if(!m){ const m2=t.match(/(\d{1,2})\s*([ap])\.?\s*m\.?/); if(m2) m=[m2[0],m2[1],'00',m2[2]]; }
+      if(m){ let h=+m[1]; if(h>12||h<1) return ''; if(m[3]==='p'&&h<12) h+=12; if(m[3]==='a'&&h===12) h=0; return String(h).padStart(2,'0')+':'+m[2]; }
+      m=t.match(/^(\d{1,2})\s*:\s*(\d{2})$/);
+      if(m && +m[1]<24 && +m[2]<60) return String(+m[1]).padStart(2,'0')+':'+m[2];
+      return '';
+    }
+    // Sugerencia (editable) del tipo de paciente según la edad escrita en Registro Diario
+    function rdSugerirCategoria(edad){
+      const t=String(edad||'').toLowerCase().trim(); if(!t) return '';
+      const n=s=>parseFloat(String(s).replace(',','.'));
+      let m;
+      if((m=t.match(/(\d+(?:[.,]\d+)?)\s*d[ií]as?/)))   return n(m[1])<=28?'Recién Nacido':'Niño 0-12 años';
+      if((m=t.match(/(\d+(?:[.,]\d+)?)\s*semanas?/)))   return n(m[1])<=4 ?'Recién Nacido':'Niño 0-12 años';
+      let a=null;
+      if((m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:a[ñn]os?|a\b)/))) a=n(m[1]);
+      else if(/\d\s*(?:meses|mes\b|m\b)/.test(t)) return 'Niño 0-12 años';
+      else if((m=t.match(/(\d+(?:[.,]\d+)?)/))) a=n(m[1]);
+      if(a==null) return '';
+      if(a<=12) return 'Niño 0-12 años';
+      if(a>=60) return 'Adulto Mayor +60 años';
+      if(a>=20) return 'Adulto 20-59 años';
+      return '';   // 13–19 años: la ficha no tiene tipo para adolescentes; se elige a mano
+    }
+    // Respaldo para fichas de RD hechas antes de que RD guardara sus signos vitales: se
+    // buscan en el texto de hallazgos (aproximado — se avisa para que se revisen).
+    function rdVitalesDesdeTexto(txt){
+      const t=String(txt||''), r={peso:'',ta:'',fc:'',fr:'',temp:''}; let m;
+      if((m=t.match(/(\d+(?:\s*[.,]\s*\d+)?)\s*kgs?\b/i))) r.peso=m[1].replace(/\s+/g,'').replace(',','.')+' kg';
+      if((m=t.match(/(?:^|[^\d\/])(\d{2,3})\s*\/\s*(\d{2,3})(?![\d\/])/)) && +m[1]>=60&&+m[1]<=260&&+m[2]>=30&&+m[2]<=160) r.ta=m[1]+'/'+m[2];
+      if((m=t.match(/(?:\bfc\b|frecuencia\s+card[ií]aca)\D{0,12}(\d{2,3})/i)||t.match(/(\d{2,3})\s*(?:lpm|latidos)/i))) r.fc=m[1]+' lpm';
+      if((m=t.match(/(?:\bfr\b|frecuencia\s+respiratoria)\D{0,12}(\d{1,2})\b/i)||t.match(/(\d{1,2})\s*(?:rpm|resp\w*\s*x)/i))) r.fr=m[1]+' rpm';
+      if((m=t.match(/(\d{2}(?:[.,]\d)?)\s*(?:°|º|grados)\s*c?/i)||t.match(/\btemp\w*\D{0,12}(\d{2}(?:[.,]\d)?)/i))) r.temp=m[1].replace(',','.')+'°C';
+      return r;
+    }
+    function rdParseFilas(raw){
+      try{
+        if(Array.isArray(raw)) return raw.length?raw:null;
+        if(typeof raw==='string' && raw.trim()){ const a=JSON.parse(raw); if(Array.isArray(a)&&a.length) return a; }
+      }catch(e){}
+      return null;
+    }
+
+    // Convierte un registro de RD (con su Informe de Visita ya generado) en una ficha de esta app
+    function rdConvertir(reg, perfil){
+      const c = reg.informeCampos || {};
+      const avisos = [];
+      const huella = [reg.nombre,reg.hallazgos,reg.acciones,reg.fecha,reg.hora,reg.vivienda].map(v=>(v==null?'':String(v)).trim()).join('§§');
+      const desactualizada = !!c._huella && c._huella !== huella;
+
+      const fecha = rdParseFecha(c.fechaMostrar) || rdParseFecha(reg.fecha) || '';
+      if(!fecha) avisos.push('Sin fecha válida');
+      const horaInicio = rdParseHora(c.horaInicio) || rdParseHora(reg.hora) || '';
+      const horaFin = rdParseHora(c.horaFin);
+      if(c.horaFin && String(c.horaFin).trim() && !horaFin) avisos.push('Hora de fin no reconocida');
+      const seguimiento = rdParseFecha(c.fechaSeguimiento);
+      if(c.fechaSeguimiento && String(c.fechaSeguimiento).trim() && !seguimiento) avisos.push('Fecha de seguimiento no reconocida');
+
+      const nombre = (c.nombreVivienda && String(c.nombreVivienda).trim())
+        || ((reg.nombre||'') + (reg.vivienda ? ' — Vivienda N° '+reg.vivienda : ''));
+
+      // Signos vitales: 1) tabla guardada en la ficha, 2) copia calculada por RD, 3) estimación del texto
+      let filas = rdParseFilas(c.tablaVitales), origenV = 'guardada';
+      if(!filas){ filas = rdParseFilas(c.vitalesCalculados); origenV = 'calculada'; }
+      if(!filas){
+        const v = rdVitalesDesdeTexto(reg.hallazgos);
+        filas = [[reg.nombre||'', v.peso, v.ta, v.fc, v.fr, v.temp, '', '']];
+        origenV = 'estimada';
+        if(v.peso||v.ta||v.fc||v.fr||v.temp) avisos.push('Signos vitales estimados del texto: revísalos');
+      }
+      const vitals = filas.map(f=>({nombre:f[0]||'',peso:f[1]||'',ta:f[2]||'',fc:f[3]||'',fr:f[4]||'',temp:f[5]||'',au:f[6]||'',fcf:f[7]||''}));
+      while(vitals.length<2) vitals.push({nombre:'',peso:'',ta:'',fc:'',fr:'',temp:'',au:'',fcf:''});
+
+      const f = reg.firmas || {};
+      const rec = {
+        ucsf: c.establecimiento || perfil.establecimiento || '',
+        fecha, expediente: c.expediente || '', nombre,
+        horaInicio, horaFin,
+        objetivo: c.objetivo || '',
+        hallazgos: c.hallazgos || reg.hallazgos || '',
+        acciones: c.acciones || reg.acciones || '',
+        acuerdos: c.acuerdo || '',
+        seguimiento,
+        seguimientoRealizado: false,
+        firmaUsuario: c.firmaUsuarioNombre || reg.nombre || '',
+        firmaPersonal: c.firmaPersonalNombre || perfil.nombre || '',
+        vitals,
+        firmaCanvasPac: f.usuario || null,
+        firmaCanvasPer: f.personal || null,
+        origenRD: reg.id,
+        rdActualizadoEn: reg.actualizadoEn || '',
+        savedAt: new Date().toISOString()
+      };
+      return { rec, avisos, desactualizada, origenV, sinFirmaPac: !f.usuario, sinFirmaPer: !f.personal };
+    }
+
+    /* ── Pantalla de importación ── */
+    let _rdItems = [];
+    function rdAbrirImportar(){
+      const regs = rdLeerRegistros();
+      const bg = document.getElementById('rd-import-bg');
+      const sub = document.getElementById('rdi-sub');
+      const list = document.getElementById('rdi-list');
+      const tools = document.getElementById('rdi-tools');
+      const go = document.getElementById('rdi-go');
+      document.getElementById('rdi-buscar').value = '';
+      _rdItems = [];
+      if(!regs){
+        sub.textContent = '';
+        tools.style.display = 'none'; go.style.display = 'none';
+        document.getElementById('rdi-count').textContent = '';
+        list.innerHTML = '<div class="rdi-empty"><b>No se encontraron datos de Registro Diario</b> en este almacenamiento.<br>Esta opción funciona cuando Registro Diario y la Hoja de Visita Domiciliar se abren dentro de SIS Comunitario (comparten el mismo almacenamiento).</div>';
+        bg.classList.add('show'); return;
+      }
+      tools.style.display = ''; go.style.display = '';
+      const perfil = rdLeerPerfil();
+      const conInforme = regs.filter(r=>r && r.informeCampos && typeof r.informeCampos==='object');
+      const sinInforme = regs.length - conInforme.length;
+      conInforme.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')) || String(b.hora||'').localeCompare(String(a.hora||'')));
+      _rdItems = conInforme.map(reg=>{
+        const conv = rdConvertir(reg, perfil);
+        const previo = records.find(r=>r.origenRD===reg.id);
+        let estado = 'nueva';
+        if(previo) estado = ((reg.actualizadoEn||'') > (previo.rdActualizadoEn||'')) ? 'cambio' : 'importada';
+        else {
+          const nn = rdNorm(reg.nombre);
+          if(nn && records.some(r=>!r.origenRD && r.fecha===conv.rec.fecha && rdNorm(r.nombre).indexOf(nn)===0)) estado = 'dup';
+        }
+        return { reg, conv, estado, cat: (previo && previo.categoria) || rdSugerirCategoria(reg.edad) };
+      });
+      const nuevas = _rdItems.filter(i=>i.estado==='nueva').length;
+      const yaImp = _rdItems.filter(i=>i.estado==='importada').length;
+      sub.textContent = _rdItems.length
+        ? `${_rdItems.length} ficha(s) con Informe de Visita en Registro Diario · ${nuevas} nueva(s) · ${yaImp} ya importada(s)`
+          + (sinInforme ? ` · ${sinInforme} registro(s) sin informe generado (no se listan)` : '')
+        : (sinInforme ? `Hay ${sinInforme} registro(s) en Registro Diario, pero ninguno tiene el Informe de Visita generado todavía.` : 'Registro Diario no tiene registros todavía.');
+      list.innerHTML = _rdItems.length ? _rdItems.map((it,ix)=>rdFilaHTML(it,ix)).join('') : '<div class="rdi-empty">No hay fichas para importar.</div>';
+      go.style.display = _rdItems.length ? '' : 'none';
+      tools.style.display = _rdItems.length ? '' : 'none';
+      bg.classList.add('show');
+      rdActualizarConteo();
+    }
+    function rdFilaHTML(it, ix){
+      const {reg, conv, estado} = it;
+      const dis = estado==='importada';
+      const marcada = estado==='nueva' && !conv.desactualizada;
+      const b = [];
+      if(estado==='nueva') b.push('<span class="rdi-b ok">Nueva</span>');
+      if(estado==='importada') b.push('<span class="rdi-b">Ya importada</span>');
+      if(estado==='cambio') b.push('<span class="rdi-b warn">Cambió en RD · reemplaza la ficha</span>');
+      if(estado==='dup') b.push('<span class="rdi-b warn">Posible duplicado (ya existe una ficha igual)</span>');
+      if(conv.desactualizada) b.push('<span class="rdi-b warn">Registro editado después del informe</span>');
+      if(conv.sinFirmaPac) b.push('<span class="rdi-b no">Sin firma del usuario</span>');
+      if(conv.sinFirmaPer) b.push('<span class="rdi-b no">Sin firma del personal</span>');
+      conv.avisos.forEach(a=>b.push('<span class="rdi-b warn">'+escHtml(a)+'</span>'));
+      const meta = [conv.rec.fecha ? conv.rec.fecha.split('-').reverse().join('/') : 'sin fecha', reg.edad ? escHtml(reg.edad) : ''].filter(Boolean).join(' · ');
+      return `<div class="rdi-row${dis?' dis':''}" data-ix="${ix}" data-nombre="${escHtml(rdNorm(conv.rec.nombre))}">
+        <input type="checkbox" class="rdi-chk" ${marcada?'checked':''} ${dis?'disabled':''} onchange="rdActualizarConteo()"/>
+        <div class="rdi-main">
+          <div class="rdi-name">${escHtml(conv.rec.nombre)}</div>
+          <div class="rdi-meta">${meta}</div>
+          <div class="rdi-badges">${b.join('')}</div>
+          ${dis?'':`<select class="rdi-cat" title="Tipo de paciente">${RD_CATEGORIAS.map(c=>`<option value="${escHtml(c)}"${c===it.cat?' selected':''}>${c?escHtml(c):'— Tipo de paciente (elegir) —'}</option>`).join('')}</select>`}
+        </div></div>`;
+    }
+    function rdActualizarConteo(){
+      const n = document.querySelectorAll('#rdi-list .rdi-chk:checked').length;
+      document.getElementById('rdi-count').textContent = n ? `${n} seleccionada(s)` : '';
+      const go = document.getElementById('rdi-go'); if(go) go.textContent = n ? `Importar (${n})` : 'Importar';
+    }
+    function rdFiltrarLista(){
+      const q = rdNorm(document.getElementById('rdi-buscar').value);
+      document.querySelectorAll('#rdi-list .rdi-row').forEach(r=>{ r.style.display = (!q || (r.dataset.nombre||'').indexOf(q)>-1) ? '' : 'none'; });
+    }
+    function rdMarcarNuevas(){
+      document.querySelectorAll('#rdi-list .rdi-row').forEach(r=>{
+        const it=_rdItems[+r.dataset.ix], chk=r.querySelector('.rdi-chk');
+        if(chk && !chk.disabled) chk.checked = (it.estado==='nueva' && !it.conv.desactualizada);
+      });
+      rdActualizarConteo();
+    }
+    function rdMarcarNinguna(){ document.querySelectorAll('#rdi-list .rdi-chk').forEach(c=>{c.checked=false;}); rdActualizarConteo(); }
+    function rdCerrarImportar(){ document.getElementById('rd-import-bg').classList.remove('show'); }
+
+    function rdImportarSeleccion(){
+      const filas = [...document.querySelectorAll('#rdi-list .rdi-row')].filter(r=>r.querySelector('.rdi-chk')?.checked);
+      if(!filas.length){ showToast('Selecciona al menos una ficha.','error'); return; }
+      const respaldo = JSON.stringify(records);
+      let nuevas=0, reemplazadas=0;
+      let nextNum = records.length>0 ? Math.max(...records.map(r=>r.num||0))+1 : 1;
+      filas.forEach(fila=>{
+        const it = _rdItems[+fila.dataset.ix]; if(!it) return;
+        const cat = fila.querySelector('.rdi-cat') ? fila.querySelector('.rdi-cat').value : (it.cat||'');
+        const previo = records.find(r=>r.origenRD===it.reg.id);
+        if(previo){
+          Object.assign(previo, it.conv.rec, { categoria: cat || previo.categoria || '', visitaGPS: previo.visitaGPS || null });
+          reemplazadas++;
+        } else {
+          records.push(Object.assign({ id: crypto.randomUUID(), num: nextNum++, categoria: cat, visitaGPS: null }, it.conv.rec));
+          nuevas++;
+        }
+      });
+      try{ saveRecords(); }
+      catch(e){
+        records = JSON.parse(respaldo);
+        showModal('No se pudo importar','Se llenó el espacio de almacenamiento del dispositivo (las firmas ocupan bastante). No se importó ninguna ficha. Prueba importando menos fichas a la vez o respaldando y liberando espacio.');
+        return;
+      }
+      rdCerrarImportar();
+      try{ updateHomeStats(); }catch(e){}
+      try{ renderList(); }catch(e){}
+      try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
+      const partes=[]; if(nuevas) partes.push(nuevas+' nueva(s)'); if(reemplazadas) partes.push(reemplazadas+' actualizada(s)');
+      showToast('✓ Importadas: '+partes.join(' y '),'success');
+    }
 
     /* ════════════════ CLEAR ALL ════════════════ */
     function confirmClearAll(){
@@ -3641,7 +3990,6 @@
 })();
 </script>
 
-
 <!-- ══════ Menú flotante de navegación entre apps (SIS Comunitario) ══════ -->
 <style>
   .sisnav-backdrop{position:fixed;inset:0;z-index:99989;display:none;}
@@ -3666,6 +4014,8 @@
   .sisnav-item:active{background:#eef1f5;}
   @media (hover:hover){.sisnav-item:hover{background:#f1f3f6;}}
   .sisnav-item .sisnav-ic{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0;}
+  @media print{.sisnav-fab,.sisnav-menu,.sisnav-backdrop{display:none!important}}
+  body:has(.modal-bg.show) .sisnav-fab,body:has(.modal-bg.active) .sisnav-fab{display:none}
 </style>
 <div class="sisnav-backdrop" id="sisnavBackdrop" onclick="sisnavCerrar()"></div>
 <button class="sisnav-fab" id="sisnavBtn" onclick="sisnavToggle()" title="Otras aplicaciones (mantén presionado para moverlo, doble clic para restaurar)" aria-label="Ver otras aplicaciones">

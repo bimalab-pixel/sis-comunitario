@@ -859,6 +859,10 @@
                     <span class="tmi-icon" style="background:linear-gradient(135deg,#1b5e20,#43a047)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg></span>
                     <span>Importar Excel</span>
                 </button>
+                <button class="topbar-menu-item" onclick="closeListMenu();msAbrir()">
+                    <span class="tmi-icon" style="background:linear-gradient(135deg,#00796b,#26a69a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                    <span>Importar del Mapa Sanitario</span>
+                </button>
                 <button class="topbar-menu-item" onclick="closeListMenu();printListado()">
                     <span class="tmi-icon" style="background:linear-gradient(135deg,#00796b,#26a69a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
                     <span>Imprimir</span>
@@ -1424,6 +1428,50 @@
         <div class="modal-btns" style="margin-top:.7rem">
             <button class="btn secondary" onclick="closeImportModal()">Cancelar</button>
             <button class="btn" id="import-confirm-btn" style="background:linear-gradient(135deg,#1b5e20,#43a047);color:#fff" onclick="confirmImportExcel()" disabled>Importar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════ IMPORTAR MUJERES 18–49 DESDE EL MAPA SANITARIO ════════════ -->
+<style>
+  .ms-box{max-width:560px;max-height:90vh;display:flex;flex-direction:column}
+  .ms-sub{font-size:.74rem;color:var(--muted,#6b7280);line-height:1.45;margin:.15rem 0 .55rem}
+  .ms-tools{display:flex;flex-wrap:wrap;gap:.35rem .6rem;align-items:center;margin-bottom:.5rem}
+  .ms-tools input[type=search]{flex:1 1 100%;min-width:0;border:1.5px solid var(--border,#d9d9e3);border-radius:8px;padding:.42rem .65rem;font-family:inherit;font-size:.85rem;outline:none}
+  .ms-link{background:none;border:none;color:#00796b;font-weight:800;font-size:.74rem;font-family:inherit;cursor:pointer;padding:.25rem .1rem}
+  .ms-chkl{display:flex;align-items:center;gap:.3rem;font-size:.74rem;color:var(--muted,#6b7280);margin-left:auto}
+  .ms-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border,#d9d9e3);border-radius:10px;min-height:120px}
+  .ms-row{display:flex;gap:.6rem;align-items:flex-start;padding:.6rem .7rem;border-bottom:1px solid var(--border,#d9d9e3)}
+  .ms-row:last-child{border-bottom:none}.ms-row.dis{opacity:.55}
+  .ms-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:#00796b;flex-shrink:0}
+  .ms-main{flex:1;min-width:0}.ms-name{font-weight:800;font-size:.88rem;overflow-wrap:anywhere}
+  .ms-meta{font-size:.72rem;color:var(--muted,#6b7280);margin-top:1px}
+  .ms-badges{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem}
+  .ms-b{font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:10px;background:#eceff4;color:#3b4560}
+  .ms-b.ok{background:#dcfce7;color:#166534}.ms-b.warn{background:#fff1dc;color:#9a5b00}.ms-b.no{background:#fde7e5;color:#a12a20}
+  .ms-foot{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.7rem;flex-wrap:wrap}
+  .ms-count{font-size:.76rem;color:var(--muted,#6b7280)}
+  .ms-empty{padding:1.2rem 1rem;font-size:.85rem;color:var(--muted,#6b7280);line-height:1.55}
+  @media print{#ms-bg{display:none!important}}
+</style>
+<div class="modal-bg" id="ms-bg" onclick="if(event.target===this)msCerrar()">
+    <div class="modal ms-box">
+        <h3 style="margin-bottom:2px">Importar del Mapa Sanitario</h3>
+        <p class="ms-sub" id="ms-sub"></p>
+        <div class="ms-tools" id="ms-tools">
+            <input type="search" id="ms-buscar" placeholder="Buscar por nombre…" oninput="msFiltrar()"/>
+            <button type="button" class="ms-link" onclick="msMarcar('seguras')">Marcar todas</button>
+            <button type="button" class="ms-link" onclick="msMarcar('aprox')">+ edad aproximada</button>
+            <button type="button" class="ms-link" onclick="msMarcar('ninguna')">Ninguna</button>
+            <label class="ms-chkl"><input type="checkbox" id="ms-hombres" onchange="msRender()"/> Ver hombres</label>
+        </div>
+        <div class="ms-list" id="ms-list"></div>
+        <div class="ms-foot">
+            <span class="ms-count" id="ms-count"></span>
+            <div class="modal-btns" style="margin:0 0 0 auto">
+                <button class="btn secondary" onclick="msCerrar()">Cerrar</button>
+                <button class="btn" id="ms-go" style="background:linear-gradient(135deg,#00796b,#26a69a);color:#fff" onclick="msImportar()">Importar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -2081,6 +2129,11 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       return (s||'').toString().trim().toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g,''); // quita tildes
     }
+    // Hash nombre+fecha de nacimiento: colapsa espacios repetidos para que el mismo nombre
+    // dé el mismo id venga de Excel o del Mapa Sanitario
+    function _hashNomNac(nombre,nac){
+      return _strHash(_normTxt(nombre).replace(/\s+/g,' ')+'|'+(nac||''));
+    }
     // Convierte cualquier valor de celda (Date, número serial de Excel, o texto) a 'YYYY-MM-DD'
     function _parseExcelDate(val){
       if(val===null||val===undefined||val==='')return null;
@@ -2145,7 +2198,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         showToast('✗ No se encontraron columnas "Nombre" y "Fecha de nacimiento"','error');
         return;
       }
-      const existentes=new Set(records.map(r=>_strHash(_normTxt(r.nombre)+'|'+(r.nacimiento||''))));
+      const existentes=new Set(records.map(r=>_hashNomNac(r.nombre,r.nacimiento)));
       const vistosEnArchivo=new Set();
       const parsed=[];
       for(let i=1;i<rows.length;i++){
@@ -2162,8 +2215,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         if(nac>hoyStr){item.estado='error';item.motivo='Fecha futura';parsed.push(item);continue;}
         item.nacimiento=nac;
         item.edad=_calcAge(nac);
-        const key=_normTxt(nombreRaw)+'|'+nac;
-        const hash=_strHash(key);
+        const hash=_hashNomNac(nombreRaw,nac);
         item.id='imp_'+hash;
         if(existentes.has(hash)||vistosEnArchivo.has(hash)){
           item.estado='duplicado';item.motivo='Ya existe en el sistema';
@@ -2243,6 +2295,264 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       closeImportModal();
       renderList();
       showToast(`✓ ${nuevos.length} paciente(s) importado(s) correctamente`,'success');
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════════
+       IMPORTAR MUJERES DE 18 A 49 AÑOS DESDE EL MAPA SANITARIO
+       Lee el catálogo del Mapa Sanitario ('mapa_san_catalogo'), que ya guarda el sexo de
+       cada persona (F/M) y su fecha de nacimiento; se usa el mismo criterio del filtro
+       "MEF" del Mapa (mujer, 18 a 49 años). Funciona dentro de SIS Comunitario, donde las
+       apps comparten almacenamiento. Solo AGREGA fichas nuevas: nunca modifica ni borra
+       fichas existentes ni su historial de atenciones.
+       Sin duplicados en la nube: el id de cada ficha es el mismo hash determinista de la
+       importación de Excel (nombre + fecha de nacimiento) y la nube guarda por id.
+    ═══════════════════════════════════════════════════════════════════ */
+    const MS_EDAD_MIN=18, MS_EDAD_MAX=49;
+const _MS_FEM = new Set(['maria','ana','rosa','carmen','juana','francisca','antonia',
+  'josefa','dolores','guadalupe','teresa','isabel','cristina','patricia','sandra','karla','karen',
+  'erika','erica','vilma','marta','martha','yesenia','yanira','wendy','xiomara','blanca','silvia',
+  'gloria','elena','lorena','leticia','veronica','vanessa','diana','daniela','andrea','alejandra',
+  'fatima','esperanza','esmeralda','estefany','estefani','estefania','jessica','jesica','kimberly',
+  'kelly','katherine','catherine','melissa','michelle','monica','norma','nohemy','noemi','noemy',
+  'paola','perla','reina','roxana','ruth','sara','susana','sonia','sofia','stefany','zulma','zoila',
+  'ivonne','yolanda','yamileth','yamilet','ingrid','iris','irma','gladys','gabriela','fernanda',
+  'flor','delmy','deysi','deisy','dinora','elsy','elsa','emely','emily','estela','esther','evelyn',
+  'griselda','heidy','hilda','idalia','jacqueline','jaqueline','jenny','jennifer','judith','julissa',
+  'karina','kenia','laura','lidia','lilian','liliana','lissette','lourdes','luz','lucia','magdalena',
+  'marlene','marleny','marisol','maritza','mayra','mirna','mirian','miriam','nancy','nataly','natalia',
+  'nelly','nidia','olga','pamela','priscila','priscilla','rebeca','reyna','rocio','rosario','rosibel',
+  'sandy','scarlett','shirley','tatiana','violeta','vivian','xenia','yesica','zoraida','beatriz',
+  'claudia','cecilia','concepcion','consuelo','socorro','amparo','trinidad','soledad','milagro',
+  'milagros','carolina','angela','angelica','adriana','alicia','amanda','araceli','beverly','brenda',
+  'candelaria','celia','denisse','edith','elizabeth','emilia','eugenia','eva','flora','gisela',
+  'graciela','ileana','ivette','jimena','johana','juanita','julia','katia','leidy','lesly','lizbeth',
+  'lizeth','luisa','marcela','margarita','marilyn','marina','marisela','marleny','melany','mildred',
+  'nayeli','nery','olivia','ondina','paloma','pilar','rina','rita','rosa','sarai','saraí','stephanie',
+  'suyapa','thelma','vicky','victoria','virginia','yesenia','yenifer','yeimy','zenaida'
+]);
+const _MS_MASC = new Set(['jose','juan','carlos','luis','miguel','francisco','antonio',
+  'manuel','pedro','pablo','ricardo','roberto','rafael','fernando','alberto','alejandro','alexander',
+  'alexis','alvaro','andres','angel','armando','arnoldo','byron','cesar','cristian','christian',
+  'danilo','daniel','david','diego','edgar','eduardo','edwin','elmer','emerson','enrique','ernesto',
+  'esteban','ezequiel','federico','felipe','gerardo','gilberto','guillermo','gustavo','hector','henry',
+  'herbert','hugo','humberto','ismael','israel','ivan','jaime','javier','jefferson','jeremias',
+  'jhonny','johnny','jonathan','jonatan','jorge','josue','julio','kevin','leonardo','lorenzo','marco',
+  'marcos','mario','martin','mauricio','maximiliano','melvin','milton','moises','nelson','nery','noe',
+  'oscar','oswaldo','rene','reynaldo','rigoberto','rodrigo','ronald','rony','rosendo','salvador',
+  'samuel','santiago','saul','sergio','simon','tomas','ulises','vicente','victor','walter','wilfredo',
+  'wilber','wilmer','william','yosimar','yovani','abel','abraham','adan','adolfo','agustin','alfonso',
+  'alfredo','amilcar','anibal','aristides','arturo','baltazar','bayron','benjamin','bernardo','bladimir',
+  'bonifacio','bryan','cecilio','celso','cristobal','damian','danny','darwin','denis','dennis','dilan',
+  'dilcia','domingo','donaldo','edin','edison','efrain','elias','elias','elvin','emanuel','emiliano',
+  'erick','erik','estuardo','ever','ezequiel','fabian','fausto','feliciano','fidel','franklin','freddy',
+  'gabriel','geovani','geovanni','german','gonzalo','gregorio','heriberto','hipolito','honorio',
+  'horacio','isaias','isidro','jacobo','jhon','john','jonas','jose maria','josimar','juan carlos',
+  'juanjose','julian','justo','kenneth','leandro','leonel','levi','lisandro','luciano','mardoqueo',
+  'marlon','mateo','mauro','maynor','misael','nahum','nahún','napoleon','narciso','nehemias','nery',
+  'nestor','nicolas','norman','omar','onofre','orlando','osman','otoniel','pascual','porfirio',
+  'quintin','ramiro','ramon','raul','regino','remigio','renan','ronaldo','rubén','ruben','salomon',
+  'santos','saturnino','sebastian','severo','silvestre','tobias','ubaldo','urbano','valentin',
+  'vidal','wagner','wenceslao','wendel','wilder','wilson','yeferson','yerson','ysrael','zacarias'
+]);
+// Nombres que rompen la regla de terminación en -a/-o (excepciones conocidas)
+const _MS_EXC_F = new Set(['rosario','consuelo','socorro','amparo']);
+const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
+
+    // Solo como pista para personas que en el Mapa tienen "Sexo no indicado"
+    function _msSexoPorNombre(nombreCompleto){
+      const primer=String(nombreCompleto||'').trim().split(/\s+/)[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(!primer||primer.length<2)return null;
+      if(_MS_FEM.has(primer)||_MS_EXC_F.has(primer))return 'F';
+      if(_MS_MASC.has(primer)||_MS_EXC_M.has(primer))return 'M';
+      return null;
+    }
+    function _msLeerCatalogo(){ try{ const v=JSON.parse(localStorage.getItem('mapa_san_catalogo')||'null'); return Array.isArray(v)?v:null; }catch(e){ return null; } }
+    function _msTok(s){ return _normTxt(s).replace(/[^a-z0-9ñ ]+/g,' ').split(/\s+/).filter(Boolean).sort().join(' '); }
+    function _msEdad(p,hoyStr){
+      const n=p.fnac?_parseExcelDate(p.fnac):null;
+      if(n&&n<=hoyStr){
+        // Mismo criterio del Mapa Sanitario: meses calendario (año/mes, sin contar el día)
+        const h=new Date(), f=new Date(n+'T00:00:00');
+        const mesesMapa=Math.max(0,(h.getFullYear()-f.getFullYear())*12+(h.getMonth()-f.getMonth()));
+        return {anios:_calcAge(n),mesesMapa,exacta:true,nac:n};
+      }
+      const t=String(p.edad||'').toLowerCase().trim();
+      const m=t.match(/(\d{1,3})\s*a[ñn]os?/)||t.match(/^(\d{1,3})$/);
+      if(m)return {anios:+m[1],exacta:false,nac:''};
+      if(/\d\s*(mes|d[ií]a|semana)/.test(t))return {anios:0,exacta:false,nac:''};
+      return {anios:null,exacta:false,nac:''};
+    }
+
+    let _msItems=[], _msResumen={};
+    function _msConstruir(){
+      const cat=_msLeerCatalogo();
+      if(!cat)return null;
+      const hoyStr=(d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))(new Date());
+      const ids=new Set(records.map(r=>r.id));
+      const hashes=new Set(records.map(r=>_hashNomNac(r.nombre,r.nacimiento)));
+      const origenes=new Set();
+      records.forEach(r=>{ if(r.origenMapa)origenes.add(r.origenMapa); });
+      const porNombre={};
+      records.forEach(r=>{ const k=_msTok(r.nombre); if(k)(porNombre[k]||(porNombre[k]=[])).push(r); });
+      const vistos=new Set();
+      const res={personas:0,sinEdad:0,fueraEdad:0,hombres:0,deshab:0};
+      const items=[];
+      cat.forEach(viv=>{
+        if(!viv)return;
+        if(viv.deshabitada){res.deshab++;return;}
+        (viv.personas||[]).forEach(p=>{
+          const nombre=String(p&&p.nombre||'').replace(/\s+/g,' ').trim();
+          if(!nombre)return;
+          res.personas++;
+          const ed=_msEdad(p,hoyStr);
+          if(ed.anios==null){res.sinEdad++;return;}
+          const enRango=ed.exacta?(ed.mesesMapa>=MS_EDAD_MIN*12&&ed.mesesMapa<(MS_EDAD_MAX+1)*12)
+                                  :(ed.anios>=MS_EDAD_MIN&&ed.anios<=MS_EDAD_MAX);
+          if(!enRango){res.fueraEdad++;return;}
+          const sexo=p.sexo==='F'||p.sexo==='M'?p.sexo:'';
+          if(sexo==='M'){res.hombres++;}
+          const pista=sexo?null:_msSexoPorNombre(nombre);   // solo si el Mapa no indica el sexo
+          const hash=_hashNomNac(nombre,ed.nac);
+          const id='imp_'+hash, tok=_msTok(nombre);
+          let estado='nueva',motivo='';
+          if((p.id&&origenes.has(p.id))||ids.has(id)||hashes.has(hash)){estado='existe';motivo='Ya tiene ficha en MEF';}
+          else if(porNombre[tok]&&porNombre[tok].length){
+            const o=porNombre[tok][0];
+            estado='posible';motivo='Ya hay una ficha con este nombre'+(o.nacimiento&&ed.nac&&o.nacimiento!==ed.nac?' (distinta fecha de nacimiento)':'');
+          }
+          else if(vistos.has(id)){estado='repetida';motivo='Aparece más de una vez en el Mapa';}
+          if(estado==='nueva')vistos.add(id);
+          items.push({p,viv,nombre,nac:ed.nac,anios:ed.anios,exacta:ed.exacta,sexo,pista,estado,motivo,id});
+        });
+      });
+      items.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+      _msResumen=res;
+      return items;
+    }
+    function _msSegura(it){ return it.estado==='nueva'&&it.sexo==='F'&&it.exacta; }
+    function msAbrir(){
+      const bg=document.getElementById('ms-bg');
+      const items=_msConstruir();
+      const list=document.getElementById('ms-list'), sub=document.getElementById('ms-sub');
+      const tools=document.getElementById('ms-tools'), go=document.getElementById('ms-go');
+      document.getElementById('ms-buscar').value='';
+      document.getElementById('ms-hombres').checked=false;
+      if(!items){
+        _msItems=[];
+        sub.textContent='';tools.style.display='none';go.style.display='none';
+        document.getElementById('ms-count').textContent='';
+        list.innerHTML='<div class="ms-empty"><b>No se encontraron datos del Mapa Sanitario</b> en este almacenamiento.<br>Esta opción funciona cuando el Mapa Sanitario y MEF se abren dentro de SIS Comunitario (comparten el mismo almacenamiento).</div>';
+        bg.classList.add('show');return;
+      }
+      _msItems=items;tools.style.display='';go.style.display='';
+      msRender();
+      bg.classList.add('show');
+    }
+    function msRender(){
+      const verH=document.getElementById('ms-hombres').checked;
+      const list=document.getElementById('ms-list'), sub=document.getElementById('ms-sub');
+      const r=_msResumen;
+      const cand=_msItems.filter(i=>i.sexo!=='M');
+      const nuevas=cand.filter(i=>i.estado==='nueva').length, yaEstan=cand.filter(i=>i.estado==='existe').length;
+      const sinSexo=cand.filter(i=>!i.sexo).length;
+      sub.textContent=`Mapa Sanitario: ${r.personas} persona(s). Mujeres con ${MS_EDAD_MIN}–${MS_EDAD_MAX} años: ${cand.length-sinSexo}`
+        +(sinSexo?` (+ ${sinSexo} sin sexo indicado)`:'')+` · ${nuevas} nueva(s) · ${yaEstan} ya en MEF`
+        +` · omitidas: ${r.fueraEdad} fuera de edad, ${r.hombres} hombres`+(r.sinEdad?`, ${r.sinEdad} sin edad`:'')+(r.deshab?`, ${r.deshab} vivienda(s) deshabitada(s)`:'')+'.';
+      const vis=_msItems.map((it,ix)=>({it,ix})).filter(o=>verH||o.it.sexo!=='M');
+      list.innerHTML=vis.length?vis.map(o=>msFila(o.it,o.ix)).join(''):'<div class="ms-empty">No hay mujeres de 18 a 49 años para importar.</div>';
+      document.getElementById('ms-go').style.display=vis.length?'':'none';
+      msConteo();
+    }
+    function msFila(it,ix){
+      const dis=it.estado==='existe'||it.estado==='repetida';
+      const b=[];
+      if(it.estado==='nueva')b.push('<span class="ms-b ok">Nueva</span>');
+      if(it.estado==='existe')b.push('<span class="ms-b">Ya está en MEF</span>');
+      if(it.estado==='posible'||it.estado==='repetida')b.push('<span class="ms-b warn">'+escHtml(it.motivo)+'</span>');
+      if(it.sexo==='F')b.push('<span class="ms-b ok">♀ Femenino</span>');
+      if(it.sexo==='M')b.push('<span class="ms-b no">♂ Masculino</span>');
+      if(!it.sexo)b.push('<span class="ms-b warn">Sexo no indicado en el Mapa'+(it.pista==='F'?' · el nombre parece de mujer':(it.pista==='M'?' · el nombre parece de hombre':''))+'</span>');
+      if(!it.exacta)b.push('<span class="ms-b warn">Edad aproximada (sin fecha de nacimiento)</span>');
+      const fn=it.nac?' · nac. '+it.nac.split('-').reverse().join('/'):'';
+      return `<div class="ms-row${dis?' dis':''}" data-ix="${ix}" data-nombre="${escHtml(_normTxt(it.nombre))}">
+        <input type="checkbox" class="ms-chk" ${_msSegura(it)?'checked':''} ${dis?'disabled':''} onchange="msConteo()"/>
+        <div class="ms-main"><div class="ms-name">${escHtml(it.nombre)}</div>
+          <div class="ms-meta">${it.anios} años · Viv. ${escHtml(String(it.viv.vivienda||'—'))}${fn}</div>
+          <div class="ms-badges">${b.join('')}</div></div></div>`;
+    }
+    function msConteo(){
+      const n=document.querySelectorAll('#ms-list .ms-chk:checked').length;
+      document.getElementById('ms-count').textContent=n?n+' seleccionada(s)':'';
+      document.getElementById('ms-go').textContent=n?'Importar ('+n+')':'Importar';
+    }
+    function msFiltrar(){
+      const q=_normTxt(document.getElementById('ms-buscar').value);
+      document.querySelectorAll('#ms-list .ms-row').forEach(r=>{r.style.display=(!q||(r.dataset.nombre||'').indexOf(q)>-1)?'':'none';});
+    }
+    function msMarcar(modo){
+      document.querySelectorAll('#ms-list .ms-row').forEach(r=>{
+        const it=_msItems[+r.dataset.ix],c=r.querySelector('.ms-chk');
+        if(!c||c.disabled)return;
+        if(modo==='ninguna'){c.checked=false;return;}
+        c.checked=_msSegura(it)||(modo==='aprox'&&it.estado==='nueva'&&it.sexo==='F');
+      });
+      msConteo();
+    }
+    function msCerrar(){document.getElementById('ms-bg').classList.remove('show');}
+
+    function msImportar(){
+      const filas=[...document.querySelectorAll('#ms-list .ms-row')].filter(r=>r.querySelector('.ms-chk')&&r.querySelector('.ms-chk').checked);
+      if(!filas.length){showToast('Selecciona al menos una paciente.','error');return;}
+      const profile=loadProfile();
+      const personal=profile.nombre?[profile.nombre,profile.cargo].filter(Boolean).join(' · '):'';
+      const hoyStr=(d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))(new Date());
+      const n0=records.length;
+      const idsActuales=new Set(records.map(r=>r.id));
+      let nextNum=records.reduce((m,r)=>Math.max(m,+r.num||0),0);
+      let nuevas=0,omitidas=0;
+      filas.forEach(fila=>{
+        const it=_msItems[+fila.dataset.ix]; if(!it)return;
+        // Red de seguridad: nunca se crea una ficha con un id que ya existe (no se pisa nada)
+        if(idsActuales.has(it.id)){omitidas++;return;}
+        idsActuales.add(it.id);
+        nextNum++;
+        const rec={
+          id:it.id,num:nextNum,
+          nombre:it.nombre,dui:'',vivienda:String(it.viv.vivienda||''),
+          nacimiento:it.nac,edad:String(it.anios),
+          direccion:'',telefono:'',
+          fecha:hoyStr,vidaSexual:'',
+          preconcepcional:'',arr:'',
+          atencionPreventiva:'',
+          ent:'',entEspecifica:'',
+          discapacidad:'',discapEspecifica:'',
+          fechaEnt:'',metodo:'',
+          blisters:'',inicioOral:'',inicioInject:'',inicioAnual:'',
+          papFecha:'',papResultado:'',papNext:null,
+          vphFecha:'',vphNext:null,referida:'',
+          gestaciones:'',partos:'',
+          riesgos:[],observaciones:'',personal,
+          vacVph:{},vacDt:{},vacNeum:{},vacInfantil:'',
+          nextDate:null,updatedAt:new Date().toISOString(),
+          origenMapa:it.p.id||''
+        };
+        rec.historial=[{
+          id:Date.now().toString(36)+'_ms_'+nextNum,
+          fecha:hoyStr,tipo:'general',
+          detalle:'Registro importado desde el Mapa Sanitario · Vivienda '+(it.viv.vivienda||'—'),
+          proxCita:'',obs:'',personal,auto:true,ts:new Date().toISOString()
+        }];
+        records.push(rec);nuevas++;
+      });
+      try{saveRecords();}
+      catch(e){
+        records.length=n0;   // solo se habían agregado fichas al final: se quitan, nada más cambia
+        showModal('No se pudo importar','Se llenó el espacio de almacenamiento del dispositivo. No se importó ninguna ficha.',null);
+        return;
+      }
+      msCerrar();updateHomeStats();renderList();
+      showToast('✓ '+nuevas+' paciente(s) importada(s) desde el Mapa Sanitario'+(omitidas?' · '+omitidas+' omitida(s) por ya existir':''),'success');
     }
 
     function deleteCurrentRecord(){

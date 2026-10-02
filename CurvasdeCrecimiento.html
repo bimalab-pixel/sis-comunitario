@@ -1370,6 +1370,31 @@
             }
         }
         
+        /* ─── Importar población desde el Mapa Sanitario ─── */
+        .mp-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin-bottom: 0.7rem; }
+        .mp-tools { display: flex; flex-wrap: wrap; gap: 0.45rem 0.7rem; align-items: center; margin-bottom: 0.6rem; }
+        .mp-tools input[type=search], .mp-tools select { border: 1.5px solid var(--border); border-radius: 8px; padding: 0.45rem 0.65rem; font-family: inherit; font-size: 0.88rem; background: #fff; min-width: 0; }
+        .mp-tools input[type=search] { flex: 1 1 100%; }
+        .mp-tools select { flex: 1 1 auto; }
+        .mp-link { background: none; border: none; color: var(--primary); font-weight: 800; font-size: 0.8rem; font-family: inherit; cursor: pointer; padding: 0.25rem 0.1rem; }
+        .mp-list { max-height: 48vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 10px; min-height: 110px; }
+        .mp-row { display: flex; gap: 0.55rem; align-items: flex-start; padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--border); }
+        .mp-row:last-child { border-bottom: none; }
+        .mp-row.dis { opacity: 0.6; }
+        .mp-n { flex-shrink: 0; min-width: 1.6rem; text-align: right; font-size: 0.72rem; font-weight: 700; color: var(--muted); padding-top: 3px; }
+        .mp-row input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary); flex-shrink: 0; }
+        .mp-main { flex: 1; min-width: 0; }
+        .mp-name { font-weight: 800; font-size: 0.9rem; overflow-wrap: anywhere; }
+        .mp-meta { font-size: 0.74rem; color: var(--muted); margin-top: 1px; }
+        .mp-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+        .mp-b { font-size: 0.64rem; font-weight: 800; padding: 1px 7px; border-radius: 10px; background: #eceff4; color: #3b4560; }
+        .mp-b.ok { background: #dcfce7; color: #166534; }
+        .mp-b.warn { background: #fff1dc; color: #9a5b00; }
+        .mp-b.no { background: #fde7e5; color: #a12a20; }
+        .mp-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+        .mp-count { font-size: 0.78rem; color: var(--muted); }
+        .mp-empty { padding: 1.2rem 1rem; font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
+
         .modal-header {
             padding: 1.5rem;
             border-bottom: 2px solid var(--light2);
@@ -2555,6 +2580,7 @@
             <div class="overflow-menu" id="overflowMenu">
                 <button onclick="cerrarOverflow(); abrirGuiaUso();">❓ Guía de uso</button>
                 <button onclick="cerrarOverflow(); document.getElementById('uploadJSON').click();">Importar</button>
+                <button onclick="cerrarOverflow(); mpAbrir();">🗺️ Importar del Mapa</button>
                 <button onclick="cerrarOverflow(); descargarJSON();">Exportar todo</button>
             </div>
         </div>
@@ -2636,8 +2662,9 @@
 
         <!-- PANEL 2: Personas -->
         <div id="personas" class="content active">
-            <div class="title-section">
+            <div class="title-section" style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap;">
                 <h2>👥 Personas</h2>
+                <button class="btn btn-secondary" style="padding:0.5rem 0.9rem;font-size:0.85rem;" onclick="mpAbrir()">🗺️ Importar del Mapa</button>
             </div>
 
             <div id="filtroEstadoBanner"></div>
@@ -3017,6 +3044,39 @@
     </div>
 
     <!-- Modal de Ordenar -->
+    <!-- Modal: Importar población desde el Mapa Sanitario -->
+    <div id="modalMapaImport" class="modal-bg" onclick="if(event.target===this)mpCerrar()">
+        <div class="modal-box" style="max-width:560px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>🗺️ Importar del Mapa Sanitario</h2>
+                <button class="modal-close" onclick="mpCerrar()">✕</button>
+            </div>
+            <div class="modal-body" style="padding:1rem;">
+                <p class="mp-sub" id="mp-sub"></p>
+                <div class="mp-tools" id="mp-tools">
+                    <input type="search" id="mp-buscar" placeholder="Buscar por nombre…" oninput="mpFiltrar()">
+                    <select id="mp-grupo" onchange="mpRender()">
+                        <option value="todos">Todos los grupos</option>
+                        <option value="ninos1">0 a 4 años 11 m</option>
+                        <option value="ninos2">5 a 11 años 11 m</option>
+                        <option value="adolescentes">12 a 19 años</option>
+                        <option value="adultos">20 años o más</option>
+                    </select>
+                    <button type="button" class="mp-link" onclick="mpMarcar('todas')">Marcar todas</button>
+                    <button type="button" class="mp-link" onclick="mpMarcar('ninguna')">Ninguna</button>
+                </div>
+                <div class="mp-list" id="mp-list"></div>
+                <div class="mp-foot">
+                    <span class="mp-count" id="mp-count"></span>
+                    <div style="display:flex;gap:0.5rem;margin-left:auto;">
+                        <button class="btn btn-secondary" onclick="mpCerrar()">Cerrar</button>
+                        <button class="btn btn-primary" id="mp-go" onclick="mpImportar()">Importar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Guía de Uso -->
     <div id="modalGuiaUso" class="modal-bg" onclick="cerrarGuiaUso(event)">
         <div class="modal-box" style="max-width: 560px;" onclick="event.stopPropagation()">
@@ -4638,6 +4698,224 @@
             alert('✅ Datos del grupo eliminados');
             renderBorrarPorGrupoEdad();
             if (typeof mostrarDashboard === 'function') mostrarDashboard();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // IMPORTAR POBLACIÓN DESDE EL CATÁLOGO DEL MAPA SANITARIO
+        // Lee 'mapa_san_catalogo' (viviendas → personas con nombre, fecha de
+        // nacimiento y sexo F/M). Funciona cuando las apps comparten el mismo
+        // almacenamiento (SIS Comunitario). Solo AGREGA personas nuevas: nunca
+        // modifica ni borra personas ni mediciones existentes.
+        // ═══════════════════════════════════════════════════════════════
+        const MP_GRUPOS = [
+            { id: 'todos',        label: 'Todos los grupos',  min: 0,   max: Infinity },
+            { id: 'ninos1',       label: '0 a 4 años 11 m',   min: 0,   max: 59 },
+            { id: 'ninos2',       label: '5 a 11 años 11 m',  min: 60,  max: 143 },
+            { id: 'adolescentes', label: '12 a 19 años',      min: 144, max: 239 },
+            { id: 'adultos',      label: '20 años o más',     min: 240, max: Infinity }
+        ];
+        let _mpItems = [], _mpResumen = {};
+
+        function _mpNorm(s) {
+            return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+        }
+        function _mpTok(s) {
+            return _mpNorm(s).replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+        }
+        // Devuelve 'AAAA-MM-DD' válida (no futura) o '' si no se puede usar
+        function _mpFecha(v) {
+            const t = String(v || '').trim();
+            if (!t) return '';
+            let x, y, m, d;
+            if ((x = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
+            else if ((x = t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/))) { d = +x[1]; m = +x[2]; y = +x[3]; }
+            else return '';
+            const f = new Date(y, m - 1, d);
+            if (y < 1900 || f.getFullYear() !== y || f.getMonth() !== m - 1 || f.getDate() !== d) return '';
+            if (f > ahoraElSalvador()) return '';
+            return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+        function _mpLeerCatalogo() {
+            try {
+                const v = JSON.parse(localStorage.getItem('mapa_san_catalogo') || 'null');
+                return Array.isArray(v) ? v : null;
+            } catch (e) { return null; }
+        }
+
+        function _mpConstruir() {
+            const cat = _mpLeerCatalogo();
+            if (!cat) return null;
+            const existentes = new Set(DB.personas.map(p => _mpNorm(p.nombre) + '|' + (p.fechaNacimiento || '')));
+            const origenes = new Set(DB.personas.map(p => p.origenMapa).filter(Boolean));
+            const porNombre = {};
+            DB.personas.forEach(p => { const k = _mpTok(p.nombre); if (k) (porNombre[k] || (porNombre[k] = [])).push(p); });
+            const vistos = new Set();
+            const res = { personas: 0, deshab: 0 };
+            const items = [];
+            cat.forEach(viv => {
+                if (!viv) return;
+                if (viv.deshabitada) { res.deshab++; return; }
+                (viv.personas || []).forEach(p => {
+                    const nombre = String(p && p.nombre || '').replace(/\s+/g, ' ').trim();
+                    if (!nombre) return;
+                    res.personas++;
+                    const nac = _mpFecha(p.fnac);
+                    const sexo = p.sexo === 'F' ? 'femenino' : (p.sexo === 'M' ? 'masculino' : '');
+                    const meses = nac ? calcularEdadEnMeses(nac) : null;
+                    const key = _mpNorm(nombre) + '|' + nac;
+                    const tok = _mpTok(nombre);
+                    let estado = 'nueva', motivo = '';
+                    if (!nac) { estado = 'sinfecha'; motivo = 'Sin fecha de nacimiento en el Mapa'; }
+                    else if (!sexo) { estado = 'sinsexo'; motivo = 'Sexo no indicado en el Mapa'; }
+                    else if ((p.id && origenes.has(p.id)) || existentes.has(key)) { estado = 'existe'; motivo = 'Ya está en Curvas'; }
+                    else if (vistos.has(key)) { estado = 'repetida'; motivo = 'Aparece más de una vez en el Mapa'; }
+                    else if (porNombre[tok] && porNombre[tok].length) {
+                        const o = porNombre[tok][0];
+                        estado = 'posible';
+                        motivo = 'Ya hay una persona con este nombre' + (o.fechaNacimiento && o.fechaNacimiento !== nac ? ' (distinta fecha de nacimiento)' : '');
+                    }
+                    if (estado === 'nueva' || estado === 'posible') vistos.add(key);
+                    items.push({ p, viv, nombre, nac, sexo, meses, estado, motivo });
+                });
+            });
+            items.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+            _mpResumen = res;
+            return items;
+        }
+
+        function mpAbrir() {
+            const bg = document.getElementById('modalMapaImport');
+            const items = _mpConstruir();
+            const list = document.getElementById('mp-list');
+            document.getElementById('mp-buscar').value = '';
+            document.getElementById('mp-grupo').value = 'todos';
+            if (!items) {
+                _mpItems = [];
+                document.getElementById('mp-sub').textContent = '';
+                document.getElementById('mp-tools').style.display = 'none';
+                document.getElementById('mp-go').style.display = 'none';
+                document.getElementById('mp-count').textContent = '';
+                list.innerHTML = '<div class="mp-empty"><b>No se encontraron datos del Mapa Sanitario</b> en este almacenamiento.<br>Esta opción funciona cuando el Mapa Sanitario y esta app se abren dentro de SIS Comunitario (comparten el mismo almacenamiento).</div>';
+                bg.classList.add('show');
+                return;
+            }
+            _mpItems = items;
+            document.getElementById('mp-tools').style.display = '';
+            document.getElementById('mp-go').style.display = '';
+            mpRender();
+            bg.classList.add('show');
+        }
+
+        function mpRender() {
+            const g = MP_GRUPOS.find(x => x.id === document.getElementById('mp-grupo').value) || MP_GRUPOS[0];
+            const list = document.getElementById('mp-list');
+            const vis = _mpItems.map((it, ix) => ({ it, ix }))
+                .filter(o => o.it.meses == null || (o.it.meses >= g.min && o.it.meses <= g.max));
+            const r = _mpResumen;
+            const nuevas = _mpItems.filter(i => i.estado === 'nueva').length;
+            const yaEstan = _mpItems.filter(i => i.estado === 'existe').length;
+            const sinFecha = _mpItems.filter(i => i.estado === 'sinfecha').length;
+            const sinSexo = _mpItems.filter(i => i.estado === 'sinsexo').length;
+            document.getElementById('mp-sub').textContent =
+                'Mapa Sanitario: ' + r.personas + ' persona(s) · ' + nuevas + ' nueva(s) para importar · ' + yaEstan + ' ya en Curvas'
+                + ' · sin importar: ' + sinFecha + ' sin fecha de nacimiento, ' + sinSexo + ' sin sexo indicado'
+                + (r.deshab ? ', ' + r.deshab + ' vivienda(s) deshabitada(s)' : '') + '.';
+            list.innerHTML = vis.length
+                ? vis.map((o, n) => mpFila(o.it, o.ix, n + 1)).join('')
+                : '<div class="mp-empty">No hay personas de este grupo de edad en el Mapa Sanitario.</div>';
+            document.getElementById('mp-go').style.display = vis.length ? '' : 'none';
+            mpFiltrar();
+            mpConteo();
+        }
+
+        function mpFila(it, ix, n) {
+            const bloqueada = it.estado !== 'nueva' && it.estado !== 'posible';
+            const b = [];
+            if (it.estado === 'nueva') b.push('<span class="mp-b ok">Nueva</span>');
+            if (it.estado === 'existe') b.push('<span class="mp-b">Ya está en Curvas</span>');
+            if (it.estado === 'posible' || it.estado === 'repetida') b.push('<span class="mp-b warn">' + _escaparHTML(it.motivo) + '</span>');
+            if (it.estado === 'sinfecha' || it.estado === 'sinsexo') b.push('<span class="mp-b no">' + _escaparHTML(it.motivo) + ' · complétalo en el Mapa</span>');
+            if (it.sexo === 'femenino') b.push('<span class="mp-b ok">♀ Femenino</span>');
+            if (it.sexo === 'masculino') b.push('<span class="mp-b ok">♂ Masculino</span>');
+            const meta = it.nac
+                ? calcularEdad(it.nac) + ' · Viv. ' + _escaparHTML(String(it.viv.vivienda || '—')) + ' · nac. ' + it.nac.split('-').reverse().join('/')
+                : 'Viv. ' + _escaparHTML(String(it.viv.vivienda || '—'));
+            return '<div class="mp-row' + (bloqueada ? ' dis' : '') + '" data-ix="' + ix + '" data-nombre="' + _escaparHTML(_mpNorm(it.nombre)) + '">'
+                + '<span class="mp-n">' + n + '</span>'
+                + '<input type="checkbox" class="mp-chk" ' + (it.estado === 'nueva' ? 'checked' : '') + ' ' + (bloqueada ? 'disabled' : '') + ' onchange="mpConteo()">'
+                + '<div class="mp-main"><div class="mp-name">' + _escaparHTML(it.nombre) + '</div>'
+                + '<div class="mp-meta">' + meta + '</div>'
+                + '<div class="mp-badges">' + b.join('') + '</div></div></div>';
+        }
+
+        function mpConteo() {
+            const n = [...document.querySelectorAll('#mp-list .mp-row')]
+                .filter(r => r.style.display !== 'none' && r.querySelector('.mp-chk:checked')).length;
+            document.getElementById('mp-count').textContent = n ? n + ' seleccionada(s)' : '';
+            document.getElementById('mp-go').textContent = n ? 'Importar (' + n + ')' : 'Importar';
+        }
+        function mpFiltrar() {
+            const q = _mpNorm(document.getElementById('mp-buscar').value);
+            document.querySelectorAll('#mp-list .mp-row').forEach(r => {
+                r.style.display = (!q || (r.dataset.nombre || '').indexOf(q) > -1) ? '' : 'none';
+            });
+            mpConteo();
+        }
+        function mpMarcar(modo) {
+            document.querySelectorAll('#mp-list .mp-row').forEach(r => {
+                const it = _mpItems[+r.dataset.ix], c = r.querySelector('.mp-chk');
+                if (!c || c.disabled || r.style.display === 'none') return;
+                c.checked = modo === 'todas' && it.estado === 'nueva';
+            });
+            mpConteo();
+        }
+        function mpCerrar() { document.getElementById('modalMapaImport').classList.remove('show'); }
+
+        function mpImportar() {
+            const filas = [...document.querySelectorAll('#mp-list .mp-row')]
+                .filter(r => r.style.display !== 'none' && r.querySelector('.mp-chk') && r.querySelector('.mp-chk').checked);
+            if (!filas.length) { alert('Selecciona al menos una persona.'); return; }
+            const n0 = DB.personas.length;
+            const ids = new Set(DB.personas.map(p => p.id));
+            const existentes = new Set(DB.personas.map(p => _mpNorm(p.nombre) + '|' + (p.fechaNacimiento || '')));
+            const ahoraIso = new Date().toISOString();
+            let base = Date.now(), nuevas = 0, omitidas = 0;
+            filas.forEach(fila => {
+                const it = _mpItems[+fila.dataset.ix];
+                if (!it) return;
+                const key = _mpNorm(it.nombre) + '|' + it.nac;
+                // Red de seguridad: nunca se crea una persona que ya existe
+                if (existentes.has(key)) { omitidas++; return; }
+                existentes.add(key);
+                let id;
+                do { id = String(base++); } while (ids.has(id));
+                ids.add(id);
+                DB.personas.push({
+                    id: id,
+                    nombre: it.nombre,
+                    sexo: it.sexo,
+                    fechaNacimiento: it.nac,
+                    edadActual: calcularEdad(it.nac),
+                    vivienda: String(it.viv.vivienda || ''),
+                    telefono: '',
+                    direccion: '',
+                    notas: '',
+                    esPrematuro: false,
+                    semanasGestacionales: null,
+                    fechaRegistro: ahoraIso,
+                    origenMapa: it.p.id || ''
+                });
+                nuevas++;
+            });
+            try { guardarDatos(); }
+            catch (e) {
+                DB.personas.length = n0; // solo se habían agregado personas al final
+                alert('❌ No se pudo importar: se llenó el espacio de almacenamiento del dispositivo. No se importó ninguna persona.');
+                return;
+            }
+            mpCerrar();
+            mostrarPanel('personas');
+            alert('✅ ' + nuevas + ' persona(s) importada(s) desde el Mapa Sanitario' + (omitidas ? ' · ' + omitidas + ' omitida(s) por ya existir' : ''));
         }
 
         function irAPanel(panel) {

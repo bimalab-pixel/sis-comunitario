@@ -343,6 +343,44 @@
           background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;
         }
         .ctrl-firma-btn:hover{background:var(--gold);border-color:var(--gold)}
+        /* Seguimiento por grupos etarios */
+        .ge-tabla{width:100%;border-collapse:collapse;font-size:.8rem;background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.7rem}
+        .ge-tabla th{background:var(--navy);color:#fff;font-weight:700;font-size:.72rem;padding:.45rem .55rem;text-align:left}
+        .ge-tabla td{padding:.5rem .55rem;border-top:1px solid var(--light2);vertical-align:middle}
+        .ge-tabla .ge-c-n{width:2rem;text-align:right;color:var(--muted);font-weight:700}
+        .ge-tabla .ge-c-p{width:4.2rem;text-align:right;font-weight:800;font-size:.95rem;color:var(--navy2)}
+        .ge-fila{cursor:pointer;transition:background .12s}
+        .ge-fila:active{background:var(--light)}
+        .ge-fila.sel{background:#e8f8f4;box-shadow:inset 3px 0 0 var(--teal2)}
+        .ge-total td{border-top:2px solid var(--border);background:var(--light)}
+        .ge-total.sel{background:#e8f8f4}
+        .ge-gnombre{font-weight:700;color:var(--navy2)}
+        .ge-gdetalle{font-size:.68rem;color:var(--muted);margin-top:1px}
+        .ge-lista-titulo{font-size:.82rem;font-weight:800;color:var(--navy);margin:.3rem 0 .6rem}
+        .ge-n{color:var(--muted);font-weight:700}
+        .badge.ge-b-f{background:#fce4ec;color:#c2185b}
+        .badge.ge-b-m{background:#e3f2fd;color:#1565c0}
+        .badge.ge-b-x{background:#fff1dc;color:#9a5b00}
+        .ge-ojo{border:1.5px solid var(--teal2);background:#fff;color:var(--teal2);border-radius:20px;padding:.1rem .6rem;font-family:inherit;font-size:.68rem;font-weight:800;cursor:pointer}
+        .ge-ojo:active{background:var(--teal2);color:#fff}
+        .ge-ojo.ge-corregir{border-color:#c77700;color:#9a5b00;background:#fff8ec}
+        .ge-ojo.ge-corregir:active{background:#c77700;color:#fff}
+        #modal-ge-vincular{display:none;position:fixed;inset:0;background:rgba(6,42,30,.55);z-index:10002;align-items:center;justify-content:center;padding:1rem}
+        #modal-ge-vincular.show{display:flex}
+        #modal-ge-vincular .mcat-box{max-height:92vh;display:flex;flex-direction:column}
+        #modal-ge-vincular .mcat-body{overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .ge-vinc-fila{display:flex;align-items:center;gap:.5rem;padding:.55rem .65rem;border-bottom:1px solid var(--light2)}
+        .ge-vinc-fila:last-child{border-bottom:none}
+        .ge-vinc-fila.sug{background:#e8f8f4}
+        .ge-vinc-info{flex:1;min-width:0}
+        .ge-vinc-nombre{font-weight:800;font-size:.84rem;color:var(--navy2);overflow-wrap:anywhere}
+        .ge-vinc-meta{font-size:.7rem;color:var(--muted);margin-top:1px}
+        .ge-vinc-btn{flex-shrink:0;border:none;background:var(--teal2);color:#fff;border-radius:8px;padding:.4rem .7rem;font-family:inherit;font-size:.74rem;font-weight:800;cursor:pointer}
+        .ge-fechas{margin-top:.55rem;padding:.5rem .65rem;background:var(--light);border:1px solid var(--border);border-radius:9px}
+        .ge-fechas-t{font-size:.7rem;font-weight:800;color:var(--navy);margin-bottom:.3rem}
+        .ge-fecha-fila{font-size:.78rem;color:var(--navy2);padding:.18rem 0;border-top:1px solid var(--light2)}
+        .ge-fecha-fila:first-of-type{border-top:none}
+        .ge-fecha-n{display:inline-block;min-width:1.3rem;text-align:right;color:var(--muted);font-weight:700;margin-right:.2rem}
         #modal-grafica-nutri .modal-box{max-width:520px;transition:max-width .15s,width .15s}
         #modal-grafica-nutri h3{padding-right:80px;word-wrap:break-word;overflow-wrap:break-word}
         .btn-fullscreen-grafica{
@@ -752,6 +790,38 @@
         #micat-prev-tbody tr:hover{background:var(--light2)}
         #micat-prev-tbody td{padding:.32rem .6rem;border-bottom:1px solid var(--light2);color:var(--text)}
         #micat-prev-tbody td.err{color:var(--danger);font-style:italic}
+
+        /* ─── Importar catálogo desde el Mapa Sanitario (completa también el sexo) ─── */
+        #modal-mapa-import{
+          display:none;position:fixed;inset:0;background:rgba(6,42,30,.55);
+          z-index:10001;align-items:center;justify-content:center;padding:1rem;
+        }
+        #modal-mapa-import.show{display:flex}
+        #modal-mapa-import .mcat-box{max-height:94vh;display:flex;flex-direction:column}
+        #modal-mapa-import .mcat-body{overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .rm-sub{font-size:.76rem;color:var(--muted);line-height:1.5;margin-bottom:.65rem}
+        .rm-tools{display:flex;flex-wrap:wrap;gap:.4rem .7rem;align-items:center;margin-bottom:.55rem}
+        .rm-tools input[type=search]{flex:1 1 100%;border:1.5px solid var(--border);border-radius:8px;padding:.45rem .65rem;font-family:inherit;font-size:.85rem;min-width:0}
+        .rm-link{background:none;border:none;color:var(--teal);font-weight:800;font-size:.78rem;font-family:inherit;cursor:pointer;padding:.2rem .1rem}
+        .rm-list{max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px;min-height:100px}
+        .rm-row{display:flex;gap:.5rem;align-items:flex-start;padding:.55rem .65rem;border-bottom:1px solid var(--light2)}
+        .rm-row:last-child{border-bottom:none}
+        .rm-row.dis{opacity:.6}
+        .rm-n{flex-shrink:0;min-width:1.6rem;text-align:right;font-size:.7rem;font-weight:700;color:var(--muted);padding-top:3px}
+        .rm-row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--teal2);flex-shrink:0}
+        .rm-main{flex:1;min-width:0}
+        .rm-name{font-weight:800;font-size:.85rem;color:var(--navy2);overflow-wrap:anywhere}
+        .rm-meta{font-size:.72rem;color:var(--muted);margin-top:1px}
+        .rm-badges{display:flex;flex-wrap:wrap;gap:.28rem;margin-top:.28rem}
+        .rm-b{font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:10px;background:#eceff4;color:#3b4560}
+        .rm-b.ok{background:#dcfce7;color:#166534}
+        .rm-b.warn{background:#fff1dc;color:#9a5b00}
+        .rm-b.no{background:#fde7e5;color:#a12a20}
+        .rm-foot{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.75rem;flex-wrap:wrap}
+        .rm-count{font-size:.76rem;color:var(--muted)}
+        .rm-empty{padding:1.1rem .9rem;font-size:.84rem;color:var(--muted);line-height:1.55}
+        .rm-map-btn{display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.7rem .9rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+        .rm-map-btn:active{transform:scale(.98)}
 
         /* ══ BOTÓN SELECTOR PACIENTE (encabezado formulario) ══ */
         .sel-pac-btn{
@@ -1408,6 +1478,17 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
+        <button class="menu-btn" onclick="irA('screen-grupos-etarios')">
+            <div class="menu-btn-icon" style="background:#0b6e8a">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-5.8 6.5-5.8s6.5 2.2 6.5 5.8"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17.5 14.2c2.4 0 4 1.6 4 4.3"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Grupos Etarios</div>
+                <div class="mbs">Adolescentes, MEF y adultos — día, mes o año</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <button class="menu-btn" onclick="irA('screen-historial')">
             <div class="menu-btn-icon" style="background:#0e5c44">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
@@ -1718,6 +1799,13 @@
                 <label class="mcat-label">Nombre completo</label>
                 <input class="mcat-input" id="mcat-nombre" placeholder="Nombre de la persona"/>
 
+                <label class="mcat-label">Sexo</label>
+                <select class="mcat-input" id="mcat-sexo" style="margin-bottom:.6rem">
+                    <option value="">Sin indicar</option>
+                    <option value="F">♀ Femenino</option>
+                    <option value="M">♂ Masculino</option>
+                </select>
+
                 <label class="mcat-label">Fecha de nacimiento</label>
                 <input class="mcat-input" type="date" id="mcat-fnac"
                        oninput="mcatCalcularEdad()" style="margin-bottom:.35rem"/>
@@ -1792,6 +1880,13 @@
     <input type="hidden" id="mep-per-id"/>
     <label class="mcat-label">Nombre completo</label>
     <input class="mcat-input" id="mep-nombre" placeholder="Nombre de la persona" autocomplete="off"/>
+
+                <label class="mcat-label">Sexo</label>
+                <select class="mcat-input" id="mep-sexo" style="margin-bottom:.6rem">
+                    <option value="">Sin indicar</option>
+                    <option value="F">♀ Femenino</option>
+                    <option value="M">♂ Masculino</option>
+                </select>
     <label class="mcat-label">Fecha de nacimiento</label>
     <input class="mcat-input" type="date" id="mep-fnac" oninput="mepCalcularEdad()"/>
     <div id="mep-edad-display" style="display:none;background:linear-gradient(135deg,#0b8a7218,#00b89c12);
@@ -1837,6 +1932,49 @@
   </div>
 </div>
 
+<!-- Modal: vincular el nombre de un registro con un integrante del catálogo (Grupos Etarios) -->
+<div id="modal-ge-vincular" onclick="if(event.target===this)_geCerrarVincular()">
+    <div class="mcat-box" style="max-width:480px" onclick="event.stopPropagation()">
+        <div class="mcat-header">
+            <h4>🔗 Vincular nombre</h4>
+            <button class="mcat-close" onclick="_geCerrarVincular()">✕</button>
+        </div>
+        <div class="mcat-body">
+            <p class="rm-sub" id="ge-vinc-sub"></p>
+            <div class="rm-list" id="ge-vinc-lista"></div>
+            <div class="mcat-btns" style="margin-top:.75rem">
+                <button class="cancel" onclick="_geCerrarVincular()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal importar catálogo desde el Mapa Sanitario (trae también el sexo) -->
+<div id="modal-mapa-import" onclick="if(event.target===this)rmCerrar()">
+    <div class="mcat-box" style="max-width:520px" onclick="event.stopPropagation()">
+        <div class="mcat-header">
+            <h4>🗺️ Importar del Mapa Sanitario</h4>
+            <button class="mcat-close" onclick="rmCerrar()">✕</button>
+        </div>
+        <div class="mcat-body">
+            <p class="rm-sub" id="rm-sub"></p>
+            <div class="rm-tools" id="rm-tools">
+                <input type="search" id="rm-buscar" placeholder="Buscar por nombre o vivienda…" oninput="rmFiltrar()">
+                <button type="button" class="rm-link" onclick="rmMarcar('todas')">Marcar todas</button>
+                <button type="button" class="rm-link" onclick="rmMarcar('ninguna')">Ninguna</button>
+            </div>
+            <div class="rm-list" id="rm-list"></div>
+            <div class="rm-foot">
+                <span class="rm-count" id="rm-count"></span>
+                <div class="mcat-btns" style="margin-left:auto;margin-top:0">
+                    <button class="cancel" onclick="rmCerrar()">Cerrar</button>
+                    <button class="ok" id="rm-go" onclick="rmImportar()">Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal importar catálogo desde Excel / CSV / Google Sheets -->
 <div id="modal-importar-cat">
     <div class="mcat-box" style="max-width:480px">
@@ -1848,22 +1986,27 @@
 
             <!-- Paso 1: instrucciones + zona de carga -->
             <div id="micat-paso1" style="padding:1rem">
+                <button type="button" class="rm-map-btn" onclick="cerrarModalImportarCat();rmAbrir()">🗺️ Importar del Mapa Sanitario <span style="font-weight:400;font-size:.72rem;opacity:.85">(incluye el sexo)</span></button>
+                <div style="text-align:center;font-size:.72rem;color:var(--muted);margin:.1rem 0 .75rem">— o desde un archivo Excel / CSV —</div>
                 <div style="background:var(--light);border:1.5px solid var(--border);border-radius:9px;padding:.75rem .9rem;margin-bottom:.85rem;font-size:.78rem;color:var(--navy2)">
                     <strong style="display:block;margin-bottom:.35rem">📋 Formato esperado</strong>
-                    El archivo debe tener <strong>3 columnas</strong> con estos encabezados
+                    El archivo puede tener hasta <strong>5 columnas</strong>, con el <strong>mismo formato del Mapa Sanitario</strong> (el mismo Excel sirve en las dos apps):
                     (en cualquier idioma, el orden sí importa):
                     <div style="margin:.5rem 0;display:flex;gap:.4rem;flex-wrap:wrap">
                         <span style="background:var(--navy2);color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna A — N° Vivienda</span>
                         <span style="background:var(--navy2);color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna B — Nombre</span>
                         <span style="background:#0b8a72;color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna C — Fecha de Nacimiento</span>
+                        <span style="background:#6b7280;color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna D — Riesgo (solo Mapa; aquí se ignora)</span>
+                        <span style="background:#7c3aed;color:#fff;border-radius:5px;padding:.18rem .55rem;font-size:.72rem;font-weight:700">Columna E — Sexo (Masculino/Femenino, opcional)</span>
                     </div>
-                    La fecha de nacimiento puede estar en formato <strong>DD/MM/AAAA</strong>,
+                    En <strong>Sexo</strong> escribe <strong>Femenino</strong> o <strong>Masculino</strong> (también sirve F/M, Mujer/Hombre, Niña/Niño). Si la dejas vacía, la persona queda sin sexo. La fecha de nacimiento puede estar en formato <strong>DD/MM/AAAA</strong>,
                     <strong>AAAA-MM-DD</strong> o como fecha de Excel. La edad se calcula
                     automáticamente en tiempo real (zona horaria El Salvador).<br/>
                     Acepta <strong>.xlsx</strong> (Excel), <strong>.xls</strong>, <strong>.csv</strong> y archivos
                     exportados de <strong>Google Sheets</strong> (.csv o .xlsx).
                     La primera fila se trata como encabezado y se omite.
                 </div>
+                <button type="button" onclick="micatDescargarPlantilla()" style="display:block;width:100%;margin:-.35rem 0 .85rem;padding:.55rem .8rem;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--navy2);font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer">📥 Descargar plantilla de ejemplo</button>
 
                 <label id="micat-dropzone" for="micat-file-input"
                     style="display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1897,9 +2040,11 @@
                     <table id="micat-prev-tabla" style="width:100%;border-collapse:collapse;font-size:.76rem">
                         <thead>
                             <tr style="background:var(--navy);color:#fff;position:sticky;top:0">
+                                <th style="padding:.38rem .5rem;text-align:right;font-weight:700">N°</th>
                                 <th style="padding:.38rem .6rem;text-align:left;font-weight:700">Vivienda</th>
                                 <th style="padding:.38rem .6rem;text-align:left;font-weight:700">Nombre</th>
                                 <th style="padding:.38rem .6rem;text-align:left;font-weight:700;background:#0b8a72">F. Nacimiento → Edad calculada</th>
+                            <th style="padding:.38rem .6rem;text-align:left;font-weight:700;background:#7c3aed">Sexo</th>
                             </tr>
                         </thead>
                         <tbody id="micat-prev-tbody"></tbody>
@@ -2162,6 +2307,62 @@
         <div id="ctrl-lista"></div>
     </div>
 </div><!-- /screen-control-entregas -->
+
+<!-- ════════════════════════════
+     SCREEN: SEGUIMIENTO POR GRUPOS ETARIOS
+════════════════════════════ -->
+<div class="screen" id="screen-grupos-etarios">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Grupos Etarios</span>
+    </div>
+
+    <div class="scroller">
+        <div class="rep-card">
+            <div class="rep-card-body">
+                <div class="ctrl-periodo-botones">
+                    <button type="button" class="ctrl-periodo-btn active" id="ge-periodo-hoy" onclick="_geCambiarPeriodo('hoy')">Hoy</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ge-periodo-dia" onclick="_geCambiarPeriodo('dia')">Otra fecha</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ge-periodo-mes" onclick="_geCambiarPeriodo('mes')">Por mes</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ge-periodo-anio" onclick="_geCambiarPeriodo('anio')">Por año</button>
+                </div>
+
+                <div class="rep-fields" id="ge-campos-dia" style="display:none">
+                    <div class="f-group">
+                        <label>Fecha</label>
+                        <input type="date" id="ge-fecha" onchange="_geRender()"/>
+                    </div>
+                </div>
+
+                <div class="rep-fields" id="ge-campos-mes" style="display:none">
+                    <div class="f-group" id="ge-grupo-mes">
+                        <label>Mes</label>
+                        <select id="ge-mes" onchange="_geRender()">
+                            <option value="01">Enero</option><option value="02">Febrero</option>
+                            <option value="03">Marzo</option><option value="04">Abril</option>
+                            <option value="05">Mayo</option><option value="06">Junio</option>
+                            <option value="07">Julio</option><option value="08">Agosto</option>
+                            <option value="09">Septiembre</option><option value="10">Octubre</option>
+                            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="f-group">
+                        <label>Año</label>
+                        <input type="number" id="ge-anio" min="2020" max="2235" onchange="_geRender()"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ctrl-resumen" id="ge-resumen">0 personas visitadas</div>
+        <div id="ge-tabla"></div>
+        <div class="ge-lista-titulo" id="ge-lista-titulo"></div>
+        <div id="ge-lista"></div>
+    </div>
+</div><!-- /screen-grupos-etarios -->
 
 <!-- ════════════════════════════
      SCREEN: HISTORIAL POR PERSONA
@@ -3168,6 +3369,7 @@ ${hojas}
       if (screenId === 'screen-list') renderListado();
       if (screenId === 'screen-home') actualizarHome();
       if (screenId === 'screen-control-entregas') _ctrlRenderLista();
+      if (screenId === 'screen-grupos-etarios') _geRender();
       if (screenId === 'screen-historial') _hpRefrescar();
       // Al abrir formulario nuevo (sin edición ni modo otra persona), refrescar fecha/hora actual
       if (screenId === 'screen-nuevo') {
@@ -9048,6 +9250,347 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
 
     // ════════════════════════════════════
+    // SEGUIMIENTO POR GRUPOS ETARIOS
+    // Toma de los registros diarios a las personas que fueron visitadas en el día, mes o año
+    // elegido (cada persona se cuenta una sola vez aunque tenga varias visitas) y las ordena
+    // por grupo de edad. El SEXO y la fecha de nacimiento se buscan en el catálogo (misma
+    // vivienda + mismo nombre). La edad se calcula a la fecha de la visita; si la persona no
+    // está en el catálogo o no tiene fecha de nacimiento, se usa la edad escrita en el registro.
+    // Una persona puede contar en dos grupos (mujeres de 18 y 19 años: adolescentes y MEF).
+    // ════════════════════════════════════
+    const GE_GRUPOS = [
+      { id: 'adol',  corto: 'Adolescente',  icono: '🧒', nombre: 'Adolescentes',           detalle: '12 a 19 años · femeninos y masculinos', test: (a, s) => a >= 12 && a <= 19 },
+      { id: 'mef',   corto: 'MEF',          icono: '🤰', nombre: 'Mujeres en edad fértil', detalle: '18 a 49 años',                          test: (a, s) => s === 'F' && a >= 18 && a <= 49 },
+      { id: 'adm',   corto: 'Adulto masc.', icono: '👨', nombre: 'Adultos masculinos',     detalle: '20 a 59 años',                          test: (a, s) => s === 'M' && a >= 20 && a <= 59 },
+      { id: 'm5059', corto: 'Mujer 50-59',  icono: '👩', nombre: 'Mujeres de 50 a 59 años', detalle: '50 a 59 años',                         test: (a, s) => s === 'F' && a >= 50 && a <= 59 },
+      { id: 'am',    corto: 'Adulto mayor', icono: '🧓', nombre: 'Adultos mayores',        detalle: '60 años en adelante · ambos sexos',     test: (a, s) => a >= 60 }
+    ];
+    let _gePeriodo = 'hoy';
+    let _geGrupoSel = 'todos';
+    let _geVisibles = [];            // personas que se están mostrando (para el botón del ojito)
+    const _geAbiertos = new Set();   // personas con las fechas desplegadas
+
+    function _geEsc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function _geNorm(s) {
+      return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    }
+    function _geTok(s) {
+      return _geNorm(s).replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+    }
+    function _geFnacISO(v) {
+      const s = String(v || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : '';
+    }
+    // Años cumplidos a la fecha de la visita
+    function _geEdadEnFecha(fnacISO, ymd) {
+      if (!fnacISO || !ymd) return null;
+      const [fy, fm, fd] = fnacISO.split('-').map(Number);
+      const [vy, vm, vd] = String(ymd).split('-').map(Number);
+      if (!fy || !vy) return null;
+      let a = vy - fy;
+      if (vm < fm || (vm === fm && vd < fd)) a--;
+      return (a >= 0 && a <= 120) ? a : null;
+    }
+    // Edad escrita en el registro: "35 años", "1 año 2 meses", "8 meses" (→ 0), "35"
+    function _geEdadDeTexto(t) {
+      const s = _geNorm(t);
+      if (!s) return null;
+      let m = s.match(/(\d+)\s*anos?/);
+      if (m) return parseInt(m[1], 10);
+      if (/mes|dia|semana/.test(s)) return 0;
+      m = s.match(/^(\d{1,3})$/);
+      return m ? parseInt(m[1], 10) : null;
+    }
+    function _geIndiceCatalogo() {
+      const idx = {};
+      getCatalogo().forEach(v => {
+        const k = _geNorm(v.vivienda);
+        (idx[k] || (idx[k] = [])).push(...(v.personas || []).map(p => ({ p, vivId: v.id })));
+        if (!idx['#' + k]) idx['#' + k] = v.id; // id de la vivienda, aunque la persona no esté en el catálogo
+      });
+      return idx;
+    }
+    // Devuelve { p, vivId } si la persona está en el catálogo, o null
+    function _geBuscarEnCatalogo(idx, viv, nombre) {
+      const lista = idx[_geNorm(viv)] || [];
+      const nk = _geNorm(nombre);
+      let e = lista.find(x => _geNorm(x.p.nombre) === nk);
+      if (!e) { const tk = _geTok(nombre); e = lista.find(x => _geTok(x.p.nombre) === tk); }
+      return e || null;
+    }
+
+    function _geRegistrosDelPeriodo() {
+      let fecha = null, prefijo = null;
+      if (_gePeriodo === 'hoy') fecha = hoy();
+      else if (_gePeriodo === 'dia') fecha = document.getElementById('ge-fecha').value || hoy();
+      else {
+        const ahora = new Date();
+        const anio = document.getElementById('ge-anio').value || ahora.getFullYear();
+        if (_gePeriodo === 'anio') prefijo = `${anio}-`;
+        else {
+          const mes = document.getElementById('ge-mes').value || String(ahora.getMonth() + 1).padStart(2, '0');
+          prefijo = `${anio}-${String(mes).padStart(2, '0')}-`;
+        }
+      }
+      return registros.filter(r => r.fecha && (fecha ? r.fecha === fecha : String(r.fecha).startsWith(prefijo)));
+    }
+
+    // Personas únicas visitadas en el período, con sexo, edad y grupos a los que pertenecen
+    function _geConstruir() {
+      const regs = _geRegistrosDelPeriodo().slice().sort((a, b) =>
+        String(b.fecha).localeCompare(String(a.fecha)) || String(b.hora || '').localeCompare(String(a.hora || '')));
+      const idx = _geIndiceCatalogo();
+      const mapa = {}, lista = [];
+      regs.forEach(r => {
+        const nombre = String(r.nombre || '').trim();
+        if (!nombre) return;
+        const key = _geNorm(r.vivienda) + '|' + _geTok(nombre);
+        let o = mapa[key];
+        if (!o) {
+          const ent = _geBuscarEnCatalogo(idx, r.vivienda, nombre);
+          const cat = ent ? ent.p : null;
+          const fnac = cat ? _geFnacISO(cat.fnac) : '';
+          let edad = fnac ? _geEdadEnFecha(fnac, r.fecha) : null;
+          if (edad == null) edad = _geEdadDeTexto(r.edad);
+          const sexo = (cat && (cat.sexo === 'F' || cat.sexo === 'M')) ? cat.sexo : '';
+          o = { key, nombre, vivienda: r.vivienda || '', fecha: r.fecha, edad, sexo, visitas: 0, fechas: [], grupos: [],
+                catVivId: ent ? ent.vivId : (idx['#' + _geNorm(r.vivienda)] || null), catPerId: cat ? cat.id : null };
+          o.grupos = GE_GRUPOS.filter(g => edad != null && g.test(edad, sexo)).map(g => g.id);
+          mapa[key] = o; lista.push(o);
+        }
+        o.visitas++;
+        o.fechas.push({ fecha: r.fecha, hora: r.hora || '' }); // ya vienen de la más reciente a la más antigua
+      });
+      lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+      return lista;
+    }
+
+    const _geEsMenor    = o => o.edad != null && o.edad < 12;
+    const _geFaltaSexo  = o => !o.sexo && o.edad != null && o.edad >= 18 && o.edad <= 59;
+    const _geSinEdad    = o => o.edad == null;
+
+    function _geFiltrar(lista, sel) {
+      if (sel === 'todos') return lista;
+      if (sel === 'menores') return lista.filter(_geEsMenor);
+      if (sel === 'faltasexo') return lista.filter(_geFaltaSexo);
+      if (sel === 'sinedad') return lista.filter(_geSinEdad);
+      return lista.filter(o => o.grupos.includes(sel));
+    }
+
+    function _geCambiarPeriodo(p) {
+      _gePeriodo = p;
+      ['hoy', 'dia', 'mes', 'anio'].forEach(x => {
+        const b = document.getElementById('ge-periodo-' + x);
+        if (b) b.classList.toggle('active', x === p);
+      });
+      const cDia = document.getElementById('ge-campos-dia');
+      const cMes = document.getElementById('ge-campos-mes');
+      const gMes = document.getElementById('ge-grupo-mes');
+      if (cDia) cDia.style.display = (p === 'dia') ? '' : 'none';
+      if (cMes) cMes.style.display = (p === 'mes' || p === 'anio') ? '' : 'none';
+      if (gMes) gMes.style.display = (p === 'mes') ? '' : 'none';
+      const fechaEl = document.getElementById('ge-fecha');
+      if (p === 'dia' && fechaEl && !fechaEl.value) fechaEl.value = hoy();
+      if (p === 'mes' || p === 'anio') {
+        const ahora = new Date();
+        const anioEl = document.getElementById('ge-anio'), mesEl = document.getElementById('ge-mes');
+        if (anioEl && !anioEl.value) anioEl.value = ahora.getFullYear();
+        if (mesEl && !mesEl.value) mesEl.value = String(ahora.getMonth() + 1).padStart(2, '0');
+      }
+      _geRender();
+    }
+
+    // 👁 Muestra u oculta las fechas en que se visitó a la persona
+    function _geToggleFechas(i) {
+      const o = _geVisibles[i];
+      if (!o) return;
+      const panel = document.getElementById('ge-fechas-' + i);
+      const btn = document.getElementById('ge-ojo-' + i);
+      const abrir = !_geAbiertos.has(o.key);
+      if (abrir) _geAbiertos.add(o.key); else _geAbiertos.delete(o.key);
+      if (panel) panel.style.display = abrir ? '' : 'none';
+      if (btn) btn.innerHTML = abrir ? '🙈 Ocultar fechas' : '👁 Ver fechas';
+    }
+    function _geHoraTxt(h) {
+      const m = /^(\d{2}):(\d{2})$/.exec(h || '');
+      if (!m) return '';
+      let hh = parseInt(m[1], 10); const ap = hh >= 12 ? 'p. m.' : 'a. m.';
+      hh = hh % 12 || 12;
+      return hh + ':' + m[2] + ' ' + ap;
+    }
+
+    // Abre el catálogo mostrando solo la vivienda de esa persona, para corregir sexo, fecha de nacimiento o edad
+    function _geAbrirFamilia(i) {
+      const o = _geVisibles[i];
+      if (!o || !o.catVivId) return;
+      irA('screen-catalogo');
+      verFamiliaCompleta(o.catVivId, o.catPerId || '');
+    }
+
+    // Cambia el nombre en los registros de esa vivienda cuyo nombre (mismas palabras, en cualquier orden)
+    // era `viejo`. Marca cada registro como modificado para que "Subir a la nube" lo detecte.
+    function _geRenombrarRegistros(vivienda, viejo, nuevo) {
+      const vk = _geNorm(vivienda), tk = _geTok(viejo), nuevoMay = _rdpsMay(nuevo);
+      if (!tk || !nuevoMay) return 0;
+      const ts = new Date().toISOString();
+      let n = 0;
+      registros.forEach(r => {
+        if (_geNorm(r.vivienda) !== vk) return;
+        if (_geTok(r.nombre) !== tk) return;
+        if (r.nombre === nuevoMay) return;
+        r.nombre = nuevoMay;
+        r.actualizadoEn = ts;
+        n++;
+      });
+      if (n) localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      return n;
+    }
+
+    let _geVincIdx = null;
+    function _geAbrirVincular(i) {
+      const o = _geVisibles[i];
+      if (!o || !o.catVivId) return;
+      const viv = getCatalogo().find(v => v.id === o.catVivId);
+      if (!viv) return;
+      _geVincIdx = i;
+      const palabras = new Set(_geTok(o.nombre).split(' ').filter(Boolean));
+      const filas = (viv.personas || []).map(p => ({
+        p, score: _geTok(p.nombre).split(' ').filter(w => palabras.has(w)).length
+      })).sort((a, b) => b.score - a.score || a.p.nombre.localeCompare(b.p.nombre, 'es'));
+      document.getElementById('ge-vinc-sub').innerHTML =
+        'En los registros aparece como <b>«' + _geEsc(o.nombre) + '»</b> (vivienda ' + _geEsc(o.vivienda) + ', ' + o.visitas + ' visita' + (o.visitas !== 1 ? 's' : '') + '), ' +
+        'pero ese nombre no coincide con ningún integrante del catálogo. Elige quién es: se cambiará el nombre en <b>todos</b> sus registros y así se podrá ubicar en su grupo.';
+      document.getElementById('ge-vinc-lista').innerHTML = filas.length
+        ? filas.map((f, k) => {
+            const fnac = _geFnacISO(f.p.fnac);
+            const edad = fnac ? calcularEdadTexto(fnac) : (f.p.edad || 'sin edad');
+            const sexo = f.p.sexo === 'F' ? '♀ Femenino' : f.p.sexo === 'M' ? '♂ Masculino' : 'sin sexo';
+            const sug = k === 0 && f.score > 0;
+            return '<div class="ge-vinc-fila' + (sug ? ' sug' : '') + '">' +
+              '<span class="rm-n">' + (k + 1) + '</span>' +
+              '<div class="ge-vinc-info"><div class="ge-vinc-nombre">' + _geEsc(f.p.nombre) + '</div>' +
+              '<div class="ge-vinc-meta">' + _geEsc(edad) + ' · ' + sexo + (sug ? ' · <b style="color:#0b8a72">Sugerida</b>' : '') + '</div></div>' +
+              '<button type="button" class="ge-vinc-btn" onclick="_geVincular(\'' + _geEsc(f.p.id) + '\')">Es esta</button></div>';
+          }).join('')
+        : '<div class="rm-empty">Esta vivienda no tiene integrantes en el catálogo. Usa «Abrir familia y corregir» para agregarlos.</div>';
+      document.getElementById('modal-ge-vincular').classList.add('show');
+    }
+    function _geCerrarVincular() {
+      document.getElementById('modal-ge-vincular').classList.remove('show');
+      _geVincIdx = null;
+    }
+    function _geVincular(perId) {
+      const o = _geVisibles[_geVincIdx];
+      if (!o) return;
+      const viv = getCatalogo().find(v => v.id === o.catVivId);
+      const p = viv && (viv.personas || []).find(x => x.id === perId);
+      if (!p) return;
+      if (!confirm('Se cambiará el nombre en todos los registros de la vivienda ' + o.vivienda + ':\n\n«' + o.nombre + '»\n→ «' + _rdpsMay(p.nombre) + '»\n\n¿Continuar?')) return;
+      const n = _geRenombrarRegistros(o.vivienda, o.nombre, p.nombre);
+      _geCerrarVincular();
+      _geRender();
+      toast(n ? '✅ ' + n + ' registro' + (n !== 1 ? 's' : '') + ' actualizado' + (n !== 1 ? 's' : '') + ': ahora dice' + (n !== 1 ? 'n' : '') + ' «' + _rdpsMay(p.nombre) + '»' : 'No había registros por cambiar', 'success', 4500);
+    }
+    // Botones de corrección de una tarjeta con sexo o edad sin especificar
+    function _geBotonesCorregir(o, i) {
+      if (o.sexo && o.edad != null) return '';
+      if (!o.catVivId) return '<span class="badge ge-b-x">⚠ Esta vivienda no está en el catálogo</span>';
+      return (o.catPerId ? '' : '<button type="button" class="ge-ojo ge-corregir" onclick="_geAbrirVincular(' + i + ')">🔗 Vincular nombre</button>') +
+        '<button type="button" class="ge-ojo ge-corregir" onclick="_geAbrirFamilia(' + i + ')">🏠 Abrir familia y corregir</button>';
+    }
+
+    function _geSeleccionarGrupo(id) {
+      _geGrupoSel = id;
+      _geRender();
+    }
+
+    function _geRender() {
+      const lista = _geConstruir();
+      const visitasTotal = lista.reduce((n, o) => n + o.visitas, 0);
+      const multi = lista.filter(o => o.grupos.length > 1).length;
+
+      // Tabla resumen (cada fila se puede tocar para ver las personas de ese grupo)
+      const filas = GE_GRUPOS.map(g => ({ id: g.id, nombre: g.icono + ' ' + g.nombre, detalle: g.detalle, n: lista.filter(o => o.grupos.includes(g.id)).length }));
+      const extras = [
+        { id: 'menores',   nombre: '👶 Menores de 12 años',        detalle: 'no entran en estos grupos',                       n: lista.filter(_geEsMenor).length,   solo: true },
+        { id: 'faltasexo', nombre: '⚠️ Falta el sexo',             detalle: '18 a 59 años: no se puede ubicar en MEF ni adultos', n: lista.filter(_geFaltaSexo).length, solo: true },
+        { id: 'sinedad',   nombre: '⚠️ Sin edad',                  detalle: 'sin fecha de nacimiento ni edad en el registro',   n: lista.filter(_geSinEdad).length,   solo: true }
+      ].filter(e => e.n > 0);
+      const todas = filas.concat(extras);
+      let html = '<table class="ge-tabla"><thead><tr><th class="ge-c-n">N°</th><th>Grupo</th><th class="ge-c-p">Personas</th></tr></thead><tbody>';
+      todas.forEach((f, i) => {
+        html += `<tr class="ge-fila${_geGrupoSel === f.id ? ' sel' : ''}" onclick="_geSeleccionarGrupo('${f.id}')">` +
+          `<td class="ge-c-n">${i + 1}</td>` +
+          `<td><div class="ge-gnombre">${_geEsc(f.nombre)}</div><div class="ge-gdetalle">${_geEsc(f.detalle)}</div></td>` +
+          `<td class="ge-c-p">${f.n}</td></tr>`;
+      });
+      html += `<tr class="ge-fila ge-total${_geGrupoSel === 'todos' ? ' sel' : ''}" onclick="_geSeleccionarGrupo('todos')">` +
+        `<td class="ge-c-n">${todas.length + 1}</td><td><div class="ge-gnombre">👥 Total de personas visitadas</div><div class="ge-gdetalle">cada persona cuenta una sola vez</div></td>` +
+        `<td class="ge-c-p">${lista.length}</td></tr></tbody></table>`;
+      const tablaEl = document.getElementById('ge-tabla');
+      if (tablaEl) tablaEl.innerHTML = html;
+
+      const resEl = document.getElementById('ge-resumen');
+      if (resEl) {
+        resEl.textContent = `${lista.length} persona${lista.length !== 1 ? 's' : ''} visitada${lista.length !== 1 ? 's' : ''} · ${visitasTotal} visita${visitasTotal !== 1 ? 's' : ''}` +
+          (multi ? ` · ${multi} cuenta${multi !== 1 ? 'n' : ''} en más de un grupo` : '');
+      }
+
+      // Lista de personas del grupo elegido
+      const sel = _geGrupoSel;
+      const titulo = sel === 'todos' ? 'Todas las personas visitadas'
+        : (todas.find(f => f.id === sel) || { nombre: '' }).nombre.replace(/^\S+\s/, '');
+      const vis = _geFiltrar(lista, sel);
+      _geVisibles = vis;
+      const tEl = document.getElementById('ge-lista-titulo');
+      if (tEl) tEl.textContent = `${titulo} (${vis.length})`;
+      const cont = document.getElementById('ge-lista');
+      if (!cont) return;
+      if (!vis.length) {
+        cont.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <h3>Sin resultados</h3>
+          <p>No hay personas visitadas de este grupo en este período</p>
+        </div>`;
+        return;
+      }
+      cont.innerHTML = vis.map((o, i) => {
+        const f = o.fecha.split('-').reverse().join('/');
+        const sexoB = o.sexo === 'F' ? '<span class="badge ge-b-f">♀ Femenino</span>'
+          : o.sexo === 'M' ? '<span class="badge ge-b-m">♂ Masculino</span>'
+          : '<span class="badge ge-b-x">⚠ Sin sexo registrado</span>';
+        const grupos = o.grupos.map(id => '<span class="badge badge-viv">' + _geEsc(GE_GRUPOS.find(g => g.id === id).corto) + '</span>').join('');
+        return `
+        <div class="record-card">
+          <div class="record-header">
+            <div style="flex:1;min-width:0">
+              <div class="record-name"><span class="ge-n">${i + 1}.</span> ${_geEsc(o.nombre)}</div>
+              <div class="record-meta">
+                ${o.edad != null ? `<span class="badge badge-hora">🎂 ${o.edad} año${o.edad !== 1 ? 's' : ''}</span>` : '<span class="badge ge-b-x">⚠ Sin edad</span>'}
+                ${sexoB}
+                ${o.vivienda ? `<span class="badge badge-viv">🏠 Viv. ${_geEsc(o.vivienda)}</span>` : ''}
+                <span class="badge badge-fecha">📅 ${f}</span>
+                ${o.visitas > 1 ? `<span class="badge badge-fecha">${o.visitas} visitas</span>` : ''}
+                ${grupos}
+                ${_geBotonesCorregir(o, i)}
+                ${o.fechas.length > 1 ? `<button type="button" class="ge-ojo" id="ge-ojo-${i}" onclick="_geToggleFechas(${i})">${_geAbiertos.has(o.key) ? '🙈 Ocultar fechas' : '👁 Ver fechas'}</button>` : ''}
+              </div>
+              ${o.fechas.length > 1 ? `<div class="ge-fechas" id="ge-fechas-${i}" style="${_geAbiertos.has(o.key) ? '' : 'display:none'}">
+                <div class="ge-fechas-t">Fechas de visita (${o.fechas.length})</div>
+                ${o.fechas.map((x, k) => `<div class="ge-fecha-fila"><span class="ge-fecha-n">${k + 1}</span> 📅 ${x.fecha.split('-').reverse().join('/')}${_geHoraTxt(x.hora) ? ' · 🕐 ' + _geHoraTxt(x.hora) : ''}</div>`).join('')}
+              </div>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ════════════════════════════════════
     // CONTROL DE ENTREGAS (Referencias / Informes de Visita Domiciliar)
     // Lleva la cuenta de a quién ya se le generó una Referencia o un Informe, permite ver
     // esa ficha de nuevo (con los datos tal como quedaron la última vez) y dejar la firma
@@ -11215,7 +11758,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
             <span class="cat-persona-ico">👤</span>
             <div class="cat-persona-info">
               <strong>${p.nombre}</strong>
-              <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}</span>
+              <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}${p.sexo === 'F' ? ' · ♀ Femenino' : (p.sexo === 'M' ? ' · ♂ Masculino' : '')}</span>
               ${esResultadoFiltrado ? `<span class="cat-ver-familia">🏠 Ver familia completa</span>` : ''}
             </div>
             ${!esResultadoFiltrado ? `
@@ -11419,6 +11962,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       document.getElementById('mcat-titulo').textContent    = `Agregar — Vivienda ${viv ? viv.vivienda : ''}`;
       document.getElementById('mcat-nombre').value          = '';
       document.getElementById('mcat-fnac').value            = '';
+      document.getElementById('mcat-sexo').value            = '';
       document.getElementById('mcat-edad-manual').value     = '';
       document.getElementById('mcat-edad-manual').placeholder = 'Ej: 32 años, 1 año 6 meses, 15 días…';
       document.getElementById('mcat-edad-display').style.display = 'none';
@@ -11457,7 +12001,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const viv = cat.find(v => v.id === _mcatVivId);
         if (!viv) return;
         if (!viv.personas) viv.personas = [];
-        viv.personas.push({ id: 'per_' + Date.now(), nombre, fnac: fnac || '', edad });
+        viv.personas.push({ id: 'per_' + Date.now(), nombre, fnac: fnac || '', edad, sexo: document.getElementById('mcat-sexo').value });
         viv.actualizadoEn = new Date().toISOString(); // marca cambio para sync
         saveCatalogo(cat);
         cerrarModalCat();
@@ -11683,6 +12227,33 @@ Notas (Acciones ya escritas): ${accion || '—'}
       el.style.display = 'block';
     }
 
+    // Plantilla de ejemplo: mismas columnas y ejemplos que la del Mapa Sanitario
+    function micatDescargarPlantilla() {
+      const filas = [
+        ['N° Vivienda', 'Nombre', 'Fecha Nacimiento (DD/MM/AAAA)', 'Riesgo (alto/medio/sin riesgo)', 'Sexo (Masculino/Femenino)'],
+        [1, 'María García', '15/03/1985', 'sin riesgo', 'Femenino'],
+        [1, 'Juan García', '22/07/1983', '', 'Masculino'],
+        [2, 'Ana López', '05/11/2002', 'medio', 'Femenino'],
+        [3, 'Pedro Martínez', '30/01/1960', 'alto', 'Masculino']
+      ];
+      _cargarXLSX(function (err) {
+        if (err || typeof XLSX === 'undefined') {
+          const csv = filas.map(r => r.join(',')).join('\n');
+          const a = document.createElement('a');
+          a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csv);
+          a.download = 'Plantilla_Catalogo.csv'; a.click();
+          toast('📥 Plantilla descargada (CSV)', 'success');
+          return;
+        }
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(filas);
+        ws['!cols'] = [{ wch: 14 }, { wch: 28 }, { wch: 28 }, { wch: 30 }, { wch: 28 }];
+        XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+        XLSX.writeFile(wb, 'Plantilla_Catalogo.xlsx');
+        toast('📥 Plantilla descargada', 'success');
+      });
+    }
+
     function micatLeerArchivo(file) {
       if (!file) return;
       document.getElementById('micat-error').style.display = 'none';
@@ -11837,8 +12408,16 @@ Notas (Acciones ya escritas): ${accion || '—'}
       return s; // devolver tal cual si no reconoce
     }
 
+    // Sexo desde una celda: F/M, mujer/hombre, femenino/masculino, niña/niño → 'F' | 'M' | ''
+    function micatParseSexo(v) {
+      const t = String(v == null ? '' : v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.\s]+/g, '');
+      if (/^(f|fem\w*|mujer|nina|female)$/.test(t)) return 'F';
+      if (/^(m|mas\w*|hombre|varon|nino|male)$/.test(t)) return 'M';
+      return '';
+    }
+
     function micatProcesarFilas(filas) {
-      // Columnas: 0=vivienda, 1=nombre, 2=fecha nacimiento
+      // Columnas (igual que el Mapa Sanitario): 0=vivienda, 1=nombre, 2=fecha nacimiento, 3=riesgo (solo Mapa, aquí se ignora), 4=sexo (opcional)
       const procesadas = [];
       let errores = 0;
       let ultimaVivienda = ''; // propagar vivienda hacia abajo si la celda está vacía
@@ -11847,6 +12426,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         let   vivienda = String(cols[0] ?? '').trim();
         const nombre   = String(cols[1] ?? '').trim();
         let   fnacRaw  = String(cols[2] ?? '').trim();
+        // Sexo: columna E, como en el Mapa Sanitario (Riesgo = columna D, que aquí se ignora).
+        // Si la E está vacía y alguien puso el sexo en la D, también se acepta (solo si se entiende).
+        const sexoE = String(cols[4] ?? '').trim();
+        const sexoD = String(cols[3] ?? '').trim();
+        let sexoTxt = sexoE, sexo = micatParseSexo(sexoE);
+        if (!sexoE && sexoD) { const s2 = micatParseSexo(sexoD); if (s2) { sexo = s2; sexoTxt = sexoD; } }
+        const sexoNoReconocido = !!sexoE && !sexo;
 
         if (!vivienda && !nombre) return; // fila vacía → ignorar
 
@@ -11871,7 +12457,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         // Normalizar fecha a ISO AAAA-MM-DD para almacenamiento uniforme
         fnacRaw = micatNormalizarISO(fnacRaw);
 
-        procesadas.push({ vivienda, nombre, fnac: fnacRaw, _err: !vivienda || !nombre });
+        procesadas.push({ vivienda, nombre, fnac: fnacRaw, sexo, sexoNoReconocido, sexoTxt, _err: !vivienda || !nombre });
       });
 
       if (!procesadas.length) {
@@ -11883,7 +12469,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
       // Renderizar vista previa
       const tbody = document.getElementById('micat-prev-tbody');
-      tbody.innerHTML = procesadas.map(f => {
+      tbody.innerHTML = procesadas.map((f, idx) => {
         const edadCalc = f.fnac ? micatCalcEdadSV(f.fnac) : null;
         let celdaFnac;
         if (f.fnac && edadCalc) {
@@ -11899,9 +12485,14 @@ Notas (Acciones ya escritas): ${accion || '—'}
           celdaFnac = `<td class="edad-calc" style="color:#9ca3af;font-size:.72rem">— sin fecha</td>`;
         }
         return `<tr>
+          <td style="text-align:right;color:#6b7280;font-weight:700">${idx + 1}</td>
           <td class="${f._err && !f.vivienda ? 'err' : ''}">${f.vivienda || '⚠ vacío'}</td>
           <td class="${f._err && !f.nombre   ? 'err' : ''}">${f.nombre   || '⚠ vacío'}</td>
           ${celdaFnac}
+          ${f.sexo === 'F' ? '<td style="font-weight:700;color:#c2185b">♀ Femenino</td>'
+            : f.sexo === 'M' ? '<td style="font-weight:700;color:#1565c0">♂ Masculino</td>'
+            : f.sexoNoReconocido ? `<td style="color:#c0392b;font-size:.72rem">⚠ «${String(f.sexoTxt).replace(/[<>&"]/g,'')}» no se entiende<br/><span style="color:#999">quedará sin sexo</span></td>`
+            : '<td style="font-weight:700;color:#aaa">—</td>'}
         </tr>`;
       }).join('');
 
@@ -11909,8 +12500,11 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
       const vivUnicas = new Set(procesadas.filter(f => !f._err).map(f => f.vivienda)).size;
       const validas   = procesadas.filter(f => !f._err).length;
+      const conSexo = procesadas.filter(f => !f._err && f.sexo).length;
+      const sexoRaros = procesadas.filter(f => !f._err && f.sexoNoReconocido).length;
       document.getElementById('micat-resumen').textContent =
-        `${validas} personas en ${vivUnicas} vivienda${vivUnicas!==1?'s':''}` +
+        `${validas} personas en ${vivUnicas} vivienda${vivUnicas!==1?'s':''} · ${conSexo} con sexo` +
+        (sexoRaros ? ` · ⚠ ${sexoRaros} con sexo que no se entiende (quedarán sin sexo)` : '') +
         (errores ? ` · ⚠ ${errores} fila${errores>1?'s':''} con datos incompletos (se omitirán)` : ' ✓');
 
       document.getElementById('micat-reemplazar').checked = false;
@@ -11943,6 +12537,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       let cat = reemplazar ? [] : getCatalogo();
 
       // Agrupar filas por vivienda y fusionar
+      let sexoCompletado = 0;
       const tsImport = new Date().toISOString();
       filas.forEach(f => {
         let viv = cat.find(v => v.vivienda === f.vivienda);
@@ -11952,16 +12547,24 @@ Notas (Acciones ya escritas): ${accion || '—'}
           cat.push(viv);
         }
         // Evitar duplicar por nombre exacto
-        const yaExiste = viv.personas.some(
+        const existente = viv.personas.find(
           p => p.nombre.toLowerCase() === f.nombre.toLowerCase()
         );
+        const yaExiste = !!existente;
+        if (existente && f.sexo && !existente.sexo) {
+          // Ya estaba en el catálogo sin sexo: se completa (nunca se cambia un sexo ya guardado)
+          existente.sexo = f.sexo;
+          viv.actualizadoEn = tsImport;
+          sexoCompletado++;
+        }
         if (!yaExiste) {
           const edadFinal = f.fnac ? (micatCalcEdadSV(f.fnac) || '') : '';
           viv.personas.push({
             id:     'per_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
             nombre: f.nombre,
             edad:   edadFinal,
-            fnac:   f.fnac || ''
+            fnac:   f.fnac || '',
+            sexo:   f.sexo || ''
           });
           viv.actualizadoEn = tsImport; // marca vivienda como modificada
         }
@@ -11972,7 +12575,263 @@ Notas (Acciones ya escritas): ${accion || '—'}
       cerrarModalImportarCat();
 
       const vivCount = new Set(filas.map(f => f.vivienda)).size;
-      toast(`✅ ${filas.length} personas importadas en ${vivCount} viviendas`, 'success');
+      toast(`✅ ${filas.length} personas importadas en ${vivCount} viviendas` +
+            (sexoCompletado ? ` · sexo completado en ${sexoCompletado} ya existente(s)` : ''), 'success', 4200);
+    }
+
+    // ══════════════════════════════════════════
+    // IMPORTAR CATÁLOGO DESDE EL MAPA SANITARIO
+    // Lee 'mapa_san_catalogo' (viviendas → personas con nombre, fecha de nacimiento y
+    // sexo F/M) y lo une al catálogo de esta app. El SEXO queda guardado en cada persona
+    // del catálogo (campo `sexo`: 'F' | 'M' | '') y viaja a la nube con la vivienda.
+    //  • Persona nueva → se agrega con nombre, fecha de nacimiento, sexo y `origenMapa`.
+    //  • Persona que ya existe en RD (mismo nombre en la misma vivienda) → solo se
+    //    COMPLETAN los datos que le faltan (sexo / fecha de nacimiento). Nunca se
+    //    sobrescribe un dato que ya tenga RD.
+    // Solo funciona si ambas apps comparten almacenamiento (SIS Comunitario).
+    // ══════════════════════════════════════════
+    let _rmItems = [], _rmRes = {};
+
+    function _rmNorm(s) {
+      return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    }
+    function _rmTok(s) {
+      return _rmNorm(s).replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+    }
+    // 'AAAA-MM-DD' válida y no futura (hora de El Salvador), o '' si no se puede usar
+    function _rmFecha(v) {
+      const t = String(v || '').trim();
+      if (!t) return '';
+      let x, y, m, d;
+      if ((x = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) { y = +x[1]; m = +x[2]; d = +x[3]; }
+      else if ((x = t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/))) { d = +x[1]; m = +x[2]; y = +x[3]; }
+      else return '';
+      const f = new Date(y, m - 1, d);
+      if (y < 1900 || f.getFullYear() !== y || f.getMonth() !== m - 1 || f.getDate() !== d) return '';
+      const iso = y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      const hoySV = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+      return iso > hoySV ? '' : iso;
+    }
+    function _rmLeerMapa() {
+      try {
+        const v = JSON.parse(localStorage.getItem('mapa_san_catalogo') || 'null');
+        return Array.isArray(v) ? v : null;
+      } catch (e) { return null; }
+    }
+    function _rmEsc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function _rmId() { return Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+
+    function _rmConstruir() {
+      const mapa = _rmLeerMapa();
+      if (!mapa) return null;
+      const cat = getCatalogo();
+      const porViv = {}, porOrigen = {}, globalNomNac = {};
+      cat.forEach(v => {
+        porViv[String(v.vivienda)] = v;
+        (v.personas || []).forEach(p => {
+          if (p.origenMapa) porOrigen[p.origenMapa] = { viv: v, p };
+          const nac = _rmFecha(p.fnac);
+          if (nac) globalNomNac[_rmNorm(p.nombre) + '|' + nac] = { viv: v, p };
+        });
+      });
+      const res = { personas: 0, deshab: 0, sinViv: 0 };
+      const items = [], vistos = new Set();
+      mapa.forEach(mv => {
+        if (!mv) return;
+        if (mv.deshabitada) { res.deshab++; return; }
+        const numViv = String(mv.vivienda == null ? '' : mv.vivienda).trim();
+        if (!numViv) { res.sinViv++; return; }
+        const vivRD = porViv[numViv] || null;
+        (mv.personas || []).forEach(mp => {
+          const nombre = String(mp && mp.nombre || '').replace(/\s+/g, ' ').trim();
+          if (!nombre) return;
+          res.personas++;
+          const sexo = (mp.sexo === 'F' || mp.sexo === 'M') ? mp.sexo : '';
+          const nac = _rmFecha(mp.fnac);
+          const nk = _rmNorm(nombre), tk = _rmTok(nombre);
+          const it = { mp, numViv, nombre, nac, sexo, estado: 'nueva', motivo: '', match: null, cambios: [] };
+          // 1) ¿ya vinculada por id del Mapa, o con el mismo nombre en la misma vivienda?
+          let m = (mp.id && porOrigen[mp.id]) ? porOrigen[mp.id].p : null;
+          let mViv = (mp.id && porOrigen[mp.id]) ? porOrigen[mp.id].viv : null;
+          if (!m && vivRD) {
+            m = (vivRD.personas || []).find(p => _rmNorm(p.nombre) === nk) || null;
+            if (m) mViv = vivRD;
+          }
+          const dupKey = numViv + '|' + nk;
+          if (vistos.has(dupKey)) { it.estado = 'repetida'; it.motivo = 'Aparece más de una vez en el Mapa'; }
+          else if (m) {
+            if (sexo && m.sexo && m.sexo !== sexo) {
+              it.estado = 'conflicto';
+              it.motivo = 'RD dice ' + (m.sexo === 'F' ? 'femenino' : 'masculino') + ' y el Mapa dice ' + (sexo === 'F' ? 'femenino' : 'masculino') + ': corrígelo a mano';
+            } else {
+              if (sexo && !m.sexo) it.cambios.push('sexo');
+              if (nac && !m.fnac) it.cambios.push('fecha de nacimiento');
+              if (it.cambios.length) { it.estado = 'completar'; it.motivo = 'Se completa: ' + it.cambios.join(' y '); }
+              else { it.estado = 'igual'; it.motivo = 'Ya está completa en RD'; }
+            }
+            it.match = { vivId: mViv.id, perId: m.id };
+          } else {
+            // 2) sin coincidencia exacta: avisar si parece la misma persona (otro orden de palabras o misma fecha en otra vivienda)
+            const otroOrden = vivRD && (vivRD.personas || []).find(p => _rmTok(p.nombre) === tk);
+            const enOtraViv = nac && globalNomNac[nk + '|' + nac];
+            if (otroOrden) { it.estado = 'posible'; it.motivo = 'Parece ser «' + otroOrden.nombre + '» (otro orden del nombre)'; }
+            else if (enOtraViv) { it.estado = 'posible'; it.motivo = 'Mismo nombre y fecha en la vivienda ' + enOtraViv.viv.vivienda; }
+          }
+          if (it.estado !== 'repetida') vistos.add(dupKey);
+          it.vivNueva = !vivRD;
+          items.push(it);
+        });
+      });
+      items.sort((a, b) => {
+        const na = parseFloat(a.numViv), nb = parseFloat(b.numViv);
+        if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+        if (a.numViv !== b.numViv) return a.numViv.localeCompare(b.numViv, 'es', { numeric: true });
+        return a.nombre.localeCompare(b.nombre, 'es');
+      });
+      _rmRes = res;
+      return items;
+    }
+
+    function rmAbrir() {
+      const items = _rmConstruir();
+      const list = document.getElementById('rm-list');
+      document.getElementById('rm-buscar').value = '';
+      if (!items) {
+        _rmItems = [];
+        document.getElementById('rm-sub').textContent = '';
+        document.getElementById('rm-tools').style.display = 'none';
+        document.getElementById('rm-go').style.display = 'none';
+        document.getElementById('rm-count').textContent = '';
+        list.innerHTML = '<div class="rm-empty"><b>No se encontraron datos del Mapa Sanitario</b> en este almacenamiento.<br>Esta opción funciona cuando el Mapa Sanitario y Registro Diario se abren dentro de SIS Comunitario (comparten el mismo almacenamiento).</div>';
+        document.getElementById('modal-mapa-import').classList.add('show');
+        return;
+      }
+      _rmItems = items;
+      document.getElementById('rm-tools').style.display = '';
+      document.getElementById('rm-go').style.display = '';
+      rmRender();
+      document.getElementById('modal-mapa-import').classList.add('show');
+    }
+    function rmCerrar() { document.getElementById('modal-mapa-import').classList.remove('show'); }
+
+    function rmRender() {
+      const list = document.getElementById('rm-list');
+      const n = e => _rmItems.filter(i => i.estado === e).length;
+      const sinSexo = _rmItems.filter(i => !i.sexo).length;
+      document.getElementById('rm-sub').textContent =
+        'Mapa Sanitario: ' + _rmRes.personas + ' persona(s) · ' + n('nueva') + ' nueva(s) · ' + n('completar') +
+        ' por completar (sexo o fecha) · ' + n('igual') + ' ya completas · ' + sinSexo + ' sin sexo en el Mapa' +
+        (n('conflicto') ? ' · ' + n('conflicto') + ' con sexo distinto' : '') +
+        (_rmRes.deshab ? ' · ' + _rmRes.deshab + ' vivienda(s) deshabitada(s) omitida(s)' : '') + '.';
+      list.innerHTML = _rmItems.length
+        ? _rmItems.map((it, ix) => _rmFila(it, ix)).join('')
+        : '<div class="rm-empty">El Mapa Sanitario no tiene personas registradas.</div>';
+      document.getElementById('rm-go').style.display = _rmItems.length ? '' : 'none';
+      rmFiltrar();
+    }
+
+    function _rmFila(it, ix) {
+      const accionable = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'posible';
+      const marcada = it.estado === 'nueva' || it.estado === 'completar';
+      const b = [];
+      if (it.estado === 'nueva') b.push('<span class="rm-b ok">Nueva' + (it.vivNueva ? ' · vivienda nueva' : '') + '</span>');
+      if (it.estado === 'completar') b.push('<span class="rm-b ok">' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'igual') b.push('<span class="rm-b">' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'posible' || it.estado === 'repetida') b.push('<span class="rm-b warn">' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'conflicto') b.push('<span class="rm-b no">' + _rmEsc(it.motivo) + '</span>');
+      if (it.sexo === 'F') b.push('<span class="rm-b ok">♀ Femenino</span>');
+      else if (it.sexo === 'M') b.push('<span class="rm-b ok">♂ Masculino</span>');
+      else b.push('<span class="rm-b warn">Sin sexo en el Mapa</span>');
+      const edad = it.nac ? calcularEdadTexto(it.nac) : (it.mp.edad || '');
+      const meta = 'Viv. ' + _rmEsc(it.numViv) + (edad ? ' · ' + _rmEsc(edad) : '') +
+        (it.nac ? ' · nac. ' + it.nac.split('-').reverse().join('/') : '');
+      return '<div class="rm-row' + (accionable ? '' : ' dis') + '" data-ix="' + ix + '" data-q="' + _rmEsc(_rmNorm(it.nombre) + ' ' + _rmNorm(it.numViv)) + '">' +
+        '<span class="rm-n">' + (ix + 1) + '</span>' +
+        '<input type="checkbox" class="rm-chk" ' + (marcada ? 'checked' : '') + ' ' + (accionable ? '' : 'disabled') + ' onchange="rmConteo()">' +
+        '<div class="rm-main"><div class="rm-name">' + _rmEsc(it.nombre) + '</div>' +
+        '<div class="rm-meta">' + meta + '</div>' +
+        '<div class="rm-badges">' + b.join('') + '</div></div></div>';
+    }
+
+    function rmConteo() {
+      const n = [...document.querySelectorAll('#rm-list .rm-row')]
+        .filter(r => r.style.display !== 'none' && r.querySelector('.rm-chk:checked')).length;
+      document.getElementById('rm-count').textContent = n ? n + ' seleccionada(s)' : '';
+      document.getElementById('rm-go').textContent = n ? 'Importar (' + n + ')' : 'Importar';
+    }
+    function rmFiltrar() {
+      const q = _rmNorm(document.getElementById('rm-buscar').value);
+      document.querySelectorAll('#rm-list .rm-row').forEach(r => {
+        r.style.display = (!q || (r.dataset.q || '').indexOf(q) > -1) ? '' : 'none';
+      });
+      rmConteo();
+    }
+    function rmMarcar(modo) {
+      document.querySelectorAll('#rm-list .rm-row').forEach(r => {
+        const it = _rmItems[+r.dataset.ix], c = r.querySelector('.rm-chk');
+        if (!c || c.disabled || r.style.display === 'none') return;
+        c.checked = modo === 'todas' && (it.estado === 'nueva' || it.estado === 'completar');
+      });
+      rmConteo();
+    }
+
+    function rmImportar() {
+      const filas = [...document.querySelectorAll('#rm-list .rm-row')]
+        .filter(r => r.style.display !== 'none' && r.querySelector('.rm-chk') && r.querySelector('.rm-chk').checked);
+      if (!filas.length) { toast('Selecciona al menos una persona', 'error'); return; }
+      const cat = getCatalogo();
+      const ts = new Date().toISOString();
+      let nuevas = 0, completadas = 0, vivNuevas = 0, omitidas = 0;
+      filas.forEach(fila => {
+        const it = _rmItems[+fila.dataset.ix];
+        if (!it) return;
+        if (it.estado === 'completar') {
+          const viv = cat.find(v => v.id === it.match.vivId);
+          const p = viv && (viv.personas || []).find(x => x.id === it.match.perId);
+          if (!p) { omitidas++; return; }
+          let cambio = false;
+          // Solo se rellenan datos vacíos: lo que ya tiene RD no se toca
+          if (it.sexo && !p.sexo) { p.sexo = it.sexo; cambio = true; }
+          if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; cambio = true; }
+          if (!p.origenMapa && it.mp.id) p.origenMapa = it.mp.id;
+          if (cambio) { viv.actualizadoEn = ts; completadas++; } else omitidas++;
+        } else if (it.estado === 'nueva' || it.estado === 'posible') {
+          let viv = cat.find(v => String(v.vivienda) === it.numViv);
+          if (!viv) {
+            viv = { id: 'viv_' + _rmId(), vivienda: it.numViv, personas: [], actualizadoEn: ts };
+            cat.push(viv); vivNuevas++;
+          }
+          if (!viv.personas) viv.personas = [];
+          // Red de seguridad: nunca se duplica el mismo nombre dentro de la vivienda
+          if (viv.personas.some(x => _rmNorm(x.nombre) === _rmNorm(it.nombre))) { omitidas++; return; }
+          viv.personas.push({
+            id: 'per_' + _rmId(),
+            nombre: it.nombre,
+            edad: it.nac ? (micatCalcEdadSV(it.nac) || '') : (it.mp.edad || ''),
+            fnac: it.nac || '',
+            sexo: it.sexo,
+            origenMapa: it.mp.id || ''
+          });
+          viv.actualizadoEn = ts; // marca la vivienda como modificada para la sincronización
+          nuevas++;
+        }
+      });
+      try { saveCatalogo(cat); }
+      catch (e) {
+        // si el almacenamiento está lleno, setItem falla y el catálogo guardado queda intacto
+        alert('❌ No se pudo importar: se llenó el espacio de almacenamiento del dispositivo. No se cambió nada del catálogo.');
+        return;
+      }
+      rmCerrar();
+      renderCatalogo();
+      const partes = [];
+      if (nuevas) partes.push(nuevas + ' nueva(s)');
+      if (completadas) partes.push(completadas + ' completada(s)');
+      if (vivNuevas) partes.push(vivNuevas + ' vivienda(s) nueva(s)');
+      if (omitidas) partes.push(omitidas + ' omitida(s)');
+      toast('✅ Mapa Sanitario: ' + (partes.join(' · ') || 'sin cambios'), 'success', 4200);
     }
 
     // ══════════════════════════════════════════
@@ -12112,7 +12971,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           <span class="cat-persona-ico">👤</span>
           <div class="cat-persona-info">
             <strong>${p.nombre}</strong>
-            <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}</span>
+            <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}${p.sexo === 'F' ? ' · ♀ Femenino' : (p.sexo === 'M' ? ' · ♂ Masculino' : '')}</span>
           </div>
           <button class="cat-per-atender" onclick="cerrarModalEditarFamilia();cerrarModalListaViv();atenderFamiliaPersona('${viv.id}','${p.id}')" title="Atender a esta persona">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
@@ -12220,7 +13079,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
             else fnacDisplay = p.fnac;
           }
           const edad = p ? ((p.fnac ? calcularEdadTexto(p.fnac) : '') || p.edad || '') : '';
-          filas.push([viv.vivienda, p ? (p.nombre || '') : '', fnacDisplay, edad]);
+          filas.push([viv.vivienda, p ? (p.nombre || '') : '', fnacDisplay, edad, p ? (p.sexo === 'F' ? 'Femenino' : (p.sexo === 'M' ? 'Masculino' : '')) : '']);
         });
       });
       return filas;
@@ -12230,7 +13089,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     function copiarCatalogoTabla() {
       const filas = _catFilas();
       if (!filas) { toast('El catálogo está vacío', 'error'); return; }
-      const cabecera = ['N° Vivienda', 'Nombre', 'Fecha de Nacimiento', 'Edad'];
+      const cabecera = ['N° Vivienda', 'Nombre', 'Fecha de Nacimiento', 'Edad', 'Sexo'];
       const tsv = [cabecera, ...filas].map(row => row.join('\t')).join('\n');
       navigator.clipboard.writeText(tsv).then(() => {
         const btn = document.getElementById('btn-copy-cat');
@@ -12275,7 +13134,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
       abrirEditPersona, cerrarEditPersona, mepCalcularEdad, guardarEditPersona,
       // Importar catálogo
       abrirModalImportarCat, cerrarModalImportarCat, micatVolverPaso1,
-      micatOnDrop, micatLeerArchivo, micatConfirmarImport,
+      micatOnDrop, micatLeerArchivo, micatConfirmarImport, micatDescargarPlantilla,
+      // Importar catálogo desde el Mapa Sanitario (con sexo)
+      rmAbrir, rmCerrar, rmFiltrar, rmMarcar, rmConteo, rmImportar,
       // Selector de paciente
       abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
       seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado,
@@ -12291,7 +13152,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
       convertirReferenciaAMayusculas, _refGuardarCampoRegistro, _refGenerarReferenciaIA,
       // Control de Entregas (Referencias / Informes)
       _ctrlCambiarTipo, _ctrlCambiarPeriodo, _ctrlRenderLista, _ctrlVerFicha,
-      _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma, _ctrlEliminarEntrada
+      _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma, _ctrlEliminarEntrada,
+      // Seguimiento por grupos etarios
+      _geCambiarPeriodo, _geSeleccionarGrupo, _geRender, _geToggleFechas, _geAbrirFamilia,
+      _geAbrirVincular, _geCerrarVincular, _geVincular
     });
 
     // ══════════════════════════════════════════
@@ -12309,6 +13173,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       document.getElementById('mep-titulo').textContent = 'Editar — Vivienda ' + viv.vivienda;
       document.getElementById('mep-nombre').value = p.nombre || '';
       document.getElementById('mep-fnac').value = p.fnac || '';
+      document.getElementById('mep-sexo').value = (p.sexo === 'F' || p.sexo === 'M') ? p.sexo : '';
       // Edad manual: si no tiene fnac, mostrar edad guardada
       document.getElementById('mep-edad-manual').value = (!p.fnac && p.edad) ? p.edad : '';
       document.getElementById('mep-edad-manual').placeholder = 'Ej: 32 años, 1 año 6 meses…';
@@ -12352,14 +13217,18 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (!viv) return;
       const p = (viv.personas || []).find(x => x.id === _mepPerId);
       if (!p) return;
+      const nombreAnterior = p.nombre || '';
       p.nombre = nombre;
       p.fnac   = fnac || '';
       p.edad   = edad;
+      p.sexo   = document.getElementById('mep-sexo').value;
       viv.actualizadoEn = new Date().toISOString();
       saveCatalogo(cat);
       renderCatalogo();
       cerrarEditPersona();
-      toast('✏️ ' + nombre + ' actualizado/a', 'success');
+      // Si se corrigió el nombre, los registros de esa persona pasan a llamarse igual
+      const nReg = (nombreAnterior && nombre !== nombreAnterior) ? _geRenombrarRegistros(viv.vivienda, nombreAnterior, nombre) : 0;
+      toast('✏️ ' + nombre + ' actualizado/a' + (nReg ? ' · ' + nReg + ' registro' + (nReg !== 1 ? 's' : '') + ' con el nombre corregido' : ''), 'success', nReg ? 4200 : 2800);
     }
 
     // ══════════════════════════════════════════
