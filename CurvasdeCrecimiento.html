@@ -8218,9 +8218,7 @@
                     15000
                 );
                 DB.config.ultimaSubidaSync = new Date().toISOString();
-                try { DB.config.sisNubeTs = _sisMs(await window.__fb.getDoc(doc(db, 'vigilancia_sync', codigo))); } catch (e) {}
                 guardarDatos();
-                _sisMarcar();
                 ocultarSyncOverlay();
                 actualizarEstadoSyncUI();
                 alert('✅ Datos subidos a la nube correctamente.\nCódigo: ' + codigo);
@@ -8272,10 +8270,8 @@
                 DB.mediciones = datos.mediciones || [];
                 DB.config = Object.assign({}, DB.config, datos.config || {}, { codigoSync: codigo });
                 DB.config.ultimaBajadaSync = new Date().toISOString();
-                DB.config.sisNubeTs = _sisMs(manifiesto);
                 guardarDatos();
                 calcularEdadesAutomaticas();
-                _sisMarcar();
                 ocultarSyncOverlay();
                 actualizarEstadoSyncUI();
                 alert('✅ Datos descargados y aplicados correctamente.');
@@ -8285,105 +8281,6 @@
                 alert('❌ No se pudo bajar de la nube.\n' + (err && err.message ? err.message : 'Revisa tu conexión e inténtalo de nuevo.'));
             }
         }
-
-
-        // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
-        function _sisHuella(claves) {
-          var h = 2166136261 >>> 0, n = 0;
-          for (var a = 0; a < claves.length; a++) {
-            var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
-            n += s.length;
-            for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-          }
-          return h.toString(36) + '-' + n.toString(36);
-        }
-        function _sisFlush() {
-          try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
-          catch (e) { return Promise.resolve(); }
-        }
-        const SIS_CLAVES = ['vigilancia_db'];
-        function _sisMarcar() {
-            try { localStorage.setItem('sis_sync_curvas', JSON.stringify({ h: _sisHuella(SIS_CLAVES), t: new Date().toISOString() })); } catch (e) {}
-        }
-        function _sisEstaLimpio() {
-            try { const x = JSON.parse(localStorage.getItem('sis_sync_curvas') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES); }
-            catch (e) { return false; }
-        }
-        // Hora (en milisegundos) en que la nube se actualizó por última vez, según el servidor
-        function _sisMs(snap) {
-            try { const a = snap && snap.exists && snap.exists() ? snap.data().actualizado : null; return a && a.toMillis ? a.toMillis() : 0; } catch (e) { return 0; }
-        }
-        async function _sisEsperarFB(ms) {
-            const t0 = Date.now();
-            while (Date.now() - t0 < ms) { if (window.__fb && window.__fb.listo) return true; await new Promise(r => setTimeout(r, 300)); }
-            return false;
-        }
-        // API del launcher: igual que los botones de la app pero sin ventanas; si la nube cambió
-        // desde la última vez, NO sobrescribe en silencio y avisa para decidir en la app
-        window.SIS_SYNC = {
-            id: 'curvas',
-            async nube() {
-                try {
-                    const codigo = obtenerCodigoSync();
-                    if (!codigo || !navigator.onLine || !(await _sisEsperarFB(20000))) return { ok: false, msg: 'Sin conexión a la nube' };
-                    const { db, doc, getDoc } = window.__fb;
-                    const man = await conTiempoLimite(() => getDoc(doc(db, 'vigilancia_sync', codigo)), 20000);
-                    if (!man.exists()) return { ok: true, hay: false };
-                    const mio = DB.config.sisNubeTs || 0;
-                    return { ok: true, hay: mio ? _sisMs(man) > mio : (man.data().totalPersonas || 0) > DB.personas.length };
-                } catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
-            },
-            async subir() {
-                try {
-                    const codigo = obtenerCodigoSync();
-                    if (!codigo) return { ok: false, abrir: true, msg: 'Falta el código de sincronización (Configuración de la app)' };
-                    if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
-                    if (!(await _sisEsperarFB(20000))) return { ok: false, msg: 'No se pudo conectar con la nube' };
-                    const { db, doc, setDoc, getDoc, serverTimestamp } = window.__fb;
-                    const man = await conTiempoLimite(() => getDoc(doc(db, 'vigilancia_sync', codigo)), 20000);
-                    if (man.exists()) {
-                        const ms = _sisMs(man), mio = DB.config.sisNubeTs || 0, nPers = man.data().totalPersonas || 0;
-                        if ((mio && ms !== mio) || (!mio && DB.personas.length < nPers))
-                            return { ok: false, abrir: true, msg: 'La nube cambió desde tu última sincronización (otro dispositivo o borrados). Decide en la app' };
-                    }
-                    const json = JSON.stringify(DB), TAM = 400000, partes = [];
-                    for (let i = 0; i < json.length; i += TAM) partes.push(json.slice(i, i + TAM));
-                    for (let i = 0; i < partes.length; i++)
-                        await conTiempoLimite(() => setDoc(doc(db, 'vigilancia_sync', codigo, 'partes', String(i)), { contenido: partes[i] }), 25000);
-                    await conTiempoLimite(() => setDoc(doc(db, 'vigilancia_sync', codigo), { totalPartes: partes.length, totalKB: Math.round(json.length / 1024), totalPersonas: DB.personas.length, actualizado: serverTimestamp() }), 15000);
-                    DB.config.ultimaSubidaSync = new Date().toISOString();
-                    try { DB.config.sisNubeTs = _sisMs(await getDoc(doc(db, 'vigilancia_sync', codigo))); } catch (e) {}
-                    guardarDatos(); _sisMarcar(); await _sisFlush();
-                    return { ok: true, msg: DB.personas.length + ' personas subidas' };
-                } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-            },
-            async bajar(opts) {
-                try {
-                    const codigo = obtenerCodigoSync();
-                    if (!codigo) return { ok: false, abrir: true, msg: 'Falta el código de sincronización (Configuración de la app)' };
-                    if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
-                    if (!(opts && opts.forzar) && !_sisEstaLimpio()) return { ok: false, msg: 'Tiene cambios sin subir: súbelos primero' };
-                    if (!(await _sisEsperarFB(20000))) return { ok: false, msg: 'No se pudo conectar con la nube' };
-                    const { db, doc, getDoc } = window.__fb;
-                    const man = await conTiempoLimite(() => getDoc(doc(db, 'vigilancia_sync', codigo)), 20000);
-                    if (!man.exists()) return { ok: false, msg: 'No hay datos en la nube con ese código' };
-                    const total = man.data().totalPartes || 0; let json = '';
-                    for (let i = 0; i < total; i++) {
-                        const ps = await conTiempoLimite(() => getDoc(doc(db, 'vigilancia_sync', codigo, 'partes', String(i))), 25000);
-                        if (!ps.exists()) return { ok: false, msg: 'Datos incompletos en la nube (falta la parte ' + (i + 1) + ')' };
-                        json += ps.data().contenido;
-                    }
-                    const datos = JSON.parse(json);
-                    DB.personas = datos.personas || [];
-                    DB.mediciones = datos.mediciones || [];
-                    DB.config = Object.assign({}, DB.config, datos.config || {}, { codigoSync: codigo });
-                    DB.config.ultimaBajadaSync = new Date().toISOString();
-                    DB.config.sisNubeTs = _sisMs(man);
-                    guardarDatos(); calcularEdadesAutomaticas(); _sisMarcar(); await _sisFlush();
-                    return { ok: true, msg: DB.personas.length + ' personas bajadas' };
-                } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-            }
-        };
 
         // ═══════════════════════════════════════════════════════════════
         // IMPORTAR PERSONAS DESDE EXCEL

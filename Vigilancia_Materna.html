@@ -4244,90 +4244,6 @@ if(contenedor) {
 // CONEXIÓN FIREBASE DE GOOGLE (BASE DE DATOS)
 // ==========================================
 
-
-// ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
-function _sisHuella(claves) {
-  var h = 2166136261 >>> 0, n = 0;
-  for (var a = 0; a < claves.length; a++) {
-    var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
-    n += s.length;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-  }
-  return h.toString(36) + '-' + n.toString(36);
-}
-function _sisFlush() {
-  try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
-  catch (e) { return Promise.resolve(); }
-}
-const SIS_CLAVES_MAT = ['embarazadas','puerperas','archivadas'];
-function _sisMarcar() {
-    try { localStorage.setItem('sis_sync_materna', JSON.stringify({ h: _sisHuella(SIS_CLAVES_MAT), t: new Date().toISOString() })); } catch (e) {}
-}
-// API que usa el launcher (index.html). Respeta el PIN, el modo supervisor y los escudos de seguridad:
-// si algo requiere decisión humana, NO sube/baja y avisa para que se haga desde esta pantalla.
-window.SIS_SYNC = {
-    id: 'materna',
-    async nube() {
-        try {
-            if (localStorage.getItem('NUBE_AUTORIZADA') !== 'true' || !navigator.onLine) return { ok: false, msg: 'Sin acceso a la nube' };
-            const db = await cargarFirebase();
-            const nodo = MI_USUARIO.trim().replace(/[.#$\[\]]/g, '_');
-            const ts = (await db.ref('respaldos/' + nodo + '/meta/timestamp').once('value')).val();
-            const v = localStorage.getItem('ULTIMA_VERSION_DESCARGADA');
-            return { ok: true, hay: !!ts && (!v || ts != v) };
-        } catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
-    },
-    async subir() {
-        try {
-            if (localStorage.getItem('NUBE_AUTORIZADA') !== 'true') return { ok: false, abrir: true, msg: 'Pide el PIN: abre Vigilancia Materna y usa "Guardar en Nube" una vez' };
-            if (MODO_SUPERVISOR || localStorage.getItem('BLOQUEO_SUBIDA') === 'true') return { ok: false, msg: 'Este dispositivo está en modo supervisor: subida bloqueada' };
-            const totalLocal = (embarazadas ? embarazadas.length : 0) + (puerperas ? puerperas.length : 0) + (archivadas ? archivadas.length : 0);
-            if (totalLocal === 0) return { ok: false, msg: 'No hay datos en este dispositivo (usa Bajar)' };
-            if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
-            const db = await cargarFirebase();
-            const nodo = MI_USUARIO.trim().replace(/[.#$\[\]]/g, '_');
-            const datosNube = (await db.ref('respaldos/' + nodo).once('value')).val();
-            if (datosNube) {
-                const totalNube = datosNube.meta ? datosNube.meta.total : 0;
-                const versionNube = datosNube.meta ? datosNube.meta.timestamp : 0;
-                const versionAntes = localStorage.getItem('ULTIMA_VERSION_DESCARGADA');
-                if (totalLocal < totalNube) return { ok: false, abrir: true, msg: 'En la nube hay ' + totalNube + ' y aquí ' + totalLocal + ': revísalo en la app antes de subir' };
-                if (versionAntes && versionNube != versionAntes) return { ok: false, abrir: true, msg: 'Otro dispositivo subió cambios: revísalo en la app antes de subir' };
-            }
-            await db.ref('respaldos/' + nodo).set({
-                meta: { usuario: MI_USUARIO, ultimaActualizacion: new Date().toLocaleString(), timestamp: firebase.database.ServerValue.TIMESTAMP, total: totalLocal },
-                embarazadas, puerperas, archivadas
-            });
-            const ts = (await db.ref('respaldos/' + nodo + '/meta/timestamp').once('value')).val();
-            if (ts) localStorage.setItem('ULTIMA_VERSION_DESCARGADA', ts);
-            _sisMarcar();
-            await _sisFlush();
-            return { ok: true, msg: totalLocal + ' registros respaldados' };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-    },
-    async bajar() {
-        try {
-            if (localStorage.getItem('NUBE_AUTORIZADA') !== 'true') return { ok: false, abrir: true, msg: 'Pide el PIN: abre Vigilancia Materna y usa "Bajar de Nube" una vez' };
-            if (MODO_SUPERVISOR || localStorage.getItem('BLOQUEO_SUBIDA') === 'true') return { ok: false, msg: 'Este dispositivo está en modo supervisor: bájalo desde la app' };
-            if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
-            const db = await cargarFirebase();
-            const nodo = MI_USUARIO.trim().replace(/[.#$\[\]]/g, '_');
-            const datosNube = (await db.ref('respaldos/' + nodo).once('value')).val();
-            if (!datosNube) return { ok: false, msg: 'No hay datos en la nube para ' + MI_USUARIO };
-            embarazadas = datosNube.embarazadas || [];
-            puerperas = datosNube.puerperas || [];
-            archivadas = datosNube.archivadas || [];
-            localStorage.setItem('embarazadas', JSON.stringify(embarazadas));
-            localStorage.setItem('puerperas', JSON.stringify(puerperas));
-            localStorage.setItem('archivadas', JSON.stringify(archivadas));
-            if (datosNube.meta && datosNube.meta.timestamp) localStorage.setItem('ULTIMA_VERSION_DESCARGADA', datosNube.meta.timestamp);
-            _sisMarcar();
-            await _sisFlush();
-            return { ok: true, msg: (embarazadas.length + puerperas.length + archivadas.length) + ' registros bajados' };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-    }
-};
-
 async function guardarEnNube() {
     if (!validarAccesoNube()) return; // <-- Solo pedirá el PIN si no ha sido autorizado hoy
 
@@ -4427,7 +4343,6 @@ async function guardarEnNube() {
             localStorage.setItem('ULTIMA_VERSION_DESCARGADA', nuevoTimestamp);
         }
 
-        _sisMarcar();
         alert(`✅ Sincronización exitosa. Se respaldaron ${totalLocal} registros.`);
         btn.innerText = '☁️ Guardar en Nube';
 
@@ -4531,7 +4446,6 @@ async function cargarDeNube(esDescargaTotal = false) {
         localStorage.setItem('embarazadas', JSON.stringify(embarazadas));
         localStorage.setItem('puerperas', JSON.stringify(puerperas));
         localStorage.setItem('archivadas', JSON.stringify(archivadas));
-        if (!esDescargaTotal) _sisMarcar();
 
         alert(`✅ ÉXITO: Se han descargado ${totalNube} registros correctamente.`);
 
