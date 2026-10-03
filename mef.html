@@ -6287,8 +6287,8 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
     // ficha sin reescribir todas; esto también lee el formato antiguo (array) por compatibilidad.
     function recordsToArray(data){const r=data&&data.records;if(!r)return[];return Array.isArray(r)?r:Object.values(r);}
 
-    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{const map={};lr.forEach(r=>{if(r&&r.id)map[r.id]=r;});await setDoc(doc(db,'usuarios_pf',k),{records:map,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:lr.length});_acResetSnapshot();setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
-    window.confirmDownload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}const k=userKey(p.nombre);const lm=lr.length>0?'Este dispositivo tiene <strong>'+lr.length+' fichas locales</strong> que serán reemplazadas.':'El dispositivo está vacío.';window.showModal&&window.showModal('Bajar de la nube','Espacio: <em>usuarios_pf/'+k+'</em><br><br>'+lm+'<br><br>¿Continuar?',async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Descargando…','loading');try{const snap=await getDoc(doc(db,'usuarios_pf',k));if(!snap.exists()){setCS('⚠ No encontré tus datos en la nube.','err');window.showToast&&window.showToast('⚠ Sin datos en la nube','error');setCSBtns(false);return;}const data=snap.data();const cr=recordsToArray(data);if(!cr.length){setCS('⚠ Nube vacía.','err');setCSBtns(false);return;}localStorage.setItem('minsal_pf_v2',JSON.stringify(cr));if(window.reloadFromStorage)window.reloadFromStorage();_acResetSnapshot();const ua=data.updatedAt?new Date(data.updatedAt).toLocaleString('es-SV'):'—';setCS('✓ '+cr.length+' fichas descargadas · Subido: '+ua,'ok');window.showToast&&window.showToast('✓ '+cr.length+' fichas descargadas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al bajar','error');}finally{setCSBtns(false);}});};
+    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{const map={};lr.forEach(r=>{if(r&&r.id)map[r.id]=r;});await setDoc(doc(db,'usuarios_pf',k),{records:map,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:lr.length});_acResetSnapshot();_sisMarcar();setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
+    window.confirmDownload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}const k=userKey(p.nombre);const lm=lr.length>0?'Este dispositivo tiene <strong>'+lr.length+' fichas locales</strong> que serán reemplazadas.':'El dispositivo está vacío.';window.showModal&&window.showModal('Bajar de la nube','Espacio: <em>usuarios_pf/'+k+'</em><br><br>'+lm+'<br><br>¿Continuar?',async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Descargando…','loading');try{const snap=await getDoc(doc(db,'usuarios_pf',k));if(!snap.exists()){setCS('⚠ No encontré tus datos en la nube.','err');window.showToast&&window.showToast('⚠ Sin datos en la nube','error');setCSBtns(false);return;}const data=snap.data();const cr=recordsToArray(data);if(!cr.length){setCS('⚠ Nube vacía.','err');setCSBtns(false);return;}localStorage.setItem('minsal_pf_v2',JSON.stringify(cr));if(window.reloadFromStorage)window.reloadFromStorage();_acResetSnapshot();_sisMarcar();const ua=data.updatedAt?new Date(data.updatedAt).toLocaleString('es-SV'):'—';setCS('✓ '+cr.length+' fichas descargadas · Subido: '+ua,'ok');window.showToast&&window.showToast('✓ '+cr.length+' fichas descargadas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al bajar','error');}finally{setCSBtns(false);}});};
 
     /* ══ SINCRONIZACIÓN AUTOMÁTICA INCREMENTAL ══
        Cada vez que se guarda un cambio local (saveRecords), se detecta QUÉ ficha
@@ -6350,7 +6350,7 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       deletedIds.forEach(id=>delete _acDeleted[id]);
       _acPersistPending();
       _acBusy=false;
-      setCS('✓ Sincronizado automáticamente · '+new Date().toLocaleTimeString('es-SV'),'ok');
+      setCS('✓ Sincronizado automáticamente · '+new Date().toLocaleTimeString('es-SV'),'ok');if(!Object.keys(_acChanged).length&&!Object.keys(_acDeleted).length)_sisMarcar();
     }
     // Punto de entrada: lo llama saveRecords() cada vez que algo cambia localmente
     window.queueAutoSync=function(){
@@ -6393,6 +6393,87 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       (window.records||[]).forEach(r=>{if(r&&r.id)_acSnapshot[r.id]=JSON.stringify(r);});
       if(Object.keys(_acChanged).length||Object.keys(_acDeleted).length)_acScheduleFlush(2500);
     })();
+
+    // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
+    function _sisHuella(claves) {
+      var h = 2166136261 >>> 0, n = 0;
+      for (var a = 0; a < claves.length; a++) {
+        var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
+        n += s.length;
+        for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      }
+      return h.toString(36) + '-' + n.toString(36);
+    }
+    function _sisFlush() {
+      try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
+      catch (e) { return Promise.resolve(); }
+    }
+    const SIS_CLAVES = ['minsal_pf_v2'];
+    function _sisMarcar() {
+      try { localStorage.setItem('sis_sync_mef', JSON.stringify({ h: _sisHuella(SIS_CLAVES), t: new Date().toISOString() })); } catch (e) {}
+    }
+    function _sisEstaLimpio() {
+      try { const x = JSON.parse(localStorage.getItem('sis_sync_mef') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES); }
+      catch (e) { return false; }
+    }
+
+    // API del launcher. Subir: manda los cambios pendientes de la sincronización automática
+    // y, si hiciera falta, une todas las fichas locales sin borrar nada de la nube.
+    window.SIS_SYNC = {
+      id: 'mef',
+      async nube() {
+        try {
+          const p = window.loadProfile ? window.loadProfile() : {};
+          if (!p.nombre || !navigator.onLine) return { ok: false, msg: 'No disponible' };
+          const snap = await getDoc(doc(db, 'usuarios_pf', userKey(p.nombre)));
+          if (!snap.exists()) return { ok: true, hay: false };
+          let lr = []; try { lr = JSON.parse(localStorage.getItem('minsal_pf_v2')) || []; } catch (e) {}
+          const m = {}; lr.forEach(r => { if (r && r.id) m[r.id] = r; });
+          const ts = r => String(r.actualizadoEn || r.updatedAt || r.savedAt || '');
+          let n = 0;
+          recordsToArray(snap.data()).forEach(c => { if (!c || !c.id) return; const l = m[c.id]; if (!l || ts(c) > ts(l)) n++; });
+          return { ok: true, hay: n > 0, n };
+        } catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
+      },
+      async subir() {
+        try {
+          const p = window.loadProfile ? window.loadProfile() : {};
+          if (!p.nombre) return { ok: false, abrir: true, msg: 'Falta tu nombre en el perfil de la app' };
+          let lr = []; try { lr = JSON.parse(localStorage.getItem('minsal_pf_v2')) || []; } catch (e) {}
+          if (!lr.length) return { ok: false, msg: 'No hay fichas en este dispositivo (usa Bajar)' };
+          if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
+          if (window.queueAutoSync) window.queueAutoSync();
+          if (Object.keys(_acChanged).length || Object.keys(_acDeleted).length) {
+            clearTimeout(_acTimer);
+            await _acFlush();
+            if (Object.keys(_acChanged).length || Object.keys(_acDeleted).length) return { ok: false, msg: 'No se pudieron enviar todos los cambios' };
+          }
+          if (!_sisEstaLimpio()) {
+            const map = {}; lr.forEach(r => { if (r && r.id) map[r.id] = r; });
+            await setDoc(doc(db, 'usuarios_pf', userKey(p.nombre)), { records: map, nombre: p.nombre, cargo: p.cargo || '', ucsf: p.ucsf || '', updatedAt: new Date().toISOString(), count: lr.length }, { merge: true });
+            _acResetSnapshot();
+          }
+          _sisMarcar(); await _sisFlush();
+          return { ok: true, msg: lr.length + ' fichas al día en la nube' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      },
+      async bajar(opts) {
+        try {
+          const p = window.loadProfile ? window.loadProfile() : {};
+          if (!p.nombre) return { ok: false, abrir: true, msg: 'Falta tu nombre en el perfil de la app' };
+          if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
+          if (!(opts && opts.forzar) && !_sisEstaLimpio()) return { ok: false, msg: 'Tiene cambios sin subir: súbelos primero' };
+          const snap = await getDoc(doc(db, 'usuarios_pf', userKey(p.nombre)));
+          if (!snap.exists()) return { ok: false, msg: 'No hay datos tuyos en la nube' };
+          const cr = recordsToArray(snap.data());
+          if (!cr.length) return { ok: false, msg: 'La nube está vacía' };
+          localStorage.setItem('minsal_pf_v2', JSON.stringify(cr));
+          if (window.reloadFromStorage) window.reloadFromStorage();
+          _acResetSnapshot(); _sisMarcar(); await _sisFlush();
+          return { ok: true, msg: cr.length + ' fichas bajadas' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      }
+    };
 </script>
 
 <!-- ════ MODAL POST-SEGUIMIENTO ════ -->

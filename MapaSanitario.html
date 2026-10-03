@@ -4187,6 +4187,113 @@ async function bajarNube(){
   }
 }
 
+
+    // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
+    function _sisHuella(claves) {
+      var h = 2166136261 >>> 0, n = 0;
+      for (var a = 0; a < claves.length; a++) {
+        var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
+        n += s.length;
+        for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      }
+      return h.toString(36) + '-' + n.toString(36);
+    }
+    function _sisFlush() {
+      try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
+      catch (e) { return Promise.resolve(); }
+    }
+    const SIS_CLAVES = ['mapa_san_catalogo','mapa_san_pdi'];
+    function _sisMarcar() {
+      try { localStorage.setItem('sis_sync_mapa', JSON.stringify({ h: _sisHuella(SIS_CLAVES), t: new Date().toISOString() })); } catch (e) {}
+    }
+    function _sisEstaLimpio() {
+      try { const x = JSON.parse(localStorage.getItem('sis_sync_mapa') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES); }
+      catch (e) { return false; }
+    }
+
+// Marcar también cuando el usuario sube/baja con los botones de la propia app
+(function(){
+  const _s0=subirNube, _b0=bajarNube;
+  subirNube=async function(){ const antes=localStorage.getItem(LS_SYNC); await _s0.apply(this,arguments); if(localStorage.getItem(LS_SYNC)!==antes) _sisMarcar(); };
+  bajarNube=async function(){ const antes=localStorage.getItem(LS_SYNC); await _b0.apply(this,arguments); if(localStorage.getItem(LS_SYNC)!==antes) _sisMarcar(); };
+})();
+// API del launcher: sube SOLO lo local que sea más nuevo y nunca borra ni pisa nada en silencio
+window.SIS_SYNC={
+  id:'mapa',
+  async nube(){
+    const uid=getUID();
+    if(!uid||_fbCargando||!navigator.onLine) return {ok:false,msg:'No disponible'};
+    _fbCargando=true;
+    try{
+      if(!(await _initFB())) return {ok:false,msg:'Sin nube'};
+      const {collection,getDocs}=window._fb;
+      const [vS,pS]=await Promise.all([getDocs(collection(_fbDb,'mapa_sanitario',uid,'viviendas')),getDocs(collection(_fbDb,'mapa_sanitario',uid,'pdi'))]);
+      const lv={},lp={}; getCatalogo().forEach(v=>lv[v.id]=v.actualizadoEn||''); getPDI().forEach(p=>lp[p.id]=p.actualizadoEn||'');
+      let n=0;
+      vS.forEach(d=>{const l=lv[d.id]; if(l===undefined||(d.data().actualizadoEn||'')>l) n++;});
+      pS.forEach(d=>{const l=lp[d.id]; if(l===undefined||(d.data().actualizadoEn||'')>l) n++;});
+      return {ok:true,hay:n>0,n};
+    }catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
+    finally{ _fbCargando=false; }
+  },
+  async subir(){
+    const uid=getUID();
+    if(!uid) return {ok:false,abrir:true,msg:'Abre la app y escribe tu código de promotor'};
+    if(_fbCargando) return {ok:false,msg:'Ya hay una sincronización en curso'};
+    if(!navigator.onLine) return {ok:false,msg:'Sin conexión a internet'};
+    const catLocal=getCatalogo(), pdiLocal=getPDI();
+    if(!catLocal.length && !pdiLocal.length) return {ok:false,msg:'No hay datos en este dispositivo (usa Bajar)'};
+    _fbCargando=true;
+    try{
+      const ok=await _initFB();
+      if(!ok) return {ok:false,msg:'No se pudo conectar con la nube'};
+      const {collection,doc,getDocs,writeBatch}=window._fb;
+      const vivRef=collection(_fbDb,'mapa_sanitario',uid,'viviendas');
+      const pdiRef=collection(_fbDb,'mapa_sanitario',uid,'pdi');
+      const [vSnap,pSnap]=await Promise.all([getDocs(vivRef),getDocs(pdiRef)]);
+      const vMeta={}, pMeta={};
+      vSnap.forEach(d=>{vMeta[d.id]=(d.data().actualizadoEn||'');});
+      pSnap.forEach(d=>{pMeta[d.id]=(d.data().actualizadoEn||'');});
+      const idsV=new Set(catLocal.map(v=>v.id)), idsP=new Set(pdiLocal.map(p=>p.id));
+      const faltanV=Object.keys(vMeta).filter(id=>!idsV.has(id)).length;
+      const faltanP=Object.keys(pMeta).filter(id=>!idsP.has(id)).length;
+      if(faltanV||faltanP) return {ok:false,abrir:true,msg:'La nube tiene '+(faltanV+faltanP)+' registros que aquí no están (¿los borraste a propósito?). Usa Bajar, o decide en la app'};
+      const subV=catLocal.filter(v=>{const c=vMeta[v.id]; const l=v.actualizadoEn||''; return c===undefined||!c||!l||l>c;});
+      const subP=pdiLocal.filter(p=>{const c=pMeta[p.id]; const l=p.actualizadoEn||''; return c===undefined||!c||!l||l>c;});
+      const subir=async(arr,ref,fn)=>{ let b=writeBatch(_fbDb), n=0; for(const it of arr){ b.set(doc(ref,it.id),fn(it)); if(++n===490){await b.commit(); b=writeBatch(_fbDb); n=0;} } if(n>0) await b.commit(); };
+      await subir(subV,vivRef,v=>({...v,_device:navigator.userAgent.slice(0,40)}));
+      await subir(subP,pdiRef,p=>p);
+      localStorage.setItem(LS_SYNC,new Date().toLocaleString('es-SV',{hour12:false,year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
+      _sisMarcar(); await _sisFlush();
+      return {ok:true,msg:(subV.length+subP.length)+' registros subidos ('+catLocal.length+' viviendas, '+pdiLocal.length+' PDI en total)'};
+    }catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
+    finally{ _fbCargando=false; }
+  },
+  async bajar(opts){
+    const uid=getUID();
+    if(!uid) return {ok:false,abrir:true,msg:'Abre la app y escribe tu código de promotor'};
+    if(_fbCargando) return {ok:false,msg:'Ya hay una sincronización en curso'};
+    if(!navigator.onLine) return {ok:false,msg:'Sin conexión a internet'};
+    if(!(opts&&opts.forzar) && !_sisEstaLimpio()) return {ok:false,msg:'Tiene cambios sin subir: súbelos primero'};
+    _fbCargando=true;
+    try{
+      const ok=await _initFB();
+      if(!ok) return {ok:false,msg:'No se pudo conectar con la nube'};
+      const {collection,getDocs}=window._fb;
+      const [vSnap,pSnap]=await Promise.all([getDocs(collection(_fbDb,'mapa_sanitario',uid,'viviendas')),getDocs(collection(_fbDb,'mapa_sanitario',uid,'pdi'))]);
+      const catNube=[], pdiNube=[];
+      vSnap.forEach(d=>{const x=d.data(); delete x._device; catNube.push(x);});
+      pSnap.forEach(d=>pdiNube.push(d.data()));
+      if(!catNube.length && !pdiNube.length) return {ok:false,msg:'La nube está vacía para este promotor'};
+      saveCatalogo(catNube); savePDI(pdiNube);
+      localStorage.setItem(LS_SYNC,new Date().toLocaleString('es-SV',{hour12:false,year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
+      _sisMarcar(); await _sisFlush();
+      return {ok:true,msg:catNube.length+' viviendas, '+pdiNube.length+' PDI bajados'};
+    }catch(e){ return {ok:false,msg:String(e&&e.message||e)}; }
+    finally{ _fbCargando=false; }
+  }
+};
+
 // _actualizarSyncUI se llama desde el DOMContentLoaded unificado arriba
 
 

@@ -3060,7 +3060,7 @@
        3. Sube el resultado combinado
        4. Actualiza también el localStorage local
     ══════════════════════════════════════ */
-    window.confirmUpload = function(){
+    window.confirmUpload = function(sil){
       const profile = window.loadProfile();
       let localRecords = [];
       try{ localRecords = JSON.parse(localStorage.getItem('minsal_visitas_v5'))||[]; }catch(e){}
@@ -3094,7 +3094,8 @@
       }
 
       const key = userKey(profile.nombre);
-      showCloudWarning(
+      const _go = sil ? (a,b,c,cb)=>cb() : showCloudWarning;
+      return _go(
         `☁ Subir y combinar datos de <strong>${profile.nombre}</strong>`,
         '☁ Confirmar subida inteligente',
         [
@@ -3168,7 +3169,7 @@
               nombre:      profile.nombre,
               cargo:       profile.cargo  || '',
               ucsf:        profile.ucsf   || '',
-              updatedAt:   new Date().toISOString(),
+              updatedAt:   (window.__sisMetaV = new Date().toISOString()),
               count:       localRecords.length,
               sigPersonal: sigPersonalUrl
             });
@@ -3180,11 +3181,14 @@
             const msg = `✓ ${localRecords.length} fichas locales · ${parts.join(' · ')}`;
             setCloudStatus(`${msg} · ${new Date().toLocaleTimeString('es-SV')}`, 'ok');
             showToast(`✓ Sincronización completada`, 'success');
+            _sisMarcar(); try { localStorage.setItem('sis_nube_visita', String(window.__sisMetaV || '')); } catch (e) {}
+            return true;
 
           } catch(err){
             console.error(err);
             setCloudStatus('✗ Error al subir: '+(err.message||'sin conexión'),'err');
             showToast('✗ Error al subir datos','error');
+            return false;
           } finally { setBtns(false); }
         }
       );
@@ -3196,7 +3200,7 @@
        2. Combina con los datos locales (gana el más reciente)
        3. Guarda el resultado combinado en localStorage
     ══════════════════════════════════════ */
-    window.confirmDownload = function(){
+    window.confirmDownload = function(sil){
       const profile = window.loadProfile();
       let localRecords = [];
       try{ localRecords = JSON.parse(localStorage.getItem('minsal_visitas_v5'))||[]; }catch(e){}
@@ -3216,7 +3220,8 @@
       }
 
       const key = userKey(profile.nombre);
-      showCloudWarning(
+      const _go = sil ? (a,b,c,cb)=>cb() : showCloudWarning;
+      return _go(
         `☁ Bajar y combinar datos de <strong>${profile.nombre}</strong>`,
         '☁ Confirmar descarga inteligente',
         [
@@ -3229,6 +3234,7 @@
           '¿Continuar?'
         ],
         async () => {
+          const _limpioAntes = _sisEstaLimpio();
           setBtns(true);
           setCloudStatus('<span class="spin">↻</span> Verificando cambios en la nube…','loading');
           try{
@@ -3238,7 +3244,7 @@
               setCloudStatus('⚠ No encontré tu espacio en la nube. ¿Ya subiste datos antes?','err');
               showToast('⚠ No hay datos tuyos en la nube aún','error');
               setBtns(false);
-              return;
+              return false;
             }
             const data = snap.data();
 
@@ -3252,7 +3258,7 @@
               setCloudStatus('⚠ Tu espacio en la nube está vacío.','err');
               showToast('⚠ Tu nube está vacía','error');
               setBtns(false);
-              return;
+              return false;
             }
 
             // Solo bajar fichas que no existen localmente o que son más recientes en la nube
@@ -3288,8 +3294,9 @@
               const ts = data.updatedAt ? new Date(data.updatedAt).toLocaleString('es-SV') : '—';
               setCloudStatus(`✓ Todo al día · ${localRecords.length} fichas · Nube: ${ts}`, 'ok');
               showToast('✓ Ya tienes todo actualizado', 'success');
+              try { localStorage.setItem('sis_nube_visita', String(data.updatedAt || '')); } catch (e) {}
               setBtns(false);
-              return;
+              return true;
             }
 
             // Aplicar cambios al arreglo local
@@ -3333,14 +3340,103 @@
             const ts = data.updatedAt ? new Date(data.updatedAt).toLocaleString('es-SV') : '—';
             setCloudStatus(`✓ ${merged.length} fichas · ${parts.join(' · ')} · Nube: ${ts}`, 'ok');
             showToast(`✓ Descarga: ${parts.join(', ')}`, 'success');
+            try { localStorage.setItem('sis_nube_visita', String(data.updatedAt || '')); } catch (e) {}
+            if (_limpioAntes) _sisMarcar();
+            return true;
 
           } catch(err){
             console.error(err);
             setCloudStatus('✗ Error al descargar: '+(err.message||'sin conexión'),'err');
             showToast('✗ Error al bajar datos','error');
+            return false;
           } finally { setBtns(false); }
         }
       );
+    };
+
+
+    // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
+    function _sisHuella(claves) {
+      var h = 2166136261 >>> 0, n = 0;
+      for (var a = 0; a < claves.length; a++) {
+        var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
+        n += s.length;
+        for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      }
+      return h.toString(36) + '-' + n.toString(36);
+    }
+    function _sisFlush() {
+      try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
+      catch (e) { return Promise.resolve(); }
+    }
+    const SIS_CLAVES = ['minsal_visitas_v5','minsal_deleted_v1'];
+    function _sisMarcar() {
+      try { localStorage.setItem('sis_sync_visita', JSON.stringify({ h: _sisHuella(SIS_CLAVES), t: new Date().toISOString() })); } catch (e) {}
+    }
+    function _sisEstaLimpio() {
+      try { const x = JSON.parse(localStorage.getItem('sis_sync_visita') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES); }
+      catch (e) { return false; }
+    }
+
+    // API del launcher: reutiliza la misma lógica de combinar (nunca borra fichas por su cuenta)
+    window.SIS_SYNC = {
+      id: 'visita',
+      // Revisión liviana: 1 lectura del doc principal; la comparación completa solo la primera vez
+      async nube() {
+        try {
+          const p = window.loadProfile();
+          if (!p.nombre || !navigator.onLine) return { ok: false, msg: 'No disponible' };
+          const snap = await getDoc(doc(db, 'usuarios', userKey(p.nombre)));
+          const cur = snap.exists() ? String(snap.data().updatedAt || '') : '';
+          const st = localStorage.getItem('sis_nube_visita');
+          if (st === null) {
+            const r = await window.SIS_SYNC._nubeCompleta();
+            if (r.ok && !r.hay) { try { localStorage.setItem('sis_nube_visita', cur); } catch (e) {} }
+            return r;
+          }
+          return { ok: true, hay: snap.exists() && cur !== '' && cur !== st };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      },
+      async _nubeCompleta() {
+        try {
+          const p = window.loadProfile();
+          if (!p.nombre || !navigator.onLine) return { ok: false, msg: 'No disponible' };
+          const key = userKey(p.nombre);
+          const snap = await getDoc(doc(db, 'usuarios', key));
+          if (!snap.exists()) return { ok: true, hay: false };
+          let lr = [], del = {};
+          try { lr = JSON.parse(localStorage.getItem('minsal_visitas_v5')) || []; } catch (e) {}
+          try { del = JSON.parse(localStorage.getItem('minsal_deleted_v1')) || {}; } catch (e) {}
+          const lm = {}; lr.forEach(r => { lm[String(r.id)] = r.savedAt || ''; });
+          const vs = await getDocs(collection(db, 'usuarios', key, 'visitas'));
+          const ids = new Set(); let n = 0;
+          vs.forEach(d => { const r = d.data(), id = String(r.id || d.id); ids.add(String(d.id)); if (del[id]) return; if (!lm[id] || (r.savedAt || '') > lm[id]) n++; });
+          if (snap.data().count !== undefined) lr.forEach(r => { if (!ids.has(String(r.id)) && !del[String(r.id)]) n++; });
+          return { ok: true, hay: n > 0, n };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      },
+      async subir() {
+        try {
+          const p = window.loadProfile(); let lr = [];
+          try { lr = JSON.parse(localStorage.getItem('minsal_visitas_v5')) || []; } catch (e) {}
+          if (!p.nombre) return { ok: false, abrir: true, msg: 'Falta tu nombre en el perfil de la app' };
+          if (!lr.length) return { ok: false, msg: 'No hay fichas en este dispositivo (usa Bajar)' };
+          if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
+          const r = await window.confirmUpload(true);
+          await _sisFlush();
+          return { ok: r === true, msg: r === true ? lr.length + ' fichas combinadas con la nube' : 'No se pudo subir (revisa la conexión)' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      },
+      async bajar() {
+        try {
+          const p = window.loadProfile();
+          if (!p.nombre) return { ok: false, abrir: true, msg: 'Falta tu nombre en el perfil de la app' };
+          if (!navigator.onLine) return { ok: false, msg: 'Sin conexión a internet' };
+          const r = await window.confirmDownload(true);
+          await _sisFlush();
+          return { ok: r === true, msg: r === true ? 'Fichas al día con la nube' : 'No se pudo bajar (¿hay datos en la nube?)' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      }
     };
 
     /* ══════════════════════════════════════

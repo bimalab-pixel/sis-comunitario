@@ -496,6 +496,12 @@
         .btn-magic:active{transform:translateY(2px);box-shadow:0 0 0 #1e3a8a,0 2px 4px rgba(30,58,138,.2);}
         .btn-magic:disabled{filter:grayscale(.4) brightness(.9);cursor:not-allowed;transform:none;}
         .btn-magic-hint{display:none;font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
+        /* Selector de estilo de redacción (Técnico / Sencillo) */
+        .estilo-ia-seg{display:flex;gap:0;border:1.5px solid #1e3a8a;border-radius:10px;overflow:hidden;background:#fff;}
+        .estilo-ia-seg button{flex:1;padding:.55rem .4rem;border:none;background:transparent;color:#1e3a8a;
+          font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;line-height:1.2;transition:background .15s,color .15s;}
+        .estilo-ia-seg button + button{border-left:1.5px solid #1e3a8a;}
+        .estilo-ia-seg button.activo{background:#1e3a8a;color:#fff;}
 
         /* ══════════════ BOTÓN INFORME MINSAL (visita domiciliar) ══════════════ */
         .btn-informe-minsal{
@@ -1696,6 +1702,13 @@
                                 <option value="balanceado" selected>⚖️ Balanceado (recomendado)</option>
                                 <option value="detallado">🔍 Extenso / Detallado</option>
                             </select>
+                        </div>
+                        <div class="f-group" style="margin-bottom:.5rem">
+                            <label>🗣️ Estilo de Redacción</label>
+                            <div class="estilo-ia-seg">
+                                <button type="button" data-estilo="tecnico" onclick="rdpsSetEstiloIA('tecnico')">🩺 Técnico profesional</button>
+                                <button type="button" data-estilo="sencillo" onclick="rdpsSetEstiloIA('sencillo')">🏘️ Técnico comunitario</button>
+                            </div>
                         </div>
                         <button type="button" class="btn-magic" id="btn-magic-ia" onclick="generarConIA()">
                             <span id="btn-magic-ia-texto">✨ Generar Informe Profesional (Hallazgos y Acciones)</span>
@@ -3036,6 +3049,15 @@
         ? informeIframe.contentDocument.getElementById('inf-btn-regen-objetivo')
         : null;
       if (regenBtn) regenBtn.style.display = visible ? '' : 'none';
+      const estiloSel = informeIframe && informeIframe.contentDocument
+        ? informeIframe.contentDocument.getElementById('inf-estilo-objetivo')
+        : null;
+      if (estiloSel) estiloSel.style.display = visible ? '' : 'none';
+      const refIframe = document.getElementById('referencia-minsal-iframe');
+      ['ref-btn-ia', 'ref-estilo-fila'].forEach(id => {
+        const el = refIframe && refIframe.contentDocument ? refIframe.contentDocument.getElementById(id) : null;
+        if (el) el.style.display = visible ? '' : 'none';
+      });
     }
 
     // ── NAVEGACIÓN ──
@@ -3326,7 +3348,7 @@
 ${css}
 @page { size: letter; margin: 1.5cm; }
 html, body { margin: 0; padding: 0 !important; background: #fff; }
-.inf-toolbar, .firma-modal-bg, .inf-firma-borrar, .inf-btn-regen-objetivo, .inf-regen-mensaje, .inf-firma-placeholder { display: none !important; }
+.inf-toolbar, .firma-modal-bg, .inf-firma-borrar, .inf-btn-regen-objetivo, .inf-estilo-obj, .inf-regen-mensaje, .inf-firma-placeholder { display: none !important; }
 .inf-tabla-wrap { overflow: visible; }
 .inf-linea, .inf-campo-full, .inf-header-row, .inf-firma-pad-wrap, table.inf-tabla tr { break-inside: avoid; page-break-inside: avoid; }
 .hoja { width: 185.9mm; height: 247mm; overflow: hidden; position: relative; break-after: page; page-break-after: always; }
@@ -6152,6 +6174,26 @@ function _riesgoActualizarGrafica(indicadorId) {
     // Guarda la nota original (idea básica) para que cambiar de nivel (Resumido/Balanceado/Detallado)
     // siempre regenere a partir de la MISMA idea original, y no sobre el texto ya redactado por la IA.
     let _iaNotaBaseOriginal = null;
+
+    // ── Estilo de redacción de la IA: 'tecnico' (formal) o 'sencillo' (lenguaje comunitario) ──
+    // Se recuerda en el dispositivo y lo comparten el formulario de registro y la tabla del reporte.
+    const RDPS_ESTILO_IA_KEY = 'rdps_estilo_ia';
+    function rdpsGetEstiloIA() {
+      try { return localStorage.getItem(RDPS_ESTILO_IA_KEY) === 'sencillo' ? 'sencillo' : 'tecnico'; }
+      catch (e) { return 'tecnico'; }
+    }
+    function rdpsPintarEstiloIA() {
+      const estilo = rdpsGetEstiloIA();
+      document.querySelectorAll('.estilo-ia-seg button').forEach(b => {
+        b.classList.toggle('activo', b.getAttribute('data-estilo') === estilo);
+      });
+    }
+    function rdpsSetEstiloIA(valor) {
+      try { localStorage.setItem(RDPS_ESTILO_IA_KEY, valor === 'sencillo' ? 'sencillo' : 'tecnico'); } catch (e) {}
+      rdpsPintarEstiloIA();
+    }
+    rdpsPintarEstiloIA();
+    document.addEventListener('DOMContentLoaded', rdpsPintarEstiloIA);
     let _iaUltimaSalidaHallazgos = null;
 
     // Listas de aperturas sugeridas (deben coincidir con las que se listan en el prompt) y
@@ -6326,6 +6368,7 @@ function _riesgoActualizarGrafica(indicadorId) {
       const notasAcciones  = document.getElementById(`${prefijo}-acciones`).value.trim();
       const nivelEl = document.getElementById(`${prefijo}-nivel-ia`);
       const nivel  = nivelEl ? nivelEl.value : 'balanceado';
+      const estilo = rdpsGetEstiloIA();
 
       if (!nombre) { toast('⚠️ Ingresa el nombre antes de usar la IA', 'error'); return; }
       if (!campoHallazgosActual) { toast('⚠️ Escribe la idea básica en "Hallazgos" primero', 'error'); return; }
@@ -6363,7 +6406,7 @@ function _riesgoActualizarGrafica(indicadorId) {
       // Si en esta misma sesión ya se generaron redacciones antes, se le pide a la IA
       // que evite repetir las mismas aperturas usadas en la(s) persona(s) anterior(es).
       let refuerzoVariedadSesion = "";
-      if (_iaHistorialAperturas.hallazgos.length || _iaHistorialAperturas.acciones.length) {
+      if (estilo === 'tecnico' && (_iaHistorialAperturas.hallazgos.length || _iaHistorialAperturas.acciones.length)) {
         refuerzoVariedadSesion = `\nEVITA REPETIR APERTURAS YA USADAS EN PERSONAS ANTERIORES DE ESTA MISMA SESIÓN (elige una alternativa distinta a estas):`;
         if (_iaHistorialAperturas.hallazgos.length) {
           refuerzoVariedadSesion += `\n   - Para "Hallazgos en la Visita", NO uses: ${_iaHistorialAperturas.hallazgos.join(', ')}`;
@@ -6396,6 +6439,18 @@ function _riesgoActualizarGrafica(indicadorId) {
         temp = 0.35;
       }
 
+      // Bloque que se agrega al prompt solo cuando se eligió "Técnico comunitario"
+      const reglaEstilo = estilo === 'sencillo' ? `
+ESTILO DE REDACCIÓN: TÉCNICO EN SALUD COMUNITARIA (regla crítica, SUSTITUYE las instrucciones anteriores de "redacción técnica formal", de aperturas técnicas y de vocabulario clínico especializado):
+   - Redacta con el registro profesional de un promotor o técnico de salud comunitaria que documenta su visita: lenguaje claro, preciso y ordenado, comprensible para cualquier persona del equipo de salud o de la comunidad, pero SIN sonar coloquial, infantil ni simplista (no uses diminutivos, expresiones de plática ni frases como "como un vecino").
+   - Usa los términos propios del primer nivel de atención y de la salud comunitaria, que sí son de uso común: hipertensión arterial, diabetes, control prenatal, signos de peligro, esquema de vacunación, lactancia materna, desnutrición, deshidratación, consejería, seguimiento, referencia al establecimiento de salud, usuario/usuaria, vivienda, grupo familiar. Estos NO se simplifican.
+   - Solo reemplaza el vocabulario clínico especializado u hospitalario por su equivalente claro: "sintomatología" → "síntomas"; "cefalea" → "dolor de cabeza"; "disnea" → "dificultad para respirar"; "edema" → "hinchazón"; "hiperglucemia" → "glucosa elevada"; "adherencia al tratamiento" → "cumplimiento del tratamiento"; "cuadro clínico" → "situación de salud"; "evaluación clínica" → "valoración". Si usas un término poco común, aclara brevemente entre paréntesis.
+   - Explica los riesgos de forma directa y entendible (ej. "riesgo de complicaciones", "puede agravarse si no recibe atención").
+   - Aperturas sugeridas en lugar de las técnicas. Para "Hallazgos": "Se identificó que...", "Durante la visita se encontró que...", "Se verificó que...", "Se observó que...", "Al realizar la visita se constató que...". Para "Acciones": "Se brindó consejería sobre...", "Se orientó a la persona sobre...", "Se explicó la importancia de...", "Se reforzó la información sobre...", "Se recomendó...". Varía entre ellas. Para el ACUERDO: "Acuerdo: ...", "Se acordó que...", "La persona se comprometió a...", "Se estableció el compromiso de...".
+   - Pretérito simple y tercera persona; nunca "paciente" ni "el equipo de salud".
+   - Solo cambia el REGISTRO del lenguaje, no el contenido: TODAS las demás reglas siguen vigentes (cifras con su unidad exacta, sexo, peso/talla, cobertura de todos los temas, no inventar nada, no recortar lo ya escrito, acuerdo claro, mismo formato TSV de 4 columnas y mismo formato de edad). Las cifras (ej. 140/90, kg, cm, semanas, fechas) se conservan exactas.
+` : '';
+
       const btn = document.getElementById(prefijo === 'e' ? 'btn-magic-ia-edit' : 'btn-magic-ia');
       const btnTexto = document.getElementById(prefijo === 'e' ? 'btn-magic-ia-edit-texto' : 'btn-magic-ia-texto');
       const textoOriginal = btnTexto.textContent;
@@ -6427,7 +6482,7 @@ ${refuerzoVariedadSesion}
 ${refuerzoRiesgo}
 
 ${reglaDetalle}
-
+${reglaEstilo}
 RAZONAMIENTO LIMITADO A LOS HALLAZGOS (regla crítica, no negociable):
    - La consejería, las "Acciones Ejecutadas" y el acuerdo DEBEN derivarse únicamente de lo que está explícitamente mencionado en las notas/hallazgos. NO inventes diagnósticos, condiciones, antecedentes, exámenes ni intervenciones que el promotor no haya anotado.
    - SÍ está permitido el razonamiento clínico lógico y directo sobre lo que fue mencionado (ej: si la nota dice "con gripe", es válido recomendar reposo, hidratación y observación de signos de alarma, porque es manejo estándar de esa condición ya mencionada).
@@ -6503,9 +6558,11 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           _autoCrecerTextarea(document.getElementById(`${prefijo}-hallazgos`));
           _autoCrecerTextarea(document.getElementById(`${prefijo}-acciones`));
           _iaUltimaSalidaHallazgos = hallazgosFinal; // Para detectar si el usuario edita manualmente después
-          _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
-          _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
-          toast('✨ Redacción generada — revisa antes de guardar', 'success');
+          if (estilo === 'tecnico') {
+            _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
+            _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
+          }
+          toast(estilo === 'sencillo' ? '✨ Redacción en estilo técnico comunitario generada — revisa antes de guardar' : '✨ Redacción generada — revisa antes de guardar', 'success');
         } else {
           toast('❌ La IA no devolvió contenido válido. Intenta de nuevo.', 'error');
         }
@@ -7718,7 +7775,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     // Si no hay clave API configurada, o la IA falla/no hay internet, devuelve null y quien
     // llama esta función debe usar _infCalcularObjetivo() como respaldo — el informe nunca
     // debe quedar bloqueado por falta de conexión.
-    async function _infGenerarObjetivoIA(nombre, hallazgos, acciones) {
+    async function _infGenerarObjetivoIA(nombre, hallazgos, acciones, estiloParam) {
+      const estilo = (estiloParam === 'sencillo' || estiloParam === 'tecnico') ? estiloParam : rdpsGetEstiloIA();
       const proveedorId = rdpsProveedorActual();
       const proveedor = RDPS_PROVEEDORES[proveedorId];
       const apiKey = localStorage.getItem(proveedor.keyStorage);
@@ -7733,7 +7791,16 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
 
       // Se sugiere una apertura distinta en cada llamada (elegida al azar) para que el
       // objetivo generado no siempre comience con la misma frase, aunque el motivo sea similar.
-      const aperturaSugerida = _infAperturaAleatoria();
+      const _aperturasObjetivoSencillo = [
+        'Realizar visita domiciliar para dar seguimiento a', 'Visitar el hogar con el fin de', 'Brindar consejería en el hogar sobre',
+        'Dar seguimiento en la vivienda a', 'Verificar en el hogar', 'Visitar a la familia para'
+      ];
+      const aperturaSugerida = estilo === 'sencillo'
+        ? _aperturasObjetivoSencillo[Math.floor(Math.random() * _aperturasObjetivoSencillo.length)]
+        : _infAperturaAleatoria();
+      const reglaApertura = estilo === 'sencillo'
+        ? `2. ESTILO: TÉCNICO EN SALUD COMUNITARIA. Redacta con el registro profesional de un promotor o técnico de salud comunitaria: lenguaje claro y directo, sin sonar coloquial ni infantil. Usa los términos propios del primer nivel de atención (hipertensión arterial, diabetes, control prenatal, signos de peligro, consejería, seguimiento, referencia) y solo reemplaza el vocabulario clínico especializado por su equivalente claro (ej. "síntomas" en vez de "sintomatología", "dificultad para respirar" en vez de "disnea"). Para esta ocasión inicia con esta apertura o una variación natural muy cercana: "${aperturaSugerida}...". Varía el inicio entre informes.`
+        : `2. Para esta ocasión, inicia el texto con esta apertura exacta o una variación natural muy cercana en redacción: "${aperturaSugerida}...". NO uses "Realizar visita domiciliaria de seguimiento con el fin de" salvo que sea justo la apertura indicada aquí — el objetivo es variar el inicio entre informes, nunca repetir siempre la misma frase.`;
 
       const prompt = `
 Eres un asistente para promotores de salud comunitaria en El Salvador (formato oficial MINSAL de informe de visita domiciliar).
@@ -7742,7 +7809,7 @@ Con base ÚNICAMENTE en los "Hallazgos" y las "Acciones ejecutadas" de una visit
 
 REGLAS (no negociables):
 1. Debe tener entre 2 y 3 oraciones (aproximadamente 35 a 60 palabras en total) — ni una sola frase telegráfica ni un párrafo largo.
-2. Para esta ocasión, inicia el texto con esta apertura exacta o una variación natural muy cercana en redacción: "${aperturaSugerida}...". NO uses "Realizar visita domiciliaria de seguimiento con el fin de" salvo que sea justo la apertura indicada aquí — el objetivo es variar el inicio entre informes, nunca repetir siempre la misma frase.
+${reglaApertura}
 3. Incluye datos CONCRETOS que ya aparezcan en los Hallazgos/Acciones y ayuden a entender el propósito de la visita: por ejemplo la edad o etapa de vida de la persona (recién nacido, embarazo de X semanas, adulto mayor, etc.), la condición o motivo principal, y si aplica, qué se buscaba verificar o reforzar (signos de alarma, signos vitales, cumplimiento de un acuerdo o control anterior). No agregues cifras o datos que no estén ya en el texto proporcionado.
 4. NO inventes ningún diagnóstico, dato, antecedente o acción que no esté explícita o implícitamente contenido en los Hallazgos/Acciones proporcionados. El objetivo debe quedarse estrictamente dentro de ese contexto.
 5. Si hay más de un tema/condición relevante, prioriza el motivo PRINCIPAL de la visita y menciona un segundo tema solo si es claramente relevante; no intentes listar todos los temas menores.
@@ -8042,6 +8109,7 @@ Acciones ejecutadas: ${acciones || '—'}
   .fm-guardar { background:#0b8a72; border-color:#0b8a72; color:#fff; font-weight:700; }
   .inf-btn-regen-objetivo { font-family:inherit; font-size:13px; line-height:1; margin-left:.6rem; padding:.28rem .5rem; border:1px solid #0b8a72; border-radius:6px; background:#eafaf5; color:#0b6a52; cursor:pointer; font-weight:600; vertical-align:middle; }
   .inf-btn-regen-objetivo:disabled { opacity:.6; cursor:default; }
+  .inf-estilo-obj { font-family:inherit; font-size:12px; margin-left:.35rem; padding:.25rem .35rem; border:1px solid #0b8a72; border-radius:6px; background:#fff; color:#0b6a52; font-weight:600; vertical-align:middle; cursor:pointer; }
   .inf-regen-mensaje { font-size:11px; margin:.2rem 0 .5rem; min-height:1em; }
   .inf-regen-mensaje.error { color:#c0392b; }
   .inf-regen-mensaje.ok { color:#0a6a44; }
@@ -8049,7 +8117,7 @@ Acciones ejecutadas: ${acciones || '—'}
     .inf-toolbar { display:none; }
     .inf-firma-borrar { display:none; }
     .firma-modal-bg { display:none !important; }
-    .inf-btn-regen-objetivo { display:none !important; }
+    .inf-btn-regen-objetivo, .inf-estilo-obj { display:none !important; }
     .inf-regen-mensaje { display:none !important; }
     body { padding: 0; }
     /* La tabla se desplaza horizontalmente en pantalla chica; al imprimir vuelve a
@@ -8107,6 +8175,10 @@ Acciones ejecutadas: ${acciones || '—'}
 
   <div class="inf-seccion-titulo">1. Objetivo de la visita.
     <button type="button" class="inf-btn-regen-objetivo" id="inf-btn-regen-objetivo" onclick="_infRegenerarObjetivo()" title="Regenerar objetivo con IA" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">🔄</button>
+    <select class="inf-estilo-obj" id="inf-estilo-objetivo" title="Estilo de redacción del objetivo con IA" onchange="_infGuardarEstiloObjetivo()" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">
+      <option value="tecnico"${localStorage.getItem('rdps_estilo_ia') === 'sencillo' ? '' : ' selected'}>🩺 Técnico</option>
+      <option value="sencillo"${localStorage.getItem('rdps_estilo_ia') === 'sencillo' ? ' selected' : ''}>🏘️ Comunitario</option>
+    </select>
   </div>
   <div class="inf-texto-box chico" id="inf-objetivo-box" contenteditable="true" data-ph="Completar..." data-nombre="${_infEsc(ta(d.nombre))}">${_infEsc(ta(d.objetivo))}</div>
   <div class="inf-regen-mensaje" id="inf-regen-mensaje"></div>
@@ -8519,6 +8591,14 @@ Acciones ejecutadas: ${acciones || '—'}
     }
     var _infRegenMsgTimeout = null;
 
+    function _infEstiloObjetivoActual() {
+      var el = document.getElementById('inf-estilo-objetivo');
+      return (el && el.value === 'sencillo') ? 'sencillo' : 'tecnico';
+    }
+    function _infGuardarEstiloObjetivo() {
+      try { localStorage.setItem('rdps_estilo_ia', _infEstiloObjetivoActual()); } catch (e) {}
+    }
+
     async function _infRegenerarObjetivo() {
       var btn = document.getElementById('inf-btn-regen-objetivo');
       var cajaObjetivo = document.getElementById('inf-objetivo-box');
@@ -8540,7 +8620,7 @@ Acciones ejecutadas: ${acciones || '—'}
       _infMostrarMensajeRegen('', '');
 
       try {
-        var nuevoObjetivo = await window.parent._infGenerarObjetivoIA(nombre, hallazgos, acciones);
+        var nuevoObjetivo = await window.parent._infGenerarObjetivoIA(nombre, hallazgos, acciones, _infEstiloObjetivoActual());
         if (nuevoObjetivo) {
           if (window.parent.rdpsMayusculasActivo && window.parent.rdpsMayusculasActivo()) {
             nuevoObjetivo = nuevoObjetivo.toUpperCase();
@@ -8549,7 +8629,7 @@ Acciones ejecutadas: ${acciones || '—'}
           if (window.parent && typeof window.parent._infGuardarCampoRegistro === 'function') {
             window.parent._infGuardarCampoRegistro('objetivo', nuevoObjetivo, _infHuellaActual);
           }
-          _infMostrarMensajeRegen('✅ Objetivo redactado con IA', 'ok');
+          _infMostrarMensajeRegen(_infEstiloObjetivoActual() === 'sencillo' ? '✅ Objetivo redactado con IA (estilo técnico comunitario)' : '✅ Objetivo redactado con IA', 'ok');
         } else {
           _infMostrarMensajeRegen('⚠️ Sin internet o IA no disponible en este momento. El objetivo actual no se modificó — puedes intentar de nuevo más tarde.', 'error');
         }
@@ -8723,7 +8803,9 @@ Acciones ejecutadas: ${acciones || '—'}
       _refGuardarHistorialAperturas();
     }
 
-    async function _refGenerarReferenciaIA(nombre, edad, motivo, accion) {
+    async function _refGenerarReferenciaIA(nombre, edad, motivo, accion, estiloParam) {
+      const estilo = (estiloParam === 'sencillo' || estiloParam === 'tecnico') ? estiloParam : rdpsGetEstiloIA();
+      const sencillo = estilo === 'sencillo';
       const proveedorId = rdpsProveedorActual();
       const proveedor = RDPS_PROVEEDORES[proveedorId];
       const apiKey = localStorage.getItem(proveedor.keyStorage);
@@ -8736,7 +8818,7 @@ Acciones ejecutadas: ${acciones || '—'}
       // Si ya se generaron referencias antes en esta misma sesión/día, se le pide a la IA
       // que evite repetir esas mismas aperturas — así cada referencia arranca distinto.
       let refuerzoVariedadRef = '';
-      if (_refHistorialAperturas.motivo.length || _refHistorialAperturas.accion.length) {
+      if (!sencillo && (_refHistorialAperturas.motivo.length || _refHistorialAperturas.accion.length)) {
         refuerzoVariedadRef = `\nEVITA REPETIR APERTURAS YA USADAS EN REFERENCIAS ANTERIORES DE ESTA MISMA SESIÓN (elige una alternativa distinta a estas, o inventa una construcción equivalente que no esté en esta lista):`;
         if (_refHistorialAperturas.motivo.length) {
           refuerzoVariedadRef += `\n   - Para "Motivo", NO uses: ${_refHistorialAperturas.motivo.join(', ')}`;
@@ -8746,13 +8828,31 @@ Acciones ejecutadas: ${acciones || '—'}
         }
       }
 
+      const _refAperturasMotivoSencillo = [
+        'Se refiere a la persona por', 'Se envía al establecimiento de salud por', 'Requiere valoración en el establecimiento de salud por',
+        'Se refiere para evaluación debido a', 'Se refiere porque presenta', 'Necesita atención en el establecimiento de salud por'
+      ];
+      const _refAperturasAccionSencillo = [
+        'Antes de la referencia, se brindó consejería sobre', 'Previo a la referencia, se tomaron los signos vitales y se orientó sobre',
+        'Se verificaron los signos vitales y se orientó a la persona sobre', 'Como primera atención, se realizó',
+        'Antes de referir, se explicó', 'Previo al traslado, se verificó'
+      ];
+      const listaMotivoRef = sencillo ? _refAperturasMotivoSencillo : _refAperturasMotivo;
+      const listaAccionRef = sencillo ? _refAperturasAccionSencillo : _refAperturasAccion;
+      const tonoRef = sencillo
+        ? 'el registro de un técnico o promotor de salud comunitaria (lenguaje profesional pero claro y directo, con los términos propios del primer nivel de atención, sin jerga clínica especializada y sin sonar coloquial), tercera persona, pretérito simple'
+        : 'tono clínico formal, tercera persona, pretérito perfecto';
+      const reglaSencilla = sencillo ? `
+ESTILO: TÉCNICO EN SALUD COMUNITARIA (regla crítica, SUSTITUYE las indicaciones de "tono clínico formal"): redacta con el registro profesional de un promotor o técnico de salud comunitaria: claro, preciso y directo, entendible para el personal del establecimiento y para la comunidad, sin sonar coloquial, infantil ni simplista. Usa con naturalidad los términos del primer nivel de atención (hipertensión arterial, diabetes, control prenatal, signos de peligro, consejería, signos vitales, referencia) sin simplificarlos. Solo reemplaza el vocabulario clínico especializado u hospitalario por su equivalente claro (ej. "síntomas" en vez de "sintomatología", "dolor de cabeza" en vez de "cefalea", "dificultad para respirar" en vez de "disnea", "hinchazón" en vez de "edema"). Solo cambia el REGISTRO del lenguaje, no el contenido: todas las demás reglas siguen vigentes y las cifras (signos vitales, semanas, fechas) se conservan exactas.
+` : '';
+
       const prompt = `
 Eres un asistente para promotores de salud comunitaria en El Salvador (formato oficial MINSAL de REFERENCIA COMUNITARIA, el documento que el promotor entrega al establecimiento de salud para que reciba y atienda a la persona referida).
 
-Con base ÚNICAMENTE en las notas de campo de abajo (que vienen del registro diario de una visita domiciliaria), redacta en tono clínico formal, tercera persona, pretérito perfecto, los DOS textos de la referencia:
+Con base ÚNICAMENTE en las notas de campo de abajo (que vienen del registro diario de una visita domiciliaria), redacta en ${tonoRef}, los DOS textos de la referencia:
 
 1. "Motivo o situación por la que se refiere": explica CLARAMENTE por qué se refiere a la persona al establecimiento de salud — el hallazgo, signo de alarma o condición de SALUD PERSONAL que justifica que sea evaluada/atendida allí. Es una justificación de referencia, no un resumen narrativo de la visita.
-2. "Acción realizada por el/la Promotor(a) de Salud antes de la referencia": describe, en tono formal, lo que el promotor ya hizo específicamente POR ESA PERSONA antes de decidir referirla (por ejemplo: toma de signos vitales, orientación clínica brindada, primeros cuidados, verificación de signos de alarma).
+2. "Acción realizada por el/la Promotor(a) de Salud antes de la referencia": describe, en el mismo tono indicado, lo que el promotor ya hizo específicamente POR ESA PERSONA antes de decidir referirla (por ejemplo: toma de signos vitales, orientación clínica brindada, primeros cuidados, verificación de signos de alarma).
 
 ENFOQUE EXCLUSIVO EN LA PERSONA REFERIDA (muy importante, regla no negociable):
 - Los dos textos deben tratar ÚNICAMENTE la condición de salud, síntomas, signos o situación clínica/personal de LA PERSONA que se está refiriendo.
@@ -8760,11 +8860,11 @@ ENFOQUE EXCLUSIVO EN LA PERSONA REFERIDA (muy importante, regla no negociable):
 - Extrae solo la parte de las notas que corresponde a la salud de la persona referida; descarta todo lo demás aunque esté en el mismo párrafo.
 
 VARIEDAD OBLIGATORIA EN LA REDACCIÓN (muy importante, regla no negociable):
-- NUNCA empieces ambos textos con la misma palabra o fórmula (ej. no comiences los dos con "Se..."). Cada vez que redactes, elige una apertura distinta y natural para "Motivo", como por ejemplo: ${_refAperturasMotivo.join(', ')}, u otra construcción equivalente que transmita lo mismo con otras palabras.
-- Para "Acción", varía igualmente la apertura, por ejemplo: ${_refAperturasAccion.join(', ')}, u otra construcción equivalente.
+- NUNCA empieces ambos textos con la misma palabra o fórmula (ej. no comiences los dos con "Se..."). Cada vez que redactes, elige una apertura distinta y natural para "Motivo", como por ejemplo: ${listaMotivoRef.join(', ')}, u otra construcción equivalente que transmita lo mismo con otras palabras.
+- Para "Acción", varía igualmente la apertura, por ejemplo: ${listaAccionRef.join(', ')}, u otra construcción equivalente.
 - No uses siempre la misma estructura de oración entre una referencia y otra: cambia el orden, los conectores y las palabras, sin perder el sentido clínico ni la información.
 ${refuerzoVariedadRef}
-
+${reglaSencilla}
 REGLAS (no negociables):
 - Basarte ÚNICAMENTE en lo que aparece en las notas; NO inventes diagnósticos, cifras, antecedentes ni procedimientos que no estén ya mencionados.
 - Conserva intactos los datos concretos que ya aparezcan sobre la persona (cifras de signos vitales, semanas de gestación, fechas, etc.).
@@ -8800,8 +8900,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const accionIA = m[2].trim().replace(/^["'“”]+|["'“”]+$/g, '');
         if (!motivoIA && !accionIA) return null;
 
-        _refRegistrarAperturaUsada(_refHistorialAperturas.motivo, _refDetectarApertura(motivoIA, _refAperturasMotivo));
-        _refRegistrarAperturaUsada(_refHistorialAperturas.accion, _refDetectarApertura(accionIA, _refAperturasAccion));
+        if (!sencillo) {
+          _refRegistrarAperturaUsada(_refHistorialAperturas.motivo, _refDetectarApertura(motivoIA, _refAperturasMotivo));
+          _refRegistrarAperturaUsada(_refHistorialAperturas.accion, _refDetectarApertura(accionIA, _refAperturasAccion));
+        }
 
         return { motivo: motivoIA, accion: accionIA };
       } catch (err) {
@@ -8955,12 +9057,14 @@ Notas (Acciones ya escritas): ${accion || '—'}
   .ref-btn-ia { display:block; width:100%; margin:.7rem 0 .2rem; padding:.6rem 1rem; border:none; border-radius:9px; font-family:inherit; font-size:12.5px; font-weight:700; color:#fff; cursor:pointer; background:linear-gradient(180deg,#1e40af 0%,#1e3a8a 100%); box-shadow:0 2px 0 #1e3a8a; }
   .ref-btn-ia:hover { filter:brightness(1.1); }
   .ref-btn-ia:disabled { opacity:.65; cursor:default; }
+  .ref-estilo-fila { text-align:center; margin:.6rem 0 0; font-size:12px; font-weight:700; color:#1e3a8a; }
+  .ref-estilo-fila select { font-family:inherit; font-size:12px; font-weight:700; color:#1e3a8a; background:#fff; border:1px solid #1e3a8a; border-radius:6px; padding:.2rem .4rem; margin-left:.3rem; cursor:pointer; }
   .inf-regen-mensaje { font-size:11px; margin:.1rem 0 .6rem; min-height:1em; text-align:center; }
   .inf-regen-mensaje.error { color:#c0392b; }
   .inf-regen-mensaje.ok { color:#0a6a44; }
   @media print {
     .inf-toolbar { display:none; }
-    .ref-btn-ia { display:none !important; }
+    .ref-btn-ia, .ref-estilo-fila { display:none !important; }
     .inf-regen-mensaje { display:none !important; }
     body { padding: 0; }
     .inf-linea, .inf-campo-full { page-break-inside: avoid; break-inside: avoid; }
@@ -9015,6 +9119,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
       <span class="inf-valor" id="ref-establecimiento-box" contenteditable="true" style="min-width:55%" data-ph="Completar...">${_infEsc(ta(d.establecimientoRefiere))}</span>
     </div>
 
+    <div class="ref-estilo-fila" id="ref-estilo-fila" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">
+      <label for="ref-estilo-ia">🗣️ Estilo de redacción:</label>
+      <select id="ref-estilo-ia" onchange="_refGuardarEstilo()">
+        <option value="tecnico"${localStorage.getItem('rdps_estilo_ia') === 'sencillo' ? '' : ' selected'}>🩺 Técnico profesional</option>
+        <option value="sencillo"${localStorage.getItem('rdps_estilo_ia') === 'sencillo' ? ' selected' : ''}>🏘️ Técnico comunitario</option>
+      </select>
+    </div>
     <button type="button" class="ref-btn-ia" id="ref-btn-ia" onclick="_refGenerarConIA()" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">✨ Generar Referencia Profesional</button>
     <div class="inf-regen-mensaje" id="ref-ia-mensaje"></div>
 
@@ -9161,6 +9272,14 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
     var _refIaMsgTimeout = null;
 
+    function _refEstiloActual() {
+      var el = document.getElementById('ref-estilo-ia');
+      return (el && el.value === 'sencillo') ? 'sencillo' : 'tecnico';
+    }
+    function _refGuardarEstilo() {
+      try { localStorage.setItem('rdps_estilo_ia', _refEstiloActual()); } catch (e) {}
+    }
+
     async function _refGenerarConIA() {
       var btn = document.getElementById('ref-btn-ia');
       var cajaNombre  = document.getElementById('ref-nombre-box');
@@ -9189,7 +9308,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _refMostrarMensajeIA('', '');
 
       try {
-        var resultado = await window.parent._refGenerarReferenciaIA(nombre, edad, motivoActual, accionActual);
+        var resultado = await window.parent._refGenerarReferenciaIA(nombre, edad, motivoActual, accionActual, _refEstiloActual());
         if (resultado && (resultado.motivo || resultado.accion)) {
           if (resultado.motivo) {
             cajaMotivo.textContent = resultado.motivo;
@@ -9203,7 +9322,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
               window.parent._refGuardarCampoRegistro('accionPromotor', resultado.accion, _refHuellaActual);
             }
           }
-          _refMostrarMensajeIA('✅ Referencia redactada con IA — revisa antes de imprimir', 'ok');
+          _refMostrarMensajeIA(_refEstiloActual() === 'sencillo' ? '✅ Referencia redactada con IA (estilo técnico comunitario) — revisa antes de imprimir' : '✅ Referencia redactada con IA — revisa antes de imprimir', 'ok');
         } else {
           _refMostrarMensajeIA('⚠️ Sin internet, sin clave API configurada, o la IA no está disponible en este momento.', 'error');
         }
@@ -10569,6 +10688,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         <span id="btn-magic-tabla-texto">✨ Generar  Informe Profesional</span>
       </button>
       <span class="ia-nivel-wrap">
+        <label for="rep-estilo-ia">🗣️ Estilo:</label>
+        <select id="rep-estilo-ia" onchange="_repGuardarEstilo()">
+          <option value="tecnico" selected>🩺 Técnico profesional</option>
+          <option value="sencillo">🏘️ Técnico comunitario</option>
+        </select>
+      </span>
+      <span class="ia-nivel-wrap">
         <label for="rep-nivel-ia">🎛️ Nivel:</label>
         <select id="rep-nivel-ia">
           <option value="resumido">Resumido</option>
@@ -10865,6 +10991,29 @@ Notas (Acciones ya escritas): ${accion || '—'}
       'Se observó que', 'Durante la visita se encontró', 'La visita permitió constatar',
       'Se evaluó la condición de la persona y se determinó'
     ];
+    // Aperturas para el estilo "Técnico comunitario"
+    var _repAperturasHallazgosSencillo = [
+      'Se identificó que', 'Durante la visita se encontró que', 'Se verificó que', 'Se observó que',
+      'Al realizar la visita se constató que', 'Se encontró que'
+    ];
+    var _repAperturasAccionesSencillo = [
+      'Se brindó consejería sobre', 'Se orientó a la persona sobre', 'Se explicó la importancia de',
+      'Se reforzó la información sobre', 'Se recomendó', 'Se dio orientación sobre'
+    ];
+    function _repEstiloActual() {
+      var el = document.getElementById('rep-estilo-ia');
+      return (el && el.value === 'sencillo') ? 'sencillo' : 'tecnico';
+    }
+    function _repGuardarEstilo() {
+      try { localStorage.setItem('rdps_estilo_ia', _repEstiloActual()); } catch (e) {}
+    }
+    (function() {
+      try {
+        var el = document.getElementById('rep-estilo-ia');
+        if (el && localStorage.getItem('rdps_estilo_ia') === 'sencillo') el.value = 'sencillo';
+      } catch (e) {}
+    })();
+
     var _repAperturasAcciones = [
       'La persona recibió orientación sobre', 'Como parte de la atención se educó sobre',
       'Durante la visita se recomendó', 'Ante esta situación, se explicó',
@@ -10902,6 +11051,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
     function _repConstruirPromptLote(items, nivel, refuerzos) {
       var regla = _repReglaNivel(nivel);
+      var sencillo = !!(items[0] && items[0].estilo === 'sencillo');
       var hayRiesgoDetectado = false;
       var personas = items.map(function(it) {
         var ref = (refuerzos && refuerzos[it.idx]) ? (' [DEBES incluir textualmente estas cifras que faltaron antes: ' + refuerzos[it.idx].join(', ') + ']') : '';
@@ -10920,8 +11070,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
         'Debes devolver EXACTAMENTE ' + items.length + ' filas, una por persona, respetando el número N° indicado para cada una (no lo cambies, no lo omitas, no reordenes).',
         'REGLAS PARA TODAS LAS FILAS:',
         '1. Edad: adultos y niños mayores con la palabra completa ("35 años"); bebés/niños pequeños con años y meses ("1 año 2 meses", "8 meses").',
+        sencillo ? '2. ESTILO: TÉCNICO EN SALUD COMUNITARIA (regla crítica, SUSTITUYE cualquier idea de redacción técnica formal): redacta con el registro profesional de un promotor o técnico de salud comunitaria que documenta su visita: lenguaje claro, preciso y ordenado, comprensible para el equipo de salud y la comunidad, pero SIN sonar coloquial, infantil ni simplista (sin diminutivos ni expresiones de plática). Usa pretérito simple y tercera persona; nunca paciente ni el equipo de salud. Usa con naturalidad los términos propios del primer nivel de atención, que NO se simplifican: hipertensión arterial, diabetes, control prenatal, signos de peligro, esquema de vacunación, lactancia materna, desnutrición, deshidratación, consejería, seguimiento, referencia al establecimiento de salud, usuario o usuaria, vivienda, grupo familiar. Solo reemplaza el vocabulario clínico especializado u hospitalario por su equivalente claro: sintomatología → síntomas; cefalea → dolor de cabeza; disnea → dificultad para respirar; edema → hinchazón; hiperglucemia → glucosa elevada; adherencia al tratamiento → cumplimiento del tratamiento; cuadro clínico → situación de salud. Si usas un término poco común, aclara brevemente entre paréntesis. Explica los riesgos de forma directa (ej. riesgo de complicaciones). Para el ACUERDO usa fórmulas como Acuerdo: ..., Se acordó que..., La persona se comprometió a..., Se estableció el compromiso de.... Solo cambia el REGISTRO del lenguaje, no el contenido: TODAS las demás reglas siguen vigentes y las cifras (140/90, kg, cm, semanas, fechas) se conservan exactas.' :
         '2. Redacción técnica formal (pretérito perfecto impersonal). Evita usar "paciente" como sustantivo por defecto (usa "la persona", "el usuario", "el señor"/"la señora", "el niño"/"la niña"). Nunca "el equipo de salud" ni "el personal de salud".',
         '3. INICIO FIJO POR PERSONA (no negociable): cada persona tiene asignado su propio inicio para Hallazgos y para Acciones (ver lista de personas abajo). Úsalo literalmente al comenzar esa columna para esa persona; distintas personas ya tienen distintos inicios asignados, así que el resultado tendrá variedad automáticamente.',
+        sencillo ? '3b. EVITA LA MULETILLA "que la persona se encuentra en...": ve directo al hallazgo (ej. Se encontró un embarazo de 32 semanas...) y nombra a la persona como máximo en UNA de las dos columnas de esa fila.' :
         '3b. EVITA LA MULETILLA "que la persona se encuentra en..." (regla crítica): no sigas el inicio asignado con esa misma frase en cada fila. En construcciones con "Se" (Se identificó, Se detectó, Se constató, etc.) el sujeto ya queda implícito gramaticalmente, así que casi siempre puedes ir directo al hallazgo sin nombrar a la persona (ej: "Se identificó un embarazo de 32 semanas..." en vez de "Se identificó que la persona se encuentra en estado de embarazo de 32 semanas..."). Usa una referencia explícita a la persona (la persona/la usuaria/el señor/la señora/el niño/la niña) como máximo en UNA de las dos columnas de esa fila, no en ambas.',
         '4. ' + regla.texto,
         '5. IDENTIFICACIÓN DE RIESGOS (regla importante): cuando el hallazgo lo permita, agrega el riesgo o posible complicación clínica directa asociada a lo encontrado (ej. hipertensión no controlada → riesgo de complicaciones cardiovasculares; diarrea con deshidratación en niño pequeño → riesgo de deshidratación severa; embarazo con hta → riesgo de preeclampsia). Este riesgo debe basarse SOLO en lo mencionado en la nota, sin inventar condiciones nuevas, y debe reflejarse en Hallazgos o como justificación de la Acción/consejería.',
@@ -11008,6 +11160,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
       var nivelSel = document.getElementById('rep-nivel-ia');
       var nivel = nivelSel ? nivelSel.value : 'balanceado';
+      var estilo = _repEstiloActual();
+      var _listaApH = estilo === 'sencillo' ? _repAperturasHallazgosSencillo : _repAperturasHallazgos;
+      var _listaApA = estilo === 'sencillo' ? _repAperturasAccionesSencillo : _repAperturasAcciones;
 
       var btn = document.getElementById('btn-magic-tabla');
       var btnTexto = document.getElementById('btn-magic-tabla-texto');
@@ -11053,8 +11208,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
           edad: (celdaEdad ? celdaEdad.textContent : '').trim(),
           notasCompletas: notasCompletas,
           numerosOriginales: _repExtraerNumeros(notasCompletas),
-          aperturaHallazgos: _repAperturasHallazgos[refIdx % _repAperturasHallazgos.length],
-          aperturaAcciones: _repAperturasAcciones[refIdx % _repAperturasAcciones.length]
+          estilo: estilo,
+          aperturaHallazgos: _listaApH[refIdx % _listaApH.length],
+          aperturaAcciones: _listaApA[refIdx % _listaApA.length]
         });
         refIdx++;
       }
@@ -11386,14 +11542,14 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (!docId) {
           toast('⚠️ Configura tu perfil antes de subir a la nube', 'error');
           setFirebaseStatus('⚠️ Perfil sin nombre — no se puede subir', 'err');
-          return;
+          return false;
         }
         setFirebaseStatus('☁️ Conectando con Firebase…');
         const fbOk = await _cargarFirebase();
         if (!fbOk) {
           setFirebaseStatus('❌ Sin internet — no se puede sincronizar', 'err');
           toast('❌ Sin conexión a internet', 'error');
-          return;
+          return false;
         }
         setFirebaseStatus('☁️ Subiendo datos…');
         const db = initFirebase();
@@ -11496,7 +11652,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const nCat = catalogo.reduce((acc, v) => acc + (v.personas?.length || 0), 0);
         await setDoc(doc(db, 'rdps', docId), {
           version: '3.0',
-          actualizadoEn: new Date().toISOString(),
+          actualizadoEn: (window.__sisMetaR = new Date().toISOString()),
           perfil,
           countRegistros: registros.length,
           countFamilias:  catalogo.length,
@@ -11511,10 +11667,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (partes.length === 0)    partes.push('Sin cambios nuevos');
         setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
+        _sisMarcar(); _sisSellarNube(window.__sisMetaR);
+        return true;
       } catch(e) {
         setFirebaseStatus('❌ Error al subir: ' + e.message, 'err');
         toast('❌ Error al subir a Firebase', 'error');
         console.error(e);
+        return false;
       }
     }
 
@@ -11525,18 +11684,19 @@ Notas (Acciones ya escritas): ${accion || '—'}
     ══════════════════════════════════════════════════════════════ */
     async function bajarNube() {
       try {
+        const _limpioAntes = _sisEstaLimpio(); // ¿no había nada pendiente de subir antes de bajar?
         const docId = _docIdPromotor();
         if (!docId) {
           toast('⚠️ Configura tu perfil antes de bajar datos de la nube', 'error');
           setFirebaseStatus('⚠️ Perfil sin nombre — no se puede descargar', 'err');
-          return;
+          return false;
         }
         setFirebaseStatus('☁️ Conectando con Firebase…');
         const fbOk = await _cargarFirebase();
         if (!fbOk) {
           setFirebaseStatus('❌ Sin internet — no se puede sincronizar', 'err');
           toast('❌ Sin conexión a internet', 'error');
-          return;
+          return false;
         }
         setFirebaseStatus('☁️ Descargando datos…');
         const db = initFirebase();
@@ -11546,7 +11706,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (!snap.exists()) {
           setFirebaseStatus('⚠️ No hay datos en la nube para este promotor', 'err');
           toast('⚠️ No hay datos guardados en la nube para tu perfil', 'error');
-          return;
+          return false;
         }
         const data = snap.data();
 
@@ -11635,7 +11795,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           const ts = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
           setFirebaseStatus(`✅ Todo al día · ${registros.length} registros · Nube: ${ts}`, 'ok');
           toast('✅ Ya tienes todo actualizado', 'success');
-          return;
+          return true;
         }
 
         // Aplicar registros
@@ -11665,12 +11825,112 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (famActualizadas > 0) parts.push(`${famActualizadas} familias actualizadas`);
         setFirebaseStatus(`✅ ${registros.length} registros · ${nCat} personas · ${parts.join(' · ')} (${fecha})`, 'ok');
         toast(`✅ ${parts.join(', ')}`, 'success');
+        _sisSellarNube(data.actualizadoEn);
+        if (_limpioAntes) _sisMarcar(); // solo si no había pendientes: así no se esconde nada sin subir
+        return true;
       } catch(e) {
         setFirebaseStatus('❌ Error al bajar: ' + e.message, 'err');
         toast('❌ Error al bajar de Firebase', 'error');
         console.error(e);
+        return false;
       }
     }
+
+
+    // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
+    function _sisHuella(claves) {
+      var h = 2166136261 >>> 0, n = 0;
+      for (var a = 0; a < claves.length; a++) {
+        var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
+        n += s.length;
+        for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      }
+      return h.toString(36) + '-' + n.toString(36);
+    }
+    function _sisFlush() {
+      try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
+      catch (e) { return Promise.resolve(); }
+    }
+    const SIS_CLAVES_RD = ['rdps_registros','rdps_catalogo','rdps_perfil','rdps_deleted_reg','rdps_deleted_fam'];
+    function _sisSellarNube(v) { try { localStorage.setItem('sis_nube_registro', String(v || '')); } catch (e) {} }
+    async function _sisMetaNube(docId) {
+      if (!(await _cargarFirebase())) return null;
+      const s = await getDoc(doc(initFirebase(), 'rdps', docId));
+      return s.exists() ? String(s.data().actualizadoEn || '') : '';
+    }
+    function _sisMarcar() {
+      try { localStorage.setItem('sis_sync_registro', JSON.stringify({ h: _sisHuella(SIS_CLAVES_RD), t: new Date().toISOString() })); } catch (e) {}
+    }
+    function _sisEstaLimpio() {
+      try { const x = JSON.parse(localStorage.getItem('sis_sync_registro') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES_RD); }
+      catch (e) { return false; }
+    }
+    // API que usa el launcher (index.html) para sincronizar sin abrir esta pantalla
+    window.SIS_SYNC = {
+      id: 'registro',
+      // Revisión liviana: 1 lectura del doc principal; la comparación completa solo la primera vez
+      async nube() {
+        if (_syncEnProgreso) return { ok: false, msg: 'Ocupado' };
+        const docId = _docIdPromotor();
+        if (!docId || !navigator.onLine) return { ok: false, msg: 'No disponible' };
+        try {
+          const st = localStorage.getItem('sis_nube_registro');
+          if (st === null) {
+            const r = await window.SIS_SYNC._nubeCompleta();
+            if (r.ok && !r.hay) { const m = await _sisMetaNube(docId); if (m !== null) _sisSellarNube(m); }
+            return r;
+          }
+          const m = await _sisMetaNube(docId);
+          if (m === null) return { ok: false, msg: 'Sin nube' };
+          return { ok: true, hay: m !== '' && m !== st };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+      },
+      async _nubeCompleta() {
+        if (_syncEnProgreso) return { ok: false, msg: 'Ocupado' };
+        const docId = _docIdPromotor();
+        if (!docId || !navigator.onLine) return { ok: false, msg: 'No disponible' };
+        _syncEnProgreso = true;
+        try {
+          if (!(await _cargarFirebase())) return { ok: false, msg: 'Sin nube' };
+          const db = initFirebase();
+          const [rS, fS] = await Promise.all([getDocs(collection(db, 'rdps', docId, 'registros')), getDocs(collection(db, 'rdps', docId, 'familias'))]);
+          let lapR = {}, lapF = {};
+          try { lapR = JSON.parse(localStorage.getItem('rdps_deleted_reg') || '{}'); } catch (e) {}
+          try { lapF = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}'); } catch (e) {}
+          const lr = {}, lf = {};
+          registros.forEach(r => { lr[String(r.id)] = r; });
+          getCatalogo().forEach(v => { lf[String(v.id)] = v; });
+          const t = x => new Date(x || 0).getTime();
+          let n = 0;
+          rS.forEach(d => { const r = d.data(), id = String(r.id || d.id); if (lapR[id]) return; const l = lr[id]; if (!l || t(r.actualizadoEn || r.savedAt) > t(l.actualizadoEn || l.savedAt)) n++; });
+          fS.forEach(d => { const v = d.data(), id = String(v.id || d.id); if (lapF[id]) return; const l = lf[id]; if (!l || t(v.actualizadoEn) > t(l.actualizadoEn)) n++; });
+          return { ok: true, hay: n > 0, n };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+        finally { _syncEnProgreso = false; }
+      },
+      async subir() {
+        if (_syncEnProgreso) return { ok: false, msg: 'Ya hay una sincronización en curso' };
+        if (!_docIdPromotor()) return { ok: false, msg: 'Falta tu nombre en Mi Perfil' };
+        _syncEnProgreso = true;
+        try {
+          const ok = await subirNube();
+          await _sisFlush();
+          return { ok: !!ok, msg: ok ? 'Subido a la nube' : 'No se pudo subir (revisa la conexión)' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+        finally { _syncEnProgreso = false; }
+      },
+      async bajar() {
+        if (_syncEnProgreso) return { ok: false, msg: 'Ya hay una sincronización en curso' };
+        if (!_docIdPromotor()) return { ok: false, msg: 'Falta tu nombre en Mi Perfil' };
+        _syncEnProgreso = true;
+        try {
+          const ok = await bajarNube();
+          await _sisFlush();
+          return { ok: !!ok, msg: ok ? 'Bajado de la nube' : 'No se pudo bajar (revisa la conexión o que haya datos en la nube)' };
+        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+        finally { _syncEnProgreso = false; }
+      }
+    };
 
     // ══════════════════════════════════════════
     // CATÁLOGO DE FAMILIAS
