@@ -11542,14 +11542,14 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (!docId) {
           toast('⚠️ Configura tu perfil antes de subir a la nube', 'error');
           setFirebaseStatus('⚠️ Perfil sin nombre — no se puede subir', 'err');
-          return false;
+          return;
         }
         setFirebaseStatus('☁️ Conectando con Firebase…');
         const fbOk = await _cargarFirebase();
         if (!fbOk) {
           setFirebaseStatus('❌ Sin internet — no se puede sincronizar', 'err');
           toast('❌ Sin conexión a internet', 'error');
-          return false;
+          return;
         }
         setFirebaseStatus('☁️ Subiendo datos…');
         const db = initFirebase();
@@ -11652,7 +11652,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const nCat = catalogo.reduce((acc, v) => acc + (v.personas?.length || 0), 0);
         await setDoc(doc(db, 'rdps', docId), {
           version: '3.0',
-          actualizadoEn: (window.__sisMetaR = new Date().toISOString()),
+          actualizadoEn: new Date().toISOString(),
           perfil,
           countRegistros: registros.length,
           countFamilias:  catalogo.length,
@@ -11667,13 +11667,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (partes.length === 0)    partes.push('Sin cambios nuevos');
         setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
-        _sisMarcar(); _sisSellarNube(window.__sisMetaR);
-        return true;
       } catch(e) {
         setFirebaseStatus('❌ Error al subir: ' + e.message, 'err');
         toast('❌ Error al subir a Firebase', 'error');
         console.error(e);
-        return false;
       }
     }
 
@@ -11684,19 +11681,18 @@ Notas (Acciones ya escritas): ${accion || '—'}
     ══════════════════════════════════════════════════════════════ */
     async function bajarNube() {
       try {
-        const _limpioAntes = _sisEstaLimpio(); // ¿no había nada pendiente de subir antes de bajar?
         const docId = _docIdPromotor();
         if (!docId) {
           toast('⚠️ Configura tu perfil antes de bajar datos de la nube', 'error');
           setFirebaseStatus('⚠️ Perfil sin nombre — no se puede descargar', 'err');
-          return false;
+          return;
         }
         setFirebaseStatus('☁️ Conectando con Firebase…');
         const fbOk = await _cargarFirebase();
         if (!fbOk) {
           setFirebaseStatus('❌ Sin internet — no se puede sincronizar', 'err');
           toast('❌ Sin conexión a internet', 'error');
-          return false;
+          return;
         }
         setFirebaseStatus('☁️ Descargando datos…');
         const db = initFirebase();
@@ -11706,7 +11702,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (!snap.exists()) {
           setFirebaseStatus('⚠️ No hay datos en la nube para este promotor', 'err');
           toast('⚠️ No hay datos guardados en la nube para tu perfil', 'error');
-          return false;
+          return;
         }
         const data = snap.data();
 
@@ -11795,7 +11791,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           const ts = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
           setFirebaseStatus(`✅ Todo al día · ${registros.length} registros · Nube: ${ts}`, 'ok');
           toast('✅ Ya tienes todo actualizado', 'success');
-          return true;
+          return;
         }
 
         // Aplicar registros
@@ -11825,112 +11821,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (famActualizadas > 0) parts.push(`${famActualizadas} familias actualizadas`);
         setFirebaseStatus(`✅ ${registros.length} registros · ${nCat} personas · ${parts.join(' · ')} (${fecha})`, 'ok');
         toast(`✅ ${parts.join(', ')}`, 'success');
-        _sisSellarNube(data.actualizadoEn);
-        if (_limpioAntes) _sisMarcar(); // solo si no había pendientes: así no se esconde nada sin subir
-        return true;
       } catch(e) {
         setFirebaseStatus('❌ Error al bajar: ' + e.message, 'err');
         toast('❌ Error al bajar de Firebase', 'error');
         console.error(e);
-        return false;
       }
     }
-
-
-    // ── SIS: huella de "lo que ya está subido" (compartida con el launcher) ──
-    function _sisHuella(claves) {
-      var h = 2166136261 >>> 0, n = 0;
-      for (var a = 0; a < claves.length; a++) {
-        var s = claves[a] + '\u0001' + (localStorage.getItem(claves[a]) || '') + '\u0002';
-        n += s.length;
-        for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-      }
-      return h.toString(36) + '-' + n.toString(36);
-    }
-    function _sisFlush() {
-      try { return (window.__lsShim && window.__lsShim.flush) ? Promise.resolve(window.__lsShim.flush()) : Promise.resolve(); }
-      catch (e) { return Promise.resolve(); }
-    }
-    const SIS_CLAVES_RD = ['rdps_registros','rdps_catalogo','rdps_perfil','rdps_deleted_reg','rdps_deleted_fam'];
-    function _sisSellarNube(v) { try { localStorage.setItem('sis_nube_registro', String(v || '')); } catch (e) {} }
-    async function _sisMetaNube(docId) {
-      if (!(await _cargarFirebase())) return null;
-      const s = await getDoc(doc(initFirebase(), 'rdps', docId));
-      return s.exists() ? String(s.data().actualizadoEn || '') : '';
-    }
-    function _sisMarcar() {
-      try { localStorage.setItem('sis_sync_registro', JSON.stringify({ h: _sisHuella(SIS_CLAVES_RD), t: new Date().toISOString() })); } catch (e) {}
-    }
-    function _sisEstaLimpio() {
-      try { const x = JSON.parse(localStorage.getItem('sis_sync_registro') || 'null'); return !!x && x.h === _sisHuella(SIS_CLAVES_RD); }
-      catch (e) { return false; }
-    }
-    // API que usa el launcher (index.html) para sincronizar sin abrir esta pantalla
-    window.SIS_SYNC = {
-      id: 'registro',
-      // Revisión liviana: 1 lectura del doc principal; la comparación completa solo la primera vez
-      async nube() {
-        if (_syncEnProgreso) return { ok: false, msg: 'Ocupado' };
-        const docId = _docIdPromotor();
-        if (!docId || !navigator.onLine) return { ok: false, msg: 'No disponible' };
-        try {
-          const st = localStorage.getItem('sis_nube_registro');
-          if (st === null) {
-            const r = await window.SIS_SYNC._nubeCompleta();
-            if (r.ok && !r.hay) { const m = await _sisMetaNube(docId); if (m !== null) _sisSellarNube(m); }
-            return r;
-          }
-          const m = await _sisMetaNube(docId);
-          if (m === null) return { ok: false, msg: 'Sin nube' };
-          return { ok: true, hay: m !== '' && m !== st };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-      },
-      async _nubeCompleta() {
-        if (_syncEnProgreso) return { ok: false, msg: 'Ocupado' };
-        const docId = _docIdPromotor();
-        if (!docId || !navigator.onLine) return { ok: false, msg: 'No disponible' };
-        _syncEnProgreso = true;
-        try {
-          if (!(await _cargarFirebase())) return { ok: false, msg: 'Sin nube' };
-          const db = initFirebase();
-          const [rS, fS] = await Promise.all([getDocs(collection(db, 'rdps', docId, 'registros')), getDocs(collection(db, 'rdps', docId, 'familias'))]);
-          let lapR = {}, lapF = {};
-          try { lapR = JSON.parse(localStorage.getItem('rdps_deleted_reg') || '{}'); } catch (e) {}
-          try { lapF = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}'); } catch (e) {}
-          const lr = {}, lf = {};
-          registros.forEach(r => { lr[String(r.id)] = r; });
-          getCatalogo().forEach(v => { lf[String(v.id)] = v; });
-          const t = x => new Date(x || 0).getTime();
-          let n = 0;
-          rS.forEach(d => { const r = d.data(), id = String(r.id || d.id); if (lapR[id]) return; const l = lr[id]; if (!l || t(r.actualizadoEn || r.savedAt) > t(l.actualizadoEn || l.savedAt)) n++; });
-          fS.forEach(d => { const v = d.data(), id = String(v.id || d.id); if (lapF[id]) return; const l = lf[id]; if (!l || t(v.actualizadoEn) > t(l.actualizadoEn)) n++; });
-          return { ok: true, hay: n > 0, n };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-        finally { _syncEnProgreso = false; }
-      },
-      async subir() {
-        if (_syncEnProgreso) return { ok: false, msg: 'Ya hay una sincronización en curso' };
-        if (!_docIdPromotor()) return { ok: false, msg: 'Falta tu nombre en Mi Perfil' };
-        _syncEnProgreso = true;
-        try {
-          const ok = await subirNube();
-          await _sisFlush();
-          return { ok: !!ok, msg: ok ? 'Subido a la nube' : 'No se pudo subir (revisa la conexión)' };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-        finally { _syncEnProgreso = false; }
-      },
-      async bajar() {
-        if (_syncEnProgreso) return { ok: false, msg: 'Ya hay una sincronización en curso' };
-        if (!_docIdPromotor()) return { ok: false, msg: 'Falta tu nombre en Mi Perfil' };
-        _syncEnProgreso = true;
-        try {
-          const ok = await bajarNube();
-          await _sisFlush();
-          return { ok: !!ok, msg: ok ? 'Bajado de la nube' : 'No se pudo bajar (revisa la conexión o que haya datos en la nube)' };
-        } catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
-        finally { _syncEnProgreso = false; }
-      }
-    };
 
     // ══════════════════════════════════════════
     // CATÁLOGO DE FAMILIAS
