@@ -242,18 +242,23 @@
 
         .icon-btn-volver {
             animation: parpadeoVolver 1.2s ease-in-out infinite;
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 1.6rem;
         }
 
+        /* Solo la flecha brilla (sin círculo de fondo), para no confundirse
+           con el botón ☰ que está al lado. */
         @keyframes parpadeoVolver {
             0%, 100% {
-                background: rgba(255,255,255,0.05);
-                box-shadow: none;
+                color: #ffffff;
+                text-shadow: none;
                 transform: scale(1);
             }
             50% {
-                background: rgba(255,215,0,0.55);
-                box-shadow: 0 0 10px 3px rgba(255,215,0,0.7);
-                transform: scale(1.1);
+                color: #ffe14d;
+                text-shadow: 0 0 6px rgba(255,225,77,0.95), 0 0 14px rgba(255,215,0,0.8);
+                transform: scale(1.15);
             }
         }
 
@@ -2464,9 +2469,11 @@
         .print-table th, .print-table td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
         .print-table th { background: #f0f0f0; color: #000; }
         @media print {
-            body * { visibility: hidden !important; }
-            .print-area, .print-area * { visibility: visible !important; }
-            .print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            /* display:none (no visibility:hidden) para que el resto de la app NO
+               ocupe espacio: antes generaba páginas en blanco con fondo gris. */
+            html, body { background: #fff !important; height: auto !important; min-height: 0 !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+            body > *:not(.print-area) { display: none !important; }
+            .print-area { display: block !important; position: static !important; width: 100%; background: #fff; }
             @page { size: Letter portrait; margin: 12mm 14mm; }
             .print-page { page-break-after: always; }
             .print-page:last-child { page-break-after: auto; }
@@ -5810,7 +5817,10 @@
                 <div class="reporte-grupo">
                     <div class="reporte-grupo-titulo" style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
                         <span>${titulo}</span>
+                        <span style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                         ${idx != null ? `<button class="btn btn-secondary" style="padding:0.35rem 0.75rem; font-size:0.85rem;" onclick="imprimirGrupo(${idx})">🖨️ PDF</button>` : ''}
+                        ${idx === 0 ? `<button class="btn btn-secondary" style="padding:0.35rem 0.75rem; font-size:0.85rem;" onclick="abrirInformeNinos0a4()">📋 Informe por sexo y edad</button>` : ''}
+                        </span>
                     </div>
                     <table class="reporte-tabla">
                         <thead>
@@ -6043,6 +6053,153 @@
             const grupo = GRUPOS_REPORTE[idx];
             if (!grupo) return;
             document.getElementById('printArea').innerHTML = _htmlReporteGrupo(grupo);
+            setTimeout(() => window.print(), 200);
+        }
+
+        // ─── Informe 0-4a11m por sexo y subgrupo de edad (SP / N / D / DS) ───
+        const SUBGRUPOS_INFORME_0A4 = [
+            { titulo: 'Niñas de 0 a 1 año 11 meses', minMeses: 0,  maxMeses: 23, sexo: 'femenino' },
+            { titulo: 'Niños de 0 a 1 año 11 meses', minMeses: 0,  maxMeses: 23, sexo: 'masculino' },
+            { subtotal: 'SUBTOTAL 0 a 1 año 11 meses', desde: 0, hasta: 1 },
+            { titulo: 'Niñas de 2 a 4 años 11 meses', minMeses: 24, maxMeses: 59, sexo: 'femenino' },
+            { titulo: 'Niños de 2 a 4 años 11 meses', minMeses: 24, maxMeses: 59, sexo: 'masculino' },
+            { subtotal: 'SUBTOTAL 2 a 4 años 11 meses', desde: 3, hasta: 4 }
+        ];
+
+        function _datosInformeNinos0a4() {
+            const filas = [];
+            const acum = { sp: 0, n: 0, d: 0, ds: 0, sd: 0, total: 0 };
+            SUBGRUPOS_INFORME_0A4.forEach(g => {
+                if (g.subtotal) {
+                    const sub = { sp: 0, n: 0, d: 0, ds: 0, sd: 0, total: 0 };
+                    for (let i = g.desde; i <= g.hasta; i++) {
+                        const f = filas[i];
+                        Object.keys(sub).forEach(k => sub[k] += f[k]);
+                    }
+                    filas.push({ etiqueta: g.subtotal, esSubtotal: true, ...sub });
+                    return;
+                }
+                const st = calcularEstadisticasGrupo(g.minMeses, g.maxMeses, 'OMS0-5', g.sexo);
+                const fila = {
+                    etiqueta: g.titulo,
+                    sp: st.sobrepeso, n: st.normal, d: st.desnutrido, ds: st.desnutridoSevero,
+                    sd: st.sinDatos, total: st.total
+                };
+                filas.push(fila);
+                Object.keys(acum).forEach(k => acum[k] += fila[k]);
+            });
+            filas.push({ etiqueta: 'TOTAL GENERAL', esGeneral: true, ...acum });
+            return filas;
+        }
+
+        function _htmlInformeNinos0a4() {
+            const filas = _datosInformeNinos0a4();
+            const filasHtml = filas.map(f => {
+                const estilo = f.esGeneral
+                    ? 'font-weight:700; background:#d9d9d9;'
+                    : (f.esSubtotal ? 'font-weight:700; background:#f0f0f0;' : '');
+                return `
+                    <tr style="${estilo}">
+                        <td>${_escaparHTML(f.etiqueta)}</td>
+                        <td style="text-align:center;">${f.sp}</td>
+                        <td style="text-align:center;">${f.n}</td>
+                        <td style="text-align:center;">${f.d}</td>
+                        <td style="text-align:center;">${f.ds}</td>
+                        <td style="text-align:center;">${f.sd}</td>
+                        <td style="text-align:center; font-weight:700;">${f.total}</td>
+                    </tr>`;
+            }).join('');
+            return `
+                <div class="print-page">
+                    ${_encabezadoImprimibleHTML('Informe de estado nutricional · Niños de 0 a 4 años 11 meses, por sexo y edad')}
+                    <table class="print-table" style="font-size:11px;">
+                        <thead>
+                            <tr>
+                                <th>Grupo</th>
+                                <th style="text-align:center;">SP<br><span style="font-weight:400; font-size:8px;">Sobrepeso</span></th>
+                                <th style="text-align:center;">N<br><span style="font-weight:400; font-size:8px;">Normal</span></th>
+                                <th style="text-align:center;">D<br><span style="font-weight:400; font-size:8px;">Desnutrido</span></th>
+                                <th style="text-align:center;">DS<br><span style="font-weight:400; font-size:8px;">Desn. severo</span></th>
+                                <th style="text-align:center;">Sin medición</th>
+                                <th style="text-align:center;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${filasHtml}</tbody>
+                    </table>
+                    <div style="font-size:9px; color:#555;">
+                        SP = Sobrepeso · N = Normal · D = Desnutrido (Z &lt; -2) · DS = Desnutrido severo (Z &lt; -3).
+                        El total de cada fila incluye a los niños sin medición.
+                    </div>
+                </div>`;
+        }
+
+        // ─── Vista previa en pantalla (adaptada a celular) del informe 0-4a11m ───
+        function abrirInformeNinos0a4() {
+            if (DB.personas.length === 0) { alert('No hay datos para reportar.'); return; }
+            cerrarInformeNinos0a4();
+            const filas = _datosInformeNinos0a4();
+            const fecha = new Date().toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const nombreCorto = e => e
+                .replace('Niñas de ', '♀ Niñas ').replace('Niños de ', '♂ Niños ')
+                .replace(' a ', '–').replace(' año 11 meses', ' a 11m').replace(' años 11 meses', ' a 11m')
+                .replace('SUBTOTAL ', 'Subtotal ');
+            const filasHtml = filas.map(f => {
+                const bg = f.esGeneral ? 'background:#0a5d4d; color:#fff;' : (f.esSubtotal ? 'background:#e3efeb; font-weight:700;' : 'background:#fff;');
+                const etiqueta = f.esGeneral ? 'TOTAL GENERAL' : nombreCorto(f.etiqueta);
+                return `<tr style="${bg}">
+                    <td style="text-align:left; padding:8px 6px; line-height:1.2;">${_escaparHTML(etiqueta)}</td>
+                    <td>${f.sp}</td><td>${f.n}</td><td>${f.d}</td><td>${f.ds}</td><td>${f.sd}</td>
+                    <td style="font-weight:700;">${f.total}</td>
+                </tr>`;
+            }).join('');
+
+            const ov = document.createElement('div');
+            ov.id = 'informe0a4Overlay';
+            ov.style.cssText = 'position:fixed; inset:0; z-index:9999; background:#f1f3f5; display:flex; flex-direction:column;';
+            ov.innerHTML = `
+                <style>
+                    #informe0a4Overlay table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px; }
+                    #informe0a4Overlay th, #informe0a4Overlay td { border:1px solid #cfd8d4; text-align:center; padding:8px 2px; }
+                    #informe0a4Overlay th { background:#0f7b63; color:#fff; font-size:12px; padding:6px 2px; }
+                    #informe0a4Overlay th small { display:block; font-weight:400; font-size:9px; opacity:.9; }
+                </style>
+                <div style="background:#0a5d4d; color:#fff; padding:12px 14px; display:flex; align-items:center; gap:10px;">
+                    <button onclick="cerrarInformeNinos0a4()" style="background:none; border:none; color:#fff; font-size:22px; line-height:1;" aria-label="Cerrar">←</button>
+                    <div style="font-weight:700; font-size:16px;">Informe 0 a 4 años 11 meses</div>
+                </div>
+                <div style="flex:1; overflow:auto; padding:12px;">
+                    <div style="background:#fff; border-radius:10px; padding:10px 8px; box-shadow:0 1px 4px rgba(0,0,0,.12);">
+                        <div style="font-size:12px; color:#555; margin:0 4px 8px;">Estado nutricional por sexo y edad · ${fecha}</div>
+                        <table>
+                            <colgroup><col style="width:34%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:13%"><col style="width:13%"></colgroup>
+                            <thead><tr>
+                                <th style="text-align:left; padding-left:6px;">Grupo</th>
+                                <th>SP</th><th>N</th><th>D</th><th>DS</th>
+                                <th>Sin<small>medir</small></th><th>Total</th>
+                            </tr></thead>
+                            <tbody>${filasHtml}</tbody>
+                        </table>
+                        <div style="font-size:11px; color:#555; margin:8px 4px 0; line-height:1.4;">
+                            <b>SP</b> Sobrepeso · <b>N</b> Normal · <b>D</b> Desnutrido (Z &lt; -2) · <b>DS</b> Desnutrido severo (Z &lt; -3).
+                            El total incluye a los niños sin medición.
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background:#fff; border-top:1px solid #dde3e0; display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cerrarInformeNinos0a4()">Cerrar</button>
+                    <button class="btn btn-primary" style="flex:2;" onclick="imprimirInformeNinos0a4()">🖨️ Imprimir / Guardar PDF</button>
+                </div>`;
+            document.body.appendChild(ov);
+        }
+
+        function cerrarInformeNinos0a4() {
+            const ov = document.getElementById('informe0a4Overlay');
+            if (ov) ov.remove();
+        }
+
+        function imprimirInformeNinos0a4() {
+            if (DB.personas.length === 0) { alert('No hay datos para reportar.'); return; }
+            document.getElementById('printArea').innerHTML = _htmlInformeNinos0a4();
             setTimeout(() => window.print(), 200);
         }
 
