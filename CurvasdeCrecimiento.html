@@ -2588,6 +2588,7 @@
                 <button onclick="cerrarOverflow(); abrirGuiaUso();">❓ Guía de uso</button>
                 <button onclick="cerrarOverflow(); document.getElementById('uploadJSON').click();">Importar</button>
                 <button onclick="cerrarOverflow(); mpAbrir();">🗺️ Importar del Mapa</button>
+                <button onclick="cerrarOverflow(); cvRevisarManual();">📲 Revisar Registro Diario</button>
                 <button onclick="cerrarOverflow(); descargarJSON();">Exportar todo</button>
             </div>
         </div>
@@ -2671,7 +2672,10 @@
         <div id="personas" class="content active">
             <div class="title-section" style="display:flex;align-items:center;justify-content:space-between;gap:0.6rem;flex-wrap:wrap;">
                 <h2>👥 Personas</h2>
-                <button class="btn btn-secondary" style="padding:0.5rem 0.9rem;font-size:0.85rem;" onclick="mpAbrir()">🗺️ Importar del Mapa</button>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" style="padding:0.5rem 0.9rem;font-size:0.85rem;" onclick="cvRevisarManual()">📲 Revisar Registro Diario</button>
+                    <button class="btn btn-secondary" style="padding:0.5rem 0.9rem;font-size:0.85rem;" onclick="mpAbrir()">🗺️ Importar del Mapa</button>
+                </div>
             </div>
 
             <div id="filtroEstadoBanner"></div>
@@ -2824,7 +2828,7 @@
                             <label>Peso <span class="required">*</span></label>
                             <div class="input-unit-group">
                                 <input type="number" id="peso" step="0.1" placeholder="Ej: 12.5" required>
-                                <select id="pesoUnidad">
+                                <select id="pesoUnidad" onchange="cambiarUnidadFormMedicion('peso')">
                                     <option value="kg">kg</option>
                                     <option value="lb">lb</option>
                                 </select>
@@ -2834,7 +2838,7 @@
                             <label id="labelTalla">Talla (opcional para <5 años)</label>
                             <div class="input-unit-group">
                                 <input type="number" id="talla" step="0.1" placeholder="Ej: 88.5">
-                                <select id="tallaUnidad">
+                                <select id="tallaUnidad" onchange="cambiarUnidadFormMedicion('talla')">
                                     <option value="cm">cm</option>
                                     <option value="m">m</option>
                                 </select>
@@ -4142,6 +4146,33 @@
 
         let medicionEditandoId = null;
 
+        // Al cambiar la unidad (kg↔lb, cm↔m) se CONVIERTE el número que ya está escrito,
+        // en vez de solo reinterpretarlo (antes 8.2 kg pasaba a ser "8.2 lb" al guardar).
+        function cambiarUnidadFormMedicion(tipo) {
+            const esPeso = tipo === 'peso';
+            const sel = document.getElementById(esPeso ? 'pesoUnidad' : 'tallaUnidad');
+            const inp = document.getElementById(esPeso ? 'peso' : 'talla');
+            if (!sel || !inp) return;
+            const prev = sel.dataset.prev || (esPeso ? 'kg' : 'cm');
+            const nueva = sel.value;
+            const v = parseFloat(inp.value);
+            if (!isNaN(v) && prev !== nueva) {
+                let r = v;
+                if (esPeso) r = nueva === 'lb' ? v / 0.453592 : v * 0.453592;
+                else r = nueva === 'm' ? v / 100 : v * 100;
+                const dec = (!esPeso && nueva === 'm') ? 2 : 1;
+                inp.value = (Math.round(r * Math.pow(10, dec)) / Math.pow(10, dec)).toFixed(dec);
+            }
+            if (!esPeso) inp.step = (nueva === 'm') ? '0.01' : '0.1';
+            sel.dataset.prev = nueva;
+        }
+        function _reiniciarUnidadesFormMedicion() {
+            const sp = document.getElementById('pesoUnidad'), st = document.getElementById('tallaUnidad');
+            if (sp) { sp.value = 'kg'; sp.dataset.prev = 'kg'; }
+            if (st) { st.value = 'cm'; st.dataset.prev = 'cm'; }
+            const t = document.getElementById('talla'); if (t) t.step = '0.1';
+        }
+
         function abrirEditorMedicion(medicionId) {
             const medicion = DB.mediciones.find(m => m.id === medicionId);
             if (!medicion) return;
@@ -4159,6 +4190,7 @@
             
             // ⚠️ NOTA: llenarSelectPersonas() sobrescribe la fecha, así que la recargamos aquí
             document.getElementById('fechaMedicion').value = medicion.fecha;
+            _reiniciarUnidadesFormMedicion(); // lo guardado siempre está en kg y cm
             document.getElementById('peso').value = medicion.peso;
             document.getElementById('talla').value = medicion.talla || '';
             document.getElementById('hemoglobina').value = medicion.hemoglobina || '';
@@ -4228,6 +4260,12 @@
             if (confirm('¿Eliminar esta medición?')) {
                 const medicion = DB.mediciones.find(m => m.id === medicionId);
                 const personaId = medicion?.personaId;
+                if (medicion && medicion.origenRegId) {
+                    // Si venía de Registro Diario, se recuerda para que no se vuelva a crear sola
+                    // (si el registro cambia de peso/talla/fecha, sí se vuelve a sincronizar).
+                    DB.config.cvIgnorados = DB.config.cvIgnorados || [];
+                    DB.config.cvIgnorados.push(_cvClaveOrigen(medicion.origenRegId, medicion.fecha, medicion.peso, medicion.talla));
+                }
                 
                 DB.mediciones = DB.mediciones.filter(m => m.id !== medicionId);
                 guardarDatos();
@@ -4556,6 +4594,11 @@
 
         function guardarDatos() {
             localStorage.setItem('vigilancia_db', JSON.stringify(DB));
+            // Si se agregó una persona (o se importó del Mapa), revisa si hay pesos de
+            // Registro Diario esperando por ella.
+            if (!_cvSincronizando && typeof _cvSincronizarDesdeRegistro === 'function') {
+                setTimeout(() => _cvSincronizarDesdeRegistro(true), 0);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -5461,6 +5504,17 @@
                 }
             }
 
+            // Red de seguridad: ya convertidos a kg y cm, los valores deben ser humanamente posibles.
+            // Evita guardar errores de unidad (ej. 109 cm tomado como metros = 10900 cm).
+            if (isNaN(pesoKg) || pesoKg < 0.5 || pesoKg > 300) {
+                alert('⚠️ El peso (' + pesoKg + ' kg) no es válido. Revisa el número y la unidad (kg / lb).');
+                return;
+            }
+            if (tallaCm !== null && (isNaN(tallaCm) || tallaCm < 25 || tallaCm > 250)) {
+                alert('⚠️ La talla (' + tallaCm + ' cm) no es válida. Revisa el número y la unidad (cm / m).');
+                return;
+            }
+
             // Validar: menores de 5 años pueden NO tener talla
             if (edadMeses < 60 && !tallaCm) {
                 // Está permitido - solo Peso/Edad
@@ -5496,6 +5550,13 @@
                 // Actualizar medición existente
                 const idx = DB.mediciones.findIndex(m => m.id === medicionEditandoId);
                 if (idx !== -1) {
+                    const previa = DB.mediciones[idx];
+                    if (previa && previa.origenRegId) {
+                        // Corrección manual de una medición que vino de Registro Diario:
+                        // se conserva el vínculo pero ya no se sobrescribe automáticamente.
+                        medicion.origenRegId = previa.origenRegId;
+                        medicion.editadaManual = true;
+                    }
                     DB.mediciones[idx] = medicion;
                 }
                 guardarDatos();
@@ -8792,6 +8853,333 @@
             alert('✅ Configuración guardada');
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // SINCRONIZACIÓN AUTOMÁTICA DESDE REGISTRO DIARIO
+        // ═══════════════════════════════════════════════════════════════
+        // Registro Diario publica en 'rdps_curvas_cola' cada visita con peso (y talla si se
+        // tomó). Aquí se busca a la persona por nombre en la MISMA base de personas (y, si
+        // todavía no está en Curvas pero sí en el Mapa Sanitario con fecha de nacimiento y sexo,
+        // se crea desde el Mapa) y se crea / actualiza / elimina la medición sola.
+        // Cada medición automática guarda 'origenRegId' (id del registro) para no duplicarse.
+        let _cvSincronizando = false;
+        let _cvUltimoRaw = null;
+        let _cvPendSig = '';
+        let _cvUltimoResultado = null;
+
+        function _cvClaveOrigen(regId, fecha, peso, talla) {
+            return String(regId) + '|' + fecha + '|' + peso + '|' + (talla == null ? '' : talla);
+        }
+
+        function _cvAviso(texto, persistente, color, accion) {
+            let el = document.getElementById('cvAviso');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'cvAviso';
+                el.style.cssText = 'position:fixed;left:12px;right:12px;bottom:14px;z-index:99999;padding:12px 40px 12px 14px;border-radius:12px;font-size:14px;line-height:1.35;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.3);display:none;';
+                el.innerHTML = '<span id="cvAvisoTxt"></span>'
+                    + '<div id="cvAvisoAcc" style="display:none;margin-top:8px;"><button type="button" id="cvAvisoBtn" style="background:#fff;color:#333;border:none;border-radius:8px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;"></button></div>'
+                    + '<button type="button" onclick="document.getElementById(\'cvAviso\').style.display=\'none\'" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>';
+                document.body.appendChild(el);
+            }
+            el.style.background = color || '#2e7d32';
+            el.dataset.pend = accion ? '1' : '0';
+            document.getElementById('cvAvisoTxt').textContent = texto;
+            const acc = document.getElementById('cvAvisoAcc');
+            const btn = document.getElementById('cvAvisoBtn');
+            if (accion) { btn.textContent = accion.texto; btn.onclick = accion.fn; acc.style.display = 'block'; }
+            else { acc.style.display = 'none'; btn.onclick = null; }
+            el.style.display = 'block';
+            clearTimeout(_cvAviso._t);
+            if (!persistente) _cvAviso._t = setTimeout(() => { el.style.display = 'none'; }, 7000);
+        }
+
+        // ── Personas con peso de Registro Diario que todavía no están en Curvas ──
+        let _cvPendientes = []; // [{ tok, nombre, vivienda, edad, sexo, visitas:[{fecha,pesoKg,tallaCm}], motivo, puedeAgregar }]
+
+        function _cvFechaCorta(iso) { return String(iso || '').split('-').reverse().join('/'); }
+
+        function cvPendAbrir() {
+            let m = document.getElementById('cvPendModal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'cvPendModal';
+                m.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:14px;';
+                m.addEventListener('click', e => { if (e.target === m) cvPendCerrar(); });
+                document.body.appendChild(m);
+            }
+            m.style.display = 'flex';
+            cvPendRender();
+        }
+        function cvPendCerrar() {
+            const m = document.getElementById('cvPendModal');
+            if (m) m.style.display = 'none';
+        }
+        function cvPendRender() {
+            const m = document.getElementById('cvPendModal');
+            if (!m) return;
+            if (!_cvPendientes.length) { cvPendCerrar(); return; }
+            const filas = _cvPendientes.map((g, i) => {
+                const vis = g.visitas.map(v => _cvFechaCorta(v.fecha) + ': ' + v.pesoKg + ' kg' + (v.tallaCm != null ? ' · ' + v.tallaCm + ' cm' : '')).join('<br>');
+                const meta = [g.vivienda ? 'Viv. ' + _escaparHTML(g.vivienda) : '', g.edad ? 'Edad: ' + _escaparHTML(g.edad) : '', g.sexo === 'F' ? '♀' : (g.sexo === 'M' ? '♂' : '')].filter(Boolean).join(' · ');
+                return '<div style="border:1px solid #d0d7de;border-radius:12px;padding:12px;margin-bottom:10px;background:#fafafa;">'
+                    + '<div style="font-weight:700;font-size:15px;color:#0b5d4b;">' + _escaparHTML(g.nombre) + '</div>'
+                    + (meta ? '<div style="font-size:13px;color:#555;margin-top:2px;">' + meta + '</div>' : '')
+                    + '<div style="font-size:13px;color:#333;margin-top:6px;">' + vis + '</div>'
+                    + '<div style="font-size:12px;color:#b45309;margin-top:6px;">' + _escaparHTML(g.motivo) + '</div>'
+                    + '<div style="display:flex;gap:8px;margin-top:10px;">'
+                    + (g.puedeAgregar ? '<button type="button" onclick="cvPendAgregar(' + i + ')" style="flex:1;background:#0b5d4b;color:#fff;border:none;border-radius:8px;padding:9px;font-size:14px;font-weight:700;">➕ Agregar</button>' : '')
+                    + '<button type="button" onclick="cvPendIgnorar(' + i + ')" style="flex:' + (g.puedeAgregar ? '0 0 auto' : '1') + ';background:#eceff1;color:#444;border:none;border-radius:8px;padding:9px 14px;font-size:14px;">Ignorar</button>'
+                    + '</div></div>';
+            }).join('');
+            m.innerHTML = '<div style="background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">'
+                + '<div style="background:#0b5d4b;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">'
+                + '<b style="font-size:16px;">📲 Pesos sin pasar a Curvas (' + _cvPendientes.length + ')</b>'
+                + '<button type="button" onclick="cvPendCerrar()" style="background:none;border:none;color:#fff;font-size:22px;">✕</button></div>'
+                + '<div style="padding:12px;overflow-y:auto;">'
+                + '<div style="background:#e8f5f1;border-left:4px solid #0b5d4b;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;line-height:1.4;color:#1f3d36;">'
+                + '<b>¿Cómo hacer que pasen a Curvas?</b><br>'
+                + '1️⃣ Toca <b>➕ Agregar</b> y completa la fecha de nacimiento, o<br>'
+                + '2️⃣ Completa <b>fecha de nacimiento y sexo</b> en el <b>Mapa Sanitario</b>, con el nombre escrito igual que en Registro Diario. Luego vuelve aquí y toca <b>📲 Revisar Registro Diario</b>.'
+                + '</div>' + filas
+                + '<button type="button" onclick="cvPendIgnorarTodos()" style="width:100%;background:none;border:1px solid #cfd8dc;color:#666;border-radius:8px;padding:9px;font-size:13px;">Ignorar todos (no volver a avisar)</button>'
+                + '</div></div>';
+        }
+        function cvPendAgregar(i) {
+            const g = _cvPendientes[i];
+            if (!g) return;
+            cvPendCerrar();
+            const av = document.getElementById('cvAviso'); if (av) av.style.display = 'none';
+            abrirFormularioAgregar();
+            document.getElementById('nombre').value = g.nombre;
+            document.getElementById('vivienda').value = g.vivienda || '';
+            document.getElementById('sexo').value = g.sexo === 'F' ? 'femenino' : (g.sexo === 'M' ? 'masculino' : '');
+            const ft = document.getElementById('fechaNacimiento');
+            if (ft) ft.focus();
+            _cvAviso('Completa la fecha de nacimiento' + (g.sexo ? '' : ' y el sexo') + ' y guarda: el peso de Registro Diario pasará solo.', false, '#0b5d4b');
+        }
+        function _cvPendIgnorarToks(toks) {
+            DB.config.cvPendIgnorados = DB.config.cvPendIgnorados || [];
+            toks.forEach(t => { if (!DB.config.cvPendIgnorados.includes(t)) DB.config.cvPendIgnorados.push(t); });
+            _cvPendientes = _cvPendientes.filter(g => !toks.includes(g.tok));
+            _cvPendSig = _cvPendientes.map(g => g.tok).join('|');
+            try { guardarDatos(); } catch (e) {}
+            if (!_cvPendientes.length) { const av = document.getElementById('cvAviso'); if (av && av.dataset.pend === '1') av.style.display = 'none'; }
+            else _cvMostrarAvisoPend();
+            cvPendRender();
+        }
+        function cvPendIgnorar(i) { const g = _cvPendientes[i]; if (g) _cvPendIgnorarToks([g.tok]); }
+        function cvPendIgnorarTodos() {
+            if (!confirm('¿Ignorar estas personas? Ya no se volverá a avisar por ellas (aunque sigas registrando su peso).')) return;
+            _cvPendIgnorarToks(_cvPendientes.map(g => g.tok));
+        }
+        function _cvMostrarAvisoPend() {
+            const n = _cvPendientes.length;
+            _cvAviso('⚠️ ' + n + ' persona(s) con peso en Registro Diario aún sin pasar a Curvas.', true, '#e65100', { texto: 'Revisar y agregar', fn: cvPendAbrir });
+        }
+
+        function _cvSincronizarDesdeRegistro(forzar) {
+            if (_cvSincronizando) return;
+            let raw = null;
+            try { raw = localStorage.getItem('rdps_curvas_cola'); } catch (e) { return; }
+            if (!raw) return;
+            if (!forzar && raw === _cvUltimoRaw) return;
+            let cola;
+            try { cola = JSON.parse(raw); } catch (e) { return; }
+            if (!cola || !Array.isArray(cola.items)) return;
+            _cvUltimoRaw = raw;
+            _cvUltimoResultado = null;
+            _cvSincronizando = true;
+            try {
+                // Índice de personas por nombre (sin tildes, mayúsculas ni orden de palabras)
+                const idx = new Map();
+                DB.personas.forEach(p => {
+                    const k = _mpTok(p.nombre);
+                    if (k) { if (!idx.has(k)) idx.set(k, []); idx.get(k).push(p); }
+                });
+                // Índice del Mapa Sanitario (solo personas con fecha de nacimiento y sexo válidos)
+                let mapaIdx = null;
+                const getMapa = () => {
+                    if (mapaIdx) return mapaIdx;
+                    mapaIdx = new Map();
+                    (_mpLeerCatalogo() || []).forEach(viv => {
+                        if (!viv || viv.deshabitada) return;
+                        (viv.personas || []).forEach(mp => {
+                            const k = _mpTok(mp && mp.nombre);
+                            if (!k) return;
+                            if (!mapaIdx.has(k)) mapaIdx.set(k, []);
+                            mapaIdx.get(k).push({ mp, viv });
+                        });
+                    });
+                    return mapaIdx;
+                };
+
+                const ignorados = new Set((DB.config && DB.config.cvIgnorados) || []);
+                const idsUsados = new Set(DB.mediciones.map(m => m.id));
+                let baseId = Date.now();
+                const nuevoId = () => { let id; do { id = String(baseId++); } while (idsUsados.has(id)); idsUsados.add(id); return id; };
+
+                let nuevas = 0, actualizadas = 0, eliminadas = 0, personasNuevas = 0;
+                const pendientes = [];
+                const pend = (it, motivo, puedeAgregar) => pendientes.push({ it, motivo, puedeAgregar });
+                const vivos = new Set();
+
+                cola.items.forEach(it => {
+                    if (!it || !it.regId || !it.fecha || it.pesoKg == null) return;
+                    vivos.add(String(it.regId));
+                    if (ignorados.has(_cvClaveOrigen(it.regId, it.fecha, it.pesoKg, it.tallaCm))) return;
+
+                    const tok = _mpTok(it.nombre);
+                    let cands = idx.get(tok) || [];
+                    if (cands.length > 1 && it.vivienda) {
+                        const v = _mpNorm(it.vivienda);
+                        const f = cands.filter(p => _mpNorm(p.vivienda) === v);
+                        if (f.length) cands = f;
+                    }
+                    if (cands.length > 1) { pend(it, 'Hay más de una persona con este nombre en Curvas: no se puede elegir sola.', false); return; }
+
+                    let persona = cands[0] || null;
+                    if (!persona) {
+                        // Respaldo: crearla desde el Mapa Sanitario si hay una coincidencia única y completa
+                        let mc = (getMapa().get(tok) || []);
+                        if (mc.length > 1 && it.vivienda) {
+                            const f = mc.filter(o => _mpNorm(o.viv.vivienda) === _mpNorm(it.vivienda));
+                            if (f.length) mc = f;
+                        }
+                        if (mc.length === 1) {
+                            const { mp, viv } = mc[0];
+                            const nac = _mpFecha(mp.fnac);
+                            const sexo = mp.sexo === 'F' ? 'femenino' : (mp.sexo === 'M' ? 'masculino' : '');
+                            if (nac && sexo) {
+                                persona = {
+                                    id: nuevoId(), nombre: String(mp.nombre).replace(/\s+/g, ' ').trim(), sexo, fechaNacimiento: nac,
+                                    edadActual: calcularEdad(nac), vivienda: String(viv.vivienda || ''), telefono: '', direccion: '',
+                                    notas: '', esPrematuro: false, semanasGestacionales: null,
+                                    fechaRegistro: new Date().toISOString(), origenMapa: mp.id || ''
+                                };
+                                DB.personas.push(persona);
+                                if (!idx.has(tok)) idx.set(tok, []);
+                                idx.get(tok).push(persona);
+                                personasNuevas++;
+                            }
+                        }
+                    }
+                    if (!persona) { pend(it, 'No está en Curvas ni en el Mapa con fecha de nacimiento y sexo.', true); return; }
+                    if (it.fecha < persona.fechaNacimiento) { pend(it, 'La fecha de la visita es anterior a su fecha de nacimiento: revisa una de las dos.', false); return; }
+
+                    const edadMeses = edadEnMesesDecimal(persona.fechaNacimiento, it.fecha);
+                    const esPrem = !!persona.esPrematuro;
+                    const sem = esPrem ? (persona.semanasGestacionales || null) : null;
+                    const edadEval = edadEvaluacionDesdeMeses(edadMeses, esPrem, sem);
+
+                    const previa = DB.mediciones.find(x => x.origenRegId === String(it.regId));
+                    if (previa) {
+                        if (previa.editadaManual) return;
+                        if (previa.personaId !== persona.id || previa.fecha !== it.fecha || previa.peso !== it.pesoKg || (previa.talla == null ? null : previa.talla) !== (it.tallaCm == null ? null : it.tallaCm)) {
+                            previa.personaId = persona.id; previa.fecha = it.fecha; previa.peso = it.pesoKg; previa.talla = it.tallaCm == null ? null : it.tallaCm;
+                            previa.edadEvaluacion = edadEval; previa.esPrematuro = esPrem; previa.semanasPretermino = sem;
+                            actualizadas++;
+                        }
+                        return;
+                    }
+                    // Ya hay una medición manual de esa persona ese mismo día: se respeta, no se duplica
+                    if (DB.mediciones.some(x => x.personaId === persona.id && x.fecha === it.fecha)) return;
+
+                    DB.mediciones.push({
+                        id: nuevoId(), personaId: persona.id, fecha: it.fecha, peso: it.pesoKg,
+                        talla: it.tallaCm == null ? null : it.tallaCm, hemoglobina: null,
+                        notas: 'Desde Registro Diario', esPrematuro: esPrem, semanasPretermino: sem,
+                        edadEvaluacion: edadEval, origenRegId: String(it.regId)
+                    });
+                    nuevas++;
+                });
+
+                // Visitas eliminadas (o a las que se les quitó el peso) en Registro Diario
+                if (cola.totalRegistros > 0) {
+                    const antes = DB.mediciones.length;
+                    DB.mediciones = DB.mediciones.filter(m => !(m.origenRegId && !m.editadaManual && !vivos.has(String(m.origenRegId))));
+                    eliminadas = antes - DB.mediciones.length;
+                }
+
+                _cvUltimoResultado = { nuevas, actualizadas, eliminadas, personasNuevas, items: cola.items.length };
+                if (nuevas || actualizadas || eliminadas || personasNuevas) {
+                    try { guardarDatos(); }
+                    catch (e) { _cvAviso('❌ No se pudieron guardar las mediciones de Registro Diario: almacenamiento lleno.', true, '#c62828'); return; }
+                    const partes = [];
+                    if (nuevas) partes.push(nuevas + ' nueva(s)');
+                    if (actualizadas) partes.push(actualizadas + ' actualizada(s)');
+                    if (eliminadas) partes.push(eliminadas + ' eliminada(s)');
+                    if (personasNuevas) partes.push(personasNuevas + ' persona(s) creada(s) desde el Mapa');
+                    _cvAviso('📲 Registro Diario → Curvas: ' + partes.join(' · '), false);
+                    const act = document.querySelector('.content.active');
+                    const id = act && act.id;
+                    try {
+                        if (id === 'personas') mostrarPersonas(false);
+                        else if (id === 'dashboard') mostrarDashboard(false);
+                        else if (id === 'curvas') llenarSelectCurvaPersonas();
+                    } catch (e) { /* la vista se actualizará al navegar */ }
+                }
+
+                // Agrupa por persona (varias visitas de la misma persona = una sola fila) y descarta las ignoradas
+                const ign = new Set((DB.config && DB.config.cvPendIgnorados) || []);
+                const grupos = new Map();
+                pendientes.forEach(({ it, motivo, puedeAgregar }) => {
+                    const tok = _mpTok(it.nombre);
+                    if (!tok || ign.has(tok)) return;
+                    let g = grupos.get(tok);
+                    if (!g) { g = { tok, nombre: it.nombre, vivienda: it.vivienda || '', edad: it.edad || '', sexo: it.sexo || '', visitas: [], motivo, puedeAgregar }; grupos.set(tok, g); }
+                    g.visitas.push({ fecha: it.fecha, pesoKg: it.pesoKg, tallaCm: it.tallaCm });
+                    if (!g.edad && it.edad) g.edad = it.edad;
+                    if (!g.sexo && it.sexo) g.sexo = it.sexo;
+                });
+                _cvPendientes = [...grupos.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+                const sig = _cvPendientes.map(g => g.tok).join('|');
+                if (_cvPendientes.length && sig !== _cvPendSig) _cvMostrarAvisoPend();
+                if (!_cvPendientes.length) {
+                    const av = document.getElementById('cvAviso');
+                    if (av && av.dataset.pend === '1') av.style.display = 'none';
+                }
+                _cvPendSig = sig;
+                if (document.getElementById('cvPendModal') && document.getElementById('cvPendModal').style.display !== 'none') cvPendRender();
+            } finally {
+                _cvSincronizando = false;
+            }
+        }
+
+        // Botón "Revisar Registro Diario": fuerza la sincronización y muestra el resultado
+        function cvRevisarManual() {
+            let raw = null;
+            try { raw = localStorage.getItem('rdps_curvas_cola'); } catch (e) {}
+            if (!raw) {
+                _cvAviso('Registro Diario todavía no ha enviado datos. Abre Registro Diario y guarda una visita con peso en Hallazgos.', false, '#546e7a');
+                return;
+            }
+            _cvSincronizarDesdeRegistro(true);
+            const r = _cvUltimoResultado;
+            if (!r) { _cvAviso('No se pudo leer lo enviado por Registro Diario.', false, '#c62828'); return; }
+            if (_cvPendientes.length) { cvPendAbrir(); return; }
+            if (r.nuevas || r.actualizadas || r.eliminadas || r.personasNuevas) return; // ya mostró su resultado
+            const nIgn = ((DB.config && DB.config.cvPendIgnorados) || []).length;
+            const txt = '✅ Todo al día: ' + r.items + ' visita(s) con peso de Registro Diario ya están en Curvas.' + (nIgn ? ' (' + nIgn + ' persona(s) ignorada(s))' : '');
+            if (nIgn) {
+                _cvAviso(txt, true, '#2e7d32', { texto: 'Volver a mostrar ignoradas', fn: () => {
+                    DB.config.cvPendIgnorados = [];
+                    try { guardarDatos(); } catch (e) {}
+                    document.getElementById('cvAviso').style.display = 'none';
+                    cvRevisarManual();
+                } });
+            } else {
+                _cvAviso(txt, false, '#2e7d32');
+            }
+        }
+
+        function _cvIniciarSincronizacion() {
+            _cvSincronizarDesdeRegistro(true);
+            window.addEventListener('storage', e => { if (!e.key || e.key === 'rdps_curvas_cola') _cvSincronizarDesdeRegistro(false); });
+            window.addEventListener('focus', () => _cvSincronizarDesdeRegistro(false));
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) _cvSincronizarDesdeRegistro(false); });
+            setInterval(() => _cvSincronizarDesdeRegistro(false), 8000);
+        }
+
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
             cargarDatos();
@@ -8804,8 +9192,10 @@
             document.getElementById('topbarTitle').textContent = 'Personas';
             document.getElementById('sortBtn').style.display = 'flex';
             mostrarPersonas();
+            _cvIniciarSincronizacion();
             
             // Event listeners para formulario de medición
+            document.getElementById('formMedicion')?.addEventListener('reset', () => setTimeout(_reiniciarUnidadesFormMedicion, 0));
             document.getElementById('semanasPretermino')?.addEventListener('change', calcularEdadCorregida);
             document.getElementById('personaMedicion')?.addEventListener('change', calcularEdadCorregida);
             document.getElementById('fechaMedicion')?.addEventListener('change', calcularEdadCorregida);

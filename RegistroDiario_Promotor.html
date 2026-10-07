@@ -2681,6 +2681,7 @@
                             <th style="padding:6px; text-align:center; font-weight:700;">Peso (kg)</th>
                             <th style="padding:6px; text-align:center; font-weight:700;">Talla (cm)</th>
                             <th style="padding:6px; text-align:center; font-weight:700;">IMC</th>
+                            <th id="thEstadoHistorial" style="padding:6px; text-align:center; font-weight:700;">Estado</th>
                         </tr>
                     </thead>
                     <tbody id="tablaHistorialBody">
@@ -2863,7 +2864,39 @@
     }
 
     let registros = JSON.parse(localStorage.getItem('rdps_registros') || '[]');
+
+    // ══════════════ PUENTE → CURVAS DE CRECIMIENTO ══════════════
+    // Cada vez que se guardan los registros, se publica en 'rdps_curvas_cola' la lista de
+    // visitas que traen PESO (y TALLA si se tomó) detectados en Hallazgos. La app Curvas de
+    // Crecimiento (mismo almacenamiento) lee esa cola, busca a la persona por nombre y crea /
+    // actualiza / elimina la medición sola. Es "best effort": nunca bloquea el guardado local.
+    function _rdpsGuardarRegistrosLS() {
+      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      clearTimeout(_rdpsGuardarRegistrosLS._t);
+      _rdpsGuardarRegistrosLS._t = setTimeout(_curvasPublicarCola, 400);
+    }
+    function _curvasPublicarCola() {
+      try {
+        if (typeof _riesgoParsearNota !== 'function') return;
+        const items = [];
+        (registros || []).forEach(r => {
+          if (!r || !r.id || !r.nombre || !r.fecha) return;
+          const d = _riesgoParsearNota(r.hallazgos || '', r.nombre || '');
+          let peso = d.pesoKg != null ? d.pesoKg : null;
+          let talla = d.tallaCm != null ? d.tallaCm : null;
+          if (peso != null && (peso < 0.5 || peso > 300)) peso = null;
+          if (talla != null && (talla < 25 || talla > 250)) talla = null;
+          if (peso == null) return; // sin peso no se crea medición (igual que el formulario de Curvas)
+          items.push({
+            regId: String(r.id), nombre: r.nombre, vivienda: r.vivienda || '',
+            fecha: r.fecha, pesoKg: peso, tallaCm: talla, edad: r.edad || '', sexo: d.sexo || ''
+          });
+        });
+        localStorage.setItem('rdps_curvas_cola', JSON.stringify({ ts: Date.now(), totalRegistros: (registros || []).length, items }));
+      } catch (e) { console.warn('Puente Curvas:', e); }
+    }
     let perfil    = JSON.parse(localStorage.getItem('rdps_perfil')    || '{}');
+    setTimeout(function () { try { _curvasPublicarCola(); } catch (e) {} }, 1500);
 
     // ══════════════ MAYÚSCULAS GLOBALES ══════════════
     // Interruptor guardado en "Mi Perfil" (rdps_mayusculas_activo: '1' = activo).
@@ -2895,7 +2928,7 @@
           });
         }
       });
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
 
       if (perfil.comunidad)       perfil.comunidad       = String(perfil.comunidad).toUpperCase();
       if (perfil.establecimiento) perfil.establecimiento = String(perfil.establecimiento).toUpperCase();
@@ -5242,7 +5275,7 @@ async function _riesgoGuardarHistorialPeso(reg) {
 // Trae el historial completo de una persona desde la nube O desde caché local.
 // Prioridad: Firebase → localStorage (caché) → []
 // Devuelve siempre un array, nunca lanza error.
-async function _riesgoObtenerHistorialPeso(vivienda, nombre) {
+async function _riesgoObtenerHistorialPesoNube(vivienda, nombre) {
   try {
     const docId = _docIdPromotor();
     if (!docId) return _riesgoObtenerHistorialDelCache(vivienda, nombre);
@@ -5273,6 +5306,49 @@ async function _riesgoObtenerHistorialPeso(vivienda, nombre) {
     console.warn('No se pudo cargar el historial de peso desde la nube, intentando caché:', e);
     return _riesgoObtenerHistorialDelCache(vivienda, nombre);
   }
+}
+
+// Arma el historial a partir de los registros guardados en este dispositivo (localStorage).
+// Así aparecen TODAS las mediciones de la persona, aunque nunca se hayan subido a la nube.
+function _riesgoHistorialDesdeRegistrosLocales(vivienda, nombre) {
+  const out = [];
+  try {
+    const clave = _riesgoClaveIdentidad(vivienda, nombre);
+    if (!clave || !Array.isArray(registros)) return out;
+    registros.forEach(function(r) {
+      if (!r || !r.nombre || !r.fecha) return;
+      if (_riesgoClaveIdentidad(r.vivienda, r.nombre) !== clave) return;
+      const d = _riesgoDatosGrafica(r.edad || '', r.hallazgos || '', r.nombre || '');
+      const p = _riesgoParsearNota(r.hallazgos || '', r.nombre || '');
+      if (p.pesoKg == null && p.tallaCm == null) return;
+      out.push({
+        fecha: r.fecha,
+        pesoKg: p.pesoKg != null ? p.pesoKg : null,
+        tallaCm: p.tallaCm != null ? p.tallaCm : null,
+        edadMeses: d ? d.edadMeses : null
+      });
+    });
+  } catch (e) { console.warn('No se pudo armar historial local:', e); }
+  return out;
+}
+
+// Une nube/caché + registros locales (sin duplicar por fecha; el registro local manda).
+async function _riesgoObtenerHistorialPeso(vivienda, nombre) {
+  let nube = [];
+  try { nube = await _riesgoObtenerHistorialPesoNube(vivienda, nombre); } catch (e) { nube = []; }
+  const esEnLinea = nube && nube._esEnLinea === true;
+  const fechaCache = nube && nube._fechaCaché;
+  const porFecha = {};
+  (nube || []).forEach(function(m) { if (m && m.fecha) porFecha[m.fecha] = m; });
+  _riesgoHistorialDesdeRegistrosLocales(vivienda, nombre).forEach(function(m) {
+    const prev = porFecha[m.fecha] || {};
+    porFecha[m.fecha] = Object.assign({}, prev, m, { edadMeses: m.edadMeses != null ? m.edadMeses : prev.edadMeses });
+  });
+  const res = Object.keys(porFecha).map(function(k) { return porFecha[k]; })
+    .sort(function(a, b) { return (a.fecha || '').localeCompare(b.fecha || ''); });
+  res._esEnLinea = esEnLinea;
+  res._fechaCaché = fechaCache;
+  return res;
 }
 
 // Guarda el historial en localStorage para acceso offline
@@ -5634,12 +5710,37 @@ function toggleHistorialTabla() {
   }
 }
 
+// Estado nutricional de UNA medición histórica, según el indicador que se está viendo
+// en la gráfica (Peso/Edad, Talla/Edad, IMC/Edad o IMC adulto).
+function _riesgoEstadoMedicion(m) {
+  try {
+    const datos = _riesgoGraficaDatosActual;
+    if (!datos || !m || m.edadMeses == null) return null;
+    const ind = _riesgoGraficaIndicadorActual || (datos.disponibles[0] && datos.disponibles[0].id);
+    if (ind === 'imcAdulto') {
+      if (m.pesoKg == null || m.tallaCm == null) return null;
+      const imcA = Math.round((m.pesoKg / Math.pow(m.tallaCm / 100, 2)) * 10) / 10;
+      return _riesgoClasificarIMCAdulto(imcA, m.edadMeses);
+    }
+    let valor = null;
+    if (ind === 'pesoEdad') valor = m.pesoKg;
+    else if (ind === 'tallaEdad') valor = m.tallaCm;
+    else if (ind === 'imcEdad' && m.pesoKg != null && m.tallaCm != null) valor = m.pesoKg / Math.pow(m.tallaCm / 100, 2);
+    if (valor == null || !datos.sexo) return null;
+    const info = _riesgoTablaIndicador(ind, m.edadMeses, datos.sexo);
+    if (!info) return null;
+    const lms = _riesgoLMS(info.tabla, info.mesInicio, m.edadMeses);
+    if (!lms) return null;
+    return _riesgoClasificar(_riesgoZ(lms[0], lms[1], lms[2], valor), info.cortes);
+  } catch (e) { return null; }
+}
+
 function _riesgoLlenarTablaHistorial(historial) {
   const tbody = document.getElementById('tablaHistorialBody');
   tbody.innerHTML = '';
   
   if (!Array.isArray(historial) || historial.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:10px; text-align:center; color:var(--muted);">No hay registros históricos disponibles</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:10px; text-align:center; color:var(--muted);">No hay registros históricos disponibles</td></tr>';
     return;
   }
   
@@ -5655,11 +5756,20 @@ function _riesgoLlenarTablaHistorial(historial) {
       indicadorEl.style.color = '#0b8a72';
     } else {
       const fechaCache = fechaCaché ? new Date(fechaCaché).toLocaleDateString('es-SV') : 'desconocida';
-      indicadorEl.innerHTML = `📱 Datos en caché offline (del ${fechaCache})`;
+      indicadorEl.innerHTML = fechaCaché ? `📱 Datos locales + caché (${fechaCache})` : '📱 Datos de este dispositivo';
       indicadorEl.style.color = '#e67e22';
     }
   }
   
+  // Encabezado de la columna: indica con qué indicador se calcula el estado
+  const thEstado = document.getElementById('thEstadoHistorial');
+  if (thEstado) {
+    const dAct = _riesgoGraficaDatosActual;
+    const indAct = _riesgoGraficaIndicadorActual || (dAct && dAct.disponibles[0] && dAct.disponibles[0].id);
+    const itemAct = dAct && dAct.disponibles.find(function(d) { return d.id === indAct; });
+    thEstado.innerHTML = 'Estado' + (itemAct ? '<div style="font-size:10px;font-weight:500;color:var(--muted);">' + itemAct.etiqueta + '</div>' : '');
+  }
+
   historial.forEach(function(registro, index) {
     const fila = document.createElement('tr');
     fila.style.borderBottom = '1px solid var(--border)';
@@ -5672,7 +5782,7 @@ function _riesgoLlenarTablaHistorial(historial) {
       fila.style.background = '';
     });
     
-    const fecha = registro.fecha ? new Date(registro.fecha).toLocaleDateString('es-SV') : '—';
+    const fecha = registro.fecha ? String(registro.fecha).split('-').reverse().join('/') : '—';
     const peso = registro.pesoKg ? registro.pesoKg.toFixed(1) : '—';
     const talla = registro.tallaCm ? registro.tallaCm.toFixed(1) : '—';
     
@@ -5681,6 +5791,10 @@ function _riesgoLlenarTablaHistorial(historial) {
       imc = (Math.round((registro.pesoKg / Math.pow(registro.tallaCm / 100, 2)) * 10) / 10).toFixed(1);
     }
     
+    const estadoCalc = _riesgoEstadoMedicion(registro);
+    const estadoTexto = estadoCalc || '—';
+    const estadoColor = estadoCalc ? _riesgoColorCategoria(estadoCalc).linea : 'var(--muted)';
+
     const edadMeses = registro.edadMeses;
     let edadTexto = '—';
     if (edadMeses != null) {
@@ -5703,6 +5817,7 @@ function _riesgoLlenarTablaHistorial(historial) {
       <td style="padding:6px; text-align:center; font-weight:500;">${peso}</td>
       <td style="padding:6px; text-align:center; font-weight:500;">${talla}</td>
       <td style="padding:6px; text-align:center; font-weight:500; color:var(--teal2);">${imc}</td>
+      <td style="padding:6px; text-align:center; font-weight:600; font-size:11px; color:${estadoColor};">${estadoTexto}</td>
     `;
     
     tbody.appendChild(fila);
@@ -5868,6 +5983,7 @@ function _riesgoActualizarGrafica(indicadorId) {
   const datos = _riesgoGraficaDatosActual;
   if (!datos) return;
   _riesgoGraficaIndicadorActual = indicadorId;
+  if (Array.isArray(datos.historial)) _riesgoLlenarTablaHistorial(datos.historial);
   const item = datos.disponibles.find(function(d) { return d.id === indicadorId; }) || datos.disponibles[0];
   const canvas = document.getElementById('graficaNutriCanvas');
   const resumen = document.getElementById('graficaNutriResumen');
@@ -6628,7 +6744,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       document.getElementById('edit-id').value = reg.id;
       clearTimeout(_ctrlAutoguardadoTimeout);
 
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       actualizarHome();
       _riesgoGuardarHistorialPeso(reg).catch(() => {});
       _vmSincronizarNota(registros.find(r => r.id === reg.id) || reg);
@@ -6838,7 +6954,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         actualizadoEn: new Date().toISOString()
       };
       registros.push(reg);
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       actualizarHome();
       if (idField) idField.value = nuevoId;
       toast('💾 Visita guardada automáticamente', 'success');
@@ -6889,7 +7005,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         registros.push(reg);
         if (idField) idField.value = reg.id;
       }
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
     }
 
     // Debounce corto: espera a que el promotor deje de escribir/cambiar de campo antes de
@@ -7181,7 +7297,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     function eliminarRegistro(id) {
       if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
       registros = registros.filter(r => r.id !== id);
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       try {
         const del = JSON.parse(localStorage.getItem('rdps_deleted_reg') || '{}');
         del[String(id)] = new Date().toISOString();
@@ -7388,7 +7504,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           if (!confirm(`¿Importar ${data.registros.length} registros?\n\nEsto REEMPLAZARÁ los datos actuales.`)) return;
           registros = data.registros;
           if (data.perfil) perfil = data.perfil;
-          localStorage.setItem('rdps_registros', JSON.stringify(registros));
+          _rdpsGuardarRegistrosLS();
           localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
           actualizarHome();
           renderListado();
@@ -7869,7 +7985,7 @@ Acciones ejecutadas: ${acciones || '—'}
       registros[idx].informeCampos[campo] = valor;
       if (huella) registros[idx].informeCampos._huella = huella;
       registros[idx].actualizadoEn = new Date().toISOString();
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       return true;
     }
 
@@ -7881,7 +7997,7 @@ Acciones ejecutadas: ${acciones || '—'}
       if (campoId === 'firma-usuario') registros[idx].firmas.usuario = dataURLOrNull;
       else if (campoId === 'firma-personal') registros[idx].firmas.personal = dataURLOrNull;
       registros[idx].actualizadoEn = new Date().toISOString();
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       return true;
     }
 
@@ -8690,7 +8806,7 @@ Acciones ejecutadas: ${acciones || '—'}
       registros[idx].referenciaCampos[campo] = valor;
       if (huella) registros[idx].referenciaCampos._huella = huella;
       registros[idx].actualizadoEn = new Date().toISOString();
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       return true;
     }
 
@@ -9565,7 +9681,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         r.actualizadoEn = ts;
         n++;
       });
-      if (n) localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      if (n) _rdpsGuardarRegistrosLS();
       return n;
     }
 
@@ -9733,7 +9849,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (!registros[idx].referenciaGeneradaEn) registros[idx].referenciaGeneradaEn = _ctrlMejorFechaEstimada(registros[idx]); // hora del registro diario de la visita, no la hora del sistema
       registros[idx].referenciaActualizadaEn = new Date().toISOString();
       registros[idx].actualizadoEn = registros[idx].referenciaActualizadaEn; // para que subirNube() detecte el cambio
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
     }
 
     // Igual que la anterior, pero para el Informe de Visita Domiciliar. Los nombres de los
@@ -9762,7 +9878,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (!registros[idx].informeGeneradoEn) registros[idx].informeGeneradoEn = _ctrlMejorFechaEstimada(registros[idx]); // hora del registro diario de la visita, no la hora del sistema
       registros[idx].informeActualizadoEn = new Date().toISOString();
       registros[idx].actualizadoEn = registros[idx].informeActualizadoEn; // para que subirNube() detecte el cambio
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
     }
 
     // Convierte un ISO datetime (que siempre se guarda en UTC, via toISOString) a
@@ -9859,7 +9975,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           cambios = true;
         }
       });
-      if (cambios) localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      if (cambios) _rdpsGuardarRegistrosLS();
     }
 
     function _ctrlMejorFechaEstimada(r) {
@@ -10065,7 +10181,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       registros[idx][campo] = dataURL;
       registros[idx][campo + 'Fecha'] = new Date().toISOString();
       registros[idx].actualizadoEn = registros[idx][campo + 'Fecha']; // para que subirNube() detecte el cambio
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       toast('✅ Firma guardada');
       _ctrlCerrarFirma();
       _ctrlRenderLista();
@@ -10097,7 +10213,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         delete registros[idx].informeControlFirmaFecha;
       }
       registros[idx].actualizadoEn = new Date().toISOString(); // para que subirNube() detecte el cambio
-      localStorage.setItem('rdps_registros', JSON.stringify(registros));
+      _rdpsGuardarRegistrosLS();
       toast('🗑️ Se quitó del Control de Entregas');
       _ctrlRenderLista();
     }
@@ -10269,12 +10385,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
         rowsHTML += `
           <tr data-id="${r.id}">
             <td class="c-fecha" data-label="Fecha">${fmtFecha(r.fecha)}</td>
-            <td class="c-hora" data-label="Hora">${r.hora || ''}</td>
+            <td class="c-hora" data-label="Hora">${/^\d{2}:\d{2}/.test(r.hora || '') ? `<input type="time" class="hora-input" value="${r.hora.slice(0,5)}" aria-label="Hora de la visita">` : (r.hora || '')}</td>
             <td class="c-viv" data-label="Vivienda">${r.vivienda || ''}</td>
             <td class="c-nombre" data-label="Nombre">${r.nombre || ''}</td>
             <td class="c-edad" data-label="Edad">${r.edad || ''}</td>
-            <td class="c-hall c-editable" data-label="Hallazgos" contenteditable="true" spellcheck="false">${(r.hallazgos||'').replace(/\n/g,'<br>')}</td>
-            <td class="c-acc c-editable" data-label="Acciones" contenteditable="true" spellcheck="false">${(r.acciones||'').replace(/\n/g,'<br>')}</td>
+            <td class="c-hall c-editable" data-campo="hallazgos" data-label="Hallazgos" contenteditable="true" spellcheck="false">${(r.hallazgos||'').replace(/\n/g,'<br>')}</td>
+            <td class="c-acc c-editable" data-campo="acciones" data-label="Acciones" contenteditable="true" spellcheck="false">${(r.acciones||'').replace(/\n/g,'<br>')}</td>
           </tr>`;
       }
 
@@ -10363,6 +10479,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
     .page-body { }
     /* ══ CELDAS EDITABLES ══ */
     @media screen {
+      .hora-input { width: 100%; box-sizing: border-box; border: 1px dashed transparent; background: transparent; font: inherit; color: inherit; text-align: center; padding: 2px 0; border-radius: 4px; }
+      .hora-input:hover { border-color: #0b8a72; background: rgba(11,138,114,0.06); }
+      .hora-input:focus { outline: 2px solid #0b8a72; background: #fff; }
+      .hora-input[data-modificado="true"] { background: #fef9c3; border-color: #eab308; }
       .c-editable {
         cursor: text;
         outline: none;
@@ -10442,6 +10562,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
     @media print {
       .c-editable { cursor: default !important; }
+      .hora-input { border: none !important; background: transparent !important; outline: none !important; }
       .edit-hint, .ia-toolbar, .cambios-bar { display: none !important; }
     }
 
@@ -10757,20 +10878,28 @@ Notas (Acciones ya escritas): ${accion || '—'}
       var cambios = {};
       var originalData = {};
 
-      document.querySelectorAll('tr[data-id]').forEach(function(tr) {
-        var id = tr.getAttribute('data-id');
-        var celdas = tr.querySelectorAll('.c-editable');
-        originalData[id] = {
-          hallazgos: celdas[0] ? celdas[0].innerHTML : '',
-          acciones:  celdas[1] ? celdas[1].innerHTML : ''
-        };
-      });
-
       function htmlToText(html) {
         var div = document.createElement('div');
         div.innerHTML = html.replace(/<br[^>]*>/gi, ' ');
         return (div.textContent || div.innerText || '').trim();
       }
+
+      function leerFila(tr) {
+        var h = tr.querySelector('[data-campo="hallazgos"]');
+        var a = tr.querySelector('[data-campo="acciones"]');
+        var hi = tr.querySelector('.hora-input');
+        return {
+          hallazgosHTML: h ? h.innerHTML : '',
+          accionesHTML: a ? a.innerHTML : '',
+          hallazgos: h ? htmlToText(h.innerHTML) : '',
+          acciones: a ? htmlToText(a.innerHTML) : '',
+          hora: hi ? hi.value : ''
+        };
+      }
+
+      document.querySelectorAll('tr[data-id]').forEach(function(tr) {
+        originalData[tr.getAttribute('data-id')] = leerFila(tr);
+      });
 
       function actualizarBarra() {
         var n = Object.keys(cambios).length;
@@ -10784,24 +10913,30 @@ Notas (Acciones ya escritas): ${accion || '—'}
         }
       }
 
+      function evaluarFila(tr) {
+        var id = tr.getAttribute('data-id');
+        var act = leerFila(tr);
+        var orig = originalData[id] || {};
+        var horaNueva = act.hora || orig.hora || '';
+        var hallCambio = act.hallazgos !== orig.hallazgos;
+        var accCambio = act.acciones !== orig.acciones;
+        var horaCambio = horaNueva !== (orig.hora || '');
+        if (hallCambio || accCambio || horaCambio) {
+          cambios[id] = { hallazgos: act.hallazgos, acciones: act.acciones, hora: horaNueva };
+        } else {
+          delete cambios[id];
+        }
+        var hi = tr.querySelector('.hora-input');
+        if (hi) { if (horaCambio) hi.setAttribute('data-modificado', 'true'); else hi.removeAttribute('data-modificado'); }
+        actualizarBarra();
+      }
+
       document.querySelectorAll('.c-editable').forEach(function(td) {
         td.addEventListener('input', function() {
           var tr = td.closest('tr[data-id]');
           if (!tr) return;
-          var id = tr.getAttribute('data-id');
-          var celdas = tr.querySelectorAll('.c-editable');
-          var hall = celdas[0] ? htmlToText(celdas[0].innerHTML) : '';
-          var acc  = celdas[1] ? htmlToText(celdas[1].innerHTML) : '';
-          var orig = originalData[id] || {};
-          var hallOrig = htmlToText(orig.hallazgos || '');
-          var accOrig  = htmlToText(orig.acciones  || '');
-          if (hall !== hallOrig || acc !== accOrig) {
-            cambios[id] = { hallazgos: hall, acciones: acc };
-            td.setAttribute('data-modificado', 'true');
-          } else {
-            delete cambios[id];
-          }
-          actualizarBarra();
+          td.setAttribute('data-modificado', 'true');
+          evaluarFila(tr);
         });
 
         td.addEventListener('blur', function() {
@@ -10820,6 +10955,15 @@ Notas (Acciones ya escritas): ${accion || '—'}
         });
       });
 
+      document.querySelectorAll('.hora-input').forEach(function(inp) {
+        function alCambiar() {
+          var tr = inp.closest('tr[data-id]');
+          if (tr) evaluarFila(tr);
+        }
+        inp.addEventListener('input', alCambiar);
+        inp.addEventListener('change', alCambiar);
+      });
+
       document.getElementById('btn-guardar').addEventListener('click', function() {
         if (Object.keys(cambios).length === 0) return;
         try {
@@ -10827,10 +10971,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
             var ok = window.parent.rdpsGuardarEdicion(cambios);
             if (ok) {
               document.querySelectorAll('tr[data-id]').forEach(function(tr) {
-                var id = tr.getAttribute('data-id');
-                var celdas = tr.querySelectorAll('.c-editable');
-                if (celdas[0]) { originalData[id] = { hallazgos: celdas[0].innerHTML, acciones: celdas[1] ? celdas[1].innerHTML : '' }; }
-                tr.querySelectorAll('.c-editable').forEach(function(c) { c.removeAttribute('data-modificado'); });
+                originalData[tr.getAttribute('data-id')] = leerFila(tr);
+                tr.querySelectorAll('.c-editable, .hora-input').forEach(function(c) { c.removeAttribute('data-modificado'); });
               });
               cambios = {};
               actualizarBarra();
@@ -10843,16 +10985,17 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
       document.getElementById('btn-descartar').addEventListener('click', function() {
         document.querySelectorAll('tr[data-id]').forEach(function(tr) {
-          var id = tr.getAttribute('data-id');
-          var celdas = tr.querySelectorAll('.c-editable');
-          var orig = originalData[id] || {};
-          if (celdas[0]) { celdas[0].innerHTML = orig.hallazgos || ''; celdas[0].removeAttribute('data-modificado'); }
-          if (celdas[1]) { celdas[1].innerHTML = orig.acciones  || ''; celdas[1].removeAttribute('data-modificado'); }
+          var orig = originalData[tr.getAttribute('data-id')] || {};
+          var h = tr.querySelector('[data-campo="hallazgos"]');
+          var a = tr.querySelector('[data-campo="acciones"]');
+          var hi = tr.querySelector('.hora-input');
+          if (h) { h.innerHTML = orig.hallazgosHTML || ''; h.removeAttribute('data-modificado'); }
+          if (a) { a.innerHTML = orig.accionesHTML || ''; a.removeAttribute('data-modificado'); }
+          if (hi) { hi.value = orig.hora || ''; hi.removeAttribute('data-modificado'); }
         });
         cambios = {};
         actualizarBarra();
       });
-
 
     })();
 
@@ -11384,11 +11527,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const c = cambios[id];
         if (typeof c.hallazgos === 'string') registros[idx].hallazgos = c.hallazgos;
         if (typeof c.acciones  === 'string') registros[idx].acciones  = c.acciones;
+        if (typeof c.hora === 'string' && /^\d{2}:\d{2}$/.test(c.hora)) registros[idx].hora = c.hora;
         registros[idx].actualizadoEn = new Date().toISOString();
+        try { _vmSincronizarNota(registros[idx]); } catch (e) { console.warn('No se pudo sincronizar la nota:', e); }
         guardados++;
       });
       if (guardados > 0) {
-        localStorage.setItem('rdps_registros', JSON.stringify(registros));
+        _rdpsGuardarRegistrosLS();
         renderListado();
         actualizarHome();
         toast('✅ ' + guardados + ' registro' + (guardados > 1 ? 's' : '') + ' guardado' + (guardados > 1 ? 's' : ''), 'success');
@@ -11630,7 +11775,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           });
           await batch.commit();
         }
-        localStorage.setItem('rdps_registros', JSON.stringify(registros));
+        _rdpsGuardarRegistrosLS();
 
         // ── Catálogo de familias (reusar famMetaCloud, sin segunda lectura) ──
         const catalogo = getCatalogo();
@@ -11797,7 +11942,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         // Aplicar registros
         registros = Object.values(mergedReg).sort((a,b) =>
           (b.fecha||'').localeCompare(a.fecha||''));
-        localStorage.setItem('rdps_registros', JSON.stringify(registros));
+        _rdpsGuardarRegistrosLS();
 
         // Aplicar catálogo
         const catalogoFinal = Object.values(mergedFam);
