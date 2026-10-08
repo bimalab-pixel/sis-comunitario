@@ -357,6 +357,11 @@
         .ge-gnombre{font-weight:700;color:var(--navy2)}
         .ge-gdetalle{font-size:.68rem;color:var(--muted);margin-top:1px}
         .ge-lista-titulo{font-size:.82rem;font-weight:800;color:var(--navy);margin:.3rem 0 .6rem}
+        .ge-buscar{position:relative;margin:0 0 .6rem}
+        .ge-buscar svg{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted);pointer-events:none}
+        .ge-buscar input{width:100%;box-sizing:border-box;padding:.6rem 2.2rem .6rem 2.1rem;border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:.9rem;background:#fff;color:var(--text);outline:none}
+        .ge-buscar input:focus{border-color:var(--teal2)}
+        .ge-buscar-x{position:absolute;right:.35rem;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1;padding:.35rem .5rem;cursor:pointer;display:none}
         .ge-n{color:var(--muted);font-weight:700}
         .badge.ge-b-f{background:#fce4ec;color:#c2185b}
         .badge.ge-b-m{background:#e3f2fd;color:#1565c0}
@@ -2287,6 +2292,7 @@
                     <button type="button" class="ctrl-periodo-btn active" id="ctrl-periodo-hoy" onclick="_ctrlCambiarPeriodo('hoy')">Hoy</button>
                     <button type="button" class="ctrl-periodo-btn" id="ctrl-periodo-dia" onclick="_ctrlCambiarPeriodo('dia')">Otra fecha</button>
                     <button type="button" class="ctrl-periodo-btn" id="ctrl-periodo-mes" onclick="_ctrlCambiarPeriodo('mes')">Por mes</button>
+                    <button type="button" class="ctrl-periodo-btn" id="ctrl-periodo-anio" onclick="_ctrlCambiarPeriodo('anio')">Por año</button>
                 </div>
 
                 <div class="rep-fields" id="ctrl-campos-dia" style="display:none">
@@ -2297,7 +2303,7 @@
                 </div>
 
                 <div class="rep-fields" id="ctrl-campos-mes" style="display:none">
-                    <div class="f-group">
+                    <div class="f-group" id="ctrl-grupo-mes">
                         <label>Mes</label>
                         <select id="ctrl-mes" onchange="_ctrlRenderLista()">
                             <option value="01">Enero</option><option value="02">Febrero</option>
@@ -2317,6 +2323,11 @@
         </div>
 
         <div class="ctrl-resumen" id="ctrl-resumen">0 referencias generadas</div>
+        <div class="ge-buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="ctrl-buscar" placeholder="Buscar por nombre o vivienda…" autocomplete="off" oninput="_ctrlBuscarCambio()"/>
+            <button type="button" class="ge-buscar-x" id="ctrl-buscar-x" onclick="_ctrlBuscarLimpiar()" aria-label="Limpiar búsqueda">✕</button>
+        </div>
         <div id="ctrl-lista"></div>
     </div>
 </div><!-- /screen-control-entregas -->
@@ -2373,6 +2384,11 @@
         <div class="ctrl-resumen" id="ge-resumen">0 personas visitadas</div>
         <div id="ge-tabla"></div>
         <div class="ge-lista-titulo" id="ge-lista-titulo"></div>
+        <div class="ge-buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="ge-buscar" placeholder="Buscar por nombre o vivienda…" autocomplete="off" oninput="_geBuscarCambio()"/>
+            <button type="button" class="ge-buscar-x" id="ge-buscar-x" onclick="_geBuscarLimpiar()" aria-label="Limpiar búsqueda">✕</button>
+        </div>
         <div id="ge-lista"></div>
     </div>
 </div><!-- /screen-grupos-etarios -->
@@ -9502,6 +9518,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
     ];
     let _gePeriodo = 'hoy';
     let _geGrupoSel = 'todos';
+    let _geCache = null;             // resultado de _geConstruir() para no recalcularlo al buscar
+    let _geBuscarT = null;
     let _geVisibles = [];            // personas que se están mostrando (para el botón del ojito)
     const _geAbiertos = new Set();   // personas con las fechas desplegadas
 
@@ -9738,6 +9756,17 @@ Notas (Acciones ya escritas): ${accion || '—'}
         '<button type="button" class="ge-ojo ge-corregir" onclick="_geAbrirFamilia(' + i + ')">🏠 Abrir familia y corregir</button>';
     }
 
+    function _geBuscarCambio() {
+      clearTimeout(_geBuscarT);
+      _geBuscarT = setTimeout(_geRenderLista, 180);
+    }
+    function _geBuscarLimpiar() {
+      const el = document.getElementById('ge-buscar');
+      if (el) { el.value = ''; el.focus(); }
+      clearTimeout(_geBuscarT);
+      _geRenderLista();
+    }
+
     function _geSeleccionarGrupo(id) {
       _geGrupoSel = id;
       _geRender();
@@ -9775,14 +9804,26 @@ Notas (Acciones ya escritas): ${accion || '—'}
           (multi ? ` · ${multi} cuenta${multi !== 1 ? 'n' : ''} en más de un grupo` : '');
       }
 
-      // Lista de personas del grupo elegido
+      _geCache = { lista, todas };
+      _geRenderLista();
+    }
+
+    // Solo redibuja la lista de tarjetas (usa los datos ya calculados); es lo que se llama al buscar
+    function _geRenderLista() {
+      if (!_geCache) { _geRender(); return; }
+      const { lista, todas } = _geCache;
       const sel = _geGrupoSel;
       const titulo = sel === 'todos' ? 'Todas las personas visitadas'
         : (todas.find(f => f.id === sel) || { nombre: '' }).nombre.replace(/^\S+\s/, '');
-      const vis = _geFiltrar(lista, sel);
+      const visGrupo = _geFiltrar(lista, sel);
+      const qEl = document.getElementById('ge-buscar');
+      const q = _geNorm(qEl ? qEl.value : '');
+      const vis = q ? visGrupo.filter(o => _geNorm(o.nombre).includes(q) || _geNorm(o.vivienda).includes(q)) : visGrupo;
       _geVisibles = vis;
+      const xEl = document.getElementById('ge-buscar-x');
+      if (xEl) xEl.style.display = q ? 'block' : 'none';
       const tEl = document.getElementById('ge-lista-titulo');
-      if (tEl) tEl.textContent = `${titulo} (${vis.length})`;
+      if (tEl) tEl.textContent = q ? `${titulo} (${vis.length} de ${visGrupo.length})` : `${titulo} (${vis.length})`;
       const cont = document.getElementById('ge-lista');
       if (!cont) return;
       if (!vis.length) {
@@ -9790,7 +9831,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <h3>Sin resultados</h3>
-          <p>No hay personas visitadas de este grupo en este período</p>
+          <p>${q ? 'Ninguna persona coincide con «' + _geEsc(qEl.value.trim()) + '»' : 'No hay personas visitadas de este grupo en este período'}</p>
         </div>`;
         return;
       }
@@ -9901,23 +9942,37 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _ctrlRenderLista();
     }
 
+    let _ctrlBuscarT = null;
+    function _ctrlBuscarCambio() {
+      clearTimeout(_ctrlBuscarT);
+      _ctrlBuscarT = setTimeout(_ctrlRenderLista, 180);
+    }
+    function _ctrlBuscarLimpiar() {
+      const el = document.getElementById('ctrl-buscar');
+      if (el) { el.value = ''; el.focus(); }
+      clearTimeout(_ctrlBuscarT);
+      _ctrlRenderLista();
+    }
+
     function _ctrlCambiarPeriodo(periodo) {
       _ctrlPeriodoActual = periodo;
-      ['hoy', 'dia', 'mes'].forEach((p) => {
+      ['hoy', 'dia', 'mes', 'anio'].forEach((p) => {
         const btn = document.getElementById('ctrl-periodo-' + p);
         if (btn) btn.classList.toggle('active', p === periodo);
       });
       const campoDia = document.getElementById('ctrl-campos-dia');
       const campoMes = document.getElementById('ctrl-campos-mes');
       if (campoDia) campoDia.style.display = (periodo === 'dia') ? '' : 'none';
-      if (campoMes) campoMes.style.display = (periodo === 'mes') ? '' : 'none';
+      if (campoMes) campoMes.style.display = (periodo === 'mes' || periodo === 'anio') ? '' : 'none';
+      const grupoMes = document.getElementById('ctrl-grupo-mes');
+      if (grupoMes) grupoMes.style.display = (periodo === 'mes') ? '' : 'none';
 
       const fechaEl = document.getElementById('ctrl-fecha');
       if (periodo === 'dia' && fechaEl && !fechaEl.value) fechaEl.value = hoy();
 
       const anioEl = document.getElementById('ctrl-anio');
       const mesEl  = document.getElementById('ctrl-mes');
-      if (periodo === 'mes') {
+      if (periodo === 'mes' || periodo === 'anio') {
         const ahora = new Date();
         if (anioEl && !anioEl.value) anioEl.value = ahora.getFullYear();
         if (mesEl  && !mesEl.value)  mesEl.value  = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -9991,11 +10046,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
     function _ctrlRenderLista() {
       const campoCampos = (_ctrlTipoActual === 'referencia') ? 'referenciaCampos' : 'informeCampos';
 
-      let fechaObjetivo = null, mesObjetivo = null;
+      let fechaObjetivo = null, mesObjetivo = null, anioObjetivo = null;
       if (_ctrlPeriodoActual === 'hoy') {
         fechaObjetivo = hoy();
       } else if (_ctrlPeriodoActual === 'dia') {
         fechaObjetivo = document.getElementById('ctrl-fecha').value || hoy();
+      } else if (_ctrlPeriodoActual === 'anio') {
+        anioObjetivo = String(document.getElementById('ctrl-anio').value || new Date().getFullYear());
       } else {
         const ahora = new Date();
         const anio = document.getElementById('ctrl-anio').value || ahora.getFullYear();
@@ -10011,15 +10068,24 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (!r[campoCampos]) return false;
         const gen = _ctrlMejorFechaEstimada(r);
         const ymd = _ctrlFechaLocalYMD(gen);
+        if (anioObjetivo) return ymd.slice(0, 4) === anioObjetivo;
         return mesObjetivo ? (ymd.slice(0, 7) === mesObjetivo) : (ymd === fechaObjetivo);
       });
       lista.sort((a, b) => _ctrlMejorFechaEstimada(b).localeCompare(_ctrlMejorFechaEstimada(a)));
 
+      const totalPeriodo = lista.length;
+      const qEl = document.getElementById('ctrl-buscar');
+      const q = _geNorm(qEl ? qEl.value : '');
+      if (q) lista = lista.filter((r) => _geNorm(r.nombre).includes(q) || _geNorm(r.vivienda).includes(q));
+      const xEl = document.getElementById('ctrl-buscar-x');
+      if (xEl) xEl.style.display = q ? 'block' : 'none';
+
       const resumenEl = document.getElementById('ctrl-resumen');
       if (resumenEl) {
+        const cuenta = q ? `${lista.length} de ${totalPeriodo}` : `${lista.length}`;
         resumenEl.textContent = (_ctrlTipoActual === 'referencia')
-          ? `${lista.length} referencia${lista.length !== 1 ? 's' : ''} generada${lista.length !== 1 ? 's' : ''}`
-          : `${lista.length} informe${lista.length !== 1 ? 's' : ''} de visita generado${lista.length !== 1 ? 's' : ''}`;
+          ? `${cuenta} referencia${lista.length !== 1 ? 's' : ''} generada${lista.length !== 1 ? 's' : ''}`
+          : `${cuenta} informe${lista.length !== 1 ? 's' : ''} de visita generado${lista.length !== 1 ? 's' : ''}`;
       }
 
       const cont = document.getElementById('ctrl-lista');
@@ -10029,7 +10095,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <h3>Sin resultados</h3>
-          <p>No se ha generado ninguna${_ctrlTipoActual === 'referencia' ? ' referencia' : ' informe'} en este período</p>
+          <p>${q ? 'Ninguna coincide con «' + _geEsc(qEl.value.trim()) + '»' : 'No se ha generado ninguna' + (_ctrlTipoActual === 'referencia' ? ' referencia' : ' informe') + ' en este período'}</p>
         </div>`;
         return;
       }
@@ -13455,6 +13521,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _ctrlCambiarTipo, _ctrlCambiarPeriodo, _ctrlRenderLista, _ctrlVerFicha,
       _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma, _ctrlEliminarEntrada,
       // Seguimiento por grupos etarios
+      _geBuscarCambio, _geBuscarLimpiar, _ctrlBuscarCambio, _ctrlBuscarLimpiar,
       _geCambiarPeriodo, _geSeleccionarGrupo, _geRender, _geToggleFechas, _geAbrirFamilia,
       _geAbrirVincular, _geCerrarVincular, _geVincular
     });
