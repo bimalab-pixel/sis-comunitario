@@ -4986,8 +4986,24 @@ function _riesgoParsearNota(texto, nombre) {
   if (m) datos.hbGdl = parseFloat(m[1].replace(',', '.'));
 
   // Presión arterial: "150/100", "hta 150/100", "pa 120/80"
-  m = t.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
-  if (m) { datos.paSistolica = parseInt(m[1], 10); datos.paDiastolica = parseInt(m[2], 10); }
+  // IMPORTANTE: se ignoran las fechas (ej. "18/08/2026" no es una PA) y solo se aceptan
+  // valores fisiológicamente posibles. Se prefiere el par que tenga contexto de PA
+  // (PA, TA, presión arterial, HTA, mmHg).
+  {
+    const reParPA = /(?<![\d\/.\-])(\d{2,3})\s*\/\s*(\d{2,3})(?!\s*[\/.\-]\s*\d)(?!\d)/g;
+    const candidatos = [];
+    let mp;
+    while ((mp = reParPA.exec(t)) !== null) {
+      const sis = parseInt(mp[1], 10), dia = parseInt(mp[2], 10);
+      if (sis < 60 || sis > 260 || dia < 30 || dia > 150 || sis <= dia) continue;
+      const antes = t.slice(Math.max(0, mp.index - 40), mp.index);
+      const despues = t.slice(mp.index + mp[0].length, mp.index + mp[0].length + 12);
+      const conContexto = /(?:\bpa\b|\bta\b|presi[oó]n(?:\s+arterial)?|hta|tensi[oó]n)[^\d]{0,25}$/i.test(antes) || /^\s*mm\s*hg/i.test(despues);
+      candidatos.push({ sis, dia, conContexto });
+    }
+    const elegido = candidatos.find(c => c.conContexto) || candidatos[0];
+    if (elegido) { datos.paSistolica = elegido.sis; datos.paDiastolica = elegido.dia; }
+  }
 
   // Glucosa: "glucosa 130", "glicemia 95 mg/dl"
   m = t.match(/\b(?:glucosa|glicemia|glucemia)\b[:\s]*?(\d+(?:[.,]\d+)?)/i);
@@ -9745,6 +9761,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (!confirm('Se cambiará el nombre en todos los registros de la vivienda ' + o.vivienda + ':\n\n«' + o.nombre + '»\n→ «' + _rdpsMay(p.nombre) + '»\n\n¿Continuar?')) return;
       const n = _geRenombrarRegistros(o.vivienda, o.nombre, p.nombre);
       _geCerrarVincular();
+      _lazyMantener();
       _geRender();
       toast(n ? '✅ ' + n + ' registro' + (n !== 1 ? 's' : '') + ' actualizado' + (n !== 1 ? 's' : '') + ': ahora dice' + (n !== 1 ? 'n' : '') + ' «' + _rdpsMay(p.nombre) + '»' : 'No había registros por cambiar', 'success', 4500);
     }
@@ -9809,6 +9826,35 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
 
     // Solo redibuja la lista de tarjetas (usa los datos ya calculados); es lo que se llama al buscar
+    // ── Carga por bloques (scroll infinito) para las listas largas ──
+    // Muestra los primeros LOTE elementos y, al acercarse al final, agrega el siguiente bloque.
+    let _lazyKeep = false;               // true = al redibujar conserva cuántos bloques ya se habían cargado
+    function _lazyMantener() { _lazyKeep = true; }
+    function _lazyRender(cont, items, fn, lote) {
+      lote = lote || 25;
+      if (cont._lazyObs) { cont._lazyObs.disconnect(); cont._lazyObs = null; }
+      let n = Math.min(items.length, (_lazyKeep && cont._lazyN) ? Math.max(cont._lazyN, lote) : lote);
+      _lazyKeep = false;
+      cont.innerHTML = items.slice(0, n).map((it, i) => fn(it, i)).join('');
+      cont._lazyN = n;
+      if (n >= items.length) return;
+      const s = document.createElement('div');
+      s.style.cssText = 'text-align:center;color:var(--muted);font-size:.78rem;padding:1rem 0';
+      s.textContent = 'Cargando más…';
+      cont.appendChild(s);
+      const obs = new IntersectionObserver((es) => {
+        if (!es[0].isIntersecting) return;
+        const sig = items.slice(n, n + lote);
+        s.insertAdjacentHTML('beforebegin', sig.map((it, i) => fn(it, n + i)).join(''));
+        n += sig.length;
+        cont._lazyN = n;
+        if (n >= items.length) { obs.disconnect(); s.remove(); cont._lazyObs = null; }
+        else { obs.unobserve(s); obs.observe(s); }   // vuelve a comprobar por si aún se ve el final
+      }, { rootMargin: '500px 0px' });
+      obs.observe(s);
+      cont._lazyObs = obs;
+    }
+
     function _geRenderLista() {
       if (!_geCache) { _geRender(); return; }
       const { lista, todas } = _geCache;
@@ -9835,7 +9881,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         </div>`;
         return;
       }
-      cont.innerHTML = vis.map((o, i) => {
+      const _tarjetaGe = (o, i) => {
         const f = o.fecha.split('-').reverse().join('/');
         const sexoB = o.sexo === 'F' ? '<span class="badge ge-b-f">♀ Femenino</span>'
           : o.sexo === 'M' ? '<span class="badge ge-b-m">♂ Masculino</span>'
@@ -9863,7 +9909,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
             </div>
           </div>
         </div>`;
-      }).join('');
+      };
+      _lazyRender(cont, vis, _tarjetaGe);
     }
 
     // ════════════════════════════════════
@@ -10099,7 +10146,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         </div>`;
         return;
       }
-      cont.innerHTML = lista.map((r) => _ctrlTarjeta(_ctrlTipoActual, r)).join('');
+      _lazyRender(cont, lista, (r) => _ctrlTarjeta(_ctrlTipoActual, r));
     }
 
     // Abre de nuevo, en el mismo visor que ya existe, la Referencia o el Informe tal como
@@ -10250,6 +10297,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _rdpsGuardarRegistrosLS();
       toast('✅ Firma guardada');
       _ctrlCerrarFirma();
+      _lazyMantener();
       _ctrlRenderLista();
     }
 
@@ -10281,6 +10329,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       registros[idx].actualizadoEn = new Date().toISOString(); // para que subirNube() detecte el cambio
       _rdpsGuardarRegistrosLS();
       toast('🗑️ Se quitó del Control de Entregas');
+      _lazyMantener();
       _ctrlRenderLista();
     }
 
