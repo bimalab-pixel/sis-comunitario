@@ -1752,6 +1752,16 @@
             white-space: nowrap;
         }
 
+        /* Etiquetas de la barra: nombre completo en pantallas anchas,
+           iniciales en celulares para que no se encimen. */
+        .imc-label .lbl-ini { display: none; }
+        @media (max-width: 520px) {
+            .imc-label .lbl-full { display: none; }
+            .imc-label .lbl-ini { display: inline; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.02em; }
+            .range-scale { font-size: 0.7rem; }
+            .ranges-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+        }
+
         .imc-indicator {
             position: absolute;
             top: -6px;
@@ -3029,7 +3039,7 @@
                     <p style="color: var(--muted); margin-bottom: 1rem;">
                         Esta acción no se puede deshacer.
                     </p>
-                    <button class="btn btn-danger" onclick="if(confirm('¿Eliminar TODOS los datos?')) { DB.personas=[]; DB.mediciones=[]; guardarDatos(); alert('✅ Datos eliminados'); location.reload(); }">🗑️ Borrar Todo</button>
+                    <button class="btn btn-danger" onclick="borrarTodo()">🗑️ Borrar Todo</button>
 
                     <div style="margin-top: 1.5rem;">
                         <p style="color: var(--muted); margin-bottom: 0.75rem;">
@@ -3463,8 +3473,8 @@
                 : 'underweight'; /* Peso bajo en adulto estándar */
 
             const rangos = esMayor
-                ? { min: 15, max: 40, c1: 23, c2: 28, c3: 32, l1: 'Desnutrición', l2: 'Normal', l3: 'Sobrepeso', l4: 'Obesidad' }
-                : { min: 15, max: 40, c1: 18.5, c2: 25, c3: 30, l1: 'Peso bajo', l2: 'Normal', l3: 'Sobrepeso', l4: 'Obesidad' };
+                ? { min: 15, max: 40, c1: 23, c2: 28, c3: 32, l1: 'Desnutrición', l2: 'Normal', l3: 'Sobrepeso', l4: 'Obesidad', i1: 'D', i2: 'N', i3: 'S', i4: 'O' }
+                : { min: 15, max: 40, c1: 18.5, c2: 25, c3: 30, l1: 'Peso bajo', l2: 'Normal', l3: 'Sobrepeso', l4: 'Obesidad', i1: 'PB', i2: 'N', i3: 'S', i4: 'O' };
 
             const posPct = v => Math.max(0, Math.min(100, ((v - rangos.min) / (rangos.max - rangos.min)) * 100));
 
@@ -3521,10 +3531,10 @@
                             </div>
                         </div>
                         <div class="imc-labels">
-                            <div class="imc-label" style="left:${posPct((rangos.min + rangos.c1) / 2).toFixed(0)}%;">${rangos.l1}</div>
-                            <div class="imc-label" style="left:${posPct((rangos.c1 + rangos.c2) / 2).toFixed(0)}%;">${rangos.l2}</div>
-                            <div class="imc-label" style="left:${posPct((rangos.c2 + rangos.c3) / 2).toFixed(0)}%;">${rangos.l3}</div>
-                            <div class="imc-label" style="left:${posPct((rangos.c3 + rangos.max) / 2).toFixed(0)}%;">${rangos.l4}</div>
+                            <div class="imc-label" style="left:${posPct((rangos.min + rangos.c1) / 2).toFixed(0)}%;" title="${rangos.l1}"><span class="lbl-full">${rangos.l1}</span><span class="lbl-ini">${rangos.i1}</span></div>
+                            <div class="imc-label" style="left:${posPct((rangos.c1 + rangos.c2) / 2).toFixed(0)}%;" title="${rangos.l2}"><span class="lbl-full">${rangos.l2}</span><span class="lbl-ini">${rangos.i2}</span></div>
+                            <div class="imc-label" style="left:${posPct((rangos.c2 + rangos.c3) / 2).toFixed(0)}%;" title="${rangos.l3}"><span class="lbl-full">${rangos.l3}</span><span class="lbl-ini">${rangos.i3}</span></div>
+                            <div class="imc-label" style="left:${posPct((rangos.c3 + rangos.max) / 2).toFixed(0)}%;" title="${rangos.l4}"><span class="lbl-full">${rangos.l4}</span><span class="lbl-ini">${rangos.i4}</span></div>
                         </div>
                         <div class="range-scale">
                             <div class="range-value" style="left:0%; transform:translateX(0%);">${rangos.min}</div>
@@ -4734,6 +4744,34 @@
             }).join('');
         }
 
+        // Marca como "ignoradas" las visitas de Registro Diario (cola rdps_curvas_cola)
+        // de las personas que se van a borrar (null = todas). Sin esto, la
+        // sincronización automática las vuelve a crear desde el Mapa Sanitario.
+        function _cvIgnorarColaDe(personas) {
+            let cola = null;
+            try { cola = JSON.parse(localStorage.getItem('rdps_curvas_cola') || 'null'); } catch (e) {}
+            if (!cola || !Array.isArray(cola.items)) return;
+            const toks = personas ? new Set(personas.map(p => _mpTok(p.nombre)).filter(Boolean)) : null;
+            const ign = new Set((DB.config && DB.config.cvIgnoradosMasivo) || []);
+            cola.items.forEach(it => {
+                if (!it || !it.regId || !it.fecha || it.pesoKg == null) return;
+                if (toks && !toks.has(_mpTok(it.nombre))) return;
+                ign.add(_cvClaveOrigen(it.regId, it.fecha, it.pesoKg, it.tallaCm));
+            });
+            if (!DB.config) DB.config = {};
+            DB.config.cvIgnoradosMasivo = [...ign];
+        }
+
+        function borrarTodo() {
+            if (!confirm('¿Eliminar TODOS los datos?')) return;
+            _cvIgnorarColaDe(null);
+            DB.personas = [];
+            DB.mediciones = [];
+            guardarDatos();
+            alert('✅ Datos eliminados');
+            location.reload();
+        }
+
         function borrarPorGrupoEdad(grupoId) {
             const grupo = GRUPOS_EDAD.find(g => g.id === grupoId);
             if (!grupo) return;
@@ -4742,6 +4780,7 @@
             if (!confirm(`¿Eliminar ${aBorrar.length} persona(s) del grupo "${grupo.label} (${grupo.sub})" y todas sus mediciones? Esta acción no se puede deshacer.`)) return;
 
             const idsABorrar = new Set(aBorrar.map(p => p.id));
+            _cvIgnorarColaDe(aBorrar);
             DB.personas = DB.personas.filter(p => !idsABorrar.has(p.id));
             DB.mediciones = DB.mediciones.filter(m => !idsABorrar.has(m.personaId));
             guardarDatos();
@@ -9013,7 +9052,7 @@
                     return mapaIdx;
                 };
 
-                const ignorados = new Set((DB.config && DB.config.cvIgnorados) || []);
+                const ignorados = new Set([...((DB.config && DB.config.cvIgnorados) || []), ...((DB.config && DB.config.cvIgnoradosMasivo) || [])]);
                 const idsUsados = new Set(DB.mediciones.map(m => m.id));
                 let baseId = Date.now();
                 const nuevoId = () => { let id; do { id = String(baseId++); } while (idsUsados.has(id)); idsUsados.add(id); return id; };
@@ -9147,6 +9186,11 @@
 
         // Botón "Revisar Registro Diario": fuerza la sincronización y muestra el resultado
         function cvRevisarManual() {
+            // Pulsar el botón es una orden explícita: recupera lo ignorado por "Borrar"
+            if (DB.config && DB.config.cvIgnoradosMasivo && DB.config.cvIgnoradosMasivo.length) {
+                DB.config.cvIgnoradosMasivo = [];
+                try { guardarDatos(); } catch (e) {}
+            }
             let raw = null;
             try { raw = localStorage.getItem('rdps_curvas_cola'); } catch (e) {}
             if (!raw) {

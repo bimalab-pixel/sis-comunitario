@@ -12015,10 +12015,66 @@ Notas (Acciones ya escritas): ${accion || '—'}
         localCat.forEach(v => { mergedFam[String(v.id)] = v; });
         let famNuevas = 0, famActualizadas = 0;
 
+        // ── Anti-duplicados por NÚMERO DE VIVIENDA ─────────────────
+        // Una vivienda importada del Mapa Sanitario recibe un id nuevo en cada dispositivo
+        // (viv_<fecha>_xxxx), distinto del id que ya tiene en la nube. Comparar solo por id
+        // las trataba como familias distintas y las duplicaba. Ahora, si la nube trae una
+        // vivienda cuyo id no existe aquí pero el MISMO número sí, se fusionan en una sola
+        // (se adopta el id de la nube, para que no se vuelva a duplicar al subir).
+        const _fNorm = s => String(s == null ? '' : s).trim().toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+        const idsDeNube = new Set();
+        function _fusionarGemela(local, nube) {
+          const res = Object.assign({}, nube);
+          res.personas = (nube.personas || []).map(p => Object.assign({}, p));
+          let cambio = false;
+          (local.personas || []).forEach(lp => {
+            const ln = _fNorm(lp.nombre);
+            const np = res.personas.find(p =>
+              (lp.id && p.id === lp.id) ||
+              (lp.origenMapa && p.origenMapa && lp.origenMapa === p.origenMapa) ||
+              (ln && _fNorm(p.nombre) === ln));
+            if (!np) { res.personas.push(Object.assign({}, lp)); cambio = true; return; }
+            // Solo se completan datos vacíos; nunca se pisa lo que ya tiene la nube
+            ['sexo', 'fnac', 'edad', 'origenMapa'].forEach(k => {
+              if (!np[k] && lp[k]) { np[k] = lp[k]; cambio = true; }
+            });
+          });
+          if (cambio) res.actualizadoEn = new Date().toISOString(); // para que suba en la próxima sincronización
+          return res;
+        }
+        function _buscarGemela(v) {
+          const num = _fNorm(v.vivienda);
+          if (!num) return null;
+          return Object.values(mergedFam).find(x =>
+            !idsDeNube.has(String(x.id)) && _fNorm(x.vivienda) === num) || null;
+        }
+        function _incorporarFamiliaNube(v, id) {
+          const local = mergedFam[id];
+          if (!local) {
+            const gemela = _buscarGemela(v);
+            if (gemela) {
+              delete mergedFam[String(gemela.id)];
+              mergedFam[id] = _fusionarGemela(gemela, v);
+              famActualizadas++;
+            } else {
+              mergedFam[id] = v; famNuevas++;
+            }
+            idsDeNube.add(id);
+            return;
+          }
+          idsDeNube.add(id);
+          const tsN = new Date(v.actualizadoEn || 0).getTime();
+          const tsL = new Date(local.actualizadoEn || 0).getTime();
+          if (tsN > tsL) { mergedFam[id] = v; famActualizadas++; }
+        }
+
         famSnap.forEach(d => {
           const v  = d.data();
           const id = String(v.id || d.id);
           if (lapFam[id]) return; // FIX: ignorar si fue borrado localmente
+          _incorporarFamiliaNube(v, id);
+          return;
           const local = mergedFam[id];
           if (!local) {
             mergedFam[id] = v; famNuevas++;
@@ -12034,6 +12090,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
           data.catalogo.forEach(v => {
             const id = String(v.id);
             if (lapFam[id]) return; // FIX: respetar lápidas también en v1
+            _incorporarFamiliaNube(v, id);
+            return;
             const local = mergedFam[id];
             if (!local) {
               mergedFam[id] = v; famNuevas++;

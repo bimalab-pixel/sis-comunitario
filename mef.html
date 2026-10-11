@@ -6287,7 +6287,71 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
     // ficha sin reescribir todas; esto también lee el formato antiguo (array) por compatibilidad.
     function recordsToArray(data){const r=data&&data.records;if(!r)return[];return Array.isArray(r)?r:Object.values(r);}
 
-    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{const map={};lr.forEach(r=>{if(r&&r.id)map[r.id]=r;});await setDoc(doc(db,'usuarios_pf',k),{records:map,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:lr.length});_acResetSnapshot();setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
+    /* ══ PROTECCIÓN CONTRA SOBRESCRITURA ══
+       Las fichas importadas (Excel / Mapa Sanitario) usan un id determinista (nombre + fecha de
+       nacimiento), así que tienen el MISMO id que la ficha completa que ya está en la nube.
+       Antes, al subir, esa ficha "solo con nombre" reemplazaba a la completa y se perdían las
+       atenciones. Ahora, antes de escribir, se compara con lo que hay en la nube:
+         • Ficha local "virgen" (solo tiene la nota automática de importación) → se conserva la de la nube.
+         • Ficha local con trabajo propio → se FUSIONA: historial de ambas (sin repetir) y los campos
+           vacíos se completan con los de la otra; manda la más reciente. */
+    function _acEsVacio(v){return v==null||v===''||(Array.isArray(v)&&!v.length)||(typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length);}
+    function _acFusionarFicha(l,c){
+      const hl=l.historial||[],hc=c.historial||[];
+      const virgen=hl.every(e=>e&&typeof e.id==='string'&&/_(imp|ms)_/.test(e.id));
+      if(virgen)return{res:c,adoptada:true};
+      const mapa={};
+      hc.concat(hl).forEach(e=>{if(!e)return;const key=e.id||[e.fecha,e.tipo,e.detalle].join('|');if(!mapa[key])mapa[key]=e;});
+      const hist=Object.keys(mapa).map(x=>mapa[x]).sort((a,b)=>String(a.ts||a.fecha||'').localeCompare(String(b.ts||b.fecha||'')));
+      const tl=Date.parse(l.updatedAt)||0,tc=Date.parse(c.updatedAt)||0;
+      const base=tl>=tc?l:c,otro=tl>=tc?c:l;
+      const res=Object.assign({},base);
+      Object.keys(otro).forEach(key=>{if(_acEsVacio(res[key])&&!_acEsVacio(otro[key]))res[key]=otro[key];});
+      res.historial=hist;
+      return{res,adoptada:false};
+    }
+    // Sube-manual: mezcla 'map' (lo local) con lo que ya hay en la nube ANTES de escribir.
+    async function _acFusionarConNubeAntesDeSubir(k,map){
+      let sn;try{sn=await getDoc(doc(db,'usuarios_pf',k));}catch(e){return;}
+      if(!sn.exists())return;
+      let hubo=false;
+      recordsToArray(sn.data()).forEach(c=>{
+        if(!c||!c.id)return;
+        const l=map[c.id];
+        if(!l){map[c.id]=c;hubo=true;return;}   // solo existía en la nube: se conserva
+        map[c.id]=_acFusionarFicha(l,c).res;hubo=true;
+      });
+      if(hubo){
+        const orden=(window.records||[]).map(r=>r.id),lista=[];
+        orden.forEach(id=>{if(map[id])lista.push(map[id]);});
+        Object.keys(map).forEach(id=>{if(orden.indexOf(id)<0)lista.push(map[id]);});
+        try{localStorage.setItem('minsal_pf_v2',JSON.stringify(lista));}catch(e){}
+        if(window.reloadFromStorage)window.reloadFromStorage();
+      }
+    }
+    // Sincronización automática: reconcilia las fichas pendientes con la nube antes de subirlas.
+    async function _acReconciliarConNube(k,ids){
+      const sn=await getDoc(doc(db,'usuarios_pf',k));
+      if(!sn.exists())return;
+      const nube={};recordsToArray(sn.data()).forEach(r=>{if(r&&r.id)nube[r.id]=r;});
+      const lista=window.records||[];let toco=false;
+      ids.forEach(id=>{
+        const c=nube[id],l=_acChanged[id];
+        if(!c||!l)return;
+        const f=_acFusionarFicha(l,c);
+        const i=lista.findIndex(x=>x&&x.id===id);
+        if(i>-1)lista[i]=f.res;
+        _acSnapshot[id]=JSON.stringify(f.res);
+        if(f.adoptada)delete _acChanged[id];else _acChanged[id]=f.res;
+        toco=true;
+      });
+      if(toco){
+        try{localStorage.setItem('minsal_pf_v2',JSON.stringify(lista));}catch(e){}
+        if(window.reloadFromStorage)window.reloadFromStorage();
+      }
+    }
+
+    window.confirmUpload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}if(!lr.length){window.showModal&&window.showModal('Sin datos','No hay fichas guardadas.',null);return;}const k=userKey(p.nombre);window.showModal&&window.showModal('Subir a la nube',`Se subirán <strong>${lr.length} fichas</strong> de <strong>${p.nombre}</strong>.<br><br>¿Continuar?`,async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Subiendo…','loading');try{const map={};lr.forEach(r=>{if(r&&r.id)map[r.id]=r;});await _acFusionarConNubeAntesDeSubir(k,map);await setDoc(doc(db,'usuarios_pf',k),{records:map,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:new Date().toISOString(),count:Object.keys(map).length});_acResetSnapshot();setCS('✓ '+lr.length+' fichas subidas · '+new Date().toLocaleTimeString('es-SV'),'ok');window.showToast&&window.showToast('✓ '+lr.length+' fichas subidas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al subir','error');}finally{setCSBtns(false);}});};
     window.confirmDownload=function(){const p=window.loadProfile?window.loadProfile():{};if(!p.nombre){window.showModal&&window.showModal('Perfil sin configurar','Configura tu nombre primero.',null);return;}let lr=[];try{lr=JSON.parse(localStorage.getItem('minsal_pf_v2'))||[];}catch(e){}const k=userKey(p.nombre);const lm=lr.length>0?'Este dispositivo tiene <strong>'+lr.length+' fichas locales</strong> que serán reemplazadas.':'El dispositivo está vacío.';window.showModal&&window.showModal('Bajar de la nube','Espacio: <em>usuarios_pf/'+k+'</em><br><br>'+lm+'<br><br>¿Continuar?',async()=>{setCSBtns(true);setCS('<span class="cspin">↻</span>&nbsp;Descargando…','loading');try{const snap=await getDoc(doc(db,'usuarios_pf',k));if(!snap.exists()){setCS('⚠ No encontré tus datos en la nube.','err');window.showToast&&window.showToast('⚠ Sin datos en la nube','error');setCSBtns(false);return;}const data=snap.data();const cr=recordsToArray(data);if(!cr.length){setCS('⚠ Nube vacía.','err');setCSBtns(false);return;}localStorage.setItem('minsal_pf_v2',JSON.stringify(cr));if(window.reloadFromStorage)window.reloadFromStorage();_acResetSnapshot();const ua=data.updatedAt?new Date(data.updatedAt).toLocaleString('es-SV'):'—';setCS('✓ '+cr.length+' fichas descargadas · Subido: '+ua,'ok');window.showToast&&window.showToast('✓ '+cr.length+' fichas descargadas','success');}catch(err){setCS('✗ Error: '+(err.message||'sin conexión'),'err');window.showToast&&window.showToast('✗ Error al bajar','error');}finally{setCSBtns(false);}});};
 
     /* ══ SINCRONIZACIÓN AUTOMÁTICA INCREMENTAL ══
@@ -6328,8 +6392,15 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       if(!navigator.onLine){setCS('☁ '+(changedIds.length+deletedIds.length)+' cambio(s) pendientes · sin internet','');return;}
       _acBusy=true;
       setCS('<span class="cspin">↻</span>&nbsp;Sincronizando '+(changedIds.length+deletedIds.length)+' cambio(s)…','loading');
+      // No pisar en la nube una ficha completa con una ficha recién importada (solo nombre)
+      try{await _acReconciliarConNube(k,changedIds);}catch(e){console.warn('No se pudo reconciliar con la nube:',e);}
+      if(!Object.keys(_acChanged).length && !deletedIds.length){
+        _acPersistPending();_acBusy=false;
+        setCS('✓ Al día con la nube · '+new Date().toLocaleTimeString('es-SV'),'ok');
+        return;
+      }
       const upd={updatedAt:new Date().toISOString(),count:(window.records||[]).length};
-      changedIds.forEach(id=>{upd['records.'+id]=_acChanged[id];});
+      Object.keys(_acChanged).forEach(id=>{upd['records.'+id]=_acChanged[id];});
       deletedIds.forEach(id=>{upd['records.'+id]=deleteField();});
       const ref=doc(db,'usuarios_pf',k);
       try{
@@ -6338,7 +6409,7 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
         // El documento aún no existe en la nube: crearlo con lo pendiente
         try{
           const p=window.loadProfile();
-          const base={};changedIds.forEach(id=>{base[id]=_acChanged[id];});
+          const base={};Object.keys(_acChanged).forEach(id=>{base[id]=_acChanged[id];});
           await setDoc(ref,{records:base,nombre:p.nombre,cargo:p.cargo||'',ucsf:p.ucsf||'',updatedAt:upd.updatedAt,count:upd.count},{merge:true});
         }catch(err2){
           _acBusy=false;
@@ -6346,7 +6417,7 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
           return;
         }
       }
-      changedIds.forEach(id=>delete _acChanged[id]);
+      Object.keys(upd).filter(x=>x.indexOf('records.')===0).forEach(x=>delete _acChanged[x.slice(8)]);
       deletedIds.forEach(id=>delete _acDeleted[id]);
       _acPersistPending();
       _acBusy=false;

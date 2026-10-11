@@ -727,138 +727,52 @@
         @media(max-width:380px){
         }
 
-        /* ══════════════ PRINT — tamaño legible, llena la hoja carta ══════════════ */
+        /* ══════════════ IMPRESIÓN — hoja independiente (#print-sheet) ══════════════
+           La ficha NO se imprime desde la pantalla de la app: se arma una hoja aparte con los
+           datos, todo en unidades "em", y se ajusta el tamaño de letra para que quepa en UNA
+           sola hoja carta. En impresión se oculta todo lo demás. */
+        #print-sheet{display:none}
+        #print-sheet.ps-measure{display:block;position:fixed;left:-99999px;top:0;width:188mm;visibility:hidden;pointer-events:none}
+        #print-sheet{font-family:'DM Sans',Arial,sans-serif;color:#000;background:#fff;font-size:var(--ps-fs,11px);line-height:1.3}
+        #print-sheet *{box-sizing:border-box;margin:0;padding:0}
+        #print-sheet .ps-inner{width:100%}
+        #print-sheet .ps-head{display:flex;align-items:center;gap:1em;padding-bottom:.55em;border-bottom:.14em solid #000}
+        #print-sheet .ps-logo{width:7.6em;height:3.4em;object-fit:contain;flex-shrink:0}
+        #print-sheet .ps-titles{flex:1;text-align:center}
+        #print-sheet .ps-sup{font-size:.72em;text-transform:uppercase;letter-spacing:.06em}
+        #print-sheet .ps-h2{font-family:'DM Serif Display',Georgia,serif;font-size:1.55em;font-weight:400;margin:.1em 0}
+        #print-sheet .ps-num{font-size:.9em;font-weight:700}
+        #print-sheet .ps-cat{margin-top:.5em;font-size:.95em}
+        #print-sheet .ps-cat b{border:.09em solid #000;border-radius:.3em;padding:.08em .6em;margin-left:.3em}
+        #print-sheet .ps-sec{margin-top:.75em;padding-bottom:.15em;border-bottom:.08em solid #000;font-size:.8em;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+        #print-sheet .ps-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:.4em;margin-top:.4em}
+        #print-sheet .ps-f label{display:block;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:.1em}
+        #print-sheet .ps-box{border:.07em solid #777;border-radius:.3em;padding:.25em .5em;min-height:1.9em;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere}
+        #print-sheet .ps-box.big{min-height:3.4em;margin-top:.4em}
+        #print-sheet .ps-sub{font-size:.75em;margin-top:.25em}
+        #print-sheet table{width:100%;border-collapse:collapse;margin-top:.4em;table-layout:fixed}
+        #print-sheet th,#print-sheet td{border:.07em solid #777;padding:.18em .3em;text-align:center;font-size:.9em;overflow:hidden;word-break:break-word}
+        #print-sheet th{font-size:.75em;text-transform:uppercase;border-bottom:.12em solid #000}
+        #print-sheet td.l,#print-sheet th.l{text-align:left}
+        #print-sheet .ps-two{display:grid;grid-template-columns:1fr;gap:.5em;margin-top:.4em}
+        #print-sheet .ps-two .ps-f:last-child{max-width:45%}
+        #print-sheet .ps-gps{margin-top:.4em;font-size:.82em}
+        #print-sheet .ps-sigs{display:grid;grid-template-columns:1fr 1fr;gap:1.6em;margin-top:.4em}
+        #print-sheet .ps-sigimg{height:4.6em;border-bottom:.08em solid #000;display:flex;align-items:flex-end;justify-content:center}
+        #print-sheet .ps-sigimg img{max-height:100%;max-width:100%;object-fit:contain;display:block}
+        #print-sheet .ps-signame{text-align:center;font-size:.95em;margin-top:.2em;min-height:1.3em;word-break:break-word}
+        #print-sheet .ps-siglbl{text-align:center;font-size:.72em;text-transform:uppercase;letter-spacing:.03em}
+
         @media print{
-          @page{size:Letter portrait;margin:12mm 14mm}
+          @page{size:Letter portrait;margin:10mm}
           *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-          html,body{height:auto!important;overflow:visible!important;font-size:11.5px!important}
-
-          /* Ocultar todas las pantallas excepto el formulario */
-          .screen{display:none!important;position:static!important;opacity:1!important;transform:none!important}
-          #screen-form{display:flex!important;position:static!important;height:auto!important;overflow:visible!important;}
-          .topbar{display:none!important}
-          .scroller{overflow:visible!important;padding:0!important;height:auto!important}
-          .form-actions{display:none!important}
-          .add-row-btn,.del-row-btn{display:none!important}
-
-          /* Encabezado — logo izquierda, texto centrado */
-          .form-header{
-            padding:.75rem 1.1rem!important;
-            background:#fff!important;
-            border-bottom:1.5px solid #000!important;
-            flex-direction:row!important;
-            align-items:center!important;
-            text-align:center!important;
-            gap:.8rem!important;
-          }
-          .fh-emblem{display:flex!important;align-items:center!important;flex-shrink:0!important}
-          .fh-logo-minsal{width:28mm!important;height:auto!important;display:block!important;filter:none!important;opacity:1!important}
-          .fh-text{text-align:center!important;flex:1!important}
-          .fh-text .fh-sup{color:#000!important;opacity:1!important;font-size:.68rem!important}
-          .fh-text h2{color:#000!important;font-size:1rem!important;margin:.15rem 0 .2rem!important}
-          .fh-text .fh-num{color:#000!important;opacity:1!important;font-size:.8rem!important}
-
-          /* Títulos de sección — sin fondo, solo borde inferior y texto negro en mayúsculas */
-          .fs-title{
-            margin:.7rem -1.1rem .5rem!important;
-            padding:.25rem 1.1rem!important;
-            font-size:.68rem!important;
-            background:#fff!important;
-            color:#000!important;
-            border:none!important;
-            border-bottom:1px solid #000!important;
-          }
-
-          /* Cuerpo del formulario */
-          .form-body{padding:.6rem 1.1rem .8rem!important}
-
-          /* Tamaños de texto encabezado */
-          .fh-text h2{font-size:1rem!important;margin:.15rem 0 .2rem!important}
-          .fh-text .fh-sup{font-size:.68rem!important}
-          .fh-text .fh-num{font-size:.8rem!important}
-
-          /* Tabla signos vitales — sin color */
-          .vt th{background:#fff!important;color:#000!important;font-size:.65rem!important;padding:.35rem .3rem!important;border-bottom:1px solid #000!important}
-
-          /* Grillas */
-          .fg{gap:.45rem!important}
-          .fg.c3{grid-template-columns:1fr 1fr 1fr!important}
-          .fg.c2{grid-template-columns:1fr 1fr!important}
-
-          /* Etiquetas y campos */
-          .f-group label{font-size:.68rem!important}
-          .f-group input{
-            font-size:.88rem!important;
-            padding:.28rem .5rem!important;
-            background:#fff!important;
-            border-color:#aaa!important;
-            border-radius:4px!important;
-            color:#000!important;
-          }
-
-          /* Textareas → usar mirror div para mostrar todo el contenido */
-          .f-group textarea{display:none!important}
-          /* Inputs de texto/fecha/hora y firma → ocultar, mostrar mirror */
-          #f-ucsf,#f-expediente,#f-nombre,#f-fecha,#f-hora-inicio,#f-hora-fin,
-          #f-firma-usuario,#f-firma-personal,#f-seguimiento{display:none!important}
-          .print-mirror{
-            display:block!important;
-            font-size:.88rem!important;
-            padding:.28rem .5rem!important;
-            background:#fff!important;
-            border:1px solid #aaa!important;
-            border-radius:4px!important;
-            white-space:pre-wrap!important;
-            word-break:break-word!important;
-            min-height:22px!important;
-            line-height:1.55!important;
-            color:#000!important;
-            font-family:'DM Sans',sans-serif!important;
-          }
-
-          /* Tabla de signos vitales */
-          .vitals-wrap{border:1.5px solid #bbb!important;overflow:visible!important;border-radius:4px!important}
-          .vt{min-width:unset!important;table-layout:auto!important}
-          .vt td{padding:.18rem .3rem!important;text-align:center!important;vertical-align:middle!important}
-          .vt td.vt-nombre{text-align:left!important}
-          .vt input{display:none!important}
-          .vt .vt-print-val{
-            display:block!important;
-            width:100%!important;
-            font-size:.8rem!important;
-            color:#000!important;
-            text-align:center!important;
-            white-space:nowrap!important;
-            overflow:hidden!important;
-            text-overflow:ellipsis!important;
-          }
-          .vt td.vt-nombre .vt-print-val{text-align:left!important;white-space:normal!important;}
-
-          /* Firmas */
-          .sig-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
-          .sig-box label{font-size:.68rem!important}
-          .sig-box input{font-size:.88rem!important;display:none!important}
-          .sig-line{height:44px!important}
-
-          /* ── Ajuste a UNA sola hoja por visita ── */
-          .form-card{zoom:var(--pf-zoom,1)!important;box-shadow:none!important;margin:0!important;max-width:none!important;width:100%!important;overflow:visible!important;border-radius:0!important}
-          .form-header,.fs-title,.vitals-wrap,.sig-grid,.sig-box,.vt tr{break-inside:avoid!important;page-break-inside:avoid!important}
-          .fs-title{break-after:avoid!important;page-break-after:avoid!important}
-          html,body{margin:0!important;padding:0!important;background:#fff!important}
-          #screen-form{background:#fff!important}
-          .toast{display:none!important}
-
-          /* ── Ocultar banner PWA en impresión ── */
-          #install-banner{display:none!important}
-
-          /* ── Categoría en impresión ── */
-          .cat-bar{background:#fff!important;border-bottom:1px solid #000!important;padding:.4rem 1.1rem!important;}
-          .cat-label{color:#000!important;font-size:.7rem!important;}
-          .cat-dropdown-list{display:none!important;}
-          .cat-dropdown-btn{
-            background:#fff!important;border:1.5px solid #000!important;
-            color:#000!important;font-size:.8rem!important;font-weight:700!important;
-            min-width:unset!important;pointer-events:none!important;
+          html,body{height:auto!important;min-height:0!important;overflow:visible!important;margin:0!important;padding:0!important;background:#fff!important}
+          body>*:not(#print-sheet){display:none!important}
+          #print-sheet,#print-sheet.ps-measure{
+            display:block!important;position:static!important;visibility:visible!important;
+            left:auto!important;top:auto!important;width:188mm!important;max-width:none!important;margin:0 auto!important;
+            height:253mm!important;overflow:hidden!important;
+            break-inside:avoid;page-break-inside:avoid;break-after:avoid;page-break-after:avoid
           }
         }
         /* ══════════════ BANNER INSTALACIÓN PWA ══════════════ */
@@ -2431,6 +2345,13 @@
         visitaGPS: window._sigGPS || null,
         savedAt: new Date().toISOString()
       };
+      // Si la ficha vino de Registro Diario, conserva el vínculo (para no duplicarla al
+      // sincronizar de nuevo) y marca que ya fue editada aquí (no se sobrescribe sola).
+      if(existingRec && existingRec.origenRD){
+        rec.origenRD = existingRec.origenRD;
+        rec.rdActualizadoEn = existingRec.rdActualizadoEn || '';
+        rec.editadaLocal = true;
+      }
       if(editingId){ const idx=records.findIndex(r=>r.id===editingId); if(idx>-1) records[idx]=rec; }
       else{ records.push(rec); editingId=rec.id; }
       saveRecords(); updateHomeStats();
@@ -2446,6 +2367,15 @@
       });
     }
     function doDelete(id){
+      // Si la ficha vino de Registro Diario, se recuerda para que la sincronización automática no la reviva
+      try{
+        const _r = records.find(r=>r.id===id);
+        if(_r && _r.origenRD){
+          const d = JSON.parse(localStorage.getItem('minsal_rd_descartadas_v1')||'{}')||{};
+          d[_r.origenRD] = new Date().toISOString();
+          localStorage.setItem('minsal_rd_descartadas_v1', JSON.stringify(d));
+        }
+      }catch(e){}
       // Guardar lápida de eliminación para sincronización futura
       try{
         const deleted = JSON.parse(localStorage.getItem('minsal_deleted_v1'))||{};
@@ -2534,46 +2464,153 @@
       }, 50);
     }
 
-    /* ════════════════ AJUSTE A UNA SOLA HOJA (impresión / PDF) ════════════════ */
-    // Mide la ficha con las reglas de @media print y reduce el tamaño del texto lo justo
-    // para que toda la visita quepa en una hoja carta, sin pasar a una segunda página.
-    function fitPrintOnePage(){
-      try{
-        const card = document.querySelector('#screen-form .form-card');
-        const scr  = document.getElementById('screen-form');
-        if(!card || !scr) return;
-        let st = document.getElementById('pf-measure-style');
-        if(!st){
-          let css = '';
-          for(const sh of document.styleSheets){
-            let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
-            for(const r of rules){
-              if(r.type === CSSRule.MEDIA_RULE && /(^|[\s,])print([\s,]|$)/.test(r.media.mediaText)){
-                for(const ir of r.cssRules){ if(ir.type !== CSSRule.PAGE_RULE) css += ir.cssText + '\n'; }
-              }
-            }
-          }
-          st = document.createElement('style'); st.id = 'pf-measure-style'; st.disabled = true;
-          st.textContent = css; document.head.appendChild(st);
-        }
-        // Área útil de una hoja carta: (279.4 − 24) mm de alto y (215.9 − 28) mm de ancho, a 96 dpi
-        const PX = 96/25.4, availH = (279.4-24)*PX - 10, printW = (215.9-28)*PX;
-        const prevW = scr.style.width;
-        st.disabled = false;
-        scr.style.setProperty('width', printW+'px', 'important');
-        let best = 0.45;
-        for(let z = 1; z >= 0.45; z = Math.round((z-0.02)*100)/100){
-          card.style.setProperty('--pf-zoom', z);
-          if(card.getBoundingClientRect().height <= availH){ best = z; break; }
-        }
-        card.style.setProperty('--pf-zoom', best);
-        st.disabled = true;
-        scr.style.width = prevW;
-      }catch(e){ console.warn('fitPrintOnePage', e); }
-    }
-    window.addEventListener('beforeprint', ()=>{ try{ syncAllMirrors(); fitPrintOnePage(); }catch(e){} });
+    /* ════════════════ IMPRESIÓN / PDF — UNA SOLA HOJA CARTA ════════════════
+       Se arma una hoja independiente (#print-sheet, hija directa de <body>) con los datos de la
+       ficha y se ajusta el tamaño de letra para que TODO quepa en una sola página. Al imprimir
+       solo se muestra esa hoja (el resto de la app se oculta por CSS), por eso ya no sale en blanco. */
+    const PS_MAX_H_MM = 253;      // alto útil de la hoja (carta 279.4 − 2×10 mm de margen − holgura)
+    const PS_FS_MAX = 12.5, PS_FS_MIN = 3.5;   // tamaño de letra (px) máximo y mínimo permitido
 
-    function printForm(){ syncAllMirrors(); fitPrintOnePage(); window.print(); }
+    function psSheet(){
+      let el = document.getElementById('print-sheet');
+      if(!el){ el = document.createElement('div'); el.id = 'print-sheet'; document.body.appendChild(el); }
+      return el;
+    }
+    function psFmtFecha(v){ const p=String(v||'').split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : String(v||''); }
+    function psTxt(v){ return escHtml(String(v==null?'':v)); }
+
+    // Reúne los datos tal como están en la ficha abierta (incluye lo que aún no se ha guardado)
+    function psCollect(){
+      const catEl = document.querySelector('input[name="f-categoria"]:checked');
+      const logo  = document.querySelector('.fh-logo-minsal');
+      const sig   = window._sigData || {};
+      const rec   = (editingId && records.find(r=>r.id===editingId)) || {};
+      return {
+        logo: logo ? logo.src : '',
+        correlativo: (document.getElementById('form-correlativo')||{}).textContent || 'Ficha N° —',
+        categoria: catEl ? catEl.value : '',
+        ucsf: getField('f-ucsf'), fecha: getField('f-fecha'), expediente: getField('f-expediente'),
+        nombre: getField('f-nombre'), horaInicio: getField('f-hora-inicio'), horaFin: getField('f-hora-fin'),
+        objetivo: getField('f-objetivo'), hallazgos: getField('f-hallazgos'),
+        acciones: getField('f-acciones'), acuerdos: getField('f-acuerdos'),
+        seguimiento: getField('f-seguimiento'),
+        seguimientoRealizado: !!(document.getElementById('f-seguimiento-realizado')||{}).checked,
+        firmaUsuario: getField('f-firma-usuario'), firmaPersonal: getField('f-firma-personal'),
+        vitals: getVitals(),
+        sigPac: sig.pac || rec.firmaCanvasPac || '',
+        sigPer: sig.per || rec.firmaCanvasPer || '',
+        gps: window._sigGPS || rec.visitaGPS || null
+      };
+    }
+
+    function psBuildHTML(d){
+      const vitCampos = ['nombre','peso','ta','fc','fr','temp','au','fcf'];
+      let filas = (d.vitals||[]).filter(v=>vitCampos.some(k=>String(v[k]||'').trim()));
+      if(!filas.length) filas = [{},{}];   // sin datos: deja 2 filas en blanco para llenar a mano
+      const vitRows = filas.map((v,i)=>
+        '<tr><td>'+(i+1)+'</td><td class="l">'+psTxt(v.nombre)+'</td>'
+        + ['peso','ta','fc','fr','temp','au','fcf'].map(k=>'<td>'+psTxt(v[k])+'</td>').join('')+'</tr>').join('');
+
+      const gps = d.gps ? '<div class="ps-gps">📍 Ubicación GPS de la visita: '+psTxt(d.gps.lat)+', '+psTxt(d.gps.lng)+' (±'+psTxt(d.gps.accuracy)+' m)</div>' : '';
+      const sigImg = s => s ? '<img src="'+s+'" alt="firma"/>' : '';
+      const seg = '<div class="ps-box">'+psTxt(psFmtFecha(d.seguimiento))+'</div>'
+        + (d.seguimientoRealizado ? '<div class="ps-sub">☑ Seguimiento ya realizado</div>' : '');
+
+      return '<div class="ps-inner">'
+        + '<div class="ps-head">'
+        +   (d.logo ? '<img class="ps-logo" src="'+d.logo+'" alt="MINSAL"/>' : '<div class="ps-logo"></div>')
+        +   '<div class="ps-titles"><div class="ps-sup">Viceministerio de Servicios de Salud · Dirección de Primer Nivel de Atención</div>'
+        +   '<div class="ps-h2">Informe de Visita Domiciliar</div><div class="ps-num">'+psTxt(d.correlativo)+'</div></div>'
+        + '</div>'
+        + (d.categoria ? '<div class="ps-cat">Tipo de paciente: <b>'+psTxt(d.categoria)+'</b></div>' : '')
+
+        + '<div class="ps-sec">Datos generales</div>'
+        + '<div class="ps-grid">'
+        +   '<div class="ps-f" style="grid-column:span 5"><label>Unidad de Salud</label><div class="ps-box">'+psTxt(d.ucsf)+'</div></div>'
+        +   '<div class="ps-f" style="grid-column:span 3"><label>Fecha</label><div class="ps-box">'+psTxt(psFmtFecha(d.fecha))+'</div></div>'
+        +   '<div class="ps-f" style="grid-column:span 4"><label>Expediente Clínico N°</label><div class="ps-box">'+psTxt(d.expediente)+'</div></div>'
+        +   '<div class="ps-f" style="grid-column:span 8"><label>Nombre de la persona o familia</label><div class="ps-box">'+psTxt(d.nombre)+'</div></div>'
+        +   '<div class="ps-f" style="grid-column:span 2"><label>Hora inicio</label><div class="ps-box">'+psTxt(d.horaInicio)+'</div></div>'
+        +   '<div class="ps-f" style="grid-column:span 2"><label>Hora fin</label><div class="ps-box">'+psTxt(d.horaFin)+'</div></div>'
+        + '</div>'
+
+        + '<div class="ps-sec">1. Objetivo de la visita</div><div class="ps-box big">'+psTxt(d.objetivo)+'</div>'
+
+        + '<div class="ps-sec">2. Signos vitales</div>'
+        + '<table><colgroup><col style="width:4%"><col style="width:30%"><col style="width:9%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"></colgroup>'
+        + '<thead><tr><th>N°</th><th class="l">Nombre</th><th>Peso kg</th><th>TA</th><th>FC</th><th>FR</th><th>T°</th><th>AU</th><th>FCF</th></tr></thead>'
+        + '<tbody>'+vitRows+'</tbody></table>'
+
+        + '<div class="ps-sec">3. Principales hallazgos</div><div class="ps-box big">'+psTxt(d.hallazgos)+'</div>'
+        + '<div class="ps-sec">4. Acciones realizadas por el personal de salud</div><div class="ps-box big">'+psTxt(d.acciones)+'</div>'
+
+        + '<div class="ps-sec">5 &amp; 6. Acuerdos y seguimiento</div>'
+        + '<div class="ps-two">'
+        +   '<div class="ps-f"><label>5. Acuerdos pactados (con la persona o familia)</label><div class="ps-box">'+psTxt(d.acuerdos)+'</div></div>'
+        +   '<div class="ps-f"><label>6. Fecha de seguimiento</label>'+seg+'</div>'
+        + '</div>'
+
+        + '<div class="ps-sec">Firmas</div>' + gps
+        + '<div class="ps-sigs">'
+        +   '<div><div class="ps-sigimg">'+sigImg(d.sigPac)+'</div><div class="ps-signame">'+psTxt(d.firmaUsuario)+'</div><div class="ps-siglbl">Nombre del usuario / paciente</div></div>'
+        +   '<div><div class="ps-sigimg">'+sigImg(d.sigPer)+'</div><div class="ps-signame">'+psTxt(d.firmaPersonal)+'</div><div class="ps-siglbl">Nombre y cargo del personal de salud</div></div>'
+        + '</div>'
+        + '</div>';
+    }
+
+    // Reduce el tamaño de letra (todo está en "em") hasta que la ficha completa entre en una hoja
+    function psFit(sheet){
+      const inner = sheet.querySelector('.ps-inner'); if(!inner) return;
+      // 1 mm CSS = 96/25.4 px (constante; no se mide con un elemento porque en modo impresión el CSS lo ocultaría)
+      const maxH = PS_MAX_H_MM * 96 / 25.4 * 0.985;   // 1.5 % de holgura. Ancho de medición = ancho de impresión = 188 mm, fijo
+      sheet.classList.add('ps-measure');
+      const fits = fs => { sheet.style.setProperty('--ps-fs', fs+'px'); return inner.getBoundingClientRect().height <= maxH; };
+      let best = PS_FS_MIN;
+      if(fits(PS_FS_MAX)){ best = PS_FS_MAX; }
+      else{
+        let lo = PS_FS_MIN, hi = PS_FS_MAX;
+        for(let i=0;i<14;i++){ const mid=(lo+hi)/2; if(fits(mid)) lo=mid; else hi=mid; }
+        best = lo;
+      }
+      sheet.style.setProperty('--ps-fs', best.toFixed(2)+'px');
+      sheet.classList.remove('ps-measure');
+    }
+
+    function psPrepare(){
+      const sheet = psSheet();
+      const d = psCollect();
+      sheet.innerHTML = psBuildHTML(d);
+      psFit(sheet);
+      return d;
+    }
+    function psClear(){ const s=document.getElementById('print-sheet'); if(s) s.innerHTML=''; }
+
+    // Ctrl+P / menú del navegador desde la ficha abierta: también usa la hoja ajustada
+    window.addEventListener('beforeprint', ()=>{ try{ if(currentScreen==='screen-form') psPrepare(); }catch(e){ console.warn('beforeprint', e); } });
+    // OJO: la hoja NO se vacía en 'afterprint'. En el WebView de Android la impresión es asíncrona y
+    // 'afterprint' llega antes de que se genere el PDF; vaciarla dejaba un archivo pequeño y en blanco.
+    // Algunos WebView no avisan con 'beforeprint' pero sí con matchMedia('print'): también se arma ahí.
+    try{
+      const psMq = window.matchMedia('print');
+      const psH = e=>{ if(e.matches && currentScreen==='screen-form'){ try{ psPrepare(); }catch(err){} } };
+      if(psMq.addEventListener) psMq.addEventListener('change', psH); else if(psMq.addListener) psMq.addListener(psH);
+    }catch(e){}
+
+    function printForm(){
+      try{
+        const d = psPrepare();
+        if(!d.nombre && !d.objetivo && !d.hallazgos && !d.acciones){
+          showToast('⚠ La ficha no tiene datos para imprimir.','error');
+        }
+        // Espera a que el navegador pinte la hoja (y decodifique firmas/logo) antes de abrir la vista previa
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          setTimeout(()=>{ try{ window.print(); }catch(e){ showToast('⚠ No se pudo abrir la impresión.','error'); } }, 200);
+        }));
+      }catch(e){
+        console.error('printForm', e);
+        showToast('⚠ Error al preparar la impresión.','error');
+      }
+    }
 
     /* ════════════════ IMPORTAR DESDE REGISTRO DIARIO ════════════════
        Registro Diario y esta app comparten el almacenamiento cuando corren dentro de
@@ -2625,12 +2662,22 @@
     // buscan en el texto de hallazgos (aproximado — se avisa para que se revisen).
     function rdVitalesDesdeTexto(txt){
       const t=String(txt||''), r={peso:'',ta:'',fc:'',fr:'',temp:''}; let m;
-      if((m=t.match(/(\d+(?:\s*[.,]\s*\d+)?)\s*kgs?\b/i))) r.peso=m[1].replace(/\s+/g,'').replace(',','.')+' kg';
+      if((m=t.match(/(\d+(?:\s*[.,]\s*\d+)?)\s*(?:kgs?|kilos?|kilogramos?|lbs?|libras?)\b/i))) r.peso=rdPesoAKg(m[0]);
       if((m=t.match(/(?:^|[^\d\/])(\d{2,3})\s*\/\s*(\d{2,3})(?![\d\/])/)) && +m[1]>=60&&+m[1]<=260&&+m[2]>=30&&+m[2]<=160) r.ta=m[1]+'/'+m[2];
       if((m=t.match(/(?:\bfc\b|frecuencia\s+card[ií]aca)\D{0,12}(\d{2,3})/i)||t.match(/(\d{2,3})\s*(?:lpm|latidos)/i))) r.fc=m[1]+' lpm';
       if((m=t.match(/(?:\bfr\b|frecuencia\s+respiratoria)\D{0,12}(\d{1,2})\b/i)||t.match(/(\d{1,2})\s*(?:rpm|resp\w*\s*x)/i))) r.fr=m[1]+' rpm';
       if((m=t.match(/(\d{2}(?:[.,]\d)?)\s*(?:°|º|grados)\s*c?/i)||t.match(/\btemp\w*\D{0,12}(\d{2}(?:[.,]\d)?)/i))) r.temp=m[1].replace(',','.')+'°C';
       return r;
+    }
+    // Peso: si viene en libras ("150 lb", "150 libras") se convierte a kg; si ya está en kg se deja
+    function rdPesoAKg(txt){
+      const t = String(txt==null?'':txt).trim(); if(!t) return '';
+      const m = t.match(/(\d+(?:\s*[.,]\s*\d+)?)\s*(kgs?|kilogramos?|kilos?|lbs?|libras?)\b\.?/i);
+      if(!m) return t;
+      const n = parseFloat(m[1].replace(/\s+/g,'').replace(',','.'));
+      if(isNaN(n)) return t;
+      if(/^(lb|libra)/i.test(m[2])){ const kg = Math.round(n*0.45359237*10)/10; return String(kg).replace(/\.0$/,'')+' kg'; }
+      return String(n).replace(/\.0$/,'')+' kg';
     }
     function rdParseFilas(raw){
       try{
@@ -2668,6 +2715,12 @@
         if(v.peso||v.ta||v.fc||v.fr||v.temp) avisos.push('Signos vitales estimados del texto: revísalos');
       }
       const vitals = filas.map(f=>({nombre:f[0]||'',peso:f[1]||'',ta:f[2]||'',fc:f[3]||'',fr:f[4]||'',temp:f[5]||'',au:f[6]||'',fcf:f[7]||''}));
+      vitals.forEach(v=>{ v.peso = rdPesoAKg(v.peso); });            // libras → kg
+      // Peso: si la fila de la persona no lo trae, se busca en los hallazgos ("... 65 kg / 150 lb ...")
+      if(vitals.length && !vitals[0].peso){
+        const pv = rdVitalesDesdeTexto(c.hallazgos || reg.hallazgos).peso;
+        if(pv) vitals[0].peso = pv;
+      }
       while(vitals.length<2) vitals.push({nombre:'',peso:'',ta:'',fc:'',fr:'',temp:'',au:'',fcf:''});
 
       const f = reg.firmas || {};
@@ -2813,6 +2866,113 @@
       showToast('✓ Importadas: '+partes.join(' y '),'success');
     }
 
+    /* ════════════════ SINCRONIZACIÓN AUTOMÁTICA CON REGISTRO DIARIO ════════════════
+       Cada Informe de Visita generado en Registro Diario pasa solo a esta app:
+       · Si el nombre ya existe (mismo paciente/familia) → la ficha se agrega a su carpeta.
+       · Si el nombre no existe → se crea el paciente nuevo con su primera ficha.
+       Las fichas ya importadas se actualizan si en Registro Diario cambian (p. ej. al firmar),
+       salvo que ya se hayan editado aquí. Las que se eliminan aquí no se vuelven a traer.
+       Solo lee de Registro Diario; nunca escribe en sus datos. */
+    const RD_KEY_DESC = 'minsal_rd_descartadas_v1';
+    let _rdUltimoRaw = null, _rdSyncBusy = false;
+
+    // storage-shim.js carga los datos en memoria al abrir cada página y NO se entera de lo que
+    // guardan las otras apps después. Por eso aquí se lee directo de IndexedDB (la base común
+    // 'sis_comunitario_kv'); si no está disponible, se usa localStorage como respaldo.
+    function rdLeerFresco(){
+      const respaldo = ()=>({ raw: localStorage.getItem(RD_KEY_REGS), perfilRaw: localStorage.getItem(RD_KEY_PERFIL) });
+      return new Promise(res=>{
+        try{
+          if(!window.indexedDB) return res(respaldo());
+          const rq = indexedDB.open('sis_comunitario_kv');
+          rq.onerror = rq.onblocked = ()=>res(respaldo());
+          rq.onupgradeneeded = ()=>{ try{ rq.transaction.abort(); }catch(e){} res(respaldo()); };
+          rq.onsuccess = ()=>{
+            const db = rq.result;
+            try{
+              if(!db.objectStoreNames.contains('kv')){ db.close(); return res(respaldo()); }
+              const st = db.transaction('kv','readonly').objectStore('kv');
+              const g1 = st.get(RD_KEY_REGS), g2 = st.get(RD_KEY_PERFIL);
+              let out = null;
+              g2.onsuccess = ()=>{ out = { raw: g1.result==null?null:g1.result, perfilRaw: g2.result==null?null:g2.result }; };
+              st.transaction.oncomplete = ()=>{ db.close(); res(out && out.raw ? out : respaldo()); };
+              st.transaction.onerror = st.transaction.onabort = ()=>{ db.close(); res(respaldo()); };
+            }catch(e){ try{db.close();}catch(_){} res(respaldo()); }
+          };
+        }catch(e){ res(respaldo()); }
+      });
+    }
+
+    async function rdAutoSincronizar(){
+      if(_rdSyncBusy) return 0;
+      _rdSyncBusy = true;
+      try{
+        const fresco = await rdLeerFresco();
+        const raw = fresco.raw;
+        if(!raw || raw === _rdUltimoRaw) return 0;      // nada nuevo desde la última revisión
+        _rdUltimoRaw = raw;
+        let regs; try{ regs = JSON.parse(raw); }catch(e){ return 0; }
+        if(!Array.isArray(regs)) return 0;
+        let perfil = {}; try{ perfil = JSON.parse(fresco.perfilRaw||'{}')||{}; }catch(e){}
+        let descartadas = {}; try{ descartadas = JSON.parse(localStorage.getItem(RD_KEY_DESC)||'{}')||{}; }catch(e){}
+        const respaldo = JSON.stringify(records);
+        let nuevas = 0, actualizadas = 0, pacientesNuevos = 0;
+        let nextNum = records.length>0 ? Math.max(...records.map(r=>r.num||0))+1 : 1;
+        const clave = s => rdNorm(String(s||'').replace(/\s*[—–-]\s*viv(?:ienda|\.)?\s*(?:n\s*[°º.o]*\s*)?[\w\/-]*\s*$/i,''));
+
+        regs.forEach(reg=>{
+          if(!reg || !reg.id || !reg.informeCampos || typeof reg.informeCampos!=='object') return;
+          if(!String(reg.nombre||'').trim()) return;
+          if(descartadas[reg.id]) return;
+          const previo = records.find(r=>r.origenRD===reg.id);
+          const conv = rdConvertir(reg, perfil);
+          if(previo){
+            if(previo.editadaLocal) return;                                   // ya se trabajó aquí: no pisar
+            if((reg.actualizadoEn||'') <= (previo.rdActualizadoEn||'')){        // sin cambios en RD
+              // solo se completa el peso si la ficha importada no lo tiene
+              const pv = conv.rec.vitals && conv.rec.vitals[0] ? conv.rec.vitals[0].peso : '';
+              if(pv && previo.vitals && previo.vitals[0] && !previo.vitals[0].peso){ previo.vitals[0].peso = pv; actualizadas++; }
+              return;
+            }
+            Object.assign(previo, conv.rec, { categoria: previo.categoria || rdSugerirCategoria(reg.edad), visitaGPS: previo.visitaGPS || null });
+            actualizadas++;
+            return;
+          }
+          // ficha hecha a mano para la misma persona y fecha → se asume la misma visita
+          const nn = rdNorm(reg.nombre);
+          if(records.some(r=>!r.origenRD && r.fecha===conv.rec.fecha && rdNorm(r.nombre).indexOf(nn)===0)) return;
+          const k = clave(conv.rec.nombre);
+          if(!records.some(r=>clave(r.nombre)===k)) pacientesNuevos++;
+          records.push(Object.assign({ id: crypto.randomUUID(), num: nextNum++, categoria: rdSugerirCategoria(reg.edad), visitaGPS: null }, conv.rec));
+          nuevas++;
+        });
+
+        if(!nuevas && !actualizadas) return 0;
+        try{ saveRecords(); }
+        catch(e){
+          records = JSON.parse(respaldo);
+          showToast('⚠ No se pudieron traer las visitas de Registro Diario: almacenamiento lleno.','error');
+          return 0;
+        }
+        try{ updateHomeStats(); }catch(e){}
+        try{ renderList(); }catch(e){}
+        try{ if(typeof renderPatients==='function') renderPatients(); }catch(e){}
+        const partes = [];
+        if(nuevas) partes.push(nuevas+' visita(s) nueva(s)'+(pacientesNuevos?' · '+pacientesNuevos+' paciente(s) nuevo(s)':''));
+        if(actualizadas) partes.push(actualizadas+' actualizada(s)');
+        showToast('✓ Desde Registro Diario: '+partes.join(' · '),'success');
+        return nuevas + actualizadas;
+      }catch(e){ console.warn('rdAutoSincronizar', e); return 0; }
+      finally{ _rdSyncBusy = false; }
+    }
+    window.rdAutoSincronizar = rdAutoSincronizar;
+    // Cuándo revisar: al abrir, al volver a esta app (Registro Diario guarda al salir de su pestaña) y cada 15 s
+    window.addEventListener('storage', e=>{ if(e.key===RD_KEY_REGS || e.key===null) rdAutoSincronizar(); });
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) rdAutoSincronizar(); });
+    window.addEventListener('focus', ()=>rdAutoSincronizar());
+    window.addEventListener('pageshow', ()=>rdAutoSincronizar());
+    setInterval(()=>{ if(!document.hidden) rdAutoSincronizar(); }, 15000);
+
     /* ════════════════ CLEAR ALL ════════════════ */
     function confirmClearAll(){
       showModal('Limpiar memoria del dispositivo','Se eliminarán <strong>todas las fichas</strong> guardadas. Esta acción es irreversible.',()=>{
@@ -2904,6 +3064,7 @@
     loadRecords();
     updateHomeStats();
     applyProfile(loadProfile());
+    setTimeout(()=>{ try{ rdAutoSincronizar(); }catch(e){} }, 400);
 
     // Sincronizar nombre del paciente con firma de usuario automáticamente
     // y buscar firma previa del paciente cuando se termina de escribir el nombre
@@ -3648,6 +3809,8 @@
       records = e.detail;
       saveRecords();
       updateHomeStats();
+      _rdUltimoRaw = null;
+      try{ rdAutoSincronizar(); }catch(err){}
     });
 </script>
 
