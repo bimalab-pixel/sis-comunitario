@@ -9962,6 +9962,11 @@ Notas (Acciones ya escritas): ${accion || '—'}
       c.fechaMostrar = datos.fechaMostrar;
       c.horaInicio = datos.horaInicioMostrar;
       c.nombreVivienda = datos.nombreVivMostrar;
+      // Si el registro diario cambió desde la última vez (la huella es distinta), la tabla de
+      // signos vitales que se mostró ahora se recalculó desde los hallazgos nuevos. La tabla
+      // guardada anteriormente quedó vieja: se descarta, para que no reaparezca al volver a
+      // generar el informe con esta misma huella (ya "actualizada" arriba).
+      if (c._huella !== huella) delete c.tablaVitales;
       c._huella = huella;
       if (!registros[idx].informeGeneradoEn) registros[idx].informeGeneradoEn = _ctrlMejorFechaEstimada(registros[idx]); // hora del registro diario de la visita, no la hora del sistema
       registros[idx].informeActualizadoEn = new Date().toISOString();
