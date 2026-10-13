@@ -7268,9 +7268,17 @@
                 const radio = (5 * factorTexto).toFixed(1);
                 const puntoId = `punto_${idx}_${Math.random().toString(36).slice(2, 9)}`;
                 const styleEtiqueta = esUltimo ? '' : 'style="display:none;"';
+                // Efecto de ondas parpadeantes solo en la medición más reciente (SMIL: no usa JS ni
+                // redibuja la gráfica; se detiene solo cuando el SVG sale del DOM).
+                const ondasSvg = esUltimo ? [0, 0.9].map(delay => `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${radio}" fill="${color}" fill-opacity="0.3" stroke="${color}" stroke-width="${(1.2 * factorTexto).toFixed(1)}" style="pointer-events:none;" opacity="0">
+                        <animate attributeName="r" from="${radio}" to="${(radio * 3.4).toFixed(1)}" dur="1.8s" begin="${delay}s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.65;0" dur="1.8s" begin="${delay}s" repeatCount="indefinite"/>
+                    </circle>`).join('') : '';
+                const parpadeoSvg = esUltimo ? '<animate attributeName="opacity" values="1;0.65;1" dur="1.8s" repeatCount="indefinite"/>' : '';
                 
                 return `<g class="punto-grupo" data-punto-id="${puntoId}" data-es-ultimo="${esUltimo}">
-                    <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${radio}" fill="${color}" stroke="white" stroke-width="${(1.5 * factorTexto).toFixed(1)}" style="cursor:pointer;" data-punto-id="${puntoId}"><title>📅 ${formatearFechaSV(p.fecha)}\n📊 ${valorTxt}\n📈 ${zTxt}</title></circle>
+                    ${ondasSvg}
+                    <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${radio}" fill="${color}" stroke="white" stroke-width="${(1.5 * factorTexto).toFixed(1)}" style="cursor:pointer;" data-punto-id="${puntoId}">${parpadeoSvg}<title>📅 ${formatearFechaSV(p.fecha)}\n📊 ${valorTxt}\n📈 ${zTxt}</title></circle>
                     <g ${styleEtiqueta} class="etiqueta-contenedor" data-punto-id="${puntoId}">
                         <rect x="${(cx - labelW / 2).toFixed(1)}" y="${(ly1 - 9 * factorTexto).toFixed(1)}" width="${labelW.toFixed(1)}" height="${(20 * factorTexto).toFixed(1)}" rx="4" fill="white" fill-opacity="0.82"/>
                         <text x="${cx.toFixed(1)}" y="${ly1.toFixed(1)}" font-size="${(9.5 * factorTexto).toFixed(1)}" font-weight="700" fill="#1f2937" text-anchor="middle">${valorTxt}</text>

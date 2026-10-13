@@ -418,6 +418,82 @@
           padding: 6px 8px;
           cursor: pointer;
         }
+
+        /* ── SINCRONIZACIÓN CON LA NUBE ── */
+        .sync-card {
+          grid-column: 1 / -1;
+          background: var(--card-bg);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          padding: 18px 16px 16px;
+          position: relative;
+          overflow: hidden;
+        }
+        .sync-card::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+          background: linear-gradient(90deg,#0d6e8a,#2bb5d8);
+        }
+        .sync-title { font-weight: 800; font-size: .98rem; color: var(--text); text-align: center; }
+        .sync-sub { font-size: .74rem; color: var(--sub); text-align: center; margin: 3px 0 14px; line-height: 1.35; }
+        .sync-btns { display: flex; gap: 10px; }
+        .sync-btn {
+          flex: 1; border: none; border-radius: 14px; padding: 14px 8px;
+          font-size: .92rem; font-weight: 800; color: #fff; cursor: pointer;
+          display: flex; flex-direction: column; align-items: center; gap: 3px;
+        }
+        .sync-btn small { font-size: .68rem; font-weight: 500; opacity: .9; }
+        .sync-btn.up   { background: linear-gradient(135deg,#2e7d32,#66bb6a); box-shadow: 0 4px 12px rgba(46,125,50,.3); }
+        .sync-btn.down { background: linear-gradient(135deg,#1565c0,#42a5f5); box-shadow: 0 4px 12px rgba(21,101,192,.3); }
+        .sync-btn:active { transform: scale(.96); }
+
+        .sync-box { max-height: 92vh; overflow-y: auto; }
+        .sync-item {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 12px; margin-bottom: 8px;
+          border: 2px solid #e0e0e0; border-radius: 12px;
+          cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--text);
+          -webkit-user-select: none; user-select: none;
+        }
+        .sync-item .si-ico { font-size: 1.3rem; }
+        .sync-item .si-name { flex: 1; }
+        .sync-item .si-check {
+          width: 24px; height: 24px; border-radius: 50%; border: 2px solid #b0bec5;
+          display: flex; align-items: center; justify-content: center;
+          font-size: .8rem; color: #fff;
+        }
+        .sync-item.sel { border-color: var(--teal); background: #e8f6fa; }
+        .sync-item.sel .si-check { background: var(--teal); border-color: var(--teal); }
+        .sync-acciones { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .sync-acciones .btn-open, .sync-acciones .btn-cancel { flex: none; width: 100%; }
+        .sync-acciones .btn-open:disabled { opacity: .45; }
+        .btn-open.verde { background: linear-gradient(135deg,#2e7d32,#66bb6a); box-shadow: 0 4px 12px rgba(46,125,50,.35); }
+        .btn-open.azul  { background: linear-gradient(135deg,#1565c0,#42a5f5); box-shadow: 0 4px 12px rgba(21,101,192,.35); }
+        .btn-open.sec   { background: #fff; color: var(--teal); border: 2px solid var(--teal); box-shadow: none; }
+
+        /* Ventana que muestra cada app mientras sube/baja */
+        #syncRunner { display: none; position: fixed; inset: 0; z-index: 200; background: #fff; flex-direction: column; }
+        #syncRunner.active { display: flex; }
+        .sr-bar {
+          background: var(--teal); color: #fff; padding: 10px 12px;
+          display: flex; align-items: center; gap: 10px;
+        }
+        .sr-info { flex: 1; min-width: 0; }
+        .sr-info strong { display: block; font-size: .86rem; }
+        .sr-info span { display: block; font-size: .7rem; opacity: .92; line-height: 1.3; margin-top: 2px; }
+        .sr-info a { color: #fff; font-weight: 700; }
+        .sr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .sr-actions button {
+          border: 1px solid rgba(255,255,255,.5); background: transparent; color: #fff;
+          border-radius: 20px; padding: 8px 12px; font-size: .76rem; font-weight: 700; cursor: pointer;
+        }
+        .sr-actions button.primary { background: #fff; color: var(--teal); border-color: #fff; }
+        #srFrame { flex: 1; width: 100%; border: 0; background: #fff; }
+
+        #syncToast {
+          position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+          background: #1a2e3a; color: #fff; padding: 11px 18px; border-radius: 24px;
+          font-size: .8rem; z-index: 300; display: none; max-width: 90%; text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -509,6 +585,16 @@
         <div class="card-label">Carpeta Oficial Salud Comunitaria</div>
         <div class="card-sub">Registro de datos en carpeta de Google Drive</div>
         <div class="card-arrow arrow-tabulador">→</div>
+    </div>
+
+    <!-- Sincronización con la nube (enlace a los botones Subir/Bajar de cada app) -->
+    <div class="sync-card">
+        <div class="sync-title">☁️ Sincronización con la nube</div>
+        <div class="sync-sub">Sube o baja los datos de todas las apps de una vez, o elige cuáles</div>
+        <div class="sync-btns">
+            <button class="sync-btn up" onclick="abrirSync('subir')">⬆️ Subir<small>Local → Nube</small></button>
+            <button class="sync-btn down" onclick="abrirSync('bajar')">⬇️ Bajar<small>Nube → Local</small></button>
+        </div>
     </div>
 </main>
 
@@ -674,6 +760,197 @@
         console.warn('No se pudo registrar el Service Worker:', err);
       });
     });
+  }
+</script>
+
+
+<!-- ── HOJA DE SELECCIÓN: SUBIR / BAJAR ── -->
+<div class="modal-overlay" id="syncSheet" onclick="if(event.target===this)syncCerrarSheet()">
+  <div class="modal-box sync-box">
+    <div class="modal-icon" id="syncSheetIcon">☁️</div>
+    <div class="modal-title" id="syncSheetTitle"></div>
+    <p class="modal-desc">Toca las apps que quieras, o usa el botón de todas. Cada app te mostrará su propia confirmación antes de subir o bajar.</p>
+    <div id="syncList"></div>
+    <div class="sync-acciones">
+      <button class="btn-open" id="syncBtnTodas" onclick="syncIniciar(true)"></button>
+      <button class="btn-open sec" id="syncBtnSel" onclick="syncIniciar(false)"></button>
+      <button class="btn-cancel" onclick="syncCerrarSheet()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── VENTANA QUE EJECUTA EL BOTÓN DE CADA APP ── -->
+<div id="syncRunner">
+  <div class="sr-bar">
+    <div class="sr-info">
+      <strong id="srTitulo"></strong>
+      <span id="srEstado"></span>
+    </div>
+    <div class="sr-actions">
+      <button onclick="syncSiguiente(true)">Omitir</button>
+      <button class="primary" id="srSig" onclick="syncSiguiente(false)">Siguiente ▶</button>
+      <button onclick="syncTerminar(true)" title="Cancelar">✕</button>
+    </div>
+  </div>
+  <iframe id="srFrame" title="App"></iframe>
+</div>
+<div id="syncToast"></div>
+
+<script type="text/x-deferred">
+  // ══════════════════════════════════════════
+  // ── SUBIR / BAJAR A LA NUBE (portal a cada app) ──
+  // No modifica las apps: abre cada una y presiona su propio
+  // botón de Subir/Bajar, con sus propias confirmaciones.
+  // ══════════════════════════════════════════
+  const SYNC_APPS = [
+    { id:'mapa',     ico:'🗺️',  nombre:'Mapa Sanitario',          file:'MapaSanitario.html',          up:'subirNube',              down:'bajarNube' },
+    { id:'materna',  ico:'👩‍⚕️', nombre:'Vigilancia Materna',      file:'Vigilancia_Materna.html',     up:'guardarEnNube',          down:'cargarDeNube' },
+    { id:'mef',      ico:'📋',  nombre:'Control MEF',             file:'mef.html',                    up:'confirmUpload',          down:'confirmDownload' },
+    { id:'curvas',   ico:'📈',  nombre:'Curvas de Crecimiento',   file:'CurvasdeCrecimiento.html',    up:'confirmarSubirFirebase', down:'confirmarDescargarFirebase' },
+    { id:'registro', ico:'📝',  nombre:'Registro Diario',         file:'RegistroDiario_Promotor.html',up:'abrirConfirmacionSubir', down:'abrirConfirmacionBajar' },
+    { id:'visita',   ico:'🩺',  nombre:'Hoja de Visita Domiciliar',file:'visita_domiciliar.html',     up:'confirmUpload',          down:'confirmDownload' }
+  ];
+
+  let syncModo = null, syncSel = new Set(), syncCola = [], syncIdx = 0;
+  let syncOcupado = false, syncHechas = 0, syncTimer = null, syncToastT = null;
+  let syncDisparado = false; // el botón de cada app se presiona UNA sola vez (algunas apps se recargan al terminar)
+
+  function syncToast(msg) {
+    const t = document.getElementById('syncToast');
+    t.textContent = msg; t.style.display = 'block';
+    clearTimeout(syncToastT);
+    syncToastT = setTimeout(() => { t.style.display = 'none'; }, 3500);
+  }
+
+  function abrirSync(modo) {
+    if (syncOcupado) return;
+    syncModo = modo;
+    syncSel = new Set();
+    const sube = modo === 'subir';
+    document.getElementById('syncSheetIcon').textContent = sube ? '⬆️' : '⬇️';
+    document.getElementById('syncSheetTitle').textContent = sube ? 'Subir a la nube' : 'Bajar de la nube';
+    const bt = document.getElementById('syncBtnTodas');
+    bt.textContent = (sube ? '⬆️ Subir todas las apps (' : '⬇️ Bajar todas las apps (') + SYNC_APPS.length + ')';
+    bt.className = 'btn-open ' + (sube ? 'verde' : 'azul');
+    syncPintarLista();
+    document.getElementById('syncSheet').classList.add('active');
+  }
+
+  function syncPintarLista() {
+    const cont = document.getElementById('syncList');
+    cont.innerHTML = '';
+    SYNC_APPS.forEach(a => {
+      const d = document.createElement('div');
+      d.className = 'sync-item' + (syncSel.has(a.id) ? ' sel' : '');
+      d.innerHTML = '<span class="si-ico">' + a.ico + '</span><span class="si-name">' + a.nombre +
+                    '</span><span class="si-check">' + (syncSel.has(a.id) ? '✓' : '') + '</span>';
+      d.onclick = () => {
+        if (syncSel.has(a.id)) syncSel.delete(a.id); else syncSel.add(a.id);
+        syncPintarLista();
+      };
+      cont.appendChild(d);
+    });
+    const n = syncSel.size, b = document.getElementById('syncBtnSel');
+    b.textContent = n ? 'Solo las seleccionadas (' + n + ')' : 'Selecciona una o más apps';
+    b.disabled = n === 0;
+  }
+
+  function syncCerrarSheet() {
+    document.getElementById('syncSheet').classList.remove('active');
+  }
+
+  function syncIniciar(todas) {
+    syncCola = SYNC_APPS.filter(a => todas || syncSel.has(a.id));
+    if (!syncCola.length) return;
+    syncCerrarSheet();
+    syncOcupado = true;
+    syncIdx = 0; syncHechas = 0;
+    document.getElementById('syncRunner').classList.add('active');
+    syncCargar();
+  }
+
+  function syncCargar() {
+    const app = syncCola[syncIdx];
+    const sube = syncModo === 'subir';
+    const frame = document.getElementById('srFrame');
+    clearInterval(syncTimer);
+    syncDisparado = false;
+    document.getElementById('srTitulo').textContent =
+      (sube ? '⬆️ Subiendo ' : '⬇️ Bajando ') + (syncIdx + 1) + ' de ' + syncCola.length + ' · ' + app.nombre;
+    document.getElementById('srEstado').textContent = 'Abriendo la app…';
+    document.getElementById('srSig').textContent = (syncIdx === syncCola.length - 1) ? 'Terminar ✓' : 'Siguiente ▶';
+    frame.onload = () => {
+      if (frame.src === 'about:blank' || !frame.getAttribute('src') || frame.getAttribute('src') === 'about:blank') return;
+      if (syncDisparado) return; // la app se recargó sola: no repetir
+      syncDisparado = true;
+      syncDisparar(app);
+    };
+    frame.src = app.file;
+  }
+
+  function syncFalla(app, msg) {
+    document.getElementById('srEstado').innerHTML =
+      msg + ' <a href="' + app.file + '">Abrir ' + app.nombre + '</a> y usa su botón.';
+  }
+
+  function syncDisparar(app) {
+    const frame = document.getElementById('srFrame');
+    const fn = syncModo === 'subir' ? app.up : app.down;
+    let intentos = 0;
+    clearInterval(syncTimer);
+    syncTimer = setInterval(() => {
+      intentos++;
+      try {
+        const w = frame.contentWindow, d = frame.contentDocument;
+        if (d && d.readyState === 'complete') {
+          if (typeof w[fn] === 'function') {
+            clearInterval(syncTimer);
+            setTimeout(() => {
+              try { w[fn](); document.getElementById('srEstado').textContent = 'Responde la confirmación de la app. Cuando termine, toca ' + (syncIdx === syncCola.length - 1 ? 'Terminar.' : 'Siguiente.'); }
+              catch (e) { syncFalla(app, 'No se pudo ejecutar.'); }
+            }, 600);
+            return;
+          }
+          const b = d.querySelector('[onclick*="' + fn + '("]');
+          if (b) {
+            clearInterval(syncTimer);
+            setTimeout(() => {
+              try { b.click(); document.getElementById('srEstado').textContent = 'Responde la confirmación de la app. Cuando termine, toca ' + (syncIdx === syncCola.length - 1 ? 'Terminar.' : 'Siguiente.'); }
+              catch (e) { syncFalla(app, 'No se pudo ejecutar.'); }
+            }, 600);
+            return;
+          }
+        }
+      } catch (e) {
+        clearInterval(syncTimer);
+        syncFalla(app, 'Esta app no se puede controlar desde aquí.');
+        return;
+      }
+      if (intentos > 90) {
+        clearInterval(syncTimer);
+        syncFalla(app, 'No encontré el botón de la app.');
+      }
+    }, 300);
+  }
+
+  function syncSiguiente(omitir) {
+    if (!omitir) syncHechas++;
+    syncIdx++;
+    if (syncIdx >= syncCola.length) syncTerminar(false);
+    else syncCargar();
+  }
+
+  function syncTerminar(cancelado) {
+    clearInterval(syncTimer);
+    const frame = document.getElementById('srFrame');
+    frame.onload = null;
+    frame.src = 'about:blank';
+    document.getElementById('syncRunner').classList.remove('active');
+    syncOcupado = false;
+    const sube = syncModo === 'subir';
+    syncToast(cancelado
+      ? 'Sincronización cancelada'
+      : (sube ? '⬆️ Subida revisada: ' : '⬇️ Bajada revisada: ') + syncHechas + ' de ' + syncCola.length + ' apps');
   }
 </script>
 

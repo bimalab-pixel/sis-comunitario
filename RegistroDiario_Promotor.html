@@ -5475,7 +5475,10 @@ function _riesgoObtenerConsejoAdulto(clasificacionTexto) {
   return _riesgoConsejosAdulto[clasificacionTexto] || null;
 }
 
+let _riesgoPulsoRAF = null; // animación de onda del punto de la gráfica
+function _riesgoDetenerPulso() { if (_riesgoPulsoRAF) { cancelAnimationFrame(_riesgoPulsoRAF); _riesgoPulsoRAF = null; } }
 function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valorPersona, historialPuntos, edadCronologica = null) {
+  _riesgoDetenerPulso();
   const info = _riesgoTablaIndicador(indicador, edadMesesPersona, sexo);
   if (!info) return null;
   const tabla = info.tabla, mesInicio = info.mesInicio;
@@ -5635,9 +5638,31 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   // taparse con las curvas en pantallas chicas).
   if (edadMesesPersona >= mesInicio && edadMesesPersona <= mesFin) {
     const px = xPix(edadMesesPersona), py = yPix(valorPersona);
-    ctx.fillStyle = '#1d4ed8';
-    ctx.beginPath(); ctx.arc(px, py, 5.5 * esc, 0, 2 * Math.PI); ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8 * esc; ctx.stroke();
+    // Punto pequeño con efecto de onda azul parpadeante (animado). Se guarda la gráfica ya
+    // dibujada como imagen base y, en cada cuadro, se restaura y se pintan encima las ondas
+    // expansivas + el punto, así no se redibujan las curvas 60 veces por segundo.
+    const baseImg = ctx.getImageData(0, 0, W, H);
+    const rPunto = 4.2 * esc, rOnda = 16 * esc, periodo = 1800, t0 = performance.now();
+    const dibujarPunto = function(ts) {
+      if (!canvas.isConnected || canvas.getClientRects().length === 0) { _riesgoPulsoRAF = null; return; }
+      ctx.putImageData(baseImg, 0, 0);
+      const t = ((ts - t0) % periodo) / periodo;
+      for (let k = 0; k < 2; k++) {
+        const f = (t + k * 0.5) % 1;
+        const radio = rPunto + (rOnda - rPunto) * f;
+        const alfa = 0.5 * (1 - f);
+        ctx.beginPath(); ctx.arc(px, py, radio, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(37,99,235,' + (alfa * 0.45) + ')'; ctx.fill();
+        ctx.strokeStyle = 'rgba(37,99,235,' + alfa + ')'; ctx.lineWidth = 1.4 * esc; ctx.stroke();
+      }
+      ctx.globalAlpha = 0.65 + 0.35 * (0.5 + 0.5 * Math.cos(t * 2 * Math.PI));
+      ctx.fillStyle = '#1d4ed8';
+      ctx.beginPath(); ctx.arc(px, py, rPunto, 0, 2 * Math.PI); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2 * esc; ctx.stroke();
+      _riesgoPulsoRAF = requestAnimationFrame(dibujarPunto);
+    };
+    dibujarPunto(t0);
   }
 
   return { unidad: info.unidad, clasificacion: clasificacion, cortes: info.cortes, z: zPersona };
@@ -5646,6 +5671,7 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
 // Para adultos no hay curva por edad (la OMS usa puntos de corte fijos): se dibuja una
 // escala horizontal de colores con el IMC de la persona marcado encima.
 function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor, esAdultoMayor) {
+  _riesgoDetenerPulso();
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
@@ -5685,13 +5711,35 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor, esAdultoMayor) {
   });
 
   const px = xPix(Math.min(Math.max(imcValor, minIMC), maxIMC));
-  ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3 * esc;
-  ctx.beginPath(); ctx.moveTo(px, barY - 10 * esc); ctx.lineTo(px, barY + barH + 10 * esc); ctx.stroke();
   ctx.fillStyle = '#1d4ed8'; ctx.font = `bold ${13 * esc}px sans-serif`; ctx.textAlign = 'center';
   ctx.fillText(imcValor.toFixed(1), px, barY - 16 * esc);
 
   ctx.fillStyle = '#64748b'; ctx.font = `${10 * esc}px sans-serif`;
   marcas.forEach(function(v) { ctx.fillText(v, xPix(v), barY + barH + 24 * esc); });
+
+  // Marca azul con destellos en forma de onda (animado): se guarda la escala ya dibujada
+  // como imagen base y en cada cuadro se pintan encima las ondas y la línea parpadeante.
+  const baseImg = ctx.getImageData(0, 0, W, H);
+  const cy = barY + barH / 2, rIni = 4 * esc, rOnda = 30 * esc, periodo = 1800, t0 = performance.now();
+  const dibujarMarca = function(ts) {
+    if (!canvas.isConnected || canvas.getClientRects().length === 0) { _riesgoPulsoRAF = null; return; }
+    ctx.putImageData(baseImg, 0, 0);
+    const t = ((ts - t0) % periodo) / periodo;
+    for (let k = 0; k < 2; k++) {
+      const f = (t + k * 0.5) % 1;
+      const radio = rIni + (rOnda - rIni) * f;
+      const alfa = 0.55 * (1 - f);
+      ctx.beginPath(); ctx.arc(px, cy, radio, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(37,99,235,' + (alfa * 0.35) + ')'; ctx.fill();
+      ctx.strokeStyle = 'rgba(37,99,235,' + alfa + ')'; ctx.lineWidth = 1.6 * esc; ctx.stroke();
+    }
+    ctx.globalAlpha = 0.7 + 0.3 * (0.5 + 0.5 * Math.cos(t * 2 * Math.PI));
+    ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3 * esc;
+    ctx.beginPath(); ctx.moveTo(px, barY - 10 * esc); ctx.lineTo(px, barY + barH + 10 * esc); ctx.stroke();
+    ctx.globalAlpha = 1;
+    _riesgoPulsoRAF = requestAnimationFrame(dibujarMarca);
+  };
+  dibujarMarca(t0);
 }
 
 let _riesgoGraficaDatosActual = null;
