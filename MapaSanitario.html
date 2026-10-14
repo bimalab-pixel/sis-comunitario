@@ -3498,6 +3498,15 @@ function _sumarDiasISO(iso,dias){
   return d.toISOString().slice(0,10);
 }
 function _edadMaterna(p){
+  // Vigilancia_Materna guarda la fecha como "fecha_nacimiento" (opcional); se muestra en años cumplidos
+  if(p.fecha_nacimiento){
+    const f=new Date(String(p.fecha_nacimiento)+'T00:00:00'), hoy=new Date();
+    if(!isNaN(f) && f<=hoy){
+      let a=hoy.getFullYear()-f.getFullYear();
+      if(hoy.getMonth()<f.getMonth() || (hoy.getMonth()===f.getMonth() && hoy.getDate()<f.getDate())) a--;
+      return a+' año'+(a!==1?'s':'');
+    }
+  }
   if(p.fnac){ const t=calcularEdadTexto(p.fnac); if(t) return t; }
   if(p.edad) return (/^\d+$/.test(String(p.edad))) ? p.edad+' años' : p.edad;
   return '—';
@@ -3658,6 +3667,7 @@ function _popupMaterna(p, tipo){
     <div style="min-width:185px;max-width:210px;font-family:sans-serif;padding:2px;">
         ${tipoBadge}${riesgoPill}<br>
         <strong style="font-size:0.97em;color:#1a1a1a;">${p.nombre || '—'}</strong>
+        <div style="font-size:0.82em;color:#444;margin:4px 0 0;">🎂 Edad: ${_edadMaterna(p) === '—' ? 'no registrada' : _edadMaterna(p)}</div>
         <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
         ${fechasClaveInfo}
         ${riesgoTag}
