@@ -881,7 +881,8 @@ td.err{color:var(--red);font-weight:700}
 }
 .sync-bar svg{width:14px;height:14px;flex-shrink:0}
 .sync-bar-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sync-bar-btns{display:flex;gap:.35rem;flex-shrink:0}
+.sync-bar-btns{display:flex;gap:.35rem;flex-shrink:0;max-width:100%}
+#sync-cfg-btn{max-width:7rem;overflow:hidden;text-overflow:ellipsis}
 .sync-bar-btn{
   background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
   color:#fff;border-radius:8px;padding:.25rem .6rem;font-family:inherit;
@@ -1599,7 +1600,7 @@ td.err{color:var(--red);font-weight:700}
     <div style="padding:1.3rem 1.4rem .9rem;background:linear-gradient(135deg,var(--ink),var(--ink2));color:#fff;position:relative;">
       <button class="modal-close-x" style="background:rgba(255,255,255,.15);color:#fff" onclick="cerrarModal('modal-importar')">✕</button>
       <h3 style="color:#fff;font-family:'Instrument Serif',serif;font-size:1.15rem;margin-bottom:.2rem">Importar Catálogo</h3>
-      <p style="color:rgba(255,255,255,.55);font-size:.77rem;margin:0">Formato Excel (.xlsx, .xls) o CSV · Columnas: Vivienda | Nombre | Fecha Nacimiento | Riesgo | Sexo</p>
+      <p style="color:rgba(255,255,255,.55);font-size:.77rem;margin:0">Formato Excel (.xlsx, .xls) o CSV · Acepta el Excel exportado por el Mapa (con ubicación) o la plantilla</p>
     </div>
 
     <!-- Paso 1: subir -->
@@ -1730,52 +1731,6 @@ td.err{color:var(--red);font-weight:700}
 <!-- ════════════════
      MODAL UID / PROMOTOR
 ════════════════ -->
-<div class="modal-bg" id="modal-uid" onclick="event.stopPropagation()">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <button class="modal-close-x" onclick="cerrarModal('modal-uid')">✕</button>
-    <h3>☁️ Configurar Sync</h3>
-    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">
-      Ingresa tu código de promotor. Este código identifica tus datos en la nube.
-      Usa el mismo en todos tus dispositivos.
-    </p>
-    <input class="uid-input" type="text" id="uid-input"
-      placeholder="Ej: PROMOTOR_01"
-      maxlength="30" autocomplete="off" autocapitalize="characters"
-      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')"/>
-    <div class="uid-hint">Solo letras, números y guión bajo. Sin espacios ni tildes.</div>
-    <div class="modal-btns">
-      <button class="btn cancel" onclick="cerrarModal('modal-uid')">Cancelar</button>
-      <button class="btn save" onclick="guardarUID()">✅ Guardar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-bg" id="modal-encabezado" onclick="event.stopPropagation()">
-  <div class="modal-box" onclick="event.stopPropagation()">
-    <button class="modal-close-x" onclick="cerrarModal('modal-encabezado')">✕</button>
-    <h3>📍 Datos del Encabezado</h3>
-    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">
-      Esta información se muestra en la pantalla de inicio y en el mapa.
-    </p>
-    <div class="f-group">
-      <label>Cantón / Zona</label>
-      <input type="text" id="enc-canton" placeholder="Ej: Cantón Las Piletas" maxlength="60" autocomplete="off"/>
-    </div>
-    <div class="f-group">
-      <label>Promotor de Salud</label>
-      <input type="text" id="enc-promotor" placeholder="Ej: Moisés López" maxlength="60" autocomplete="off"/>
-    </div>
-    <div class="f-group">
-      <label>Unidad de Salud</label>
-      <input type="text" id="enc-unidad" placeholder="Ej: UCSF Venecia" maxlength="60" autocomplete="off"/>
-    </div>
-    <div class="modal-btns">
-      <button class="btn cancel" onclick="cerrarModal('modal-encabezado')">Cancelar</button>
-      <button class="btn save" onclick="guardarEncabezado()">✅ Guardar</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <!-- ════════════════════════════════════════════
@@ -2996,12 +2951,12 @@ function leerArchivo(file){
         const sep=txt.indexOf(';')!==-1?';':',';
         const lines=txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
         if(lines.length<2){mostrarError('Archivo vacío o sin datos.');return;}
-        const filas=lines.slice(1).map(l=>{
+        const todas=lines.map(l=>{
           const cols=[];let dentro=false,campo='';
           for(let i=0;i<l.length;i++){const c=l[i];if(c==='"')dentro=!dentro;else if(c===sep&&!dentro){cols.push(campo.trim());campo='';}else campo+=c;}
           cols.push(campo.trim());return cols;
         });
-        procesarFilas(filas);
+        procesarFilas(todas.slice(1),todas[0]);
       }catch(err){mostrarError('Error CSV: '+err.message);}
     };
     r.readAsText(file,'UTF-8'); return;
@@ -3015,7 +2970,7 @@ function leerArchivo(file){
         const ws=wb.Sheets[wb.SheetNames[0]];
         const datos=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
         if(datos.length<2){mostrarError('Archivo vacío o sin datos.');return;}
-        procesarFilas(datos.slice(1).filter(r=>r.some(c=>String(c).trim()!=='')));
+        procesarFilas(datos.slice(1).filter(r=>r.some(c=>String(c).trim()!=='')),datos[0]);
       }catch(err){mostrarError('Error Excel: '+err.message);}
     };
     r.readAsArrayBuffer(file); return;
@@ -3023,24 +2978,53 @@ function leerArchivo(file){
   mostrarError('Formato no compatible. Usa .xlsx, .xls o .csv');
 }
 
-function procesarFilas(filas){
-  // Columnas: 0=vivienda, 1=nombre, 2=fecha nacimiento, 3=riesgo (opcional), 4=sexo (opcional)
+// Detecta las columnas por NOMBRE de encabezado (el orden ya no importa).
+// Si el encabezado no se reconoce, usa el orden clásico: Vivienda|Nombre|Fecha|Riesgo|Sexo.
+function _mapaIdxCols(h){
+  const clasico={viv:0,nom:1,fnac:2,riesgo:3,sexo:4,lat:-1,lng:-1,exp:false};
+  if(!h||!h.length) return clasico;
+  const n=s=>String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+  const m={viv:-1,nom:-1,fnac:-1,riesgo:-1,sexo:-1,lat:-1,lng:-1};
+  h.forEach((c,i)=>{
+    const k=n(c); if(!k) return;
+    if(k.includes('vivienda')&&m.viv<0) m.viv=i;
+    else if(k.includes('nombre')&&m.nom<0) m.nom=i;
+    else if((k.includes('nacimiento')||k==='fnac')&&m.fnac<0) m.fnac=i;
+    else if(k.includes('riesgo')&&m.riesgo<0) m.riesgo=i;
+    else if(k.includes('sexo')&&m.sexo<0) m.sexo=i;
+    else if((k==='latitud'||k==='lat')&&m.lat<0) m.lat=i;
+    else if((k==='longitud'||k==='lng'||k==='lon'||k==='long')&&m.lng<0) m.lng=i;
+  });
+  if(m.viv<0||m.nom<0) return clasico;
+  m.exp=m.lat>=0&&m.lng>=0;
+  return m;
+}
+function _numCoord(v){const n=parseFloat(String(v==null?'':v).replace(',','.'));return isFinite(n)?n:null;}
+
+function procesarFilas(filas,hdr){
+  const ix=_mapaIdxCols(hdr);
   const res=[]; let err=0; let ultViv='';
   filas.forEach(cols=>{
-    let viv=String(cols[0]??'').trim();
-    const nom=String(cols[1]??'').trim();
-    let fnacRaw=String(cols[2]??'').trim();
-    const riesgoRaw=String(cols[3]??'').trim().toLowerCase();
-    const sexoRaw=String(cols[4]??'').trim().toLowerCase();
+    const g=i=>i>=0?cols[i]:'';
+    let viv=String(g(ix.viv)??'').trim();
+    const nom=String(g(ix.nom)??'').trim();
+    let fnacRaw=String(g(ix.fnac)??'').trim();
+    const riesgoRaw=String(g(ix.riesgo)??'').trim().toLowerCase();
+    const sexoRaw=String(g(ix.sexo)??'').trim().toLowerCase();
+    const latN=_numCoord(g(ix.lat)), lngN=_numCoord(g(ix.lng));
+    const geo=latN!=null&&lngN!=null&&Math.abs(latN)<=90&&Math.abs(lngN)<=180&&!(latN===0&&lngN===0);
     if(!viv&&!nom) return;
     if(!viv&&nom) viv=ultViv;
     if(viv) ultViv=viv;
-    if(!viv||!nom) err++;
+    const desh=/deshab/.test(riesgoRaw);
+    // Fila de vivienda sin integrantes (deshabitada, con ubicación o con riesgo): es válida
+    const soloViv=!!viv&&!nom&&(desh||geo||riesgoRaw!=='');
+    const _err=!viv||(!nom&&!soloViv);
+    if(_err) err++;
     // Normalizar riesgo
     let riesgo='ninguno';
     if(/alto|high|alrp/.test(riesgoRaw)) riesgo='alto';
     else if(/medio|med|moderate/.test(riesgoRaw)) riesgo='medio';
-    else if(/sin|bajo|no|none|low/.test(riesgoRaw)) riesgo='ninguno';
     // Normalizar sexo → 'F', 'M' o ''
     let sexo='';
     if(/^f|fem|mujer|femenino/.test(sexoRaw)) sexo='F';
@@ -3048,7 +3032,8 @@ function procesarFilas(filas){
     // Normalizar fecha
     if(/^\d{4,6}$/.test(fnacRaw)){const iso=serialExcelAFecha(parseInt(fnacRaw));fnacRaw=iso;}
     else fnacRaw=normalISO(fnacRaw);
-    res.push({viv,nom,fnac:fnacRaw,riesgo,sexo,_err:!viv||!nom});
+    res.push({viv,nom,fnac:fnacRaw,riesgo,sexo,lat:geo?latN:null,lng:geo?lngN:null,
+      desh,soloViv,riesgoExp:riesgoRaw!==''&&!desh,exp:ix.exp,_err});
   });
   if(!res.length){mostrarError('No se encontraron filas válidas.');return;}
   _impFilas=res;
@@ -3062,7 +3047,7 @@ function procesarFilas(filas){
     const sColor=f.sexo==='F'?'color:#c2185b':f.sexo==='M'?'color:#1565c0':'color:#aaa';
     return `<tr>
       <td class="${f._err&&!f.viv?'err':''}">${f.viv||'⚠ vacío'}</td>
-      <td class="${f._err&&!f.nom?'err':''}">${f.nom||'⚠ vacío'}</td>
+      <td class="${f._err&&!f.nom?'err':''}">${f.nom||(f.soloViv?'<i style="color:#888">'+(f.desh?'🏚️ Deshabitada':'Sin integrantes')+'</i>':'⚠ vacío')}</td>
       <td><strong>${edad}</strong><br><span style="font-size:.68em;color:#666">${fnacDisp}</span></td>
       <td>${rMap[f.riesgo]||rMap.ninguno}</td>
       <td style="font-weight:700;font-size:.8rem;${sColor}">${sMap[f.sexo]??'—'}</td>
@@ -3070,11 +3055,34 @@ function procesarFilas(filas){
   }).join('');
 
   const vivU=new Set(res.filter(f=>!f._err).map(f=>f.viv)).size;
-  const val=res.filter(f=>!f._err).length;
-  document.getElementById('imp-resumen').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 11l3 3L22 4"/></svg> ${val} personas en ${vivU} vivienda${vivU!==1?'s':''}${err?` · ⚠ ${err} fila${err>1?'s':''} con datos incompletos`:''}`;
+  const val=res.filter(f=>!f._err&&!f.soloViv).length;
+  const geoN=new Set(res.filter(f=>!f._err&&f.lat!=null).map(f=>f.viv)).size;
+  document.getElementById('imp-resumen').innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 11l3 3L22 4"/></svg> ${val} personas en ${vivU} vivienda${vivU!==1?'s':''}${geoN?` · 📍 ${geoN} con ubicación`:''}${err?` · ⚠ ${err} fila${err>1?'s':''} con datos incompletos`:''}`;
   const syncRadio=document.getElementById('imp-modo-sync');if(syncRadio)syncRadio.checked=true;
   document.getElementById('imp-paso1').style.display='none';
   document.getElementById('imp-paso2').style.display='block';
+}
+
+// Aplica a la vivienda lo que trae el Excel además de las personas:
+// ubicación (lat/lng), estado deshabitada y riesgo manual.
+function _aplicarMetaImport(v,filaViv,ts){
+  const f0=filaViv[0];
+  const gf=filaViv.find(f=>f.lat!=null&&f.lng!=null);
+  if(gf && (v.lat!==gf.lat||v.lng!==gf.lng)){
+    v.lat=gf.lat; v.lng=gf.lng; v.origen_ubic=v.origen_ubic||'manual'; v.actualizadoEn=ts;
+  }
+  const hayPers=(v.personas||[]).length>0;
+  if(filaViv.some(f=>f.desh)){
+    if(!hayPers){ v.deshabitada=true; v.riesgo='ninguno'; v._riesgoManual=false; v.actualizadoEn=ts; }
+    return;
+  }
+  if(f0.exp && v.deshabitada && !hayPers) v.deshabitada=false; // el archivo manda
+  if(f0.riesgoExp){
+    const auto=calcRiesgoAuto((v.personas||[]).length);
+    if(f0.riesgo!==auto && (f0.riesgo!=='ninguno'||f0.exp)){
+      v.riesgo=f0.riesgo; v._riesgoManual=true; v.actualizadoEn=ts;
+    } else if(f0.exp){ v._riesgoManual=false; }
+  }
 }
 
 function confirmarImport(){
@@ -3117,7 +3125,7 @@ function confirmarImport(){
           (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'').trim()), p.id
         ])
       );
-      v.personas = filaViv.map(f=>{
+      v.personas = filaViv.filter(f=>!f.soloViv).map(f=>{
         const key = (f.nom.toLowerCase().trim()+'|'+(f.fnac||'').trim());
         const edad = f.fnac ? calcularEdadTexto(f.fnac)||'' : '';
         return {
@@ -3125,15 +3133,11 @@ function confirmarImport(){
           nombre: f.nom, fnac: f.fnac||'', edad, sexo: f.sexo||''
         };
       });
-      // Actualizar riesgo solo si no fue fijado manualmente
-      if(!v._riesgoManual && filaViv[0].riesgo && filaViv[0].riesgo!=='ninguno')
-        v.riesgo = filaViv[0].riesgo;
       v.actualizadoEn = ts;
 
     } else {
       // ── SOLO AGREGAR: fusionar sin eliminar ──
-      if(filaViv[0].riesgo && filaViv[0].riesgo!=='ninguno') v.riesgo = filaViv[0].riesgo;
-      filaViv.forEach(f=>{
+      filaViv.filter(f=>!f.soloViv).forEach(f=>{
         const normNom = f.nom.toLowerCase().trim();
         const normFnac = (f.fnac||'').trim();
         const yaExiste = (v.personas||[]).some(p=>{
@@ -3154,6 +3158,12 @@ function confirmarImport(){
     }
   });
 
+  // Ubicación, deshabitada y riesgo (ya con las personas definitivas de cada vivienda)
+  vivExcel.forEach((filaViv,vivNom)=>{
+    const v=catByViv.get(String(vivNom).trim());
+    if(v) _aplicarMetaImport(v,filaViv,ts);
+  });
+
   // Recalcular riesgo automático en todas las viviendas afectadas
   cat.forEach(v=>{ _reactivarSiTienePersonas(v); if(!v._riesgoManual) recalcRiesgoVivienda(v); });
   saveCatalogo(cat);
@@ -3161,7 +3171,7 @@ function confirmarImport(){
   renderCatalogo(); actualizarHome();
   if(_mapaZona) renderMarcadores(_filtroMapa);
   const vivU = vivExcel.size;
-  const totalPer = filas.length;
+  const totalPer = filas.filter(f=>!f.soloViv).length;
   const modoLabel = modo==='sync' ? '🔄 Sincronizado' : '➕ Fusionado';
   toast(`✅ ${modoLabel} · ${totalPer} personas en ${vivU} viviendas`,'success',3500);
 }
@@ -4044,48 +4054,31 @@ async function _initFB(){
 }
 
 // ── UID del promotor ──
-function getUID(){ return localStorage.getItem(LS_UID)||''; }
-
-function abrirModalUID(){
-  document.getElementById('uid-input').value=getUID();
-  document.getElementById('modal-uid').classList.add('show');
-  setTimeout(()=>document.getElementById('uid-input').focus(),80);
+// Perfil ÚNICO (se edita solo en index.html): código de sincronización, cantón, promotor y unidad.
+function irAPerfilUnico(){ location.href='index.html#perfil'; }
+const LS_PERFIL_UNICO = 'sis_perfil_unico_v1';
+function getPerfilUnico(){
+  try{ const u=JSON.parse(localStorage.getItem(LS_PERFIL_UNICO)||'null'); if(u&&typeof u==='object') return u; }catch(e){}
+  return {};
+}
+// La clave de la nube sale del nombre del perfil único (mismo criterio que Control MEF y Visita Domiciliar):
+// sin mayúsculas/minúsculas, sin tildes y sin símbolos.
+function getUID(){
+  const n=String(getPerfilUnico().nombre||'');
+  return n.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40);
 }
 
-function guardarUID(){
-  const val=document.getElementById('uid-input').value.trim().toUpperCase();
-  if(!val){toast('Ingresa un código de promotor','error');return;}
-  localStorage.setItem(LS_UID,val);
-  cerrarModal('modal-uid');
-  _actualizarSyncUI();
-  toast('✅ Código guardado: '+val,'success');
-}
+function abrirModalUID(){ irAPerfilUnico(); }
 
 // ── DATOS DE ENCABEZADO (cantón, promotor, unidad de salud) ──
 const LS_HEADER = 'mapa_san_encabezado';
 function getHeaderInfo(){
-  try{ return JSON.parse(localStorage.getItem(LS_HEADER)||'{}'); }
+  const u=getPerfilUnico();
+  if(u.nombre||u.comunidad||u.ucsf) return {canton:u.comunidad||'', promotor:u.nombre||'', unidad:u.ucsf||''};
+  try{ return JSON.parse(localStorage.getItem(LS_HEADER)||'{}'); }   // respaldo: datos antiguos
   catch(e){ return {}; }
 }
-function abrirModalEncabezado(){
-  const h=getHeaderInfo();
-  document.getElementById('enc-canton').value=h.canton||'';
-  document.getElementById('enc-promotor').value=h.promotor||'';
-  document.getElementById('enc-unidad').value=h.unidad||'';
-  document.getElementById('modal-encabezado').classList.add('show');
-  setTimeout(()=>document.getElementById('enc-canton').focus(),80);
-}
-function guardarEncabezado(){
-  const h={
-    canton: document.getElementById('enc-canton').value.trim(),
-    promotor: document.getElementById('enc-promotor').value.trim(),
-    unidad: document.getElementById('enc-unidad').value.trim(),
-  };
-  localStorage.setItem(LS_HEADER, JSON.stringify(h));
-  cerrarModal('modal-encabezado');
-  aplicarEncabezado();
-  toast('✅ Datos guardados','success');
-}
+function abrirModalEncabezado(){ irAPerfilUnico(); }
 function aplicarEncabezado(){
   const h=getHeaderInfo();
   const homeSub=document.getElementById('home-sub');
@@ -4116,7 +4109,7 @@ function _actualizarSyncUI(){
   const mbtnSub=document.getElementById('mbtn-sync-sub');
   if(uid){
     txt.textContent=syncAt?'Último sync: '+syncAt:'Promotor: '+uid+' · Sin sincronizar';
-    cfgBtn.textContent='✏️ '+uid;
+    cfgBtn.textContent='✏️ Perfil'; cfgBtn.title='Perfil: '+uid;   // el nombre completo es largo y empujaba Subir/Bajar fuera de la pantalla
     if(upBtn) upBtn.style.display='';
     if(dnBtn) dnBtn.style.display='';
     if(syncBtn) syncBtn.style.display='';

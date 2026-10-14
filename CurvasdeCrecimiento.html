@@ -2969,11 +2969,8 @@
 
                 <div style="margin: 2rem 0;">
                     <h3 style="color: var(--primary); margin-bottom: 1rem;">Perfil del Promotor</h3>
-                    <div class="form-group">
-                        <label>Tu Nombre / Promotor</label>
-                        <input type="text" id="nombrePromotor" placeholder="Ej: Carlos García">
-                    </div>
-                    <button class="btn btn-primary" onclick="guardarConfig()">Guardar</button>
+                    <p id="perfilUnicoResumen" style="color: var(--muted); margin-bottom: .8rem;"></p>
+                    <button class="btn btn-primary" onclick="irAPerfilUnico()">✏️ Editar perfil en el menú principal</button>
                 </div>
 
                 <div style="margin: 2rem 0; padding-top: 2rem; border-top: 1px solid var(--light2);">
@@ -3013,10 +3010,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Código de sincronización (identifica tus datos en la nube)</label>
-                            <input type="text" id="codigoSyncInput" placeholder="Ej: piletas-abimael-2026" autocapitalize="off" autocorrect="off">
+                            <label>Identificador en la nube (se genera con el nombre de tu perfil)</label>
+                            <input type="text" id="codigoSyncInput" readonly placeholder="Configura tu nombre en el perfil del menú principal">
                         </div>
-                        <button class="btn btn-secondary" onclick="guardarCodigoSync()">💾 Guardar código</button>
+                        <button class="btn btn-secondary" onclick="irAPerfilUnico()">✏️ Editar perfil en el menú principal</button>
 
                         <div id="syncEstadoTexto" class="sync-status-badge">Sin sincronizar todavía</div>
 
@@ -5007,6 +5004,81 @@
             alert('✅ ' + nuevas + ' persona(s) importada(s) desde el Mapa Sanitario' + (omitidas ? ' · ' + omitidas + ' omitida(s) por ya existir' : ''));
         }
 
+        // ══════════════════════════════════════════════════════════════════
+        // POBLACIÓN BASE → AUTO-IMPORTACIÓN
+        // La población se carga UNA vez en el launcher (SIS Comunitario) y llega al Mapa
+        // Sanitario ('mapa_san_catalogo'). Al abrir esta app se aplica sola lo que falte,
+        // con las mismas reglas seguras de la importación manual: solo AGREGA / COMPLETA,
+        // nunca borra ni pisa datos. La "huella" del catálogo evita repetir el trabajo si el
+        // Mapa no cambió. Se apaga con la casilla del launcher (clave 'sis_pob_auto' = '0').
+        // ══════════════════════════════════════════════════════════════════
+        function _sisPobHuella() {
+          const s = localStorage.getItem('mapa_san_catalogo') || '';
+          let h = 5381;
+          for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+          return s.length + ':' + (h >>> 0);
+        }
+        function _sisPobAviso(msg) {
+          try {
+            let d = document.getElementById('sis-pob-aviso');
+            if (!d) {
+              d = document.createElement('div'); d.id = 'sis-pob-aviso';
+              d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:99999;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+              document.body.appendChild(d);
+            }
+            d.textContent = msg; d.style.display = 'block';
+            clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, 5200);
+          } catch (e) {}
+        }
+
+        function mpAutoImportar() {
+            try {
+                if (localStorage.getItem('sis_pob_auto') === '0') return;
+                if (!localStorage.getItem('mapa_san_catalogo')) return;
+                const huella = _sisPobHuella();
+                if (localStorage.getItem('sis_pob_aplicada_curvas') === huella) return;
+                const items = _mpConstruir();
+                if (!items) return;
+                const n0 = DB.personas.length;
+                const ids = new Set(DB.personas.map(p => p.id));
+                const existentes = new Set(DB.personas.map(p => _mpNorm(p.nombre) + '|' + (p.fechaNacimiento || '')));
+                const ahoraIso = new Date().toISOString();
+                let base = Date.now(), nuevas = 0, faltanDatos = 0, revisar = 0;
+                items.forEach(it => {
+                    if (it.estado === 'sinfecha' || it.estado === 'sinsexo') { faltanDatos++; return; }
+                    if (it.estado === 'posible') { revisar++; return; }
+                    if (it.estado !== 'nueva') return;
+                    const key = _mpNorm(it.nombre) + '|' + it.nac;
+                    if (existentes.has(key)) return;
+                    existentes.add(key);
+                    let id; do { id = String(base++); } while (ids.has(id));
+                    ids.add(id);
+                    DB.personas.push({
+                        id: id, nombre: it.nombre, sexo: it.sexo, fechaNacimiento: it.nac,
+                        edadActual: calcularEdad(it.nac), vivienda: String(it.viv.vivienda || ''),
+                        telefono: '', direccion: '', notas: '', esPrematuro: false,
+                        semanasGestacionales: null, fechaRegistro: ahoraIso, origenMapa: it.p.id || ''
+                    });
+                    nuevas++;
+                });
+                if (nuevas) {
+                    try { guardarDatos(); }
+                    catch (e) { DB.personas.length = n0; console.warn('[Población base] Curvas sin espacio', e); return; }
+                    if (typeof mostrarPersonas === 'function') { try { mostrarPersonas(); } catch (e) {} }
+                }
+                localStorage.setItem('sis_pob_aplicada_curvas', huella);
+                if (nuevas || faltanDatos || revisar) {
+                    const partes = [];
+                    if (nuevas) partes.push(nuevas + ' persona(s) nueva(s)');
+                    if (faltanDatos) partes.push(faltanDatos + ' sin fecha o sexo en el Mapa');
+                    if (revisar) partes.push(revisar + ' por revisar (Importar del Mapa)');
+                    _sisPobAviso('👥 Población base: ' + partes.join(' · '));
+                }
+            } catch (e) { console.warn('[Población base] Curvas:', e); }
+        }
+        setTimeout(mpAutoImportar, 1800);
+
+
         function irAPanel(panel) {
             mostrarPanel(panel);
             toggleDrawer(false);
@@ -6087,7 +6159,7 @@
         }
 
         function _encabezadoImprimibleHTML(subtitulo) {
-            const promotor = (DB.config && DB.config.nombrePromotor) ? DB.config.nombrePromotor : '';
+            const promotor = perfilUnico().nombre || ((DB.config && DB.config.nombrePromotor) ? DB.config.nombrePromotor : '');
             const fecha = new Date().toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
             return `
                 <div style="text-align:center; border-bottom:1.5px solid #000; padding-bottom:8px; margin-bottom:12px;">
@@ -8360,7 +8432,9 @@
         }
 
         function obtenerCodigoSync() {
-            return (DB.config && DB.config.codigoSync) || '';
+            // La clave de la nube sale del nombre del perfil único (sin mayúsculas, tildes ni símbolos)
+            return String(perfilUnico().nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
         }
 
         function guardarCodigoSync() {
@@ -8412,8 +8486,8 @@
             if (!el) return;
             const codigo = obtenerCodigoSync();
             const inputCodigo = document.getElementById('codigoSyncInput');
-            if (inputCodigo && !inputCodigo.value) inputCodigo.value = codigo;
-            if (!codigo) { el.textContent = 'Sin código de sincronización configurado'; return; }
+            if (inputCodigo) inputCodigo.value = obtenerCodigoSync();
+            if (!codigo) { el.textContent = 'Falta configurar tu perfil en el menú principal'; return; }
             const opciones = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
             const subida = DB.config && DB.config.ultimaSubidaSync;
             const bajada = DB.config && DB.config.ultimaBajadaSync;
@@ -8426,7 +8500,7 @@
 
         function confirmarSubirFirebase() {
             const codigo = obtenerCodigoSync();
-            if (!codigo) { alert('Primero escribe y guarda un código de sincronización aquí en Configuración.'); return; }
+            if (!codigo) { alert('Primero configura tu nombre en el perfil del menú principal.'); return; }
             const ok = confirm(
                 '☁️⬆️ Vas a SUBIR los datos de este dispositivo a la nube.\n\n' +
                 '• Esto SOBRESCRIBIRÁ lo que haya guardado en la nube con el código "' + codigo + '".\n' +
@@ -8440,7 +8514,7 @@
 
         function confirmarDescargarFirebase() {
             const codigo = obtenerCodigoSync();
-            if (!codigo) { alert('Primero escribe y guarda un código de sincronización aquí en Configuración.'); return; }
+            if (!codigo) { alert('Primero configura tu nombre en el perfil del menú principal.'); return; }
             const ok = confirm(
                 '☁️⬇️ Vas a BAJAR los datos de la nube (código "' + codigo + '").\n\n' +
                 '• Esto REEMPLAZARÁ todos los datos guardados en este dispositivo.\n' +
@@ -8894,10 +8968,17 @@
             setTimeout(() => URL.revokeObjectURL(link.href), 2000);
         }
 
-        function guardarConfig() {
-            DB.config.nombrePromotor = document.getElementById('nombrePromotor').value;
-            guardarDatos();
-            alert('✅ Configuración guardada');
+        // Perfil ÚNICO: se edita solo en el menú principal (index.html) y se comparte con todas las apps.
+        function irAPerfilUnico(){ location.href='index.html#perfil'; }
+        function perfilUnico() {
+            try { const u = JSON.parse(localStorage.getItem('sis_perfil_unico_v1') || 'null'); if (u && typeof u === 'object') return u; } catch (e) {}
+            return {};
+        }
+        function pintarPerfilUnico() {
+            const el = document.getElementById('perfilUnicoResumen');
+            if (!el) return;
+            const u = perfilUnico();
+            el.textContent = u.nombre ? [u.nombre, u.cargo, u.ucsf].filter(Boolean).join(' · ') : 'Aún no has configurado tu perfil.';
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -9235,9 +9316,7 @@
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
             cargarDatos();
-            if (DB.config.nombrePromotor) {
-                document.getElementById('nombrePromotor').value = DB.config.nombrePromotor;
-            }
+            pintarPerfilUnico();
             actualizarEstadoSyncUI();
             restaurarDesbloqueoSyncPanel();
             restaurarEstadoSyncPanel();

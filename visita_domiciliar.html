@@ -948,7 +948,7 @@
     <div class="home-scroller">
 
         <!-- Perfil de usuario -->
-        <div class="home-user-bar" onclick="openProfileModal()" title="Editar perfil">
+        <div class="home-user-bar" onclick="irAPerfilUnico()" title="Editar perfil en el menú principal">
             <div class="user-avatar" id="user-avatar">?</div>
             <div class="user-info">
                 <div class="user-name" id="user-name-display">Toca aquí para configurar tu nombre</div>
@@ -1457,48 +1457,6 @@
 </div><!-- /screen-form -->
 
 <!-- Modal -->
-<!-- Modal de perfil de usuario -->
-<div class="modal-bg" id="profile-modal-bg" onclick="if(event.target===this)closeProfileModal()">
-    <div class="modal" style="max-width:360px">
-        <h3 style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Mi perfil
-        </h3>
-        <div class="profile-modal-body">
-            <div class="profile-field">
-                <label>Nombre completo</label>
-                <input type="text" id="profile-nombre" placeholder="Ej: María González" maxlength="80"/>
-            </div>
-            <div class="profile-field">
-                <label>Cargo / Especialidad</label>
-                <input type="text" id="profile-cargo" placeholder="Ej: Enfermera, Médico general…" maxlength="60"/>
-            </div>
-            <div class="profile-field">
-                <label>UDS / Unidad de salud</label>
-                <input type="text" id="profile-ucsf" placeholder="Ej: UDS San Marcos" maxlength="60"/>
-            </div>
-            <div class="profile-field">
-                <label>Tu firma digital <span style="font-size:.6rem;color:var(--muted);font-weight:400">(se guarda en este dispositivo)</span></label>
-                <!-- Recuadro-botón: abre el pad grande -->
-                <div class="sig-btn" id="profile-sig-btn" onclick="profileSigAbrirPad()" title="Toca para dibujar tu firma">
-                    <div class="sig-btn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
-                    <span class="sig-btn-lbl">Toca para dibujar tu firma</span>
-                    <img id="profile-sig-preview" class="sig-preview" alt="tu firma"/>
-                    <span class="sig-edit-hint">Toca para editar</span>
-                </div>
-                <div class="psig-actions">
-                    <button class="psig-clr" onclick="profileSigBorrar()">✕ Borrar firma</button>
-                </div>
-            </div>
-        </div>
-        <button class="profile-save-btn" onclick="saveProfile()">
-            ✓ Guardar perfil en este dispositivo
-        </button>
-        <button class="btn secondary" onclick="closeProfileModal()" style="width:100%;margin-top:.5rem;justify-content:center">
-            Cancelar
-        </button>
-    </div>
-</div>
 
 <!-- ════ PAD DE FIRMA (sheet) ════ -->
 <div id="sig-pad-bg">
@@ -2616,11 +2574,12 @@
        Registro Diario y esta app comparten el almacenamiento cuando corren dentro de
        SIS Comunitario, así que las fichas se leen directo de 'rdps_registros'. Esta app
        nunca escribe en los datos de Registro Diario: solo lee y copia. */
-    const RD_KEY_REGS = 'rdps_registros', RD_KEY_PERFIL = 'rdps_perfil';
+    const RD_KEY_REGS = 'rdps_registros', RD_KEY_PERFIL = 'sis_perfil_unico_v1';
     const RD_CATEGORIAS = ['','Embarazada','Puérpera','Recién Nacido','Niño 0-12 años','Adulto 20-59 años','Adulto Mayor +60 años'];
 
     function rdLeerRegistros(){ try{ const v=JSON.parse(localStorage.getItem(RD_KEY_REGS)||'null'); return Array.isArray(v)?v:null; }catch(e){ return null; } }
-    function rdLeerPerfil(){ try{ return JSON.parse(localStorage.getItem(RD_KEY_PERFIL)||'{}')||{}; }catch(e){ return {}; } }
+    function rdPerfilNorm(u){ u=u||{}; return {nombre:u.nombre||'',comunidad:u.comunidad||'',establecimiento:u.ucsf||u.establecimiento||'',municipio:u.municipio||''}; }
+    function rdLeerPerfil(){ try{ return rdPerfilNorm(JSON.parse(localStorage.getItem(RD_KEY_PERFIL)||'{}')); }catch(e){ return {}; } }
     function rdNorm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
 
     // "29/09/2026", "29-9-2026" o "2026-09-29"  →  "2026-09-29"
@@ -2913,7 +2872,7 @@
         _rdUltimoRaw = raw;
         let regs; try{ regs = JSON.parse(raw); }catch(e){ return 0; }
         if(!Array.isArray(regs)) return 0;
-        let perfil = {}; try{ perfil = JSON.parse(fresco.perfilRaw||'{}')||{}; }catch(e){}
+        let perfil = {}; try{ perfil = rdPerfilNorm(JSON.parse(fresco.perfilRaw||'{}')); }catch(e){}
         let descartadas = {}; try{ descartadas = JSON.parse(localStorage.getItem(RD_KEY_DESC)||'{}')||{}; }catch(e){}
         const respaldo = JSON.stringify(records);
         let nuevas = 0, actualizadas = 0, pacientesNuevos = 0;
@@ -3011,26 +2970,15 @@
     function escAttr(s){ return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
     /* ════════════════ PERFIL DE USUARIO ════════════════ */
-    const LS_PROFILE = 'minsal_perfil_v1';
-
+    /* Perfil ÚNICO: se edita solo en el menú principal (index.html) y se comparte con todas las apps. */
+    const LS_PROFILE = 'sis_perfil_unico_v1';
     function loadProfile(){
-      try{ return JSON.parse(localStorage.getItem(LS_PROFILE))||{}; }catch(e){ return {}; }
+      try{ const u=JSON.parse(localStorage.getItem(LS_PROFILE)||'null'); if(u&&u.nombre) return {nombre:u.nombre,cargo:u.cargo||'',ucsf:u.ucsf||''}; }catch(e){}
+      try{ const l=JSON.parse(localStorage.getItem('minsal_perfil_v1')||'null'); if(l&&l.nombre) return l; }catch(e){}
+      return {};
     }
     window.loadProfile = loadProfile;
-    function saveProfile(){
-      const nombre = document.getElementById('profile-nombre').value.trim();
-      const cargo  = document.getElementById('profile-cargo').value.trim();
-      const ucsf   = document.getElementById('profile-ucsf').value.trim();
-      if(!nombre){ showToast('⚠ Ingresa tu nombre para continuar.','error'); return; }
-      const profile = { nombre, cargo, ucsf };
-      localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
-      // La firma del personal ya se guardó en localStorage cuando se aceptó en el pad
-      // (ver profileSigAbrirPad → sigPadAceptar → 'per' key)
-      // No hay que hacer nada extra aquí.
-      applyProfile(profile);
-      closeProfileModal();
-      showToast('✓ Perfil guardado en este dispositivo','success');
-    }
+    function irAPerfilUnico(){ location.href='index.html#perfil'; }
     function applyProfile(profile){
       const nombre  = profile.nombre || '';
       const cargo   = profile.cargo  || '';
@@ -3043,23 +2991,6 @@
       const roleText = [cargo, ucsf].filter(Boolean).join(' · ') || 'Personal de salud · MINSAL';
       document.getElementById('user-cargo-display').textContent = roleText;
     }
-    function openProfileModal(){
-      const p = loadProfile();
-      document.getElementById('profile-nombre').value = p.nombre||'';
-      document.getElementById('profile-cargo').value  = p.cargo||'';
-      document.getElementById('profile-ucsf').value   = p.ucsf||'';
-      document.getElementById('profile-modal-bg').classList.add('show');
-      setTimeout(()=>{
-        document.getElementById('profile-nombre').focus();
-        // Cargar preview de firma guardada en el recuadro del perfil
-        const saved = localStorage.getItem('sig_personal_v1');
-        profileSigMostrarPreview(saved || null);
-      }, 100);
-    }
-    function closeProfileModal(){
-      document.getElementById('profile-modal-bg').classList.remove('show');
-    }
-
     /* ════════════════ INIT ════════════════ */
     loadRecords();
     updateHomeStats();

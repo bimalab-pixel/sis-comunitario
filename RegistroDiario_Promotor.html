@@ -1379,12 +1379,15 @@
 
     <div class="home-scroller">
         <!-- Usuario -->
-        <div class="home-user-bar" id="home-user-bar" onclick="abrirConfig()">
+        <div class="home-user-bar" id="home-user-bar" onclick="irAPerfilUnico()">
             <div class="user-avatar" id="home-avatar">?</div>
             <div class="user-info">
                 <div class="user-name" id="home-nombre">Promotor de Salud</div>
                 <div class="user-role" id="home-rol">✏️ Toca aquí para configurar tu perfil</div>
             </div>
+            <button type="button" class="user-edit-icon" title="Ajustes (MAYÚSCULAS, IA)" aria-label="Ajustes"
+                    onclick="event.stopPropagation(); abrirConfig();"
+                    style="border:none;background:none;cursor:pointer;font-size:1.05rem;margin-right:.4rem;flex-shrink:0">⚙️</button>
             <div class="user-edit-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
@@ -2426,24 +2429,13 @@
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-box-inner" style="position:relative">
             <button class="modal-close-x" onclick="cerrarModal('modal-config')">✕</button>
-            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:.3rem">Mi Perfil</h3>
-            <p style="font-size:.8rem;color:var(--muted);margin-bottom:1.1rem">Datos del promotor que aparecen en los reportes oficiales.</p>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:.3rem">Ajustes</h3>
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:1.1rem">Ajustes de esta app. Tu perfil (nombre, comunidad, establecimiento, municipio) es único y se edita en el menú principal.</p>
             <div class="profile-modal-body">
                 <div class="profile-field">
-                    <label>Nombre completo *</label>
-                    <input type="text" id="cfg-nombre" placeholder="Ej: JUAN CARLOS LÓPEZ"/>
-                </div>
-                <div class="profile-field">
-                    <label>Comunidad / Cantón</label>
-                    <input type="text" id="cfg-comunidad" placeholder="Ej: Cantón El Carmen"/>
-                </div>
-                <div class="profile-field">
-                    <label>Establecimiento de Salud</label>
-                    <input type="text" id="cfg-establecimiento" placeholder="Ej: UCSF Coatepeque"/>
-                </div>
-                <div class="profile-field">
-                    <label>Municipio / Distrito</label>
-                    <input type="text" id="cfg-municipio" placeholder="Ej: Coatepeque"/>
+                    <label>Perfil único</label>
+                    <div id="cfg-perfil-resumen" style="font-size:.82rem;color:var(--navy);line-height:1.5"></div>
+                    <button type="button" class="profile-save-btn" style="margin-top:.5rem;background:var(--navy)" onclick="irAPerfilUnico()">✏️ Editar perfil en el menú principal</button>
                 </div>
                 <hr style="margin:1rem 0;border:none;border-top:1px dashed var(--border)"/>
                 <div class="profile-field">
@@ -2477,7 +2469,7 @@
                 </div>
             </div>
             <button class="profile-save-btn" onclick="guardarConfiguracion()">
-                💾 Guardar perfil
+                💾 Guardar ajustes
             </button>
         </div>
     </div>
@@ -2911,7 +2903,23 @@
         localStorage.setItem('rdps_curvas_cola', JSON.stringify({ ts: Date.now(), totalRegistros: (registros || []).length, items }));
       } catch (e) { console.warn('Puente Curvas:', e); }
     }
-    let perfil    = JSON.parse(localStorage.getItem('rdps_perfil')    || '{}');
+    // Perfil ÚNICO: se edita solo en el menú principal (index.html), llave 'sis_perfil_unico_v1'.
+    // Aquí solo se lee; esta app ya no guarda ni baja un perfil propio desde la nube.
+    function irAPerfilUnico() { location.href = 'index.html#perfil'; }
+    function _rdpsPerfilUnificado() {
+      let u = {};
+      try { u = JSON.parse(localStorage.getItem('sis_perfil_unico_v1') || 'null') || {}; } catch (e) {}
+      if (!u.nombre) {
+        try { const l = JSON.parse(localStorage.getItem('rdps_perfil') || 'null') || {}; if (l.nombre) return l; } catch (e) {}
+      }
+      const may = localStorage.getItem('rdps_mayusculas_activo') === '1';
+      const t = v => may ? String(v || '').toUpperCase() : String(v || '');
+      return {
+        nombre: String(u.nombre || '').toUpperCase(),   // el nombre siempre en mayúsculas (como antes)
+        comunidad: t(u.comunidad), establecimiento: t(u.ucsf || u.establecimiento), municipio: t(u.municipio)
+      };
+    }
+    let perfil    = _rdpsPerfilUnificado();
     setTimeout(function () { try { _curvasPublicarCola(); } catch (e) {} }, 1500);
 
     // ══════════════ MAYÚSCULAS GLOBALES ══════════════
@@ -2946,11 +2954,8 @@
       });
       _rdpsGuardarRegistrosLS();
 
-      if (perfil.comunidad)       perfil.comunidad       = String(perfil.comunidad).toUpperCase();
-      if (perfil.establecimiento) perfil.establecimiento = String(perfil.establecimiento).toUpperCase();
-      if (perfil.municipio)       perfil.municipio       = String(perfil.municipio).toUpperCase();
-      // perfil.nombre ya se guarda siempre en mayúsculas, sin importar este interruptor.
-      localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
+      // El perfil es único (index) y se muestra en mayúsculas automáticamente cuando el interruptor está activo.
+      perfil = _rdpsPerfilUnificado();
     }
     function toggleMayusculasGlobal(activar) {
       if (activar) {
@@ -6244,10 +6249,10 @@ function _riesgoActualizarGrafica(indicadorId) {
 
     // ── MODALES ──
     function abrirConfig() {
-      document.getElementById('cfg-nombre').value          = perfil.nombre          || '';
-      document.getElementById('cfg-comunidad').value       = perfil.comunidad       || '';
-      document.getElementById('cfg-establecimiento').value = perfil.establecimiento  || '';
-      document.getElementById('cfg-municipio').value       = perfil.municipio        || '';
+      perfil = _rdpsPerfilUnificado();
+      document.getElementById('cfg-perfil-resumen').innerHTML = perfil.nombre
+        ? '<b>' + _hpEsc(perfil.nombre) + '</b><br>' + _hpEsc([perfil.comunidad, perfil.establecimiento, perfil.municipio].filter(Boolean).join(' · ') || '—')
+        : 'Aún no has configurado tu perfil.';
       document.getElementById('cfg-mayusculas').checked    = rdpsMayusculasActivo();
 
       const selectProveedor = document.getElementById('cfg-ia-proveedor');
@@ -6273,14 +6278,6 @@ function _riesgoActualizarGrafica(indicadorId) {
 
     // ── CONFIGURACIÓN ──
     function guardarConfiguracion() {
-      const n = document.getElementById('cfg-nombre').value.trim().toUpperCase();
-      if (!n) { toast('⚠️ El nombre es obligatorio', 'error'); return; }
-      perfil.nombre          = n;
-      perfil.comunidad       = _rdpsMay(document.getElementById('cfg-comunidad').value.trim());
-      perfil.establecimiento = _rdpsMay(document.getElementById('cfg-establecimiento').value.trim());
-      perfil.municipio       = _rdpsMay(document.getElementById('cfg-municipio').value.trim());
-      localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
-
       const provId = document.getElementById('cfg-ia-proveedor').value;
       const prov = RDPS_PROVEEDORES[provId];
       const clave = document.getElementById('cfg-api-key').value.trim();
@@ -6294,7 +6291,7 @@ function _riesgoActualizarGrafica(indicadorId) {
 
       actualizarHome();
       cerrarModal('modal-config');
-      toast('✅ Configuración guardada', 'success');
+      toast('✅ Ajustes guardados', 'success');
     }
 
     // Helper: cuenta viviendas únicas visitadas en un conjunto de registros
@@ -7583,9 +7580,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
           if (!Array.isArray(data.registros)) throw new Error('Formato inválido');
           if (!confirm(`¿Importar ${data.registros.length} registros?\n\nEsto REEMPLAZARÁ los datos actuales.`)) return;
           registros = data.registros;
-          if (data.perfil) perfil = data.perfil;
           _rdpsGuardarRegistrosLS();
-          localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
           actualizarHome();
           renderListado();
           toast(`✅ ${registros.length} registros importados`, 'success');
@@ -7600,12 +7595,10 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
     function borrarTodo() {
       if (!confirm('⚠️ ¿Eliminar TODOS los registros, catálogo y configuración?\n\nEsta acción NO se puede deshacer.')) return;
       localStorage.removeItem('rdps_registros');
-      localStorage.removeItem('rdps_perfil');
       localStorage.removeItem('rdps_catalogo');
       localStorage.removeItem('rdps_deleted_reg');
       localStorage.removeItem('rdps_deleted_fam');
       registros = [];
-      perfil = {};
       actualizarHome();
       renderListado();
       renderCatalogo();
@@ -12175,10 +12168,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         saveCatalogo(catalogoFinal);
         renderCatalogo();
 
-        if (data.perfil) {
-          perfil = data.perfil;
-          localStorage.setItem('rdps_perfil', JSON.stringify(perfil));
-        }
+        // El perfil ya no se baja de la nube: es único y se edita en el menú principal.
 
         actualizarHome();
         renderListado();
@@ -13364,6 +13354,84 @@ Notas (Acciones ya escritas): ${accion || '—'}
     // ══════════════════════════════════════════
     // LISTA DE VIVIENDAS
     // ══════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════
+    // POBLACIÓN BASE → AUTO-IMPORTACIÓN
+    // La población se carga UNA vez en el launcher (SIS Comunitario) y llega al Mapa
+    // Sanitario ('mapa_san_catalogo'). Al abrir esta app se aplica sola lo que falte,
+    // con las mismas reglas seguras de la importación manual: solo AGREGA / COMPLETA,
+    // nunca borra ni pisa datos. La "huella" del catálogo evita repetir el trabajo si el
+    // Mapa no cambió. Se apaga con la casilla del launcher (clave 'sis_pob_auto' = '0').
+    // ══════════════════════════════════════════════════════════════════
+    function _sisPobHuella() {
+      const s = localStorage.getItem('mapa_san_catalogo') || '';
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+      return s.length + ':' + (h >>> 0);
+    }
+    function _sisPobAviso(msg) {
+      try {
+        let d = document.getElementById('sis-pob-aviso');
+        if (!d) {
+          d = document.createElement('div'); d.id = 'sis-pob-aviso';
+          d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:99999;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+          document.body.appendChild(d);
+        }
+        d.textContent = msg; d.style.display = 'block';
+        clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, 5200);
+      } catch (e) {}
+    }
+
+    function rmAutoImportar() {
+      try {
+        if (localStorage.getItem('sis_pob_auto') === '0') return;
+        if (!localStorage.getItem('mapa_san_catalogo')) return;
+        const huella = _sisPobHuella();
+        if (localStorage.getItem('sis_pob_aplicada_rd') === huella) return;
+        const items = _rmConstruir();
+        if (!items) return;
+        const cat = getCatalogo();
+        const ts = new Date().toISOString();
+        let nuevas = 0, completadas = 0, vivNuevas = 0, revisar = 0;
+        items.forEach(it => {
+          if (it.estado === 'completar') {
+            const viv = cat.find(v => v.id === it.match.vivId);
+            const p = viv && (viv.personas || []).find(x => x.id === it.match.perId);
+            if (!p) return;
+            let cambio = false;
+            if (it.sexo && !p.sexo) { p.sexo = it.sexo; cambio = true; }
+            if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; cambio = true; }
+            if (!p.origenMapa && it.mp.id) p.origenMapa = it.mp.id;
+            if (cambio) { viv.actualizadoEn = ts; completadas++; }
+          } else if (it.estado === 'nueva') {
+            let viv = cat.find(v => String(v.vivienda) === it.numViv);
+            if (!viv) { viv = { id: 'viv_' + _rmId(), vivienda: it.numViv, personas: [], actualizadoEn: ts }; cat.push(viv); vivNuevas++; }
+            if (!viv.personas) viv.personas = [];
+            if (viv.personas.some(x => _rmNorm(x.nombre) === _rmNorm(it.nombre))) return;
+            viv.personas.push({
+              id: 'per_' + _rmId(), nombre: it.nombre,
+              edad: it.nac ? (micatCalcEdadSV(it.nac) || '') : (it.mp.edad || ''),
+              fnac: it.nac || '', sexo: it.sexo, origenMapa: it.mp.id || ''
+            });
+            viv.actualizadoEn = ts; nuevas++;
+          } else if (it.estado === 'posible' || it.estado === 'conflicto') revisar++;
+        });
+        if (nuevas || completadas) {
+          try { saveCatalogo(cat); } catch (e) { console.warn('[Población base] RD sin espacio', e); return; }
+          try { renderCatalogo(); } catch (e) {}
+        }
+        localStorage.setItem('sis_pob_aplicada_rd', huella);
+        if (nuevas || completadas || revisar) {
+          const partes = [];
+          if (nuevas) partes.push(nuevas + ' persona(s) nueva(s)');
+          if (completadas) partes.push(completadas + ' completada(s)');
+          if (vivNuevas) partes.push(vivNuevas + ' vivienda(s) nueva(s)');
+          if (revisar) partes.push(revisar + ' por revisar (Importar → Mapa Sanitario)');
+          toast('👥 Población base: ' + partes.join(' · '), 'success', 5200);
+        }
+      } catch (e) { console.warn('[Población base] Registro Diario:', e); }
+    }
+    setTimeout(rmAutoImportar, 1800);
+
     let _mlvSorted = []; // cache para filtrado
     let _mefVivId  = null; // vivienda actualmente abierta en el modal familia
 

@@ -323,6 +323,69 @@
         }
         .btn-open:active, .btn-cancel:active { opacity: .8; }
 
+
+        /* ── PERFIL ÚNICO ── */
+        .perfil-bar {
+          width: calc(100% - 28px); max-width: 500px; margin: 14px 14px 0;
+          background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+          display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
+        }
+        .perfil-avatar {
+          width: 44px; height: 44px; border-radius: 50%; flex: none;
+          background: linear-gradient(135deg,#0d6e8a,#2bb5d8); color: #fff;
+          display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem;
+        }
+        .perfil-info { flex: 1; min-width: 0; }
+        .perfil-nombre { font-weight: 700; font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .perfil-rol { font-size: .75rem; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .perfil-edit { font-size: 1.1rem; color: var(--teal); }
+        .perfil-bar.vacio { border: 2px dashed var(--teal-lt); }
+        .perfil-field { text-align: left; margin-bottom: 10px; }
+        .perfil-field label { display: block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--sub); margin-bottom: 4px; }
+        .perfil-field .modal-input { margin-bottom: 0; }
+        #modalPerfil .modal-input:focus { border-color: var(--teal-lt); }
+        .perfil-sig { position: relative; border: 2px dashed #cfd8dc; border-radius: 10px; background: #fafcfd; height: 96px; cursor: pointer;
+                      display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .perfil-sig.firmada { border-style: solid; border-color: var(--teal-lt); }
+        .perfil-sig img { max-width: 100%; max-height: 100%; display: none; object-fit: contain; }
+        .perfil-sig.firmada img { display: block; }
+        .perfil-sig-ph { font-size: .8rem; color: #78909c; font-weight: 600; text-align: center; padding: 0 8px; }
+        .perfil-sig.firmada .perfil-sig-ph { display: none; }
+        .perfil-sig-hint { position: absolute; right: 6px; bottom: 4px; font-size: .62rem; color: var(--teal); font-weight: 700; display: none; }
+        .perfil-sig.firmada .perfil-sig-hint { display: block; }
+        .perfil-sig-btns { display: flex; justify-content: flex-end; margin-top: 4px; }
+        .perfil-sig-btns button { border: none; background: none; color: #c62828; font-size: .75rem; font-weight: 600; cursor: pointer; padding: 4px 6px; }
+
+        /* Pad de firma a pantalla completa */
+        #pfSigFull { position: fixed; inset: 0; z-index: 300; background: #fff; display: none; flex-direction: column; }
+        #pfSigFull.active { display: flex; }
+        .pfsf-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: linear-gradient(135deg,#0d6e8a,#2bb5d8); color: #fff; }
+        .pfsf-head b { font-size: .95rem; }
+        .pfsf-head span { font-size: .72rem; opacity: .9; }
+        .pfsf-body { flex: 1; min-height: 0; padding: 10px; background: #eceff1; }
+        .pfsf-pad { position: relative; width: 100%; height: 100%; background: #fff; border: 2px solid var(--teal-lt); border-radius: 12px; touch-action: none; overflow: hidden; }
+        .pfsf-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+        .pfsf-line { position: absolute; left: 6%; right: 6%; bottom: 22%; border-bottom: 1.5px dashed #cfd8dc; pointer-events: none; }
+        .pfsf-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #b0bec5; font-size: 1rem; pointer-events: none; }
+        .pfsf-foot { display: flex; gap: 10px; padding: 10px 14px; background: #fff; border-top: 1px solid #e0e0e0; }
+        .pfsf-foot button { flex: 1; padding: 12px; border-radius: 12px; font-size: .9rem; font-weight: 700; cursor: pointer; border: 2px solid #e0e0e0; background: #fff; color: #546e7a; }
+        .pfsf-foot button.ok { flex: 2; border: none; color: #fff; background: linear-gradient(135deg,#2e7d32,#66bb6a); }
+        .pfsf-foot button.ok:disabled { opacity: .45; }
+        .pfsf-foot button.borrar { color: #c62828; }
+
+        /* Modal de perfil: se adapta cuando el teléfono está en horizontal */
+        #modalPerfil .modal-box { max-height: 92vh; overflow-y: auto; }
+        @media (orientation: landscape) {
+          #modalPerfil { padding: 8px; }
+          #modalPerfil .modal-box { max-width: 760px; max-height: 96vh; padding: 14px 20px 14px; }
+          #modalPerfil .modal-icon { display: none; }
+          #modalPerfil .modal-title { margin-bottom: 2px; }
+          #modalPerfil .modal-desc { margin-bottom: 8px; }
+          #modalPerfil .perfil-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+          #modalPerfil .perfil-field-firma { grid-column: 1 / -1; }
+        }
+        .perfil-nota { font-size: .72rem; color: var(--sub); line-height: 1.4; margin: 2px 0 14px; text-align: left; }
+
         /* ── INFO BAR ── */
         .info-bar {
           width: 100%;
@@ -494,6 +557,87 @@
           background: #1a2e3a; color: #fff; padding: 11px 18px; border-radius: 24px;
           font-size: .8rem; z-index: 300; display: none; max-width: 90%; text-align: center;
         }
+
+        /* ── POBLACIÓN BASE ── */
+        .pob-card {
+          grid-column: 1 / -1;
+          background: var(--card-bg);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          padding: 18px 16px 16px;
+          position: relative;
+          overflow: hidden;
+        }
+        .pob-card::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+          background: linear-gradient(90deg,#0a5c3c,#00c48c);
+        }
+        .pob-title { font-weight: 800; font-size: .98rem; color: var(--text); text-align: center; }
+        .pob-sub { font-size: .74rem; color: var(--sub); text-align: center; margin: 3px 0 12px; line-height: 1.35; }
+        .pob-stat { text-align: center; font-size: .82rem; font-weight: 700; color: #0a5c3c; margin-bottom: 10px; }
+        .pob-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 14px; }
+        .pob-chip { font-size: .68rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: #eceff1; color: #546e7a; }
+        .pob-chip.ok { background: #e8f5e9; color: #2e7d32; }
+        .pob-chip.pend { background: #fff8e1; color: #b26a00; }
+        .pob-btn {
+          width: 100%; border: none; border-radius: 14px; padding: 14px 8px;
+          font-size: .92rem; font-weight: 800; color: #fff; cursor: pointer;
+          background: linear-gradient(135deg,#0a5c3c,#00c48c); box-shadow: 0 4px 12px rgba(10,92,60,.3);
+        }
+        .pob-btn:active { transform: scale(.97); }
+        .pob-auto { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: .74rem; color: var(--sub); }
+        .pob-auto input { width: 18px; height: 18px; accent-color: #0a5c3c; }
+
+        .pob-box { max-width: 470px; max-height: 92vh; overflow-y: auto; }
+        .pob-drop {
+          border: 2px dashed #90a4ae; border-radius: 14px; padding: 22px 12px; text-align: center;
+          color: var(--sub); font-size: .82rem; cursor: pointer; margin-bottom: 10px; background: #f7fbfc;
+        }
+        .pob-drop strong { display: block; color: var(--text); font-size: .9rem; margin-bottom: 4px; }
+        .pob-err { display: none; background: #ffebee; color: #c62828; border-radius: 10px; padding: 9px 12px; font-size: .78rem; margin-bottom: 10px; }
+        .pob-link { background: none; border: none; color: var(--teal); font-weight: 700; font-size: .78rem; text-decoration: underline; cursor: pointer; display: block; margin: 4px auto 0; }
+        .pob-resumen { background: #e8f5ef; color: #0a5c3c; border-radius: 10px; padding: 9px 12px; font-size: .8rem; font-weight: 700; margin-bottom: 10px; }
+        .pob-tabla-wrap { max-height: 240px; overflow: auto; border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 12px; }
+        .pob-tabla { width: 100%; border-collapse: collapse; font-size: .72rem; }
+        .pob-tabla th { position: sticky; top: 0; background: #eceff1; color: #455a64; padding: 6px 5px; text-align: left; }
+        .pob-tabla td { padding: 5px; border-top: 1px solid #f0f0f0; color: var(--text); }
+        .pob-tabla td.n, .pob-tabla th.n { text-align: center; width: 32px; color: #90a4ae; }
+        .pob-tabla td.bad { color: #c62828; font-weight: 700; }
+        .pob-modos { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .pob-modo { display: flex; gap: 10px; align-items: flex-start; border: 2px solid #e0e0e0; border-radius: 12px; padding: 10px 12px; cursor: pointer; font-size: .78rem; color: var(--sub); line-height: 1.35; }
+        .pob-modo input { margin-top: 3px; accent-color: #0a5c3c; }
+        .pob-modo strong { display: block; color: var(--text); font-size: .84rem; }
+        .pob-modo.sel { border-color: #0a5c3c; background: #e8f5ef; }
+    
+        /* ── ADAPTABLE: horizontal, tablet y PC ── */
+        .section-title, main { max-width: 1000px; }
+        main { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
+        .info-bar { max-width: 972px; width: calc(100% - 28px); margin: 18px auto 0; }
+        .app-card { transition: transform .15s, box-shadow .15s; }
+        @media (hover: hover) {
+          .app-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(13,110,138,.22); }
+        }
+        /* Pantallas anchas (PC / tablet): tarjetas más grandes y cómodas */
+        @media (min-width: 900px) {
+          .section-title, main { max-width: 1100px; }
+          main { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
+          .info-bar { max-width: 1072px; }
+          .pob-card, .sync-card { max-width: 640px; justify-self: center; width: 100%; }
+        }
+        /* Celular en horizontal (poca altura): todo más compacto para que quepan más apps a la vista */
+        @media (orientation: landscape) and (max-height: 520px) {
+          header { flex-direction: row; justify-content: center; gap: 16px; padding: 10px 24px; }
+          .logo-wrap { width: 54px; height: 54px; padding: 4px; flex-shrink: 0; }
+          .header-text h1 { font-size: 1.25rem; }
+          .header-text p { font-size: .75rem; margin-top: 2px; }
+          .section-title { padding: 12px 20px 4px; }
+          main { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+          .app-card { padding: 12px 8px 10px; gap: 5px; }
+          .card-icon { width: 46px; height: 46px; font-size: 1.5rem; border-radius: 13px; }
+          .card-label { font-size: .82rem; }
+          .card-sub { display: none; }
+          .card-arrow { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -508,6 +652,16 @@
         <p>Salud Integral Familiar de Promoción y Prevención</p>
     </div>
 </header>
+
+<!-- Perfil único: lo usan Registro Diario, Control MEF y Hoja de Visita Domiciliar -->
+<div class="perfil-bar vacio" id="perfilBar" onclick="abrirPerfil()" title="Editar perfil">
+    <div class="perfil-avatar" id="perfilAvatar">?</div>
+    <div class="perfil-info">
+        <div class="perfil-nombre" id="perfilNombre">Toca aquí para configurar tu perfil</div>
+        <div class="perfil-rol" id="perfilRol">Un solo perfil para todas las apps</div>
+    </div>
+    <div class="perfil-edit">✏️</div>
+</div>
 
 <div id="installBanner">
   <div class="install-card">
@@ -587,6 +741,16 @@
         <div class="card-arrow arrow-tabulador">→</div>
     </div>
 
+    <!-- Población base: se carga una sola vez aquí y llega a todas las apps -->
+    <div class="pob-card">
+        <div class="pob-title">👥 Población base</div>
+        <div class="pob-sub">Cárgala una sola vez aquí. Pasa al Mapa Sanitario y se aplica sola en Registro Diario, Curvas de Crecimiento y Control MEF</div>
+        <div class="pob-stat" id="pobStat">—</div>
+        <div class="pob-chips" id="pobChips"></div>
+        <button class="pob-btn" onclick="pobAbrir()">📥 Agregar / actualizar población</button>
+        <label class="pob-auto"><input type="checkbox" id="pobAuto" onchange="pobCambiarAuto(this.checked)"/> Aplicar automáticamente a las apps</label>
+    </div>
+
     <!-- Sincronización con la nube (enlace a los botones Subir/Bajar de cada app) -->
     <div class="sync-card">
         <div class="sync-title">☁️ Sincronización con la nube</div>
@@ -603,6 +767,48 @@
 </div>
 
 <footer>© 2026 SIS Comunitario <br/>Moisés Labor-Todos los derechos reservados</footer>
+
+
+<!-- ── PAD DE FIRMA A PANTALLA COMPLETA ── -->
+<div id="pfSigFull">
+  <div class="pfsf-head"><b>✍️ Firma del personal</b><span>Firma con el dedo dentro del recuadro</span></div>
+  <div class="pfsf-body"><div class="pfsf-pad" id="pfsfPad"><canvas id="pfsfCanvas"></canvas><div class="pfsf-line"></div><div class="pfsf-ph" id="pfsfPh">Firma aquí</div></div></div>
+  <div class="pfsf-foot">
+    <button type="button" onclick="pfSigCerrar()">Cancelar</button>
+    <button type="button" class="borrar" onclick="pfSigLimpiar()">🗑 Limpiar</button>
+    <button type="button" class="ok" id="pfsfOk" onclick="pfSigAceptar()" disabled>✓ Aceptar</button>
+  </div>
+</div>
+
+<!-- ── MODAL PERFIL ÚNICO ── -->
+<div class="modal-overlay" id="modalPerfil" onclick="if(event.target===this)cerrarPerfil()">
+  <div class="modal-box">
+    <div class="modal-icon">👤</div>
+    <div class="modal-title">Mi perfil</div>
+    <p class="modal-desc">Se guarda una sola vez aquí y lo usan todas las apps (Registro Diario, Control MEF, Visita Domiciliar).</p>
+    <div class="perfil-grid">
+    <div class="perfil-field"><label>Nombre completo *</label><input type="text" id="pf-nombre" class="modal-input" placeholder="Ej: María González" maxlength="80"/></div>
+    <div class="perfil-field"><label>Cargo / Especialidad</label><input type="text" id="pf-cargo" class="modal-input" placeholder="Ej: Promotor de Salud, Enfermera…" maxlength="60"/></div>
+    <div class="perfil-field"><label>Establecimiento / UCSF / UDS</label><input type="text" id="pf-ucsf" class="modal-input" placeholder="Ej: UCSF Coatepeque" maxlength="60"/></div>
+    <div class="perfil-field"><label>Comunidad / Cantón</label><input type="text" id="pf-comunidad" class="modal-input" placeholder="Ej: Cantón El Carmen" maxlength="60"/></div>
+    <div class="perfil-field"><label>Municipio / Distrito</label><input type="text" id="pf-municipio" class="modal-input" placeholder="Ej: Coatepeque" maxlength="60"/></div>
+    <div class="perfil-field perfil-field-firma">
+      <label>Tu firma digital</label>
+      <div class="perfil-sig" id="pfSigWrap" onclick="pfSigAbrir()">
+        <img id="pfSigImg" alt="Tu firma"/>
+        <div class="perfil-sig-ph">✍️ Toca para firmar en pantalla grande</div>
+        <div class="perfil-sig-hint">Toca para editar</div>
+      </div>
+      <div class="perfil-sig-btns"><button type="button" onclick="pfSigQuitar()">✕ Borrar firma</button></div>
+    </div>
+    </div>
+    <p class="perfil-nota">💾 Se guarda en este dispositivo. Para cambiar tu perfil, hazlo siempre desde aquí.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarPerfil()">Cancelar</button>
+      <button class="btn-open" onclick="guardarPerfil()">✓ Guardar perfil</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── MODAL TABULADOR ── -->
 <div class="modal-overlay" id="modalTabulador" onclick="cerrarSiOverlay(event)">
@@ -763,6 +969,47 @@
   }
 </script>
 
+
+<!-- ── MODAL: POBLACIÓN BASE ── -->
+<div class="modal-overlay" id="pobModal" onclick="if(event.target===this)pobCerrar()">
+  <div class="modal-box pob-box">
+    <div class="modal-icon">👥</div>
+    <div class="modal-title">Población base</div>
+
+    <div id="pobPaso1">
+      <p class="modal-desc">Archivo Excel (.xlsx, .xls) o CSV con las columnas:<br/><strong>Vivienda · Nombre · Fecha de nacimiento · Riesgo · Sexo</strong><br/>También acepta el Excel exportado por el Mapa (con Latitud y Longitud). La primera fila es el encabezado.</p>
+      <div class="pob-drop" id="pobDrop" onclick="document.getElementById('pobFile').click()"
+           ondragover="event.preventDefault()" ondrop="pobDrop(event)">
+        <strong>📂 Toca para elegir el archivo</strong>
+        o arrástralo aquí
+        <input type="file" id="pobFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="pobLeer(this.files[0])"/>
+      </div>
+      <div class="pob-err" id="pobErr"></div>
+      <button class="pob-link" onclick="pobPlantilla()">⬇️ Descargar plantilla de ejemplo</button>
+      <div class="modal-btns" style="margin-top:14px"><button class="btn-cancel" onclick="pobCerrar()">Cancelar</button></div>
+    </div>
+
+    <div id="pobPaso2" style="display:none">
+      <div class="pob-resumen" id="pobResumen"></div>
+      <div class="pob-tabla-wrap">
+        <table class="pob-tabla">
+          <thead><tr><th class="n">N°</th><th>Vivienda</th><th>Nombre</th><th>Edad</th><th>Sexo</th></tr></thead>
+          <tbody id="pobTbody"></tbody>
+        </table>
+      </div>
+      <div class="pob-modos">
+        <label class="pob-modo sel" id="pobModoSync"><input type="radio" name="pobModo" value="sync" checked onchange="pobSelModo()"/>
+          <span><strong>🔄 Sincronizar (recomendado)</strong>El archivo manda: las viviendas que vienen en él quedan con esas personas. Las viviendas que no vienen no se tocan.</span></label>
+        <label class="pob-modo" id="pobModoAdd"><input type="radio" name="pobModo" value="add" onchange="pobSelModo()"/>
+          <span><strong>➕ Solo agregar</strong>Suma las personas nuevas sin quitar ninguna.</span></label>
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="pobVolver()">Atrás</button>
+        <button class="btn-open" style="background:linear-gradient(135deg,#0a5c3c,#00c48c);box-shadow:0 4px 12px rgba(10,92,60,.35)" onclick="pobConfirmar()">✅ Guardar población</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ── HOJA DE SELECCIÓN: SUBIR / BAJAR ── -->
 <div class="modal-overlay" id="syncSheet" onclick="if(event.target===this)syncCerrarSheet()">
@@ -952,6 +1199,466 @@
       ? 'Sincronización cancelada'
       : (sube ? '⬆️ Subida revisada: ' : '⬇️ Bajada revisada: ') + syncHechas + ' de ' + syncCola.length + ' apps');
   }
+</script>
+
+<script type="text/x-deferred">
+  // ══════════════════════════════════════════
+  // ── PERFIL ÚNICO (llave sis_perfil_unico_v1) ──
+  // Lo leen Registro Diario, Control MEF y Hoja de Visita Domiciliar.
+  // La firma se guarda en 'sig_personal_v1' (la misma que ya usa Visita Domiciliar).
+  // ══════════════════════════════════════════
+  const PF_KEY = 'sis_perfil_unico_v1', PF_SIG = 'sig_personal_v1';
+  let pfSigTrazo = false, pfSigTinta = false;
+  let pfFirma;   // undefined = sin cambios · null = borrada · 'data:...' = nueva
+
+  function pfLeer() {
+    try { const p = JSON.parse(localStorage.getItem(PF_KEY) || 'null'); if (p && typeof p === 'object') return p; } catch (e) {}
+    return null;
+  }
+
+  // Une los perfiles antiguos de cada app (sin borrarlos) la primera vez
+  function pfMigrar() {
+    if (pfLeer()) return;
+    const rd = k => { try { return JSON.parse(localStorage.getItem(k) || 'null') || {}; } catch (e) { return {}; } };
+    const v = rd('minsal_perfil_v1'), m = rd('minsal_pf_perfil_v1'), r = rd('rdps_perfil');
+    const pick = (...xs) => xs.map(x => String(x || '').trim()).find(Boolean) || '';
+    const p = {
+      nombre: pick(v.nombre, m.nombre, r.nombre),
+      cargo: pick(v.cargo, m.cargo),
+      ucsf: pick(v.ucsf, m.ucsf, r.establecimiento),
+      comunidad: pick(r.comunidad),
+      municipio: pick(r.municipio)
+    };
+    if (p.nombre) localStorage.setItem(PF_KEY, JSON.stringify(p));
+  }
+
+  function pfPintarBarra() {
+    const p = pfLeer() || {};
+    const n = (p.nombre || '').trim(), pts = n.split(/\s+/).filter(Boolean);
+    document.getElementById('perfilAvatar').textContent =
+      pts.length >= 2 ? (pts[0][0] + pts[pts.length - 1][0]).toUpperCase() : (n.slice(0, 2).toUpperCase() || '?');
+    document.getElementById('perfilNombre').textContent = n || 'Toca aquí para configurar tu perfil';
+    document.getElementById('perfilRol').textContent =
+      [p.cargo, p.ucsf].filter(Boolean).join(' · ') || 'Un solo perfil para todas las apps';
+    document.getElementById('perfilBar').classList.toggle('vacio', !n);
+  }
+
+  // ── Firma en la vista previa del perfil ──
+  function pfSigMostrar(dataUrl) {
+    const w = document.getElementById('pfSigWrap'), im = document.getElementById('pfSigImg');
+    if (dataUrl) { im.src = dataUrl; w.classList.add('firmada'); }
+    else { im.removeAttribute('src'); w.classList.remove('firmada'); }
+  }
+  function pfSigQuitar() { pfFirma = null; pfSigMostrar(null); }
+
+  // ── Pad de firma a pantalla completa (se reajusta al girar el teléfono) ──
+  function pfsfCanvas() { return document.getElementById('pfsfCanvas'); }
+  function pfsfAjustar() {
+    const c = pfsfCanvas(), w = c.parentNode;
+    const nw = Math.max(Math.round(w.clientWidth * (window.devicePixelRatio || 1)), 1);
+    const nh = Math.max(Math.round(w.clientHeight * (window.devicePixelRatio || 1)), 1);
+    if (c.width === nw && c.height === nh) return;
+    let snap = null;
+    if (pfSigTinta && c.width > 1) { snap = new Image(); snap.src = c.toDataURL('image/png'); }
+    const ow = c.width, oh = c.height;
+    c.width = nw; c.height = nh;
+    const x = c.getContext('2d');
+    x.lineWidth = Math.max(2.6 * (window.devicePixelRatio || 1), 2.6); x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#1a2e3a';
+    if (snap) {
+      const dib = () => {
+        const k = Math.min(nw / ow, nh / oh);
+        x.drawImage(snap, (nw - ow * k) / 2, (nh - oh * k) / 2, ow * k, oh * k);
+      };
+      if (snap.complete) dib(); else snap.onload = dib;
+    }
+  }
+  function pfsfPos(e) {
+    const c = pfsfCanvas(), b = c.getBoundingClientRect();
+    return { x: (e.clientX - b.left) * c.width / b.width, y: (e.clientY - b.top) * c.height / b.height };
+  }
+  function pfSigIniciar() {
+    const c = pfsfCanvas();
+    c.addEventListener('pointerdown', e => {
+      e.preventDefault(); pfSigTrazo = true;
+      try { c.setPointerCapture(e.pointerId); } catch (_) {}
+      const x = c.getContext('2d'), p = pfsfPos(e);
+      x.beginPath(); x.moveTo(p.x, p.y); x.lineTo(p.x + .1, p.y + .1); x.stroke();
+      pfSigTinta = true;
+      document.getElementById('pfsfPh').style.display = 'none';
+      document.getElementById('pfsfOk').disabled = false;
+    });
+    c.addEventListener('pointermove', e => {
+      if (!pfSigTrazo) return; e.preventDefault();
+      const x = c.getContext('2d'), p = pfsfPos(e); x.lineTo(p.x, p.y); x.stroke();
+    });
+    ['pointerup', 'pointercancel'].forEach(t => c.addEventListener(t, () => { pfSigTrazo = false; }));
+    window.addEventListener('resize', () => { if (document.getElementById('pfSigFull').classList.contains('active')) setTimeout(pfsfAjustar, 120); });
+    window.addEventListener('orientationchange', () => setTimeout(() => { if (document.getElementById('pfSigFull').classList.contains('active')) pfsfAjustar(); }, 300));
+  }
+  function pfSigAbrir() {
+    const ov = document.getElementById('pfSigFull');
+    ov.classList.add('active');
+    pfSigTinta = false; pfSigTrazo = false;
+    document.getElementById('pfsfPh').style.display = '';
+    document.getElementById('pfsfOk').disabled = true;
+    const c = pfsfCanvas(); c.width = 1; c.height = 1;
+    setTimeout(pfsfAjustar, 50);
+  }
+  function pfSigCerrar() { document.getElementById('pfSigFull').classList.remove('active'); }
+  function pfSigLimpiar() {
+    const c = pfsfCanvas(), x = c.getContext('2d');
+    x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); x.restore();
+    pfSigTinta = false;
+    document.getElementById('pfsfPh').style.display = '';
+    document.getElementById('pfsfOk').disabled = true;
+  }
+  // Recorta la firma a su tamaño real (con un margen) para que se vea igual sin importar el tamaño de pantalla
+  function pfSigRecortada() {
+    const c = pfsfCanvas(), x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height).data;
+    let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+    for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) {
+      if (d[(yy * c.width + xx) * 4 + 3] > 10) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+    }
+    if (x1 < 0) return null;
+    const m = 12; x0 = Math.max(x0 - m, 0); y0 = Math.max(y0 - m, 0); x1 = Math.min(x1 + m, c.width - 1); y1 = Math.min(y1 + m, c.height - 1);
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, k = Math.min(1, 700 / w);
+    const o = document.createElement('canvas'); o.width = Math.round(w * k); o.height = Math.round(h * k);
+    o.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, o.width, o.height);
+    return o.toDataURL('image/png');
+  }
+  function pfSigAceptar() {
+    const url = pfSigRecortada();
+    if (!url) return;
+    pfFirma = url; pfSigMostrar(url); pfSigCerrar();
+  }
+
+  function abrirPerfil() {
+    const p = pfLeer() || {};
+    ['nombre', 'cargo', 'ucsf', 'comunidad', 'municipio'].forEach(k => { document.getElementById('pf-' + k).value = p[k] || ''; });
+    pfFirma = undefined;
+    pfSigMostrar(localStorage.getItem(PF_SIG) || null);
+    document.getElementById('modalPerfil').classList.add('active');
+  }
+  function cerrarPerfil() { document.getElementById('modalPerfil').classList.remove('active'); }
+
+  function guardarPerfil() {
+    const g = k => document.getElementById('pf-' + k).value.trim();
+    if (!g('nombre')) { alert('Ingresa tu nombre completo para continuar.'); return; }
+    const p = { nombre: g('nombre'), cargo: g('cargo'), ucsf: g('ucsf'), comunidad: g('comunidad'), municipio: g('municipio') };
+    localStorage.setItem(PF_KEY, JSON.stringify(p));
+    // Firma: solo se reescribe si la dibujó de nuevo o la borró
+    if (typeof pfFirma === 'string') localStorage.setItem(PF_SIG, pfFirma);
+    else if (pfFirma === null) localStorage.removeItem(PF_SIG);
+    pfPintarBarra();
+    cerrarPerfil();
+    if (window.__lsShim) window.__lsShim.flush();
+    syncToast('✓ Perfil guardado para todas las apps');
+  }
+
+  pfMigrar();
+  pfPintarBarra();
+  pfSigIniciar();
+  // Las apps envían aquí al tocar su barra de perfil: index.html#perfil
+  if (location.hash === '#perfil') { history.replaceState(null, '', location.pathname + location.search); abrirPerfil(); }
+</script>
+
+<script type="text/x-deferred" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="text/x-deferred">
+  // ══════════════════════════════════════════
+  // ── POBLACIÓN BASE ──
+  // Escribe en 'mapa_san_catalogo' (el catálogo del Mapa Sanitario) con las mismas reglas
+  // que la importación Excel del propio Mapa. Después, Registro Diario, Curvas de
+  // Crecimiento y Control MEF toman de ahí lo que les falta al abrirse (solo agregan o
+  // completan; nunca borran ni pisan datos de esas apps).
+  // ══════════════════════════════════════════
+  const POB_KEY = 'mapa_san_catalogo';
+  const POB_APPS = [
+    { id: 'rd',     nombre: 'Registro Diario' },
+    { id: 'curvas', nombre: 'Curvas' },
+    { id: 'mef',    nombre: 'MEF' }
+  ];
+  let _pobFilas = [];
+
+  function pobCat() { try { const v = JSON.parse(localStorage.getItem(POB_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function pobHuella() {
+    const s = localStorage.getItem(POB_KEY) || '';
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return s.length + ':' + (h >>> 0);
+  }
+  function pobEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ── Fechas y edad (mismos criterios del Mapa Sanitario) ──
+  function pobNormalISO(s) {
+    if (!s) return ''; s = String(s).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+    return s;
+  }
+  function pobSerialAFecha(serial) {
+    const dt = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+    return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0') + '-' + String(dt.getUTCDate()).padStart(2,'0');
+  }
+  function pobEdadTexto(fnacISO) {
+    if (!fnacISO) return '';
+    const hoy = new Date(), f = new Date(fnacISO + 'T00:00:00');
+    if (isNaN(f) || f > hoy) return '';
+    let a = hoy.getFullYear() - f.getFullYear(), m = hoy.getMonth() - f.getMonth(), d = hoy.getDate() - f.getDate();
+    if (d < 0) { m--; d += new Date(hoy.getFullYear(), hoy.getMonth(), 0).getDate(); }
+    if (m < 0) { a--; m += 12; }
+    if (a === 0 && m === 0) return d + ' día' + (d !== 1 ? 's' : '');
+    if (a === 0) { let t = m + ' mes' + (m !== 1 ? 'es' : ''); if (d > 0) t += ' ' + d + ' día' + (d !== 1 ? 's' : ''); return t; }
+    let t = a + ' año' + (a !== 1 ? 's' : ''); if (m > 0) t += ' ' + m + ' mes' + (m !== 1 ? 'es' : ''); return t;
+  }
+  function pobRiesgoAuto(n) { return n >= 8 ? 'alto' : (n >= 5 ? 'medio' : 'ninguno'); }
+
+  // ── Tarjeta principal ──
+  function pobPintar() {
+    const cat = pobCat();
+    const viv = cat.length, per = cat.reduce((a, v) => a + ((v.personas || []).length), 0);
+    document.getElementById('pobStat').textContent = per
+      ? per + ' persona' + (per !== 1 ? 's' : '') + ' en ' + viv + ' vivienda' + (viv !== 1 ? 's' : '')
+      : 'Aún no hay población cargada';
+    const auto = localStorage.getItem('sis_pob_auto') !== '0';
+    document.getElementById('pobAuto').checked = auto;
+    const h = pobHuella(), cont = document.getElementById('pobChips');
+    cont.innerHTML = '';
+    if (!per) return;
+    POB_APPS.forEach(a => {
+      const ok = localStorage.getItem('sis_pob_aplicada_' + a.id) === h;
+      const c = document.createElement('span');
+      c.className = 'pob-chip ' + (ok ? 'ok' : 'pend');
+      c.textContent = (ok ? '✓ ' : '⏳ ') + a.nombre + (ok ? '' : (auto ? ' · se aplica al abrirla' : ' · automático apagado'));
+      cont.appendChild(c);
+    });
+  }
+  function pobCambiarAuto(on) {
+    localStorage.setItem('sis_pob_auto', on ? '1' : '0');
+    try { window.__lsShim && window.__lsShim.flush(); } catch (e) {}
+    pobPintar();
+    syncToast(on ? 'Las apps tomarán la población solas' : 'Automático apagado: usa «Importar del Mapa» en cada app');
+  }
+
+  // ── Modal ──
+  function pobAbrir() { pobVolver(); document.getElementById('pobModal').classList.add('active'); }
+  function pobCerrar() { document.getElementById('pobModal').classList.remove('active'); }
+  function pobVolver() {
+    document.getElementById('pobPaso1').style.display = 'block';
+    document.getElementById('pobPaso2').style.display = 'none';
+    document.getElementById('pobErr').style.display = 'none';
+    document.getElementById('pobFile').value = '';
+    _pobFilas = [];
+  }
+  function pobError(m) { const e = document.getElementById('pobErr'); e.textContent = m; e.style.display = 'block'; }
+  function pobDrop(ev) { ev.preventDefault(); const f = ev.dataTransfer.files[0]; if (f) pobLeer(f); }
+  function pobSelModo() {
+    const v = document.querySelector('input[name="pobModo"]:checked').value;
+    document.getElementById('pobModoSync').classList.toggle('sel', v === 'sync');
+    document.getElementById('pobModoAdd').classList.toggle('sel', v === 'add');
+  }
+
+  function pobLeer(file) {
+    if (!file) return;
+    document.getElementById('pobErr').style.display = 'none';
+    const ext = file.name.split('.').pop().toLowerCase();
+    const r = new FileReader();
+    if (ext === 'csv') {
+      r.onload = e => {
+        try {
+          const txt = e.target.result, sep = txt.indexOf(';') !== -1 ? ';' : ',';
+          const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          if (lines.length < 2) { pobError('Archivo vacío o sin datos.'); return; }
+          const _todas = lines.map(l => {
+            const cols = []; let dentro = false, campo = '';
+            for (let i = 0; i < l.length; i++) {
+              const c = l[i];
+              if (c === '"') dentro = !dentro; else if (c === sep && !dentro) { cols.push(campo.trim()); campo = ''; } else campo += c;
+            }
+            cols.push(campo.trim()); return cols;
+          });
+          pobProcesar(_todas.slice(1), _todas[0]);
+        } catch (err) { pobError('Error CSV: ' + err.message); }
+      };
+      r.readAsText(file, 'UTF-8'); return;
+    }
+    if (ext === 'xlsx' || ext === 'xls') {
+      if (typeof XLSX === 'undefined') { pobError('La librería de Excel no cargó (revisa la conexión) o usa un archivo .csv.'); return; }
+      r.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const datos = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+          if (datos.length < 2) { pobError('Archivo vacío o sin datos.'); return; }
+          pobProcesar(datos.slice(1).filter(f => f.some(c => String(c).trim() !== '')), datos[0]);
+        } catch (err) { pobError('Error Excel: ' + err.message); }
+      };
+      r.readAsArrayBuffer(file); return;
+    }
+    pobError('Formato no compatible. Usa .xlsx, .xls o .csv');
+  }
+
+  // Detecta columnas por NOMBRE de encabezado; si no lo reconoce usa el orden clásico.
+  function pobIdxCols(h) {
+    const clasico = { viv: 0, nom: 1, fnac: 2, riesgo: 3, sexo: 4, lat: -1, lng: -1, exp: false };
+    if (!h || !h.length) return clasico;
+    const n = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    const m = { viv: -1, nom: -1, fnac: -1, riesgo: -1, sexo: -1, lat: -1, lng: -1 };
+    h.forEach((c, i) => {
+      const k = n(c); if (!k) return;
+      if (k.includes('vivienda') && m.viv < 0) m.viv = i;
+      else if (k.includes('nombre') && m.nom < 0) m.nom = i;
+      else if ((k.includes('nacimiento') || k === 'fnac') && m.fnac < 0) m.fnac = i;
+      else if (k.includes('riesgo') && m.riesgo < 0) m.riesgo = i;
+      else if (k.includes('sexo') && m.sexo < 0) m.sexo = i;
+      else if ((k === 'latitud' || k === 'lat') && m.lat < 0) m.lat = i;
+      else if ((k === 'longitud' || k === 'lng' || k === 'lon' || k === 'long') && m.lng < 0) m.lng = i;
+    });
+    if (m.viv < 0 || m.nom < 0) return clasico;
+    m.exp = m.lat >= 0 && m.lng >= 0;
+    return m;
+  }
+  function pobNumCoord(v) { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) ? n : null; }
+
+  function pobProcesar(filas, hdr) {
+    const ix = pobIdxCols(hdr);
+    const res = []; let ultViv = '';
+    filas.forEach(c => {
+      const g = i => (i >= 0 ? c[i] : '');
+      let viv = String(g(ix.viv) == null ? '' : g(ix.viv)).trim();
+      const nom = String(g(ix.nom) == null ? '' : g(ix.nom)).replace(/\s+/g, ' ').trim();
+      let fn = String(g(ix.fnac) == null ? '' : g(ix.fnac)).trim();
+      const rg = String(g(ix.riesgo) == null ? '' : g(ix.riesgo)).trim().toLowerCase();
+      const sx = String(g(ix.sexo) == null ? '' : g(ix.sexo)).trim().toLowerCase();
+      const latN = pobNumCoord(g(ix.lat)), lngN = pobNumCoord(g(ix.lng));
+      const geo = latN != null && lngN != null && Math.abs(latN) <= 90 && Math.abs(lngN) <= 180 && !(latN === 0 && lngN === 0);
+      if (!viv && !nom) return;
+      if (!viv && nom) viv = ultViv;
+      if (viv) ultViv = viv;
+      const desh = /deshab/.test(rg);
+      const soloViv = !!viv && !nom && (desh || geo || rg !== '');
+      let riesgo = 'ninguno';
+      if (/alto|high|alrp/.test(rg)) riesgo = 'alto'; else if (/medio|med|moderate/.test(rg)) riesgo = 'medio';
+      let sexo = '';
+      if (/^f|fem|mujer|femenino/.test(sx)) sexo = 'F'; else if (/^m|mas|hombre|masculino|varon/.test(sx)) sexo = 'M';
+      fn = /^\d{4,6}$/.test(fn) ? pobSerialAFecha(parseInt(fn, 10)) : pobNormalISO(fn);
+      res.push({ viv, nom, fnac: fn, riesgo, sexo, lat: geo ? latN : null, lng: geo ? lngN : null,
+        desh, soloViv, riesgoExp: rg !== '' && !desh, exp: ix.exp, err: !viv || (!nom && !soloViv) });
+    });
+    if (!res.length) { pobError('No se encontraron filas válidas.'); return; }
+    _pobFilas = res;
+    const sMap = { F: '♀', M: '♂', '': '—' };
+    document.getElementById('pobTbody').innerHTML = res.map((f, i) =>
+      '<tr><td class="n">' + (i + 1) + '</td>' +
+      '<td class="' + (f.err && !f.viv ? 'bad' : '') + '">' + (pobEsc(f.viv) || '⚠ vacío') + '</td>' +
+      '<td class="' + (f.err && !f.nom ? 'bad' : '') + '">' + (pobEsc(f.nom) || (f.soloViv ? '<i>' + (f.desh ? '🏚️ Deshabitada' : 'Sin integrantes') + '</i>' : '⚠ vacío')) + '</td>' +
+      '<td>' + pobEsc(f.fnac ? (pobEdadTexto(f.fnac) || '—') : '—') + '</td>' +
+      '<td>' + sMap[f.sexo] + '</td></tr>').join('');
+    const ok = res.filter(f => !f.err && !f.soloViv);
+    const nViv = new Set(res.filter(f => !f.err).map(f => f.viv)).size;
+    const sinSexo = ok.filter(f => !f.sexo).length, sinFecha = ok.filter(f => !f.fnac).length, malas = res.filter(f => f.err).length;
+    let txt = '✓ ' + ok.length + ' persona' + (ok.length !== 1 ? 's' : '') + ' en ' + nViv + ' vivienda' + (nViv !== 1 ? 's' : '');
+    if (sinFecha) txt += ' · ' + sinFecha + ' sin fecha de nacimiento';
+    if (sinSexo) txt += ' · ' + sinSexo + ' sin sexo';
+    if (malas) txt += ' · ⚠ ' + malas + ' fila' + (malas > 1 ? 's' : '') + ' incompleta' + (malas > 1 ? 's se omiten' : ' se omite');
+    document.getElementById('pobResumen').textContent = txt;
+    document.getElementById('pobPaso1').style.display = 'none';
+    document.getElementById('pobPaso2').style.display = 'block';
+  }
+
+  function pobConfirmar() {
+    const modo = document.querySelector('input[name="pobModo"]:checked').value;
+    const filas = _pobFilas.filter(f => !f.err);
+    if (!filas.length) { syncToast('No hay filas válidas'); return; }
+    const cat = pobCat(), ts = new Date().toISOString();
+    const vivExcel = new Map();
+    filas.forEach(f => { if (!vivExcel.has(f.viv)) vivExcel.set(f.viv, []); vivExcel.get(f.viv).push(f); });
+    const catByViv = new Map(cat.map(v => [String(v.vivienda).trim(), v]));
+    let vivNuevas = 0;
+
+    vivExcel.forEach((filaViv, vivNom) => {
+      let v = catByViv.get(String(vivNom).trim());
+      if (!v) {
+        v = { id: 'viv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), vivienda: vivNom,
+              riesgo: 'ninguno', _riesgoManual: false, personas: [], actualizadoEn: ts };
+        cat.push(v); catByViv.set(String(vivNom).trim(), v); vivNuevas++;
+      }
+      if (!v.personas) v.personas = [];
+      if (modo === 'sync') {
+        const idExistente = new Map(v.personas.map(p => [(String(p.nombre || '').toLowerCase().trim() + '|' + String(p.fnac || '').trim()), p.id]));
+        v.personas = filaViv.filter(f => !f.soloViv).map(f => ({
+          id: idExistente.get(f.nom.toLowerCase().trim() + '|' + (f.fnac || '').trim()) || ('per_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+          nombre: f.nom, fnac: f.fnac || '', edad: f.fnac ? pobEdadTexto(f.fnac) : '', sexo: f.sexo || ''
+        }));
+        v.actualizadoEn = ts;
+      } else {
+        filaViv.filter(f => !f.soloViv).forEach(f => {
+          const nn = f.nom.toLowerCase().trim(), nf = (f.fnac || '').trim();
+          const ya = v.personas.some(p => {
+            const pn = String(p.nombre || '').toLowerCase().trim(), pf = String(p.fnac || '').trim();
+            return (nf && pf) ? (pn === nn && pf === nf) : (pn === nn);
+          });
+          if (!ya) {
+            v.personas.push({ id: 'per_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              nombre: f.nom, fnac: f.fnac || '', edad: f.fnac ? pobEdadTexto(f.fnac) : '', sexo: f.sexo || '' });
+            v.actualizadoEn = ts;
+          }
+        });
+      }
+    });
+
+    // Ubicación, deshabitada y riesgo manual (con las personas ya definitivas)
+    vivExcel.forEach((filaViv, vivNom) => {
+      const v = catByViv.get(String(vivNom).trim());
+      if (!v) return;
+      const f0 = filaViv[0], gf = filaViv.find(f => f.lat != null && f.lng != null);
+      if (gf && (v.lat !== gf.lat || v.lng !== gf.lng)) { v.lat = gf.lat; v.lng = gf.lng; v.origen_ubic = v.origen_ubic || 'manual'; v.actualizadoEn = ts; }
+      const hay = v.personas.length > 0;
+      if (filaViv.some(f => f.desh)) { if (!hay) { v.deshabitada = true; v.riesgo = 'ninguno'; v._riesgoManual = false; v.actualizadoEn = ts; } return; }
+      if (f0.exp && v.deshabitada && !hay) v.deshabitada = false;
+      if (f0.riesgoExp) {
+        const auto = pobRiesgoAuto(v.personas.length);
+        if (f0.riesgo !== auto && (f0.riesgo !== 'ninguno' || f0.exp)) { v.riesgo = f0.riesgo; v._riesgoManual = true; v.actualizadoEn = ts; }
+        else if (f0.exp) v._riesgoManual = false;
+      }
+    });
+
+    // Igual que el Mapa: reactivar viviendas deshabitadas que reciben gente y recalcular riesgo automático
+    cat.forEach(v => {
+      if (v.deshabitada && v.personas && v.personas.length > 0) v.deshabitada = false;
+      if (!v._riesgoManual) v.riesgo = pobRiesgoAuto((v.personas || []).length);
+    });
+
+    try { localStorage.setItem(POB_KEY, JSON.stringify(cat)); }
+    catch (e) { pobError('No se pudo guardar: se llenó el espacio del dispositivo. No se cambió nada.'); return; }
+    try { window.__lsShim && window.__lsShim.flush(); } catch (e) {}
+    pobCerrar();
+    pobPintar();
+    const auto = localStorage.getItem('sis_pob_auto') !== '0';
+    syncToast('✅ ' + (modo === 'sync' ? 'Sincronizada: ' : 'Agregada: ') + filas.filter(f => !f.soloViv).length + ' personas en ' + vivExcel.size + ' viviendas' +
+      (auto ? ' · las apps la tomarán al abrirse' : ''));
+  }
+
+  function pobPlantilla() {
+    const filas = [['Vivienda', 'Nombre', 'Fecha de nacimiento', 'Riesgo', 'Sexo'],
+                   ['1', 'María Ejemplo Pérez', '1990-05-14', '', 'F'],
+                   ['1', 'Juan Ejemplo Pérez', '2019-11-02', '', 'M'],
+                   ['2', 'Ana Ejemplo López', '14/03/1985', '', 'Femenino']];
+    if (typeof XLSX === 'undefined') {
+      const csv = filas.map(r => r.join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' }));
+      a.download = 'Plantilla_Poblacion.csv'; a.click(); return;
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = [{ wch: 10 }, { wch: 32 }, { wch: 20 }, { wch: 10 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Población');
+    XLSX.writeFile(wb, 'Plantilla_Poblacion.xlsx');
+  }
+
+  pobPintar();
 </script>
 
 </body>

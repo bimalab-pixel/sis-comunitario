@@ -753,7 +753,7 @@
         </a>
     </div>
     <div class="home-scroller">
-        <div class="home-user-bar" onclick="openProfileModal()">
+        <div class="home-user-bar" onclick="irAPerfilUnico()" title="Editar perfil en el menú principal">
             <div class="user-avatar" id="user-avatar">?</div>
             <div class="user-info"><div class="user-name" id="user-name-display">Toca aquí para configurar tu nombre</div><div class="user-role" id="user-cargo-display">Personal de salud · MINSAL</div></div>
             <div class="user-edit-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
@@ -1400,16 +1400,7 @@
         </div>
     </div>
 </div>
-<div class="modal-bg" id="profile-modal-bg" onclick="if(event.target===this)closeProfileModal()">
-    <div class="modal" style="max-width:355px">
-        <h3><svg viewBox="0 0 24 24" fill="none" stroke="var(--rose2)" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi perfil</h3>
-        <div class="profile-field"><label>Nombre completo</label><input type="text" id="profile-nombre" placeholder="Ej: María González" maxlength="80"/></div>
-        <div class="profile-field"><label>Cargo / Especialidad</label><input type="text" id="profile-cargo" placeholder="Ej: Promotora de Salud" maxlength="60"/></div>
-        <div class="profile-field"><label>UDS / Unidad de salud</label><input type="text" id="profile-ucsf" placeholder="Ej: UDS San Marcos" maxlength="60"/></div>
-        <button class="profile-save-btn" onclick="saveProfile()">✓ Guardar perfil</button>
-        <button class="btn secondary" onclick="closeProfileModal()" style="width:100%;margin-top:.42rem;justify-content:center">Cancelar</button>
-    </div>
-</div>
+
 <div class="modal-bg" id="modal-bg">
     <div class="modal">
         <h3 id="modal-title">¿Confirmar?</h3>
@@ -1501,7 +1492,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     const MONTHS_ES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const METODO_COLORS={'oral':'#c2185b','inject-m':'#7b1fa2','inject-t':'#512da8','diu':'#2e7d32','implante':'#1565c0','esteril':'#e65100','ninguno':'#9e9e9e'};
     const LS_KEY='minsal_pf_v2';
-    const LS_PROFILE='minsal_pf_perfil_v1';
+    const LS_PROFILE='sis_perfil_unico_v1';
     let records=[],editingId=null,_currentFilter='all';
     let _listSort='az', _vbSort='az', _mvSort='az', _alSort='date', _mvMonthLabel='';
 
@@ -2554,6 +2545,98 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       msCerrar();updateHomeStats();renderList();
       showToast('✓ '+nuevas+' paciente(s) importada(s) desde el Mapa Sanitario'+(omitidas?' · '+omitidas+' omitida(s) por ya existir':''),'success');
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // POBLACIÓN BASE → AUTO-IMPORTACIÓN
+    // La población se carga UNA vez en el launcher (SIS Comunitario) y llega al Mapa
+    // Sanitario ('mapa_san_catalogo'). Al abrir esta app se aplica sola lo que falte,
+    // con las mismas reglas seguras de la importación manual: solo AGREGA / COMPLETA,
+    // nunca borra ni pisa datos. La "huella" del catálogo evita repetir el trabajo si el
+    // Mapa no cambió. Se apaga con la casilla del launcher (clave 'sis_pob_auto' = '0').
+    // ══════════════════════════════════════════════════════════════════
+    function _sisPobHuella() {
+      const s = localStorage.getItem('mapa_san_catalogo') || '';
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+      return s.length + ':' + (h >>> 0);
+    }
+    function _sisPobAviso(msg) {
+      try {
+        let d = document.getElementById('sis-pob-aviso');
+        if (!d) {
+          d = document.createElement('div'); d.id = 'sis-pob-aviso';
+          d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:99999;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+          document.body.appendChild(d);
+        }
+        d.textContent = msg; d.style.display = 'block';
+        clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, 5200);
+      } catch (e) {}
+    }
+
+    function msAutoImportar(){
+      try{
+        if(localStorage.getItem('sis_pob_auto')==='0')return;
+        if(!localStorage.getItem('mapa_san_catalogo'))return;
+        const huella=_sisPobHuella();
+        if(localStorage.getItem('sis_pob_aplicada_mef')===huella)return;
+        const items=_msConstruir();
+        if(!items)return;
+        const profile=loadProfile();
+        const personal=profile.nombre?[profile.nombre,profile.cargo].filter(Boolean).join(' · '):'';
+        const hoyStr=(d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))(new Date());
+        const n0=records.length;
+        const idsActuales=new Set(records.map(r=>r.id));
+        let nextNum=records.reduce((m,r)=>Math.max(m,+r.num||0),0);
+        let nuevas=0, revisar=0;
+        items.forEach(it=>{
+          if(it.sexo==='M')return;
+          if(!_msSegura(it)){ if(it.estado==='nueva'||it.estado==='posible')revisar++; return; }
+          if(idsActuales.has(it.id))return;
+          idsActuales.add(it.id); nextNum++;
+          const rec={
+            id:it.id,num:nextNum,
+            nombre:it.nombre,dui:'',vivienda:String(it.viv.vivienda||''),
+            nacimiento:it.nac,edad:String(it.anios),
+            direccion:'',telefono:'',
+            fecha:hoyStr,vidaSexual:'',
+            preconcepcional:'',arr:'',
+            atencionPreventiva:'',
+            ent:'',entEspecifica:'',
+            discapacidad:'',discapEspecifica:'',
+            fechaEnt:'',metodo:'',
+            blisters:'',inicioOral:'',inicioInject:'',inicioAnual:'',
+            papFecha:'',papResultado:'',papNext:null,
+            vphFecha:'',vphNext:null,referida:'',
+            gestaciones:'',partos:'',
+            riesgos:[],observaciones:'',personal,
+            vacVph:{},vacDt:{},vacNeum:{},vacInfantil:'',
+            nextDate:null,updatedAt:new Date().toISOString(),
+            origenMapa:it.p.id||''
+          };
+          rec.historial=[{
+            id:Date.now().toString(36)+'_ms_'+nextNum,
+            fecha:hoyStr,tipo:'general',
+            detalle:'Registro importado desde el Mapa Sanitario · Vivienda '+(it.viv.vivienda||'—'),
+            proxCita:'',obs:'',personal,auto:true,ts:new Date().toISOString()
+          }];
+          records.push(rec); nuevas++;
+        });
+        if(nuevas){
+          try{saveRecords();}
+          catch(e){records.length=n0; console.warn('[Población base] MEF sin espacio',e); return;}
+          try{updateHomeStats();renderList();}catch(e){}
+        }
+        localStorage.setItem('sis_pob_aplicada_mef',huella);
+        if(nuevas||revisar){
+          const partes=[];
+          if(nuevas)partes.push(nuevas+' paciente(s) nueva(s)');
+          if(revisar)partes.push(revisar+' por revisar (Importar del Mapa)');
+          showToast('👥 Población base: '+partes.join(' · '),'success');
+        }
+      }catch(e){console.warn('[Población base] MEF:',e);}
+    }
+    setTimeout(msAutoImportar,1800);
+
 
     function deleteCurrentRecord(){
       if(!editingId)return;
@@ -4522,12 +4605,15 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
     }
 
     /* ═══ PROFILE ═══ */
-    window.loadProfile=function(){try{return JSON.parse(localStorage.getItem(LS_PROFILE))||{};}catch(e){return{};}}
+    /* Perfil ÚNICO: se edita solo en el menú principal (index.html) y se comparte con todas las apps. */
+    window.loadProfile=function(){
+      try{const u=JSON.parse(localStorage.getItem(LS_PROFILE)||'null');if(u&&u.nombre)return{nombre:u.nombre,cargo:u.cargo||'',ucsf:u.ucsf||''};}catch(e){}
+      try{const l=JSON.parse(localStorage.getItem('minsal_pf_perfil_v1')||'null');if(l&&l.nombre)return l;}catch(e){}
+      return{};
+    };
     function loadProfile(){return window.loadProfile();}
-    function saveProfile(){const n=document.getElementById('profile-nombre').value.trim();if(!n){window.showToast('⚠ Ingresa tu nombre','error');return;}const c=document.getElementById('profile-cargo').value.trim(),u=document.getElementById('profile-ucsf').value.trim(),p={nombre:n,cargo:c,ucsf:u};localStorage.setItem(LS_PROFILE,JSON.stringify(p));applyProfile(p);closeProfileModal();window.showToast('✓ Perfil guardado','success');}
+    function irAPerfilUnico(){ location.href='index.html#perfil'; }
     function applyProfile(p){const n=p.nombre||'';const pts=n.trim().split(' ').filter(Boolean);const ini=pts.length>=2?(pts[0][0]+pts[pts.length-1][0]).toUpperCase():(n.slice(0,2).toUpperCase()||'?');document.getElementById('user-avatar').textContent=ini;document.getElementById('user-name-display').textContent=n||'Toca aquí para configurar tu nombre';document.getElementById('user-cargo-display').textContent=[p.cargo,p.ucsf].filter(Boolean).join(' · ')||'Personal de salud · MINSAL';}
-    function openProfileModal(){const p=loadProfile();document.getElementById('profile-nombre').value=p.nombre||'';document.getElementById('profile-cargo').value=p.cargo||'';document.getElementById('profile-ucsf').value=p.ucsf||'';document.getElementById('profile-modal-bg').classList.add('show');setTimeout(()=>document.getElementById('profile-nombre').focus(),100);}
-    function closeProfileModal(){document.getElementById('profile-modal-bg').classList.remove('show');}
 
     /* ═══════════════════════════════════════
        HISTORIAL DE SEGUIMIENTOS

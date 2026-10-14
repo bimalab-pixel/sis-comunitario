@@ -1280,6 +1280,14 @@
 <script type="text/x-deferred">
     (function() {
         // Carga inmediata del nombre guardado
+        // Perfil ÚNICO (index.html): el nombre del personal se toma de ahí
+        try {
+            const u = JSON.parse(localStorage.getItem('sis_perfil_unico_v1') || 'null');
+            if (u && u.nombre) {
+                const n = String(u.nombre).toUpperCase().trim(), ant = localStorage.getItem('MI_NOMBRE_RECURSO');
+                if (ant !== n) { window.__vmNombreAnterior = ant || ''; localStorage.setItem('MI_NOMBRE_RECURSO', n); }
+            }
+        } catch (e) {}
         const nombreLocal = localStorage.getItem('MI_NOMBRE_RECURSO');
 
         // Función para pintar el nombre sin depender de nada más
@@ -2000,12 +2008,17 @@ let nubeDesbloqueada = false; // Estado inicial
     // NUEVA LISTA DE PACIENTES ARCHIVADAS
     let archivadas = JSON.parse(localStorage.getItem('archivadas')) || [];
         // 1. IDENTIFICACIÓN DE USUARIO (RECURSO)
-    if(!localStorage.getItem('MI_NOMBRE_RECURSO')) {
-        let nombre = prompt("Configuración Inicial:\nEscribe TU nombre para firmar tus registros:");
-        if(nombre) localStorage.setItem('MI_NOMBRE_RECURSO', nombre.toUpperCase().trim());
-        else localStorage.setItem('MI_NOMBRE_RECURSO', "SIN_NOMBRE");
-    }
+    // El nombre viene del perfil único del menú principal (ya no se pide aquí).
+    if(!localStorage.getItem('MI_NOMBRE_RECURSO')) localStorage.setItem('MI_NOMBRE_RECURSO', "SIN_NOMBRE");
     let MI_USUARIO = localStorage.getItem('MI_NOMBRE_RECURSO');
+    // Si el perfil cambió de nombre, las fichas propias (o sin firma) pasan a llevar el nombre nuevo
+    if (typeof window.__vmNombreAnterior === 'string') {
+        const _ant = window.__vmNombreAnterior;
+        [embarazadas, puerperas, archivadas].forEach(lista => lista.forEach(p => {
+            if (p.registrado_por === _ant || !p.registrado_por || p.registrado_por === "SIN_NOMBRE") p.registrado_por = MI_USUARIO;
+        }));
+        guardarDatos('embarazadas'); guardarDatos('puerperas'); guardarDatos('archivadas');
+    }
 
     // Variables del Supervisor
     let MODO_SUPERVISOR = false;
@@ -4789,61 +4802,8 @@ async function generarReporteGlobal() {
 }
 
 
-function cambiarNombreUsuario() {
-    // 1. Capturamos el nombre VIEJO antes de que cambie
-    let nombreAnterior = localStorage.getItem('MI_NOMBRE_RECURSO');
-
-    let nuevo = prompt("Escribe tu nombre de trabajador:", nombreAnterior || "");
-
-    if (nuevo && nuevo.trim().length > 0) {
-        let nombreFinal = nuevo.toUpperCase().trim();
-
-        // Si el nombre es igual al que ya tenías, no hacemos nada
-        if(nombreFinal === nombreAnterior) return;
-
-        // 2. Guardamos el NUEVO nombre
-        localStorage.setItem('MI_NOMBRE_RECURSO', nombreFinal);
-        if(typeof MI_USUARIO !== 'undefined') MI_USUARIO = nombreFinal;
-
-        // 3. --- MIGRACIÓN DE DATOS (LA MAGIA) ---
-        // Recorremos todas las listas y buscamos los registros que tenían tu nombre viejo
-        // o que no tenían nombre, y les ponemos el nuevo.
-
-        let cambiados = 0;
-
-        const actualizarEtiqueta = (lista) => {
-            lista.forEach(paciente => {
-                // Si la paciente fue registrada por mi YO del pasado...
-                if (paciente.registrado_por === nombreAnterior || !paciente.registrado_por || paciente.registrado_por === "SIN_NOMBRE") {
-                    paciente.registrado_por = nombreFinal; // ¡Actualizamos la firma!
-                    cambiados++;
-                }
-            });
-        };
-
-        actualizarEtiqueta(embarazadas);
-        actualizarEtiqueta(puerperas);
-        actualizarEtiqueta(archivadas);
-
-        // 4. Guardamos los cambios en la memoria del teléfono
-        guardarDatos('embarazadas');
-        guardarDatos('puerperas');
-        guardarDatos('archivadas');
-
-        // 5. Actualizamos visualmente
-        const etiqueta = document.getElementById('display-nombre-recurso');
-        if(etiqueta) {
-            etiqueta.innerText = nombreFinal;
-            etiqueta.style.color = "#a7ffeb";
-            setTimeout(() => etiqueta.style.color = "#4db6ac", 500);
-        }
-
-        // 6. Aviso inteligente
-        setTimeout(() => {
-            alert(`✅ Nombre actualizado a: ${nombreFinal}.\n\n🔄 Se han actualizado ${cambiados} expedientes antiguos para que aparezcan bajo tu nuevo nombre.`);
-        }, 100);
-    }
-}
+// El nombre del usuario es único para todas las apps y se edita en el menú principal.
+function cambiarNombreUsuario() { location.href = 'index.html#perfil'; }
 // ==========================================
 // FUNCIÓN DE BORRADO DE FÁBRICA (CORREGIDA)
 // ==========================================
