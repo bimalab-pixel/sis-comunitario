@@ -1948,6 +1948,17 @@
       measurementId: "G-ERZ72YE3JZ"
     };
 
+    // Recarga la página SOLO cuando los datos ya quedaron escritos en el almacenamiento del equipo
+    // (storage-shim los guarda en IndexedDB de forma asíncrona; si se recarga antes, en algunos equipos
+    // los datos recién bajados de la nube se pierden y la app aparece vacía).
+    function recargarSeguro() {
+        const ir = () => location.reload();
+        try {
+            if (window.__lsShim && window.__lsShim.flush) { window.__lsShim.flush().then(ir, ir); setTimeout(ir, 4000); }
+            else ir();
+        } catch (e) { ir(); }
+    }
+
     let database = null; // Se inicializa solo al sincronizar
     let _firebaseLoadPromise = null;
 
@@ -4465,7 +4476,7 @@ async function cargarDeNube(esDescargaTotal = false) {
         if(esDescargaTotal) {
             iniciarPanelSupervisor();
         } else {
-            location.reload();
+            recargarSeguro();
         }
 
     } catch (error) {
@@ -4819,7 +4830,7 @@ function borrarTodoDeFabrica() {
 
     // 4. Reinicio
     alert("✅ La aplicación se ha reiniciado de fábrica. Todos los datos han sido borrados.");
-    location.reload();
+    recargarSeguro();
 }
 
 
