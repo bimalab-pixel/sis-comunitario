@@ -263,6 +263,7 @@
         .home-tema-toggle:hover{background:var(--light2)}
         #screen-home.tema-oscuro .home-tema-toggle{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff;box-shadow:none;}
         #screen-home.tema-oscuro .home-tema-toggle:hover{background:rgba(255,255,255,.2)}
+        .home-config-btn{right:auto;left:1rem;font-size:1.1rem;line-height:1;padding:0}
         .home-tema-toggle .icon-sol{display:none}
         #screen-home.tema-oscuro .home-tema-toggle .icon-luna{display:none}
         #screen-home.tema-oscuro .home-tema-toggle .icon-sol{display:block}
@@ -1365,6 +1366,7 @@
             <svg class="icon-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
             <svg class="icon-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         </button>
+        <button type="button" class="home-tema-toggle home-config-btn" id="btn-config-home" onclick="abrirConfig()" title="Ajustes (MAYÚSCULAS, IA)" aria-label="Ajustes">⚙️</button>
         <div class="home-logo" id="rdps-toque-secreto-ia" onclick="rdpsToqueSecretoIA()" style="cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -1385,9 +1387,6 @@
                 <div class="user-name" id="home-nombre">Promotor de Salud</div>
                 <div class="user-role" id="home-rol">✏️ Toca aquí para configurar tu perfil</div>
             </div>
-            <button type="button" class="user-edit-icon" title="Ajustes (MAYÚSCULAS, IA)" aria-label="Ajustes"
-                    onclick="event.stopPropagation(); abrirConfig();"
-                    style="border:none;background:none;cursor:pointer;font-size:1.05rem;margin-right:.4rem;flex-shrink:0">⚙️</button>
             <div class="user-edit-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
