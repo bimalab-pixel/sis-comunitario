@@ -2433,6 +2433,44 @@
             height: 100% !important;
         }
 
+        /* ── Perfil de persona a PANTALLA COMPLETA en pantallas grandes ──
+           En computadora / tablet horizontal el recuadro del perfil ocupa toda la
+           ventana (antes quedaba en una caja angosta de 600px). La gráfica crece
+           con el ancho, pero se limita a la altura visible para que se vea completa
+           sin tener que desplazarse. En teléfono no cambia nada. */
+        @media (min-width: 900px) {
+            #modalPerfil.modal-bg.show { align-items: stretch; justify-content: stretch; }
+            #modalPerfil .modal-box {
+                width: 100vw; max-width: none;
+                height: 100vh; max-height: none;
+                border-radius: 0;
+                display: flex; flex-direction: column;
+                overflow: hidden;
+            }
+            #modalPerfil .modal-header { flex: 0 0 auto; padding: 1.1rem 2.5rem; }
+            #modalPerfil .modal-header h2 { font-size: 1.7rem; }
+            #modalPerfil .modal-body {
+                flex: 1 1 auto; min-height: 0;
+                overflow-y: auto; -webkit-overflow-scrolling: touch;
+                padding: 2rem 3rem 3rem;
+            }
+            #modalPerfil .modal-body > * { max-width: 1500px; margin-left: auto !important; margin-right: auto !important; }
+            /* Información personal en 3 columnas y recomendaciones en 2, para ganar altura
+               y que la gráfica quede más arriba, visible sin tanto desplazamiento. */
+            #modalPerfil .modal-body > div:first-child { columns: 3; column-gap: 2rem; }
+            #modalPerfil .modal-body > div:first-child h3 { column-span: all; }
+            #modalPerfil .modal-body > div:first-child p { break-inside: avoid; }
+            #modalPerfil .mini-chart { padding: 1.1rem; }
+            #modalPerfil .mini-chart-scroll { overflow-x: visible; }
+            #modalPerfil .mini-chart-inner {
+                min-width: 0;
+                width: 100%;
+                max-width: calc((100vh - 230px) * 1.565);
+                margin: 0 auto;
+            }
+            #modalPerfil .mini-chart-tabs button { font-size: 0.9rem; padding: 0.5rem 1rem; }
+        }
+
         @media (max-width: 768px) {
             .chart-toolbar { flex-direction: column; align-items: stretch; }
             /* El scroll horizontal y el ancho natural de cada pestaña ya son
@@ -7980,7 +8018,8 @@
                                 <th>Peso (kg)</th>
                                 <th>Talla (cm)</th>
                                 ${encabezadosIndicadores}
-                                <th style="width: 100px;" class="col-acciones-fija">Acciones</th>
+                                <th>Estado nutricional</th>
+                                <th style="width: 100px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -8001,6 +8040,15 @@
                                     return `<td><span class="estado-badge estado-${c.clase}">${valor}</span></td>`;
                                 }).join('');
 
+                                // Estado nutricional de ESTA medición: el peor de sus indicadores (igual que
+                                // el recuadro "Estado Actual"), más el detalle por indicador en letra pequeña.
+                                const _detInd = (c.esOMS && c.detalle) ? ['pe','te','pt'].map(k => c.detalle[k]).filter(Boolean) : [];
+                                const estadoNutri = `
+                                    <span class="estado-badge estado-${c.clase}">${c.estado}</span>
+                                    ${_detInd.length ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:0.3rem; line-height:1.35;">${_detInd.map(d => `${d.indicador}: ${d.label}`).join('<br>')}</div>` : ''}
+                                    ${(c.esOMS && !m.talla) ? `<div style="font-size:0.72rem; color:var(--muted); margin-top:0.3rem;">Solo por Peso/Edad (falta talla)</div>` : ''}
+                                `;
+
                                 return `
                                     <tr>
                                         <td>${formatearFechaSV(m.fecha)}</td>
@@ -8008,7 +8056,8 @@
                                         <td>${m.peso}</td>
                                         <td>${m.talla || '—'}</td>
                                         ${celdas}
-                                        <td style="text-align:center; gap:0.4rem; display:flex; justify-content:center;" class="col-acciones-fija">
+                                        <td>${estadoNutri}</td>
+                                        <td style="text-align:center; white-space:nowrap;">
                                             <button class="table-icon-btn" onclick="event.stopPropagation(); cerrarModal(); cerrarModalTabla(); abrirEditorMedicion('${m.id}')" title="Editar medición">✏️</button>
                                             <button class="table-icon-btn" onclick="event.stopPropagation(); eliminarMedicion('${m.id}')" title="Eliminar medición" style="color:#dc2626;">🗑️</button>
                                         </td>
@@ -8278,6 +8327,13 @@
             if (e && e.target.id !== 'modalPerfil') return;
             document.getElementById('modalPerfil').classList.remove('show');
         }
+
+        // Con el perfil a pantalla completa, Esc lo cierra (útil en computadora).
+        document.addEventListener('keydown', function (ev) {
+            if (ev.key !== 'Escape') return;
+            const m = document.getElementById('modalPerfil');
+            if (m && m.classList.contains('show')) m.classList.remove('show');
+        });
 
         // ═══════════════════════════════════════════════════════════════
         // REPORTES

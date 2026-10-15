@@ -1509,6 +1509,7 @@ td.err{color:var(--red);font-weight:700}
     <div class="f-group">
       <label>N° de Vivienda *</label>
       <input type="text" id="mviv-num" placeholder="Ej: 15"/>
+      <div id="mviv-sugerido" style="display:none;font-size:.74rem;color:#166534;margin-top:.3rem;line-height:1.4"></div>
     </div>
     <label class="import-checkbox" style="border-radius:8px;border:1.5px solid var(--border);margin-bottom:.9rem">
       <input type="checkbox" id="mviv-deshabitada" onchange="mvivToggleDeshabitada()"/>
@@ -2096,16 +2097,35 @@ function renderCatalogo(opcs){
 }
 
 // ── CRUD VIVIENDA ──
+// Siguiente número de vivienda: toma el mayor número ya registrado (usa los dígitos iniciales,
+// así "15-A" cuenta como 15) y le suma 1. Si no hay viviendas, sugiere 1.
+function siguienteNumeroVivienda(){
+  let max=0;
+  getCatalogo().forEach(v=>{
+    const m=String(v&&v.vivienda!=null?v.vivienda:'').trim().match(/^\d+/);
+    if(m){const n=parseInt(m[0],10); if(n>max) max=n;}
+  });
+  return {ultimo:max, siguiente:max+1};
+}
 function abrirNuevaVivienda(){
   _editVivId=null;
   document.getElementById('mviv-titulo').textContent='Nueva Vivienda';
   document.getElementById('mviv-sub').textContent='Registra el número y el nivel de riesgo sanitario.';
-  document.getElementById('mviv-num').value='';
+  const _sug=siguienteNumeroVivienda();
+  const _inp=document.getElementById('mviv-num');
+  _inp.value=String(_sug.siguiente);   // propuesto: se puede borrar o cambiar antes de guardar
+  const _hint=document.getElementById('mviv-sugerido');
+  if(_hint){
+    _hint.innerHTML=_sug.ultimo>0
+      ?'💡 Número sugerido: <strong>'+_sug.siguiente+'</strong> (la última vivienda registrada es la '+_sug.ultimo+'). Puedes cambiarlo si lo necesitas.'
+      :'💡 Aún no hay viviendas registradas: se sugiere empezar con <strong>1</strong>. Puedes cambiarlo.';
+    _hint.style.display='block';
+  }
   document.getElementById('mviv-deshabitada').checked=false;
   mvivToggleDeshabitada();
   _mvivSetRiesgo(null);
   abrirModal('modal-vivienda');
-  setTimeout(()=>document.getElementById('mviv-num').focus(),80);
+  setTimeout(()=>{_inp.focus();_inp.select();},80);
 }
 function abrirEditVivienda(id){
   const cat=getCatalogo(); const v=cat.find(x=>x.id===id); if(!v) return;
@@ -2113,6 +2133,7 @@ function abrirEditVivienda(id){
   document.getElementById('mviv-titulo').textContent='Editar Vivienda '+v.vivienda;
   document.getElementById('mviv-sub').textContent='Modifica los datos de esta vivienda.';
   document.getElementById('mviv-num').value=v.vivienda;
+  const _h2=document.getElementById('mviv-sugerido'); if(_h2) _h2.style.display='none';
   document.getElementById('mviv-deshabitada').checked=!!v.deshabitada;
   mvivToggleDeshabitada();
   _mvivSetRiesgo(id);
