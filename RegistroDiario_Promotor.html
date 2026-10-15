@@ -387,19 +387,23 @@
         .ge-fecha-fila{font-size:.78rem;color:var(--navy2);padding:.18rem 0;border-top:1px solid var(--light2)}
         .ge-fecha-fila:first-of-type{border-top:none}
         .ge-fecha-n{display:inline-block;min-width:1.3rem;text-align:right;color:var(--muted);font-weight:700;margin-right:.2rem}
-        #modal-grafica-nutri .modal-box{max-width:520px;transition:max-width .15s,width .15s}
-        #modal-grafica-nutri h3{padding-right:80px;word-wrap:break-word;overflow-wrap:break-word}
-        .btn-fullscreen-grafica{
-          position:absolute;top:.9rem;right:2.9rem;background:#f0fdf4;border:1px solid #bbf7d0;
-          color:#166534;border-radius:8px;width:30px;height:30px;font-size:1rem;cursor:pointer;
+        /* Modal de la gráfica: se adapta solo a toda la pantalla (vertical y horizontal) */
+        #modal-grafica-nutri{padding:.5rem}
+        #modal-grafica-nutri .modal-box{width:100%;max-width:520px;max-height:96vh;max-height:96dvh;overflow-y:auto}
+        #modal-grafica-nutri h3{padding-right:44px;word-wrap:break-word;overflow-wrap:break-word}
+        .btn-fullscreen-grafica{display:none}
+        #graficaNutriCanvas{width:100%;display:block}
+        @media (min-width:600px){
+          #modal-grafica-nutri .modal-box{max-width:98vw}
         }
-        .btn-fullscreen-grafica:hover{background:#16a34a;color:#fff;border-color:#16a34a}
-        #modal-grafica-nutri-box.fullscreen{
-          max-width:none !important;width:100vw;height:100vh;max-height:100vh;
-          border-radius:0;margin:0;
+        /* Horizontal en pantallas medianas/grandes: gráfica grande a la izquierda, datos a la derecha */
+        @media (min-width:700px) and (orientation:landscape){
+          #modal-grafica-nutri .modal-box{padding:.8rem 1rem}
+          #modal-grafica-nutri .modal-box-inner{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);column-gap:1rem;align-content:start}
+          #modal-grafica-nutri .modal-box-inner > *{grid-column:2}
+          #modal-grafica-nutri .modal-box-inner > h3{grid-column:1 / -1;grid-row:1}
+          #modal-grafica-nutri .modal-box-inner > #graficaNutriCanvas{grid-column:1;grid-row:2 / span 14;position:sticky;top:0;align-self:start}
         }
-        #modal-grafica-nutri-box.fullscreen .modal-box-inner{height:100%;overflow-y:auto}
-        #modal-grafica-nutri-box.fullscreen #graficaNutriCanvas{max-height:70vh;width:auto;margin:0 auto}
 
         .btn-ver-grafica-form{
           display:flex;align-items:center;justify-content:center;gap:.4rem;
@@ -5495,7 +5499,7 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
   // Todo se escala en función del tamaño real del canvas, así que en pantalla completa
   // (canvas más grande) el texto, líneas y puntos crecen proporcionalmente en vez de
   // quedar diminutos como en la versión chica.
-  const esc = W / 500;
+  const esc = _riesgoEscalaCanvas(canvas);
   const pad = { l: 52 * esc, r: 18 * esc, t: 68 * esc, b: 42 * esc };
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
@@ -5573,7 +5577,9 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
   }
   const pasoMesesGrid = (mesFin - mesInicio) > 100 ? 24 : 12;
-  for (let mes = mesInicio; mes <= mesFin; mes += pasoMesesGrid) {
+  // Las marcas siempre caen en años completos (6a, 8a, 10a…), nunca en meses sueltos como 61m o 85m.
+  const primerMesGrid = Math.ceil(mesInicio / pasoMesesGrid) * pasoMesesGrid;
+  for (let mes = primerMesGrid; mes <= mesFin; mes += pasoMesesGrid) {
     const x = xPix(mes);
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
   }
@@ -5609,12 +5615,12 @@ function _riesgoDibujarCurvaEdad(canvas, indicador, edadMesesPersona, sexo, valo
 
   // Etiquetas del eje X (edad)
   ctx.textAlign = 'center'; ctx.fillStyle = '#475569'; ctx.font = `${10 * esc}px sans-serif`;
-  for (let mes = mesInicio; mes <= mesFin; mes += pasoMesesGrid) {
+  for (let mes = primerMesGrid; mes <= mesFin; mes += pasoMesesGrid) {
     const x = xPix(mes);
-    ctx.fillText(mes % 12 === 0 ? (mes / 12) + 'a' : mes + 'm', x, H - pad.b + 16 * esc);
+    ctx.fillText((mes / 12) + 'a', x, H - pad.b + 16 * esc);
   }
-  ctx.fillStyle = '#64748b'; ctx.font = `${9.5 * esc}px sans-serif`;
-  ctx.fillText('Edad', W - pad.r - 16 * esc, H - 8 * esc);
+  ctx.fillStyle = '#64748b'; ctx.font = `${9.5 * esc}px sans-serif`; ctx.textAlign = 'right';
+  ctx.fillText('Edad (años)', W - pad.r - 4 * esc, H - 8 * esc);
 
   // Historial comparativo (visitas anteriores de la misma persona, cargado desde Firebase):
   // línea punteada azul conectando cada medición en orden cronológico, con un punto pequeño
@@ -5679,7 +5685,7 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor, esAdultoMayor) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  const esc = W / 500;
+  const esc = _riesgoEscalaCanvas(canvas);
   const pad = { l: 30 * esc, r: 30 * esc };
   const plotW = W - pad.l - pad.r;
   const minIMC = 12, maxIMC = 42;
@@ -5745,6 +5751,55 @@ function _riesgoDibujarEscalaIMCAdulto(canvas, imcValor, esAdultoMayor) {
   };
   dibujarMarca(t0);
 }
+
+// Escala de dibujo: si el canvas fue ajustado a la pantalla usa esa escala; si no, la base 500x300.
+function _riesgoEscalaCanvas(canvas) {
+  const e = parseFloat(canvas.dataset.esc);
+  return e > 0 ? e : Math.min(canvas.width / 500, canvas.height / 300);
+}
+
+// Ajusta el tamaño REAL del canvas al espacio disponible de la pantalla (vertical u horizontal)
+// con la densidad de píxeles del dispositivo, para que la gráfica se vea grande y nítida.
+function _riesgoAjustarCanvasGrafica() {
+  const modal = document.getElementById('modal-grafica-nutri');
+  if (!modal || !modal.classList.contains('show')) return;
+  const canvas = document.getElementById('graficaNutriCanvas');
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const horizontal = vw > vh && vw >= 700;
+  const cssW = Math.max(240, canvas.clientWidth || 300);
+  let cssH;
+  if (horizontal) {
+    const box = document.getElementById('modal-grafica-nutri-box');
+    const h3 = document.getElementById('graficaNutriTitulo');
+    const cs = getComputedStyle(box);
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    cssH = vh * 0.96 - pad - (h3 ? h3.offsetHeight : 40) - 14;
+    cssH = Math.min(cssH, cssW * 0.85);
+  } else {
+    cssH = Math.min(cssW * (cssW < 600 ? 0.62 : 0.72), vh * 0.5);
+  }
+  cssH = Math.max(200, Math.round(cssH));
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.height = cssH + 'px';
+  let f = Math.min(cssW / 500, cssH / 300);
+  if (f > 1) f = 1 + (f - 1) * 0.55; // en pantallas grandes el texto crece, pero más suave que el área de la gráfica
+  canvas.dataset.esc = String(f * dpr);
+}
+
+let _riesgoResizeT = null;
+function _riesgoReajustarGrafica() {
+  clearTimeout(_riesgoResizeT);
+  _riesgoResizeT = setTimeout(function () {
+    const m = document.getElementById('modal-grafica-nutri');
+    if (!m || !m.classList.contains('show') || !_riesgoGraficaIndicadorActual) return;
+    _riesgoAjustarCanvasGrafica();
+    _riesgoActualizarGrafica(_riesgoGraficaIndicadorActual);
+  }, 150);
+}
+window.addEventListener('resize', _riesgoReajustarGrafica);
+window.addEventListener('orientationchange', _riesgoReajustarGrafica);
 
 let _riesgoGraficaDatosActual = null;
 let _riesgoGraficaIndicadorActual = null;
@@ -6004,8 +6059,6 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   const box = document.getElementById('modal-grafica-nutri-box');
   const canvas = document.getElementById('graficaNutriCanvas');
   box.classList.remove('fullscreen');
-  canvas.width = 500; canvas.height = 300;
-  document.getElementById('btnFullscreenGrafica').textContent = '⛶';
   
   // Reinicializar estado del historial
   _historialVisible = false;
@@ -6050,6 +6103,7 @@ function _riesgoAbrirGraficaConDatos(datos, nombre, vivienda) {
   }
 
   document.getElementById('modal-grafica-nutri').classList.add('show');
+  _riesgoAjustarCanvasGrafica();
   _riesgoActualizarGrafica(datos.disponibles[0].id);
 
   // El historial se busca DESPUÉS de mostrar la gráfica (no bloquea, no depende de internet
