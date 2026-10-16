@@ -948,7 +948,7 @@
     <div class="home-scroller">
 
         <!-- Perfil de usuario -->
-        <div class="home-user-bar" onclick="irAPerfilUnico()" title="Editar perfil en el menú principal">
+        <div class="home-user-bar" onclick="irAPerfilUnico()" title="Editar perfil">
             <div class="user-avatar" id="user-avatar">?</div>
             <div class="user-info">
                 <div class="user-name" id="user-name-display">Toca aquí para configurar tu nombre</div>
@@ -2978,7 +2978,7 @@
       return {};
     }
     window.loadProfile = loadProfile;
-    function irAPerfilUnico(){ location.href='index.html#perfil'; }
+    function irAPerfilUnico(){ (window.pfxAbrirPerfil ? pfxAbrirPerfil() : (location.href='index.html#perfil')); }
     function applyProfile(profile){
       const nombre  = profile.nombre || '';
       const cargo   = profile.cargo  || '';
@@ -4073,6 +4073,7 @@
             var isHidden = zone.style.display === 'none';
             zone.style.display = isHidden ? '' : 'none';
             localStorage.setItem(CLOUD_HIDE_KEY, isHidden ? '0' : '1');
+            try { window.sisnavFijarVisible && sisnavFijarVisible(isHidden); } catch (e) {}
         }
     };
     document.addEventListener('DOMContentLoaded', function(){
@@ -4240,5 +4241,262 @@
 })();
 </script>
 
+<!-- PERFIL_RESPALDO_INICIO: perfil único de respaldo (misma llave que el index: sis_perfil_unico_v1) -->
+<style>
+#pfxModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:100000;align-items:center;justify-content:center;padding:20px;font-family:inherit}
+#pfxModal.active{display:flex}
+#pfxModal .pfx-box{background:#fff;border-radius:20px;padding:24px 22px 20px;max-width:340px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.28);color:#1a2e3a;box-sizing:border-box}
+#pfxModal .pfx-ico{font-size:2.2rem;text-align:center;margin-bottom:6px}
+#pfxModal .pfx-tit{font-size:1.05rem;font-weight:800;text-align:center;margin-bottom:6px}
+#pfxModal .pfx-desc{font-size:.82rem;color:#546e7a;text-align:center;margin:0 0 14px;line-height:1.4}
+#pfxModal .pfx-f{text-align:left;margin-bottom:10px}
+#pfxModal .pfx-f label{display:block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#546e7a;margin-bottom:4px}
+#pfxModal .pfx-f input{width:100%;box-sizing:border-box;padding:12px;border:2px solid #e0e0e0;border-radius:10px;font-size:.88rem;color:#1a2e3a;background:#fff;outline:none;font-family:inherit}
+#pfxModal .pfx-f input:focus{border-color:#17a2b8}
+#pfxModal .pfx-sig{position:relative;border:2px dashed #cfd8dc;border-radius:10px;background:#fafcfd;height:96px;cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#pfxModal .pfx-sig.firmada{border-style:solid;border-color:#17a2b8}
+#pfxModal .pfx-sig img{max-width:100%;max-height:100%;display:none;object-fit:contain}
+#pfxModal .pfx-sig.firmada img{display:block}
+#pfxModal .pfx-sig-ph{font-size:.8rem;color:#78909c;font-weight:600;text-align:center;padding:0 8px}
+#pfxModal .pfx-sig.firmada .pfx-sig-ph{display:none}
+#pfxModal .pfx-sig-b{display:flex;justify-content:flex-end;margin-top:4px}
+#pfxModal .pfx-sig-b button{border:none;background:none;color:#c62828;font-size:.75rem;font-weight:600;cursor:pointer;padding:4px 6px}
+#pfxModal .pfx-nota{font-size:.72rem;color:#546e7a;line-height:1.4;margin:2px 0 14px}
+#pfxModal .pfx-btns{display:flex;gap:10px}
+#pfxModal .pfx-btns button{padding:12px;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit}
+#pfxModal .pfx-cancel{flex:1;border:2px solid #e0e0e0;background:#fff;color:#546e7a}
+#pfxModal .pfx-ok{flex:2;border:none;background:linear-gradient(135deg,#0d6e8a,#2bb5d8);color:#fff;box-shadow:0 4px 12px rgba(13,110,138,.35)}
+@media (orientation:landscape){
+ #pfxModal{padding:8px}
+ #pfxModal .pfx-box{max-width:760px;max-height:96vh;padding:14px 20px}
+ #pfxModal .pfx-ico{display:none}
+ #pfxModal .pfx-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+ #pfxModal .pfx-firma{grid-column:1/-1}
+}
+#pfxSigFull{position:fixed;inset:0;z-index:100001;background:#fff;display:none;flex-direction:column;font-family:inherit}
+#pfxSigFull.active{display:flex}
+#pfxSigFull .pfx-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:linear-gradient(135deg,#0d6e8a,#2bb5d8);color:#fff}
+#pfxSigFull .pfx-h b{font-size:.95rem}
+#pfxSigFull .pfx-h span{font-size:.72rem;opacity:.9}
+#pfxSigFull .pfx-b{flex:1;min-height:0;padding:10px;background:#eceff1}
+#pfxSigFull .pfx-pad{position:relative;width:100%;height:100%;background:#fff;border:2px solid #17a2b8;border-radius:12px;touch-action:none;overflow:hidden}
+#pfxSigFull canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#pfxSigFull .pfx-ln{position:absolute;left:6%;right:6%;bottom:22%;border-bottom:1.5px dashed #cfd8dc;pointer-events:none}
+#pfxSigFull .pfx-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b0bec5;font-size:1rem;pointer-events:none}
+#pfxSigFull .pfx-ft{display:flex;gap:10px;padding:10px 14px;background:#fff;border-top:1px solid #e0e0e0}
+#pfxSigFull .pfx-ft button{flex:1;padding:12px;border-radius:12px;font-size:.9rem;font-weight:700;cursor:pointer;border:2px solid #e0e0e0;background:#fff;color:#546e7a;font-family:inherit}
+#pfxSigFull .pfx-ft button.ok{flex:2;border:none;color:#fff;background:linear-gradient(135deg,#2e7d32,#66bb6a)}
+#pfxSigFull .pfx-ft button.ok:disabled{opacity:.45}
+#pfxSigFull .pfx-ft button.bor{color:#c62828}
+</style>
+
+<div id="pfxModal" onclick="if(event.target===this)pfxCerrarPerfil()">
+  <div class="pfx-box">
+    <div class="pfx-ico">👤</div>
+    <div class="pfx-tit">Mi perfil</div>
+    <p class="pfx-desc">Es el mismo perfil de todas las apps. Se guarda en este dispositivo y funciona sin internet.</p>
+    <div class="pfx-grid">
+      <div class="pfx-f"><label>Nombre completo *</label><input type="text" id="pfx-nombre" placeholder="Ej: María González" maxlength="80"></div>
+      <div class="pfx-f"><label>Cargo / Especialidad</label><input type="text" id="pfx-cargo" placeholder="Ej: Promotor de Salud, Enfermera…" maxlength="60"></div>
+      <div class="pfx-f"><label>Establecimiento / UCSF / UDS</label><input type="text" id="pfx-ucsf" placeholder="Ej: UCSF Coatepeque" maxlength="60"></div>
+      <div class="pfx-f"><label>Comunidad / Cantón</label><input type="text" id="pfx-comunidad" placeholder="Ej: Cantón El Carmen" maxlength="60"></div>
+      <div class="pfx-f"><label>Municipio / Distrito</label><input type="text" id="pfx-municipio" placeholder="Ej: Coatepeque" maxlength="60"></div>
+      <div class="pfx-f pfx-firma">
+        <label>Tu firma digital</label>
+        <div class="pfx-sig" id="pfxSigWrap" onclick="pfxSigAbrir()">
+          <img id="pfxSigImg" alt="Tu firma">
+          <div class="pfx-sig-ph">✍️ Toca para firmar en pantalla grande</div>
+        </div>
+        <div class="pfx-sig-b"><button type="button" onclick="pfxSigQuitar()">✕ Borrar firma</button></div>
+      </div>
+    </div>
+    <p class="pfx-nota">💾 Si usas el menú principal (index), el perfil que guardes aquí es el mismo que verás allá cuando compartan almacenamiento.</p>
+    <div class="pfx-btns">
+      <button type="button" class="pfx-cancel" onclick="pfxCerrarPerfil()">Cancelar</button>
+      <button type="button" class="pfx-ok" onclick="pfxGuardarPerfil()">✓ Guardar perfil</button>
+    </div>
+  </div>
+</div>
+
+<div id="pfxSigFull">
+  <div class="pfx-h"><b>✍️ Firma del personal</b><span>Firma con el dedo dentro del recuadro</span></div>
+  <div class="pfx-b"><div class="pfx-pad"><canvas id="pfxCanvas"></canvas><div class="pfx-ln"></div><div class="pfx-ph" id="pfxPh">Firma aquí</div></div></div>
+  <div class="pfx-ft">
+    <button type="button" onclick="pfxSigCerrar()">Cancelar</button>
+    <button type="button" class="bor" onclick="pfxSigLimpiar()">🗑 Limpiar</button>
+    <button type="button" class="ok" id="pfxOk" onclick="pfxSigAceptar()" disabled>✓ Aceptar</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  if (window.pfxAbrirPerfil) return;
+  var KEY = 'sis_perfil_unico_v1', SIG = 'sig_personal_v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var firma;            // undefined = sin cambios · null = borrada · 'data:...' = nueva
+  var trazo = false, tinta = false;
+
+  function ss(op, k, v) { try { return op === 'g' ? sessionStorage.getItem(k) : sessionStorage.setItem(k, v); } catch (e) { return null; } }
+  function leer() {
+    try { var p = JSON.parse(localStorage.getItem(KEY) || 'null'); if (p && typeof p === 'object') return p; } catch (e) {}
+    return null;
+  }
+  function tieneNombre() { var p = leer(); return !!(p && String(p.nombre || '').trim()); }
+
+  // Si ya había perfiles viejos de cada app, se unen (sin borrarlos), igual que en el index
+  function migrar() {
+    if (tieneNombre()) return false;
+    var rd = function (k) { try { return JSON.parse(localStorage.getItem(k) || 'null') || {}; } catch (e) { return {}; } };
+    var v = rd('minsal_perfil_v1'), m = rd('minsal_pf_perfil_v1'), r = rd('rdps_perfil');
+    var pick = function () { for (var i = 0; i < arguments.length; i++) { var s = String(arguments[i] || '').trim(); if (s) return s; } return ''; };
+    var p = { nombre: pick(v.nombre, m.nombre, r.nombre), cargo: pick(v.cargo, m.cargo),
+              ucsf: pick(v.ucsf, m.ucsf, r.establecimiento), comunidad: pick(r.comunidad), municipio: pick(r.municipio) };
+    if (!p.nombre) return false;
+    localStorage.setItem(KEY, JSON.stringify(p));
+    return true;
+  }
+
+  function sigMostrar(url) {
+    var w = $('pfxSigWrap'), im = $('pfxSigImg');
+    if (url) { im.src = url; w.classList.add('firmada'); } else { im.removeAttribute('src'); w.classList.remove('firmada'); }
+  }
+  window.pfxSigQuitar = function () { firma = null; sigMostrar(null); };
+
+  window.pfxAbrirPerfil = function () {
+    var p = leer() || {};
+    ['nombre', 'cargo', 'ucsf', 'comunidad', 'municipio'].forEach(function (k) { $('pfx-' + k).value = p[k] || ''; });
+    firma = undefined;
+    sigMostrar(localStorage.getItem(SIG) || null);
+    $('pfxModal').classList.add('active');
+  };
+  window.pfxCerrarPerfil = function () { $('pfxModal').classList.remove('active'); ss('s', 'pfx_omitido', '1'); };
+
+  window.pfxGuardarPerfil = function () {
+    var g = function (k) { return $('pfx-' + k).value.trim(); };
+    if (!g('nombre')) { alert('Ingresa tu nombre completo para continuar.'); return; }
+    var p = { nombre: g('nombre'), cargo: g('cargo'), ucsf: g('ucsf'), comunidad: g('comunidad'), municipio: g('municipio') };
+    localStorage.setItem(KEY, JSON.stringify(p));
+    if (typeof firma === 'string') localStorage.setItem(SIG, firma);
+    else if (firma === null) localStorage.removeItem(SIG);
+    var listo = (window.__lsShim && window.__lsShim.flush) ? window.__lsShim.flush() : Promise.resolve();
+    // Se recarga para que la app tome el perfil nuevo en todas sus pantallas
+    Promise.resolve(listo).then(function () { location.reload(); });
+  };
+
+  /* ---------- Pad de firma a pantalla completa ---------- */
+  function cv() { return $('pfxCanvas'); }
+  function ajustar() {
+    var c = cv(), w = c.parentNode, d = window.devicePixelRatio || 1;
+    var nw = Math.max(Math.round(w.clientWidth * d), 1), nh = Math.max(Math.round(w.clientHeight * d), 1);
+    if (c.width === nw && c.height === nh) return;
+    var snap = null, ow = c.width, oh = c.height;
+    if (tinta && c.width > 1) { snap = new Image(); snap.src = c.toDataURL('image/png'); }
+    c.width = nw; c.height = nh;
+    var x = c.getContext('2d');
+    x.lineWidth = Math.max(2.6 * d, 2.6); x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#1a2e3a';
+    if (snap) {
+      var dib = function () { var k = Math.min(nw / ow, nh / oh); x.drawImage(snap, (nw - ow * k) / 2, (nh - oh * k) / 2, ow * k, oh * k); };
+      if (snap.complete) dib(); else snap.onload = dib;
+    }
+  }
+  function pos(e) { var c = cv(), b = c.getBoundingClientRect(); return { x: (e.clientX - b.left) * c.width / b.width, y: (e.clientY - b.top) * c.height / b.height }; }
+  function iniciarPad() {
+    var c = cv();
+    c.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); trazo = true;
+      try { c.setPointerCapture(e.pointerId); } catch (_) {}
+      var x = c.getContext('2d'), p = pos(e);
+      x.beginPath(); x.moveTo(p.x, p.y); x.lineTo(p.x + .1, p.y + .1); x.stroke();
+      tinta = true; $('pfxPh').style.display = 'none'; $('pfxOk').disabled = false;
+    });
+    c.addEventListener('pointermove', function (e) { if (!trazo) return; e.preventDefault(); var x = c.getContext('2d'), p = pos(e); x.lineTo(p.x, p.y); x.stroke(); });
+    ['pointerup', 'pointercancel'].forEach(function (t) { c.addEventListener(t, function () { trazo = false; }); });
+    var re = function (ms) { return function () { setTimeout(function () { if ($('pfxSigFull').classList.contains('active')) ajustar(); }, ms); }; };
+    window.addEventListener('resize', re(120));
+    window.addEventListener('orientationchange', re(300));
+  }
+  window.pfxSigAbrir = function () {
+    $('pfxSigFull').classList.add('active');
+    tinta = false; trazo = false; $('pfxPh').style.display = ''; $('pfxOk').disabled = true;
+    var c = cv(); c.width = 1; c.height = 1; setTimeout(ajustar, 50);
+  };
+  window.pfxSigCerrar = function () { $('pfxSigFull').classList.remove('active'); };
+  window.pfxSigLimpiar = function () {
+    var c = cv(), x = c.getContext('2d'); x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); x.restore();
+    tinta = false; $('pfxPh').style.display = ''; $('pfxOk').disabled = true;
+  };
+  function recortada() {
+    var c = cv(), x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height).data;
+    var x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+    for (var yy = 0; yy < c.height; yy++) for (var xx = 0; xx < c.width; xx++) {
+      if (d[(yy * c.width + xx) * 4 + 3] > 10) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+    }
+    if (x1 < 0) return null;
+    var m = 12; x0 = Math.max(x0 - m, 0); y0 = Math.max(y0 - m, 0); x1 = Math.min(x1 + m, c.width - 1); y1 = Math.min(y1 + m, c.height - 1);
+    var w = x1 - x0 + 1, h = y1 - y0 + 1, k = Math.min(1, 700 / w);
+    var o = document.createElement('canvas'); o.width = Math.round(w * k); o.height = Math.round(h * k);
+    o.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, o.width, o.height);
+    return o.toDataURL('image/png');
+  }
+  window.pfxSigAceptar = function () { var u = recortada(); if (!u) return; firma = u; sigMostrar(u); pfxSigCerrar(); };
+  iniciarPad();
+
+  /* ---------- Arranque: si no hay perfil, se abre el formulario ---------- */
+  function auto() {
+    if (tieneNombre()) return;
+    if (migrar()) {
+      // Había perfiles viejos: se unieron; se recarga una sola vez para que la app los tome
+      if (!ss('g', 'pfx_recargado')) {
+        ss('s', 'pfx_recargado', '1');
+        var f = (window.__lsShim && window.__lsShim.flush) ? window.__lsShim.flush() : Promise.resolve();
+        Promise.resolve(f).then(function () { location.reload(); });
+      }
+      return;
+    }
+    if (ss('g', 'pfx_omitido')) return;   // ya lo cerraste en esta sesión: no insiste
+    window.pfxAbrirPerfil();
+  }
+  var listo = (window.__lsShim && window.__lsShim.ready) ? window.__lsShim.ready : Promise.resolve();
+  Promise.resolve(listo).then(function () { setTimeout(auto, 900); });
+})();
+</script>
+<!-- PERFIL_RESPALDO_FIN -->
+
+<!-- SISNAV_OCULTO_INICIO: el botón flotante de menú viene oculto; los 5 toques secretos de cada app lo muestran/ocultan -->
+<style>html:not(.sisnav-on) #sisnavBtn,html:not(.sisnav-on) #sisnavMenu,html:not(.sisnav-on) #sisnavBackdrop{display:none!important}</style>
+<script>
+(function () {
+  var KEY = 'sisnav_visible_v1';
+  function aplicar(v) { document.documentElement.classList.toggle('sisnav-on', !!v); }
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.textContent = txt;
+    d.style.cssText = 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:rgba(22,26,34,.92);color:#fff;padding:10px 16px;border-radius:12px;font:600 .85rem sans-serif;z-index:100010;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1800);
+  }
+  window.sisnavFijarVisible = function (v) {
+    if (v === undefined) v = !document.documentElement.classList.contains('sisnav-on');
+    aplicar(v);
+    try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {}
+    if (!v && window.sisnavCerrar) { try { sisnavCerrar(); } catch (e) {} }
+    return v;
+  };
+  // Gesto de 5 toques para las apps que no tenían uno (Vigilancia Materna y Calculadora Materna)
+  var n = 0, t = null;
+  window.sisnavToque5 = function () {
+    n++; clearTimeout(t); t = setTimeout(function () { n = 0; }, 1500);
+    if (n >= 5) {
+      n = 0; clearTimeout(t);
+      aviso(sisnavFijarVisible() ? '🔓 Botón de menú activado' : '🔒 Botón de menú oculto');
+    }
+  };
+  var listo = (window.__lsShim && window.__lsShim.ready) ? window.__lsShim.ready : Promise.resolve();
+  Promise.resolve(listo).then(function () {
+    var v = null; try { v = localStorage.getItem(KEY); } catch (e) {}
+    aplicar(v === '1');   // por defecto (primera vez) queda oculto
+  });
+})();
+</script>
+<!-- SISNAV_OCULTO_FIN -->
 </body>
 </html>

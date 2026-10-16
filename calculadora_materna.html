@@ -780,7 +780,7 @@
         <div class="header-eyebrow">
             🇸🇻 &nbsp;MINSAL · Promotor de Salud
         </div>
-        <h1>SALUD<br>MATERNA</h1>
+        <h1 onclick="sisnavToque5()" style="user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent">SALUD<br>MATERNA</h1>
         <p class="subtitle">"Herramienta de Apoyo para una Salud Materna Integral"</p>
         <div class="header-rule"><span></span><i class="fas fa-heartbeat"></i><span></span></div>
     </div>
@@ -1742,5 +1742,41 @@
 })();
 </script>
 
+<!-- SISNAV_OCULTO_INICIO: el botón flotante de menú viene oculto; los 5 toques secretos de cada app lo muestran/ocultan -->
+<style>html:not(.sisnav-on) #sisnavBtn,html:not(.sisnav-on) #sisnavMenu,html:not(.sisnav-on) #sisnavBackdrop{display:none!important}</style>
+<script>
+(function () {
+  var KEY = 'sisnav_visible_v1';
+  function aplicar(v) { document.documentElement.classList.toggle('sisnav-on', !!v); }
+  function aviso(txt) {
+    var d = document.createElement('div');
+    d.textContent = txt;
+    d.style.cssText = 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:rgba(22,26,34,.92);color:#fff;padding:10px 16px;border-radius:12px;font:600 .85rem sans-serif;z-index:100010;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1800);
+  }
+  window.sisnavFijarVisible = function (v) {
+    if (v === undefined) v = !document.documentElement.classList.contains('sisnav-on');
+    aplicar(v);
+    try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {}
+    if (!v && window.sisnavCerrar) { try { sisnavCerrar(); } catch (e) {} }
+    return v;
+  };
+  // Gesto de 5 toques para las apps que no tenían uno (Vigilancia Materna y Calculadora Materna)
+  var n = 0, t = null;
+  window.sisnavToque5 = function () {
+    n++; clearTimeout(t); t = setTimeout(function () { n = 0; }, 1500);
+    if (n >= 5) {
+      n = 0; clearTimeout(t);
+      aviso(sisnavFijarVisible() ? '🔓 Botón de menú activado' : '🔒 Botón de menú oculto');
+    }
+  };
+  var listo = (window.__lsShim && window.__lsShim.ready) ? window.__lsShim.ready : Promise.resolve();
+  Promise.resolve(listo).then(function () {
+    var v = null; try { v = localStorage.getItem(KEY); } catch (e) {}
+    aplicar(v === '1');   // por defecto (primera vez) queda oculto
+  });
+})();
+</script>
+<!-- SISNAV_OCULTO_FIN -->
 </body>
 </html>

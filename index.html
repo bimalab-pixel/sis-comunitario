@@ -2,6 +2,19 @@
 <html lang="es">
 <head>
 <script src="storage-shim.js"></script>
+<style>html:not(.sis-nube-on) .sync-card{display:none!important}</style>
+<script>
+/* Interruptor maestro (5 toques en el logo): activa/desactiva de una vez IA, nube y botón flotante
+   escribiendo las MISMAS claves que usa cada app con su propio gesto, así cada app puede seguir
+   cambiando lo suyo y la última decisión manda. */
+(function(){
+  var H=document.documentElement;
+  function aplicar(){ var v=null; try{v=localStorage.getItem('sis_master_v1');}catch(e){} H.classList.toggle('sis-nube-on', v==='1'); }  // por defecto (instalación/reinstalación) queda OCULTO; solo los 5 toques lo activan
+  var l=(window.__lsShim&&window.__lsShim.ready)?window.__lsShim.ready:Promise.resolve();
+  Promise.resolve(l).then(aplicar,aplicar);
+  window.sisMasterAplicar=aplicar;
+})();
+</script>
 
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -644,8 +657,8 @@
 
 <header>
     <div class="version-badge">v1.0</div>
-    <div class="logo-wrap">
-        <img src="icon-192.png" alt="SIS Comunitario"/>
+    <div class="logo-wrap" onclick="sisMasterToque()" style="user-select:none;-webkit-user-select:none;">
+        <img src="icon-192.png" alt="SIS Comunitario" style="pointer-events:none;-webkit-user-drag:none;"/>
     </div>
     <div class="header-text">
         <h1>Sistema Integrado Salud Comunitaria El Salvador</h1>
@@ -1041,6 +1054,34 @@
   </div>
   <iframe id="srFrame" title="App"></iframe>
 </div>
+<script>
+/* 5 toques en el logo = activar / desactivar TODO (IA, nube, botón flotante) en todas las apps */
+var _sisMT=0,_sisMTT=null;
+function sisMasterToque(){
+  _sisMT++; clearTimeout(_sisMTT); _sisMTT=setTimeout(function(){_sisMT=0;},1500);
+  if(_sisMT>=5){ _sisMT=0; clearTimeout(_sisMTT); sisMasterAlternar(); }
+}
+function sisMasterAlternar(){
+  var ls=localStorage, m=ls.getItem('sis_master_v1'), on;
+  if(m==='1'||m==='0') on=(m!=='1');                       // alterna el estado del maestro
+  else on=!(ls.getItem('rdps_ia_funciones_visibles')==='1'||ls.getItem('sisnav_visible_v1')==='1'); // primera vez
+  var a=on?'1':'0', oc=on?'0':'1';
+  ls.setItem('sis_master_v1',a);
+  ls.setItem('rdps_ia_funciones_visibles',a);   // Registro Diario: IA + sección de nube + guía
+  ls.setItem('sisnav_visible_v1',a);            // botón flotante de todas las apps
+  ls.setItem('sync_panel_desbloqueado',a);      // Curvas de Crecimiento: panel de nube
+  ls.setItem('ms_cloudOptsHidden',oc);          // Mapa Sanitario: opciones de nube
+  ls.setItem('mef_cloudOptsHidden',oc);         // Control MEF: zona de nube
+  ls.setItem('vd_cloudOptsHidden',oc);          // Visita Domiciliar: zona de nube
+  try{ window.__lsShim&&window.__lsShim.flush&&window.__lsShim.flush(); }catch(e){}
+  sisMasterAplicar();
+  try{navigator.vibrate&&navigator.vibrate(40);}catch(e){}
+  var d=document.createElement('div');
+  d.textContent=on?'🔓 IA, nube y botón flotante ACTIVADOS en todas las apps':'🔒 IA, nube y botón flotante OCULTOS en todas las apps';
+  d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);max-width:88%;text-align:center;background:rgba(22,26,34,.94);color:#fff;padding:12px 18px;border-radius:12px;font:600 .85rem sans-serif;z-index:100010;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+  document.body.appendChild(d); setTimeout(function(){d.remove();},2600);
+}
+</script>
 <div id="syncToast"></div>
 
 <script type="text/x-deferred">
