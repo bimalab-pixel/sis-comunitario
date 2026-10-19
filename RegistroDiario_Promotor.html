@@ -1517,6 +1517,17 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
+        <button class="menu-btn" onclick="irA('screen-ruta')">
+            <div class="menu-btn-icon" style="background:#b45309">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 000-6H9a3 3 0 010-6h7"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Ruta de Trabajo</div>
+                <div class="mbs">Viviendas a visitar por día, mes o año — copiar a Excel</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <!-- Respaldo -->
         <div class="menu-section-label" style="margin-top:.6rem">Datos</div>
 
@@ -2423,6 +2434,65 @@
         <div id="hp-resultado"></div>
     </div>
 </div><!-- /screen-historial -->
+
+<!-- ════════════════════════════
+     PANTALLA: RUTA DE TRABAJO
+════════════════════════════ -->
+<div class="screen" id="screen-ruta">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Ruta de Trabajo</span>
+    </div>
+    <div class="scroller">
+        <div class="rep-card">
+            <div class="rep-card-body">
+                <div class="ctrl-periodo-botones">
+                    <button type="button" class="ctrl-periodo-btn active" id="rt-v-dia" onclick="_rtVista('dia')">Diaria</button>
+                    <button type="button" class="ctrl-periodo-btn" id="rt-v-mes" onclick="_rtVista('mes')">Mensual</button>
+                    <button type="button" class="ctrl-periodo-btn" id="rt-v-anio" onclick="_rtVista('anio')">Anual</button>
+                </div>
+                <div class="f-group" id="rt-g-dia"><label>Día</label><input type="date" id="rt-p-dia" onchange="_rtRender()"/></div>
+                <div class="f-group" id="rt-g-mes" style="display:none"><label>Mes</label><input type="month" id="rt-p-mes" onchange="_rtRender()"/></div>
+                <div class="f-group" id="rt-g-anio" style="display:none"><label>Año</label><input type="number" id="rt-p-anio" min="2000" max="2100" onchange="_rtRender()"/></div>
+            </div>
+        </div>
+
+        <div class="rep-card">
+            <div class="rep-card-body">
+                <div class="f-group"><label>Fecha de la visita</label><input type="date" id="rt-nueva-fecha"/></div>
+                <div class="f-group" style="margin-top:.5rem"><label>N° de vivienda</label>
+                    <input type="text" id="rt-nueva-viv" list="rt-viv-lista" placeholder="Escribe o elige el número…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();_rtAgregar();}"/>
+                    <datalist id="rt-viv-lista"></datalist>
+                </div>
+                <div class="rt-acciones">
+                    <button type="button" class="rt-btn rt-btn-main" onclick="_rtAgregar()">➕ Agregar a la ruta</button>
+                    <button type="button" class="rt-btn" onclick="_rtTraerDeRegistros()">📥 Traer viviendas visitadas ese día</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="rt-resumen" id="rt-resumen"></div>
+        <div class="rt-tabla-wrap">
+            <table class="rt-tabla">
+                <thead><tr>
+                    <th style="width:118px">Fecha</th>
+                    <th style="width:72px">N° de Vivienda</th>
+                    <th style="min-width:150px">Lugar a Visitar</th>
+                    <th style="min-width:150px">Jefe de Familia</th>
+                    <th style="min-width:190px">Actividad a Realizar</th>
+                    <th style="width:38px"></th>
+                </tr></thead>
+                <tbody id="rt-tbody"></tbody>
+            </table>
+        </div>
+        <div class="rt-acciones" style="margin:.8rem 0 1.5rem">
+            <button type="button" class="rt-btn rt-btn-main" onclick="_rtCopiarExcel()">📋 Copiar a tabla de Excel</button>
+        </div>
+    </div>
+</div><!-- /screen-ruta -->
 
 
 <!-- ════════════════════════════
@@ -3451,6 +3521,7 @@ ${hojas}
       if (screenId === 'screen-control-entregas') _ctrlRenderLista();
       if (screenId === 'screen-grupos-etarios') _geRender();
       if (screenId === 'screen-historial') _hpRefrescar();
+      if (screenId === 'screen-ruta') _rtIniciar();
       // Al abrir formulario nuevo (sin edición ni modo otra persona), refrescar fecha/hora actual
       if (screenId === 'screen-nuevo') {
         const esEdicion     = document.getElementById('edit-id').value !== '';
@@ -14312,5 +14383,190 @@ Notas (Acciones ya escritas): ${accion || '—'}
 })();
 </script>
 <!-- SISNAV_OCULTO_FIN -->
+<style>
+.rt-acciones{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.7rem}
+.rt-btn{flex:1 1 auto;padding:.55rem .8rem;border-radius:9px;border:1.5px solid var(--border);background:var(--white);color:var(--navy);font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.rt-btn-main{background:var(--teal2);border-color:var(--teal2);color:#fff}
+.rt-resumen{font-size:.78rem;color:var(--muted);margin:.2rem .2rem .5rem;font-weight:600}
+.rt-tabla-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.rt-tabla{border-collapse:collapse;width:100%;min-width:720px;font-size:.8rem}
+.rt-tabla th{background:var(--navy);color:#fff;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:.55rem .5rem;text-align:left;position:sticky;top:0}
+.rt-tabla td{border-top:1px solid var(--border);padding:.3rem .35rem;vertical-align:top}
+.rt-tabla input,.rt-tabla textarea,.rt-tabla select{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;font-family:inherit;font-size:.8rem;padding:.3rem .3rem;border-radius:6px;color:inherit}
+.rt-tabla textarea{resize:none;overflow:hidden;min-height:34px;line-height:1.4}
+.rt-tabla input:focus,.rt-tabla textarea:focus,.rt-tabla select:focus{outline:none;border-color:var(--teal2);background:#fff}
+.rt-tabla textarea.rt-edit{background:rgba(13,158,143,.06);border-color:rgba(13,158,143,.25)}
+.rt-viv{font-weight:800;text-align:center;padding-top:.55rem!important}
+.rt-del{background:none;border:none;cursor:pointer;font-size:1rem;padding:.3rem}
+.rt-vacio{text-align:center;color:var(--muted);padding:1.6rem .8rem!important;font-size:.82rem}
+</style>
+<script>
+// ══════════════ RUTA DE TRABAJO ══════════════
+// Filas: {id, fecha, vivienda, jefeId, jefeNombre, lugar, actividad}. Se guardan en 'rdps_ruta'.
+// Vivienda y jefe de familia salen del Catálogo (jefe = primera persona de la vivienda, o la que se elija);
+// la fecha puede venir de los registros diarios ("Traer viviendas visitadas ese día").
+var RT_KEY = 'rdps_ruta';
+var _rtEstado = { vista: 'dia' };
+function _rtLeer() { try { return JSON.parse(localStorage.getItem(RT_KEY) || '[]') || []; } catch (e) { return []; } }
+function _rtGuardar(a) { localStorage.setItem(RT_KEY, JSON.stringify(a)); }
+function _rtNum(v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? Infinity : n; }
+function _rtCmpViv(a, b) { var x = _rtNum(a), y = _rtNum(b); if (x !== y) return x < y ? -1 : 1; return String(a).localeCompare(String(b), 'es', { numeric: true }); }
+function _rtBuscarViv(num) {
+  var q = String(num == null ? '' : num).trim().toLowerCase();
+  if (!q) return null;
+  return getCatalogo().find(function (v) { return String(v.vivienda).trim().toLowerCase() === q; }) || null;
+}
+function _rtJefe(row) {
+  var viv = _rtBuscarViv(row.vivienda);
+  var pers = (viv && viv.personas) || [];
+  if (!pers.length) return { nombre: row.jefeNombre || '', id: '', personas: [] };
+  var p = pers.find(function (x) { return x.id === row.jefeId; }) || pers[0];
+  return { nombre: p.nombre || '', id: p.id, personas: pers };
+}
+function _rtIniciar() {
+  var h = hoy();
+  if (!document.getElementById('rt-p-dia').value) document.getElementById('rt-p-dia').value = h;
+  if (!document.getElementById('rt-p-mes').value) document.getElementById('rt-p-mes').value = h.slice(0, 7);
+  if (!document.getElementById('rt-p-anio').value) document.getElementById('rt-p-anio').value = h.slice(0, 4);
+  if (!document.getElementById('rt-nueva-fecha').value) document.getElementById('rt-nueva-fecha').value = h;
+  var dl = document.getElementById('rt-viv-lista');
+  dl.innerHTML = getCatalogo().map(function (v) { return String(v.vivienda); })
+    .sort(_rtCmpViv).map(function (n) { return '<option value="' + _hpEsc(n) + '"></option>'; }).join('');
+  _rtVista(_rtEstado.vista);
+}
+function _rtVista(v) {
+  _rtEstado.vista = v;
+  ['dia', 'mes', 'anio'].forEach(function (k) {
+    document.getElementById('rt-v-' + k).classList.toggle('active', k === v);
+    document.getElementById('rt-g-' + k).style.display = (k === v) ? '' : 'none';
+  });
+  _rtRender();
+}
+function _rtFiltradas() {
+  var v = _rtEstado.vista, pref;
+  if (v === 'dia') pref = document.getElementById('rt-p-dia').value;
+  else if (v === 'mes') pref = document.getElementById('rt-p-mes').value;
+  else pref = String(document.getElementById('rt-p-anio').value || '').trim();
+  if (!pref) return [];
+  var rows = _rtLeer().filter(function (r) {
+    if (v === 'dia') return r.fecha === pref;
+    if (v === 'mes') return (r.fecha || '').slice(0, 7) === pref;
+    return (r.fecha || '').slice(0, 4) === pref;
+  });
+  rows.sort(function (a, b) {
+    if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
+    return _rtCmpViv(a.vivienda, b.vivienda);
+  });
+  return rows;
+}
+function _rtRender() {
+  var rows = _rtFiltradas();
+  var tb = document.getElementById('rt-tbody');
+  document.getElementById('rt-resumen').textContent = rows.length + (rows.length === 1 ? ' vivienda en la ruta' : ' viviendas en la ruta');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="rt-vacio">No hay viviendas en la ruta de este período.<br>Agrega una con el N° de vivienda o trae las visitadas ese día.</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(function (r) {
+    var j = _rtJefe(r), id = _hpEsc(r.id), jefeHtml;
+    if (j.personas.length > 1) {
+      jefeHtml = '<select onchange="_rtEditar(\'' + id + '\',\'jefeId\',this.value)">' +
+        j.personas.map(function (p) { return '<option value="' + _hpEsc(p.id) + '"' + (p.id === j.id ? ' selected' : '') + '>' + _hpEsc(p.nombre) + '</option>'; }).join('') + '</select>';
+    } else {
+      jefeHtml = '<div style="padding:.35rem .3rem">' + (j.nombre ? _hpEsc(j.nombre) : '<span style="color:var(--muted)">— sin dato —</span>') + '</div>';
+    }
+    return '<tr>' +
+      '<td><input type="date" value="' + _hpEsc(r.fecha) + '" onchange="_rtEditar(\'' + id + '\',\'fecha\',this.value)"/></td>' +
+      '<td class="rt-viv">' + _hpEsc(r.vivienda) + '</td>' +
+      '<td><textarea class="rt-edit" rows="1" placeholder="Lugar…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'lugar\',this.value)">' + _hpEsc(r.lugar || '') + '</textarea></td>' +
+      '<td>' + jefeHtml + '</td>' +
+      '<td><textarea class="rt-edit" rows="1" placeholder="Actividad…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'actividad\',this.value)">' + _hpEsc(r.actividad || '') + '</textarea></td>' +
+      '<td><button type="button" class="rt-del" title="Quitar de la ruta" onclick="_rtEliminar(\'' + id + '\')">🗑️</button></td>' +
+      '</tr>';
+  }).join('');
+  tb.querySelectorAll('textarea').forEach(_rtAuto);
+}
+function _rtAuto(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
+function _rtEditar(id, campo, valor) {
+  var a = _rtLeer(), r = a.find(function (x) { return x.id === id; });
+  if (!r) return;
+  r[campo] = valor;
+  if (campo === 'jefeId') { var j = _rtJefe(r); r.jefeNombre = j.nombre; }
+  if (campo === 'fecha') { _rtGuardar(a); _rtRender(); return; }
+  _rtGuardar(a);
+}
+function _rtEliminar(id) {
+  if (!confirm('¿Quitar esta vivienda de la ruta?')) return;
+  _rtGuardar(_rtLeer().filter(function (x) { return x.id !== id; }));
+  _rtRender();
+}
+function _rtNuevaFila(fecha, viv) {
+  var j = _rtJefe({ vivienda: viv.vivienda });
+  return { id: 'rt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), fecha: fecha, vivienda: String(viv.vivienda),
+           jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '' };
+}
+function _rtAgregar() {
+  var fecha = document.getElementById('rt-nueva-fecha').value;
+  var num = document.getElementById('rt-nueva-viv').value.trim();
+  if (!fecha) { toast('Elige la fecha de la visita', 'error'); return; }
+  if (!num) { toast('Escribe el N° de vivienda', 'error'); return; }
+  var viv = _rtBuscarViv(num);
+  if (!viv) { toast('La vivienda ' + num + ' no está en el catálogo', 'error'); return; }
+  var a = _rtLeer();
+  if (a.some(function (r) { return r.fecha === fecha && String(r.vivienda).toLowerCase() === String(viv.vivienda).toLowerCase(); })) {
+    toast('Esa vivienda ya está en la ruta de ese día', 'error'); return;
+  }
+  a.push(_rtNuevaFila(fecha, viv));
+  _rtGuardar(a);
+  document.getElementById('rt-nueva-viv').value = '';
+  _rtIrAFecha(fecha);
+  toast('Vivienda ' + viv.vivienda + ' agregada');
+}
+function _rtTraerDeRegistros() {
+  var fecha = document.getElementById('rt-nueva-fecha').value;
+  if (!fecha) { toast('Elige la fecha', 'error'); return; }
+  var vistas = {};
+  (registros || []).forEach(function (r) { if (r && r.fecha === fecha && r.vivienda) vistas[String(r.vivienda).trim()] = true; });
+  var nums = Object.keys(vistas).sort(_rtCmpViv);
+  if (!nums.length) { toast('No hay registros diarios con vivienda en esa fecha', 'error'); return; }
+  var a = _rtLeer(), n = 0;
+  nums.forEach(function (num) {
+    if (a.some(function (r) { return r.fecha === fecha && String(r.vivienda).toLowerCase() === num.toLowerCase(); })) return;
+    var viv = _rtBuscarViv(num) || { vivienda: num };
+    a.push(_rtNuevaFila(fecha, viv)); n++;
+  });
+  _rtGuardar(a);
+  _rtIrAFecha(fecha);
+  toast(n ? (n + ' vivienda(s) traída(s) de los registros') : 'Todas ya estaban en la ruta');
+}
+// Ajusta el período mostrado para que se vea lo recién agregado
+function _rtIrAFecha(f) {
+  document.getElementById('rt-p-dia').value = f;
+  document.getElementById('rt-p-mes').value = f.slice(0, 7);
+  document.getElementById('rt-p-anio').value = f.slice(0, 4);
+  _rtRender();
+}
+function _rtCopiarExcel() {
+  var rows = _rtFiltradas();
+  if (!rows.length) { toast('No hay filas para copiar', 'error'); return; }
+  var limpia = function (t) { return String(t == null ? '' : t).replace(/[\t\r\n]+/g, ' ').trim(); };
+  var lineas = [['Fecha', 'N° de Vivienda', 'Lugar a Visitar', 'Jefe de Familia', 'Actividad a Realizar'].join('\t')];
+  rows.forEach(function (r) {
+    lineas.push([fmtFecha(r.fecha), limpia(r.vivienda), limpia(r.lugar), limpia(_rtJefe(r).nombre), limpia(r.actividad)].join('\t'));
+  });
+  var txt = lineas.join('\r\n');
+  var ok = function () { toast('✅ Tabla copiada — pégala en Excel (Ctrl+V)'); };
+  var viejo = function () {
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var r = false; try { r = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (r) ok(); else toast('No se pudo copiar', 'error');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, viejo);
+  else viejo();
+}
+</script>
 </body>
 </html>

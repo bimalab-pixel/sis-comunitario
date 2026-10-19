@@ -1098,6 +1098,17 @@ td.err{color:var(--red);font-weight:700}
 .mat-item-row{font-size:.72rem;color:#555;margin-top:.12rem}
 .mef-btn{font-size:.7rem;font-weight:800;color:#880e4f;background:#fff;border:none;
   border-radius:20px;padding:.35rem .7rem;flex-shrink:0;cursor:pointer;font-family:inherit}
+.lst-acc{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap}
+.lst-acc-btn{flex:1;min-width:130px;border:none;border-radius:10px;padding:.55rem .8rem;font-size:.78rem;font-weight:800;font-family:inherit;cursor:pointer;background:#0a5c3c;color:#fff}
+.lst-acc-btn.lst-xls{background:#1d6f42}
+.lst-acc-btn:active{transform:scale(.97)}
+#print-root{display:none}
+@media print{
+  html,body{height:auto!important;overflow:visible!important;position:static!important;background:#fff!important}
+  body.imprimiendo > *:not(#print-root){display:none!important}
+  body.imprimiendo #print-root{display:block!important}
+  @page{margin:12mm}
+}
 .mef-modal-box{display:flex;flex-direction:column;overflow:hidden;padding:0}
 .mef-modal-head{flex-shrink:0;padding:1.5rem 1.5rem .7rem;border-bottom:1px solid var(--mist2);background:#fff}
 .mef-modal-head h3{margin-bottom:.35rem}
@@ -1236,6 +1247,14 @@ td.err{color:var(--red);font-weight:700}
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5" fill="white" stroke="none"/><circle cx="3.5" cy="12" r="1.5" fill="white" stroke="none"/><circle cx="3.5" cy="18" r="1.5" fill="white" stroke="none"/></svg>
       </div>
       <div class="mbtn-text"><div class="mbt">Listado de Viviendas</div><div class="mbs">Buscar y editar familias</div></div>
+      <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+    </button>
+
+    <button class="mbtn" onclick="abrirModalGruposEtarios()">
+      <div class="mbtn-ico" style="background:rgba(0,150,136,.35)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="mbtn-text"><div class="mbt">Grupos Etarios</div><div class="mbs">Niños, adolescentes, mujeres, adultos…</div></div>
       <div class="mbtn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
     </button>
 
@@ -1632,6 +1651,8 @@ td.err{color:var(--red);font-weight:700}
   </div>
 </div>
 
+<div id="print-root"></div>
+
 <!-- ════════════════
      MODAL LISTADO MEF
 ════════════════ -->
@@ -1641,6 +1662,10 @@ td.err{color:var(--red);font-weight:700}
     <div class="mef-modal-head">
       <h3>🌸 Mujeres en Edad Fértil</h3>
       <p id="mef-detalle-sub"></p>
+      <div class="lst-acc">
+        <button type="button" class="lst-acc-btn" onclick="imprimirListadoPersonas()">🖨️ Imprimir / PDF</button>
+        <button type="button" class="lst-acc-btn lst-xls" onclick="copiarListadoExcel()">📋 Copiar a Excel</button>
+      </div>
     </div>
     <div id="mef-detalle-lista" class="mef-modal-scroll"></div>
   </div>
@@ -1665,6 +1690,10 @@ td.err{color:var(--red);font-weight:700}
     <div class="mef-modal-head">
       <h3 id="grupo-detalle-titulo">Grupo</h3>
       <p id="grupo-detalle-sub"></p>
+      <div class="lst-acc">
+        <button type="button" class="lst-acc-btn" onclick="imprimirListadoPersonas()">🖨️ Imprimir / PDF</button>
+        <button type="button" class="lst-acc-btn lst-xls" onclick="copiarListadoExcel()">📋 Copiar a Excel</button>
+      </div>
     </div>
     <div id="grupo-detalle-lista" class="mef-modal-scroll"></div>
   </div>
@@ -3680,7 +3709,7 @@ function abrirModalMEFDetalle(){
       if(p.sexo!=='F') return;
       const m=mesesPersona(p);
       if(m===null||m<216||m>=600) return;
-      lista.push({nombre:p.nombre||'—',fnac:p.fnac,viv:v.vivienda,meses:m});
+      lista.push({nombre:p.nombre||'—',fnac:p.fnac,sexo:'F',viv:v.vivienda,meses:m});
     });
   });
   // Orden: por vivienda (numérico) y luego por nombre
@@ -3690,6 +3719,7 @@ function abrirModalMEFDetalle(){
   });
   document.getElementById('mef-detalle-sub').textContent=
     lista.length+' mujer'+(lista.length!==1?'es':'')+' de 18 a 49 años, ordenadas por vivienda.';
+  _listadoActual={titulo:'Mujeres en edad fértil de 18 a 49 años',lista:lista};
   const elMef=document.getElementById('mef-detalle-lista');
   if(lista.length) _listaLazy(elMef,lista,(p,i)=>_itemPersonaHtml(p,i,false));
   else elMef.innerHTML='<p class="mat-item-empty">Sin mujeres en edad fértil registradas.</p>';
@@ -3740,10 +3770,78 @@ function abrirGrupoEtario(key){
   document.getElementById('grupo-detalle-titulo').textContent=g.ico+' '+g.label;
   document.getElementById('grupo-detalle-sub').textContent=
     lista.length+' persona'+(lista.length!==1?'s':'')+', ordenadas por vivienda.';
+  _listadoActual={titulo:g.label,lista:lista};
   const elGru=document.getElementById('grupo-detalle-lista');
   if(lista.length) _listaLazy(elGru,lista,(p,i)=>_itemPersonaHtml(p,i,g.mixto));
   else elGru.innerHTML='<p class="mat-item-empty">Sin personas en este grupo.</p>';
   abrirModal('modal-grupo-detalle');
+}
+
+// ── Imprimir (PDF con la impresora del sistema) y copiar a Excel los listados de personas ──
+let _listadoActual={titulo:'',lista:[]};
+function _sexoTxt(x){ return x==='F'?'Femenino':(x==='M'?'Masculino':''); }
+function _filasListado(){
+  return _listadoActual.lista.map((p,i)=>[
+    i+1,
+    p.nombre||'',
+    _fmtFechaISO(p.fnac)==='—'?'':_fmtFechaISO(p.fnac),
+    calcularEdadTexto(p.fnac)||(Math.floor((p.meses||0)/12)+' años'),
+    _sexoTxt(p.sexo),
+    p.viv
+  ]);
+}
+function imprimirListadoPersonas(){
+  const L=_listadoActual;
+  if(!L.lista.length){ toast('No hay personas para imprimir','error'); return; }
+  const th='style="background:#0a5c3c;color:#fff;padding:5px 7px;font-size:11px;border:1px solid #0a5c3c;text-align:left"';
+  const td='style="padding:4px 7px;font-size:11px;border:1px solid #bcd"';
+  const filas=_filasListado().map((f,i)=>`<tr${i%2?' style="background:#eef8f2"':''}>
+    <td ${td.slice(0,-1)};text-align:center">${f[0]}</td>
+    <td ${td}>${_mlvEsc(f[1])}</td>
+    <td ${td}>${_mlvEsc(f[2])}</td>
+    <td ${td}>${_mlvEsc(f[3])}</td>
+    <td ${td}>${_mlvEsc(f[4])}</td>
+    <td ${td.slice(0,-1)};text-align:center">${_mlvEsc(f[5])}</td></tr>`).join('');
+  const hoy=new Date().toLocaleDateString('es-SV',{day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('print-root').innerHTML=`<div style="font-family:Arial,Helvetica,sans-serif;color:#0c1f18">
+    <h2 style="color:#0a5c3c;margin:0 0 4px;font-size:16px">${_mlvEsc(L.titulo)}</h2>
+    <p style="margin:0 0 10px;font-size:11px;color:#555">Total: ${L.lista.length} persona${L.lista.length!==1?'s':''} · Ordenadas por vivienda · Impreso: ${hoy}</p>
+    <table style="border-collapse:collapse;width:100%">
+      <thead style="display:table-header-group"><tr>
+        <th ${th} width="34">N°</th><th ${th}>Nombre</th><th ${th} width="78">Fecha nac.</th>
+        <th ${th} width="95">Edad</th><th ${th} width="68">Sexo</th><th ${th} width="46">Viv.</th>
+      </tr></thead><tbody>${filas}</tbody></table></div>`;
+  document.body.classList.add('imprimiendo');
+  const limpiar=()=>{ document.body.classList.remove('imprimiendo'); document.getElementById('print-root').innerHTML=''; window.removeEventListener('afterprint',limpiar); };
+  window.addEventListener('afterprint',limpiar);
+  setTimeout(()=>{ try{ window.print(); }catch(e){ limpiar(); toast('No se pudo abrir la impresión','error'); } },150);
+}
+function copiarListadoExcel(){
+  const L=_listadoActual;
+  if(!L.lista.length){ toast('No hay personas para copiar','error'); return; }
+  const filas=_filasListado().map(f=>f.slice(0,5));            // N°, Nombre, Fecha nac., Edad, Sexo
+  const enc=['N°','Nombre','Fecha de nacimiento','Edad','Sexo'];
+  const limpio=t=>String(t).replace(/[\t\r\n]+/g,' ');
+  const tsv=[enc].concat(filas).map(r=>r.map(limpio).join('\t')).join('\r\n');
+  const html='<table><tr>'+enc.map(h=>'<th>'+_mlvEsc(h)+'</th>').join('')+'</tr>'
+    +filas.map(r=>'<tr>'+r.map(c=>'<td>'+_mlvEsc(c)+'</td>').join('')+'</tr>').join('')+'</table>';
+  const ok=()=>toast('✅ '+filas.length+' filas copiadas. Pega en Excel (Ctrl+V)');
+  const respaldo=()=>{
+    const ta=document.createElement('textarea');
+    ta.value=tsv; ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    let r=false; try{ r=document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    r?ok():toast('No se pudo copiar al portapapeles','error');
+  };
+  if(navigator.clipboard && window.ClipboardItem){
+    navigator.clipboard.write([new ClipboardItem({
+      'text/plain':new Blob([tsv],{type:'text/plain'}),
+      'text/html':new Blob([html],{type:'text/html'})
+    })]).then(ok).catch(respaldo);
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(tsv).then(ok).catch(respaldo);
+  } else respaldo();
 }
 
 function abrirModalMaternoDetalle(){
