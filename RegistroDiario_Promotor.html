@@ -7723,6 +7723,8 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       localStorage.removeItem('rdps_catalogo');
       localStorage.removeItem('rdps_deleted_reg');
       localStorage.removeItem('rdps_deleted_fam');
+      localStorage.removeItem('rdps_ruta');
+      localStorage.removeItem('rdps_deleted_rt');
       registros = [];
       actualizarHome();
       renderListado();
@@ -12079,6 +12081,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
           await batch.commit();
         }
 
+        // ── Ruta de trabajo (subcolección 'rutas') ────────────────
+        const rtSubidas = await _rtSubirNube(db, docId, BATCH_SIZE);
+
         // ── Doc principal: solo metadata liviana ──────────────────
         const nCat = catalogo.reduce((acc, v) => acc + (v.personas?.length || 0), 0);
         await setDoc(doc(db, 'rdps', docId), {
@@ -12095,6 +12100,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (toUploadFam.length > 0) partes.push(`${toUploadFam.length} familias subidas`);
         if (delRegCount > 0)        partes.push(`${delRegCount} registros borrados`);
         if (delFamCount > 0)        partes.push(`${delFamCount} familias borradas`);
+        if (rtSubidas > 0)          partes.push(`${rtSubidas} filas de ruta sincronizadas`);
         if (partes.length === 0)    partes.push('Sin cambios nuevos');
         setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
         toast('✅ Datos guardados en la nube', 'success');
@@ -12274,8 +12280,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
           });
         }
 
+        // ── Merge ruta de trabajo ─────────────────────────────────
+        const rtRes = await _rtBajarNube(db, docId);
+
         const sinCambios = regNuevos === 0 && regActualizados === 0
-                        && famNuevas === 0 && famActualizadas === 0;
+                        && famNuevas === 0 && famActualizadas === 0
+                        && rtRes.nuevas === 0 && rtRes.actualizadas === 0;
         if (sinCambios) {
           const ts = data.actualizadoEn ? new Date(data.actualizadoEn).toLocaleDateString('es-ES') : '—';
           setFirebaseStatus(`✅ Todo al día · ${registros.length} registros · Nube: ${ts}`, 'ok');
@@ -12287,6 +12297,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
         registros = Object.values(mergedReg).sort((a,b) =>
           (b.fecha||'').localeCompare(a.fecha||''));
         _rdpsGuardarRegistrosLS();
+
+        // Aplicar ruta de trabajo
+        if (rtRes.nuevas > 0 || rtRes.actualizadas > 0) {
+          _rtGuardar(rtRes.filas);
+          if (document.getElementById('screen-ruta') && document.getElementById('screen-ruta').classList.contains('active')) _rtRender();
+        }
 
         // Aplicar catálogo
         const catalogoFinal = Object.values(mergedFam);
@@ -12305,6 +12321,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (regActualizados > 0) parts.push(`${regActualizados} registros actualizados`);
         if (famNuevas > 0)      parts.push(`+${famNuevas} familias nuevas`);
         if (famActualizadas > 0) parts.push(`${famActualizadas} familias actualizadas`);
+        if (rtRes.nuevas > 0)   parts.push(`+${rtRes.nuevas} filas de ruta nuevas`);
+        if (rtRes.actualizadas > 0) parts.push(`${rtRes.actualizadas} filas de ruta actualizadas`);
         setFirebaseStatus(`✅ ${registros.length} registros · ${nCat} personas · ${parts.join(' · ')} (${fecha})`, 'ok');
         toast(`✅ ${parts.join(', ')}`, 'success');
       } catch(e) {
@@ -14491,19 +14509,25 @@ function _rtEditar(id, campo, valor) {
   var a = _rtLeer(), r = a.find(function (x) { return x.id === id; });
   if (!r) return;
   r[campo] = valor;
+  r.actualizadoEn = new Date().toISOString();
   if (campo === 'jefeId') { var j = _rtJefe(r); r.jefeNombre = j.nombre; }
   if (campo === 'fecha') { _rtGuardar(a); _rtRender(); return; }
   _rtGuardar(a);
 }
 function _rtEliminar(id) {
   if (!confirm('¿Quitar esta vivienda de la ruta?')) return;
+  try {
+    var lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}');
+    lap[id] = new Date().toISOString();
+    localStorage.setItem('rdps_deleted_rt', JSON.stringify(lap));
+  } catch (e) {}
   _rtGuardar(_rtLeer().filter(function (x) { return x.id !== id; }));
   _rtRender();
 }
 function _rtNuevaFila(fecha, viv) {
   var j = _rtJefe({ vivienda: viv.vivienda });
   return { id: 'rt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), fecha: fecha, vivienda: String(viv.vivienda),
-           jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '' };
+           jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '', actualizadoEn: new Date().toISOString() };
 }
 function _rtAgregar() {
   var fecha = document.getElementById('rt-nueva-fecha').value;
@@ -14566,6 +14590,52 @@ function _rtCopiarExcel() {
   };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, viejo);
   else viejo();
+}
+// ── Sincronización con Firebase: rdps/{docId}/rutas/{id} (mismo esquema que registros y familias) ──
+async function _rtSubirNube(db, docId, BATCH_SIZE) {
+  var local = _rtLeer(), tocado = false;
+  local.forEach(function (r) { if (!r.actualizadoEn) { r.actualizadoEn = new Date().toISOString(); tocado = true; } });
+  if (tocado) _rtGuardar(local);
+  var snap = await getDocs(collection(db, 'rdps', docId, 'rutas'));
+  var meta = {};
+  snap.forEach(function (d) { meta[String(d.id)] = d.data().actualizadoEn || ''; });
+  // Lápidas: borrar en la nube lo que se quitó localmente (se limpian solo tras commit exitoso)
+  var lap = {};
+  try { lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}'); } catch (e) {}
+  var aBorrar = Object.keys(lap).filter(function (id) { return meta[id] !== undefined; });
+  if (aBorrar.length) {
+    var bd = writeBatch(db);
+    aBorrar.forEach(function (id) { bd.delete(doc(db, 'rdps', docId, 'rutas', id)); });
+    await bd.commit();
+  }
+  Object.keys(lap).forEach(function (id) { delete lap[id]; });
+  localStorage.setItem('rdps_deleted_rt', JSON.stringify(lap));
+  var subir = local.filter(function (r) {
+    var c = meta[String(r.id)];
+    return !c || r.actualizadoEn > c;
+  });
+  for (var i = 0; i < subir.length; i += BATCH_SIZE) {
+    var b = writeBatch(db);
+    subir.slice(i, i + BATCH_SIZE).forEach(function (r) { b.set(doc(db, 'rdps', docId, 'rutas', String(r.id)), r); });
+    await b.commit();
+  }
+  return subir.length + aBorrar.length;
+}
+async function _rtBajarNube(db, docId) {
+  var lap = {};
+  try { lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}'); } catch (e) {}
+  var snap = await getDocs(collection(db, 'rdps', docId, 'rutas'));
+  var mapa = {};
+  _rtLeer().forEach(function (r) { mapa[String(r.id)] = r; });
+  var nuevas = 0, actualizadas = 0;
+  snap.forEach(function (d) {
+    var r = d.data(), id = String(r.id || d.id);
+    if (lap[id]) return; // borrada localmente: no resucitar
+    var loc = mapa[id];
+    if (!loc) { mapa[id] = r; nuevas++; }
+    else if (new Date(r.actualizadoEn || 0).getTime() > new Date(loc.actualizadoEn || 0).getTime()) { mapa[id] = r; actualizadas++; }
+  });
+  return { filas: Object.keys(mapa).map(function (k) { return mapa[k]; }), nuevas: nuevas, actualizadas: actualizadas };
 }
 </script>
 </body>
