@@ -2457,6 +2457,12 @@
                 <div class="f-group" id="rt-g-dia"><label>Día</label><input type="date" id="rt-p-dia" onchange="_rtRender()"/></div>
                 <div class="f-group" id="rt-g-mes" style="display:none"><label>Mes</label><input type="month" id="rt-p-mes" onchange="_rtRender()"/></div>
                 <div class="f-group" id="rt-g-anio" style="display:none"><label>Año</label><input type="number" id="rt-p-anio" min="2000" max="2100" onchange="_rtRender()"/></div>
+                <div class="f-group" style="margin-top:.5rem"><label>Orden de la lista</label>
+                    <select id="rt-orden" onchange="_rtSetOrden(this.value)">
+                        <option value="num">Por N° de vivienda (menor a mayor)</option>
+                        <option value="agregado">Como las fui agregando</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -2464,9 +2470,12 @@
             <div class="rep-card-body">
                 <div class="f-group"><label>Fecha de la visita</label><input type="date" id="rt-nueva-fecha"/></div>
                 <div class="f-group" style="margin-top:.5rem"><label>N° de vivienda</label>
-                    <input type="text" id="rt-nueva-viv" list="rt-viv-lista" placeholder="Escribe o elige el número…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();_rtAgregar();}"/>
-                    <datalist id="rt-viv-lista"></datalist>
+                    <div class="rt-sug-wrap">
+                        <input type="text" id="rt-nueva-viv" placeholder="Escribe o elige el número…" autocomplete="off" inputmode="text" oninput="_rtSugerir();_rtMostrarFamilia()" onfocus="_rtSugerir()" onblur="setTimeout(_rtCerrarSug,150)" onkeydown="if(event.key==='Enter'){event.preventDefault();_rtCerrarSug();_rtAgregar();}"/>
+                        <div id="rt-viv-sug" class="rt-sug" style="display:none"></div>
+                    </div>
                 </div>
+                <div id="rt-nueva-fam" style="display:none;margin-top:.5rem"></div>
                 <div class="rt-acciones">
                     <button type="button" class="rt-btn rt-btn-main" onclick="_rtAgregar()">➕ Agregar a la ruta</button>
                     <button type="button" class="rt-btn" onclick="_rtTraerDeRegistros()">📥 Traer viviendas visitadas ese día</button>
@@ -2483,13 +2492,15 @@
                     <th style="min-width:150px">Lugar a Visitar</th>
                     <th style="min-width:150px">Jefe de Familia</th>
                     <th style="min-width:190px">Actividad a Realizar</th>
+                    <th style="width:104px">Visita</th>
                     <th style="width:38px"></th>
                 </tr></thead>
                 <tbody id="rt-tbody"></tbody>
             </table>
         </div>
         <div class="rt-acciones" style="margin:.8rem 0 1.5rem">
-            <button type="button" class="rt-btn rt-btn-main" onclick="_rtCopiarExcel()">📋 Copiar a tabla de Excel</button>
+            <button type="button" class="rt-btn rt-btn-main" onclick="_rtGuardarManual()">💾 Guardar ruta</button>
+            <button type="button" class="rt-btn" onclick="_rtCopiarExcel()">📋 Copiar a tabla de Excel</button>
         </div>
     </div>
 </div><!-- /screen-ruta -->
@@ -12081,19 +12092,34 @@ Notas (Acciones ya escritas): ${accion || '—'}
           await batch.commit();
         }
 
-        // ── Ruta de trabajo (subcolección 'rutas') ────────────────
-        const rtSubidas = await _rtSubirNube(db, docId, BATCH_SIZE);
+        // ── Ruta de trabajo (va dentro del doc principal, campo 'rutas') ──
+        let rtRes = null, rtError = '';
+        try {
+          rtRes = await _rtSubirNube(db, docId);
+        } catch (eRt) {
+          console.error('Error preparando ruta de trabajo:', eRt);
+          rtError = (eRt && (eRt.code || eRt.message)) ? ((eRt.code ? eRt.code + ': ' : '') + (eRt.message || '')) : String(eRt);
+        }
+        const rtSubidas = rtRes ? rtRes.cambios : 0;
 
-        // ── Doc principal: solo metadata liviana ──────────────────
+        // ── Doc principal: metadata liviana + ruta de trabajo ──────────────────
         const nCat = catalogo.reduce((acc, v) => acc + (v.personas?.length || 0), 0);
-        await setDoc(doc(db, 'rdps', docId), {
+        const docPrincipal = {
           version: '3.0',
           actualizadoEn: new Date().toISOString(),
           perfil,
           countRegistros: registros.length,
           countFamilias:  catalogo.length,
           countPersonas:  nCat
-        });
+        };
+        if (rtRes) {
+          docPrincipal.rutas = rtRes.rutas;
+          await setDoc(doc(db, 'rdps', docId), docPrincipal);
+          _rtLimpiarLapidas(); // solo tras escritura exitosa
+        } else {
+          // si la ruta falló al prepararse, no tocar el campo 'rutas' que ya está en la nube
+          await setDoc(doc(db, 'rdps', docId), docPrincipal, { merge: true });
+        }
 
         const partes = [];
         if (toUploadReg.length > 0) partes.push(`${toUploadReg.length} registros subidos`);
@@ -12102,8 +12128,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         if (delFamCount > 0)        partes.push(`${delFamCount} familias borradas`);
         if (rtSubidas > 0)          partes.push(`${rtSubidas} filas de ruta sincronizadas`);
         if (partes.length === 0)    partes.push('Sin cambios nuevos');
-        setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
-        toast('✅ Datos guardados en la nube', 'success');
+        if (rtError) {
+          setFirebaseStatus(`⚠️ ${partes.join(' · ')} — pero la RUTA DE TRABAJO no se subió: ${rtError}`, 'err');
+          toast('⚠️ Se subió todo menos la ruta de trabajo', 'error');
+        } else {
+          setFirebaseStatus(`✅ ${partes.join(' · ')} · ${registros.length} total · ${nCat} personas`, 'ok');
+          toast('✅ Datos guardados en la nube', 'success');
+        }
       } catch(e) {
         setFirebaseStatus('❌ Error al subir: ' + e.message, 'err');
         toast('❌ Error al subir a Firebase', 'error');
@@ -12281,7 +12312,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         }
 
         // ── Merge ruta de trabajo ─────────────────────────────────
-        const rtRes = await _rtBajarNube(db, docId);
+        const rtRes = await _rtBajarNube(db, docId, data);
 
         const sinCambios = regNuevos === 0 && regActualizados === 0
                         && famNuevas === 0 && famActualizadas === 0
@@ -12806,7 +12837,24 @@ Notas (Acciones ya escritas): ${accion || '—'}
       `).join('');
     }
 
+    // Ficha ya existente de la misma persona, en la misma vivienda y el mismo día
+    function _buscarVisitaDuplicada(fecha, vivienda, nombre) {
+      const n = t => String(t == null ? '' : t).trim().toLowerCase();
+      return registros.find(r => r && r.fecha === fecha && n(r.vivienda) === n(vivienda) && n(r.nombre) === n(nombre) && n(nombre) !== '') || null;
+    }
+
     function seleccionarPaciente(vivienda, nombre, edad, modoVivFija) {
+      // Si esta persona ya tiene ficha ese día, no crear otra: abrir la existente para editar
+      if (!document.getElementById('edit-id').value) {
+        const fechaForm = document.getElementById('r-fecha').value || hoy();
+        const dup = _buscarVisitaDuplicada(fechaForm, vivienda, nombre);
+        if (dup) {
+          cerrarSelectorPac();
+          editarRegistro(dup.id);
+          toast('📝 ' + nombre + ' ya tiene ficha de este día — se abrió para editarla', 'success');
+          return;
+        }
+      }
       // En modo vivienda fija no sobreescribir vivienda (ya está fijada)
       if (!modoVivFija) {
         document.getElementById('r-vivienda').value = vivienda;
@@ -13877,7 +13925,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       rmAbrir, rmCerrar, rmFiltrar, rmMarcar, rmConteo, rmImportar,
       // Selector de paciente
       abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
-      seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado,
+      seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado, _buscarVisitaDuplicada,
       // Validación botón nutrición
       _puedeGraficar, _actualizarBtnGrafica,
       // Historial de mediciones
@@ -14406,6 +14454,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
 .rt-btn{flex:1 1 auto;padding:.55rem .8rem;border-radius:9px;border:1.5px solid var(--border);background:var(--white);color:var(--navy);font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
 .rt-btn-main{background:var(--teal2);border-color:var(--teal2);color:#fff}
 .rt-resumen{font-size:.78rem;color:var(--muted);margin:.2rem .2rem .5rem;font-weight:600}
+.rt-sug-wrap{position:relative}
+.rt-sug{position:absolute;left:0;right:0;top:100%;z-index:30;margin-top:4px;max-height:220px;overflow-y:auto;background:var(--white);color:var(--text);border:1.5px solid var(--teal2);border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.18);-webkit-overflow-scrolling:touch}
+.rt-sug-item{padding:.65rem .9rem;font-size:1rem;cursor:pointer;border-bottom:1px solid var(--light2)}
+.rt-sug-item:last-child{border-bottom:none}
+.rt-sug-item:active{background:rgba(0,184,148,.15)}
+.rt-sug-vacio{padding:.65rem .9rem;color:var(--muted);font-size:.9rem}
 .rt-tabla-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
 .rt-tabla{border-collapse:collapse;width:100%;min-width:720px;font-size:.8rem}
 .rt-tabla th{background:var(--navy);color:#fff;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:.55rem .5rem;text-align:left;position:sticky;top:0}
@@ -14424,7 +14478,21 @@ Notas (Acciones ya escritas): ${accion || '—'}
 // Vivienda y jefe de familia salen del Catálogo (jefe = primera persona de la vivienda, o la que se elija);
 // la fecha puede venir de los registros diarios ("Traer viviendas visitadas ese día").
 var RT_KEY = 'rdps_ruta';
-var _rtEstado = { vista: 'dia' };
+var _rtEstado = { vista: 'dia', orden: (function () { try { return localStorage.getItem('rdps_rt_orden') === 'agregado' ? 'agregado' : 'num'; } catch (e) { return 'num'; } })() };
+var _rtUltOrden = 0;
+// Marca de orden de agregado: sube siempre (aunque se agreguen varias en el mismo milisegundo)
+function _rtSigOrden() { var t = Date.now(); if (t <= _rtUltOrden) t = _rtUltOrden + 1; _rtUltOrden = t; return t; }
+// Filas viejas sin 'orden': se usa la hora que lleva su id (rt_<hora>_xxxxx)
+function _rtOrdenDe(r) {
+  if (typeof r.orden === 'number') return r.orden;
+  var m = /^rt_(\d+)_/.exec(String(r.id || ''));
+  return m ? Number(m[1]) : 0;
+}
+function _rtSetOrden(v) {
+  _rtEstado.orden = (v === 'agregado') ? 'agregado' : 'num';
+  try { localStorage.setItem('rdps_rt_orden', _rtEstado.orden); } catch (e) {}
+  _rtRender();
+}
 function _rtLeer() { try { return JSON.parse(localStorage.getItem(RT_KEY) || '[]') || []; } catch (e) { return []; } }
 function _rtGuardar(a) { localStorage.setItem(RT_KEY, JSON.stringify(a)); }
 function _rtNum(v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? Infinity : n; }
@@ -14447,9 +14515,6 @@ function _rtIniciar() {
   if (!document.getElementById('rt-p-mes').value) document.getElementById('rt-p-mes').value = h.slice(0, 7);
   if (!document.getElementById('rt-p-anio').value) document.getElementById('rt-p-anio').value = h.slice(0, 4);
   if (!document.getElementById('rt-nueva-fecha').value) document.getElementById('rt-nueva-fecha').value = h;
-  var dl = document.getElementById('rt-viv-lista');
-  dl.innerHTML = getCatalogo().map(function (v) { return String(v.vivienda); })
-    .sort(_rtCmpViv).map(function (n) { return '<option value="' + _hpEsc(n) + '"></option>'; }).join('');
   _rtVista(_rtEstado.vista);
 }
 function _rtVista(v) {
@@ -14473,16 +14538,19 @@ function _rtFiltradas() {
   });
   rows.sort(function (a, b) {
     if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
-    return _rtCmpViv(a.vivienda, b.vivienda);
+    if (_rtEstado.orden === 'agregado') return _rtOrdenDe(a) - _rtOrdenDe(b); // como las agregué
+    return _rtCmpViv(a.vivienda, b.vivienda); // por N° de vivienda
   });
   return rows;
 }
 function _rtRender() {
+  var selOrd = document.getElementById('rt-orden');
+  if (selOrd) selOrd.value = _rtEstado.orden;
   var rows = _rtFiltradas();
   var tb = document.getElementById('rt-tbody');
   document.getElementById('rt-resumen').textContent = rows.length + (rows.length === 1 ? ' vivienda en la ruta' : ' viviendas en la ruta');
   if (!rows.length) {
-    tb.innerHTML = '<tr><td colspan="6" class="rt-vacio">No hay viviendas en la ruta de este período.<br>Agrega una con el N° de vivienda o trae las visitadas ese día.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="rt-vacio">No hay viviendas en la ruta de este período.<br>Agrega una con el N° de vivienda o trae las visitadas ese día.</td></tr>';
     return;
   }
   tb.innerHTML = rows.map(function (r) {
@@ -14499,10 +14567,34 @@ function _rtRender() {
       '<td><textarea class="rt-edit" rows="1" placeholder="Lugar…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'lugar\',this.value)">' + _hpEsc(r.lugar || '') + '</textarea></td>' +
       '<td>' + jefeHtml + '</td>' +
       '<td><textarea class="rt-edit" rows="1" placeholder="Actividad…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'actividad\',this.value)">' + _hpEsc(r.actividad || '') + '</textarea></td>' +
+      '<td style="text-align:center">' + _rtBtnVisita(r, id) + '</td>' +
       '<td><button type="button" class="rt-del" title="Quitar de la ruta" onclick="_rtEliminar(\'' + id + '\')">🗑️</button></td>' +
       '</tr>';
   }).join('');
   tb.querySelectorAll('textarea').forEach(_rtAuto);
+}
+// ¿Ya hay un registro diario de esa vivienda en la fecha de la fila?
+function _rtYaVisitada(r) {
+  var v = String(r.vivienda || '').trim().toLowerCase();
+  return (typeof registros !== 'undefined' ? registros : []).some(function (x) {
+    return x && x.fecha === r.fecha && String(x.vivienda || '').trim().toLowerCase() === v;
+  });
+}
+function _rtBtnVisita(r, id) {
+  var hecha = _rtYaVisitada(r);
+  var j = _rtJefe(r), dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(hoy(), r.vivienda, j.nombre) : null;
+  return '<button type="button" class="rt-btn rt-btn-main" style="padding:.4rem .5rem;font-size:.76rem;line-height:1.2" onclick="_rtVisitar(\'' + id + '\')">' + (dup ? '✏️ Editar visita' : '📝 Registrar visita') + '</button>' +
+    (hecha ? '<div style="font-size:.7rem;color:var(--success);font-weight:700;margin-top:.2rem">✅ Ya registrada</div>' : '');
+}
+// Abre el formulario de registro con la vivienda y el nombre que están en la fila de la ruta
+function _rtVisitar(id) {
+  var r = _rtLeer().find(function (x) { return x.id === id; });
+  if (!r) return;
+  var viv = _rtBuscarViv(r.vivienda);
+  if (!viv) { toast('La vivienda ' + r.vivienda + ' no está en el catálogo', 'error'); return; }
+  var j = _rtJefe(r);
+  if (j.id && typeof atenderFamiliaPersona === 'function') atenderFamiliaPersona(viv.id, j.id);
+  else if (typeof atenderFamilia === 'function') atenderFamilia(viv.id); // sin personas guardadas: abre el selector
 }
 function _rtAuto(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function _rtEditar(id, campo, valor) {
@@ -14524,10 +14616,49 @@ function _rtEliminar(id) {
   _rtGuardar(_rtLeer().filter(function (x) { return x.id !== id; }));
   _rtRender();
 }
-function _rtNuevaFila(fecha, viv) {
-  var j = _rtJefe({ vivienda: viv.vivienda });
+function _rtNuevaFila(fecha, viv, personaId) {
+  var j = _rtJefe({ vivienda: viv.vivienda, jefeId: personaId || '' });
   return { id: 'rt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), fecha: fecha, vivienda: String(viv.vivienda),
-           jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '', actualizadoEn: new Date().toISOString() };
+           jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '', orden: _rtSigOrden(), actualizadoEn: new Date().toISOString() };
+}
+// Al escribir/elegir el N° de vivienda: mostrar los integrantes para escoger el nombre que irá en la ruta
+// Lista propia de sugerencias de N° de vivienda (reemplaza el datalist nativo, que se veía mal en Android)
+function _rtSugerir() {
+  var box = document.getElementById('rt-viv-sug'), inp = document.getElementById('rt-nueva-viv');
+  if (!box || !inp) return;
+  var q = inp.value.trim().toLowerCase();
+  var todas = getCatalogo().map(function (v) { return String(v.vivienda); }).sort(_rtCmpViv);
+  var lista = !q ? todas : todas.filter(function (n) { return n.toLowerCase().indexOf(q) === 0; })
+    .concat(todas.filter(function (n) { var l = n.toLowerCase(); return l.indexOf(q) > 0; }));
+  if (lista.length === 1 && lista[0].toLowerCase() === q) { box.style.display = 'none'; return; } // ya escribió el número exacto
+  box.innerHTML = lista.length
+    ? lista.slice(0, 200).map(function (n) {
+        return '<div class="rt-sug-item" data-n="' + _hpEsc(n) + '" onmousedown="event.preventDefault();_rtElegirViv(this.dataset.n)" ontouchstart="_rtSugToque=Date.now()" ontouchend="if(Date.now()-_rtSugToque<400){event.preventDefault();_rtElegirViv(this.dataset.n)}">' + _hpEsc(n) + '</div>';
+      }).join('')
+    : '<div class="rt-sug-vacio">Esa vivienda no está en el catálogo</div>';
+  box.style.display = '';
+}
+var _rtSugToque = 0;
+function _rtCerrarSug() { var b = document.getElementById('rt-viv-sug'); if (b) b.style.display = 'none'; }
+function _rtElegirViv(n) {
+  var inp = document.getElementById('rt-nueva-viv');
+  inp.value = n;
+  _rtCerrarSug();
+  _rtMostrarFamilia();
+}
+function _rtMostrarFamilia() {
+  var cont = document.getElementById('rt-nueva-fam');
+  if (!cont) return;
+  var viv = _rtBuscarViv(document.getElementById('rt-nueva-viv').value);
+  var pers = ((viv && viv.personas) || []).filter(function (p) { return p && p.nombre; });
+  if (!pers.length) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
+  cont.innerHTML = '<label style="display:block;font-weight:700;font-size:.8rem;margin:.1rem 0 .3rem">Integrantes de la familia — elige el nombre para la ruta</label>' +
+    pers.map(function (p, i) {
+      return '<label style="display:flex;align-items:center;gap:.5rem;padding:.4rem .2rem;cursor:pointer">' +
+        '<input type="radio" name="rt-nueva-persona" value="' + _hpEsc(p.id) + '"' + (i === 0 ? ' checked' : '') + '/>' +
+        '<span>' + _hpEsc(p.nombre) + (p.edad !== undefined && p.edad !== '' && p.edad !== null ? ' <span style="color:var(--muted)">(' + _hpEsc(String(p.edad)) + ')</span>' : '') + '</span></label>';
+    }).join('');
+  cont.style.display = '';
 }
 function _rtAgregar() {
   var fecha = document.getElementById('rt-nueva-fecha').value;
@@ -14540,9 +14671,11 @@ function _rtAgregar() {
   if (a.some(function (r) { return r.fecha === fecha && String(r.vivienda).toLowerCase() === String(viv.vivienda).toLowerCase(); })) {
     toast('Esa vivienda ya está en la ruta de ese día', 'error'); return;
   }
-  a.push(_rtNuevaFila(fecha, viv));
+  var sel = document.querySelector('input[name="rt-nueva-persona"]:checked');
+  a.push(_rtNuevaFila(fecha, viv, sel ? sel.value : ''));
   _rtGuardar(a);
   document.getElementById('rt-nueva-viv').value = '';
+  _rtMostrarFamilia();
   _rtIrAFecha(fecha);
   toast('Vivienda ' + viv.vivienda + ' agregada');
 }
@@ -14591,45 +14724,60 @@ function _rtCopiarExcel() {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, viejo);
   else viejo();
 }
-// ── Sincronización con Firebase: rdps/{docId}/rutas/{id} (mismo esquema que registros y familias) ──
-async function _rtSubirNube(db, docId, BATCH_SIZE) {
+// ── Sincronización con Firebase: la ruta viaja DENTRO del doc principal rdps/{docId}, campo "rutas" ──
+// (así no necesita permisos extra: usa el mismo documento que ya se escribe al subir registros)
+async function _rtSubirNube(db, docId) {
   var local = _rtLeer(), tocado = false;
   local.forEach(function (r) { if (!r.actualizadoEn) { r.actualizadoEn = new Date().toISOString(); tocado = true; } });
   if (tocado) _rtGuardar(local);
-  var snap = await getDocs(collection(db, 'rdps', docId, 'rutas'));
-  var meta = {};
-  snap.forEach(function (d) { meta[String(d.id)] = d.data().actualizadoEn || ''; });
-  // Lápidas: borrar en la nube lo que se quitó localmente (se limpian solo tras commit exitoso)
+  var snap = await getDoc(doc(db, 'rdps', docId));
+  var nube = (snap.exists() && snap.data().rutas) || {};
+  var cambios = 0;
+  // Lápidas: quitar de la nube lo que se borró localmente
   var lap = {};
   try { lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}'); } catch (e) {}
-  var aBorrar = Object.keys(lap).filter(function (id) { return meta[id] !== undefined; });
-  if (aBorrar.length) {
-    var bd = writeBatch(db);
-    aBorrar.forEach(function (id) { bd.delete(doc(db, 'rdps', docId, 'rutas', id)); });
-    await bd.commit();
-  }
-  Object.keys(lap).forEach(function (id) { delete lap[id]; });
-  localStorage.setItem('rdps_deleted_rt', JSON.stringify(lap));
-  var subir = local.filter(function (r) {
-    var c = meta[String(r.id)];
-    return !c || r.actualizadoEn > c;
+  Object.keys(lap).forEach(function (id) { if (nube[id] !== undefined) { delete nube[id]; cambios++; } });
+  // Subir filas nuevas o más recientes (JSON: quita valores undefined, que Firestore rechaza)
+  local.forEach(function (r) {
+    var id = String(r.id), c = nube[id];
+    if (!c || (r.actualizadoEn || '') > (c.actualizadoEn || '')) { nube[id] = JSON.parse(JSON.stringify(r)); cambios++; }
   });
-  for (var i = 0; i < subir.length; i += BATCH_SIZE) {
-    var b = writeBatch(db);
-    subir.slice(i, i + BATCH_SIZE).forEach(function (r) { b.set(doc(db, 'rdps', docId, 'rutas', String(r.id)), r); });
-    await b.commit();
-  }
-  return subir.length + aBorrar.length;
+  if (JSON.stringify(nube).length > 800000) throw new Error('La ruta de trabajo es demasiado grande para el documento principal (límite ~1 MB)');
+  return { rutas: nube, cambios: cambios };
 }
-async function _rtBajarNube(db, docId) {
+// Botón "Guardar ruta": confirma el guardado en el teléfono y sube SOLO la ruta a la nube (sin tocar registros ni familias)
+async function _rtGuardarManual() {
+  try { _rtGuardar(_rtLeer()); } catch (e) { toast('No se pudo guardar en el teléfono', 'error'); return; }
+  var docId;
+  try { docId = _docIdPromotor(); } catch (e) { docId = ''; }
+  if (!docId) { toast('💾 Ruta guardada en el teléfono (configura tu perfil para subirla a la nube)'); return; }
+  try {
+    var fbOk = await _cargarFirebase();
+    if (!fbOk) { toast('💾 Guardada en el teléfono. Sin internet para subirla a la nube'); return; }
+    var db = initFirebase();
+    var res = await _rtSubirNube(db, docId);
+    var ref = doc(db, 'rdps', docId);
+    var snap = await getDoc(ref);
+    var base = snap.exists() ? snap.data() : { version: '3.0' };
+    base.rutas = res.rutas;
+    await setDoc(ref, base);
+    _rtLimpiarLapidas();
+    toast('✅ Ruta guardada en el teléfono y en la nube');
+  } catch (e) {
+    console.error('Guardar ruta:', e);
+    toast('💾 Guardada en el teléfono, pero no subió a la nube: ' + ((e && (e.code || e.message)) || e), 'error');
+  }
+}
+function _rtLimpiarLapidas() { try { localStorage.setItem('rdps_deleted_rt', '{}'); } catch (e) {} }
+async function _rtBajarNube(db, docId, dataPrincipal) {
   var lap = {};
   try { lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}'); } catch (e) {}
-  var snap = await getDocs(collection(db, 'rdps', docId, 'rutas'));
+  var nube = (dataPrincipal && dataPrincipal.rutas) || {};
   var mapa = {};
   _rtLeer().forEach(function (r) { mapa[String(r.id)] = r; });
   var nuevas = 0, actualizadas = 0;
-  snap.forEach(function (d) {
-    var r = d.data(), id = String(r.id || d.id);
+  Object.keys(nube).forEach(function (k) {
+    var r = nube[k], id = String(r.id || k);
     if (lap[id]) return; // borrada localmente: no resucitar
     var loc = mapa[id];
     if (!loc) { mapa[id] = r; nuevas++; }
