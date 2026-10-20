@@ -4077,12 +4077,55 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
 
       const footer=`<div style="font-size:.62rem;color:#9e6070;margin-top:.5rem;border-top:1.5px solid #f48fb1;padding-top:.4rem;display:flex;justify-content:space-between"><span>Planificación Familiar · MINSAL El Salvador · ${escHtml(ucsf)}</span><span>Total: ${planifican.length} pacientes · ${todayStr}</span></div>`;
 
+      // ── ABASTOS ENTREGADOS ESTE MES (botón + panel desplegable) ──
+      const _hoy=new Date(), mesPrefix=_hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0');
+      const mesNombre=new Date().toLocaleDateString('es-SV',{month:'long',year:'numeric'});
+      const entregasMes={}; // metodo -> [{r,fechas[]}]
+      let totalEntregas=0, totalMujeresMes=0;
+      records.forEach(r=>{
+        const porMetodo={};
+        (r.historial||[]).forEach(e=>{
+          if(e.tipo!=='pf'||!e.fecha||e.fecha.slice(0,7)!==mesPrefix)return;
+          const m=e.metodo||r.metodo;
+          if(!m||m==='ninguno')return;
+          (porMetodo[m]=porMetodo[m]||[]).push(e.fecha);
+        });
+        Object.keys(porMetodo).forEach(m=>{
+          const fechas=[...new Set(porMetodo[m])].sort();
+          (entregasMes[m]=entregasMes[m]||[]).push({r,fechas});
+          totalEntregas+=fechas.length; totalMujeresMes++;
+        });
+      });
+      let abastosRows='';
+      const metodosMes=METODO_ORDER.filter(m=>m!=='ninguno'&&entregasMes[m]&&entregasMes[m].length);
+      metodosMes.forEach(m=>{
+        const color=METODO_COLORS[m]||'#c2185b';
+        const lista=entregasMes[m].sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0])||(a.r.nombre||'').localeCompare(b.r.nombre||''));
+        abastosRows+=`<tr style="page-break-inside:avoid;break-inside:avoid"><td colspan="3" class="pfl-group" style="background:${color};border:1px solid ${color}">💊 ${escHtml(METODO_LABELS[m]||m)} — ${lista.length} entrega${lista.length!==1?'s':''}</td></tr>`;
+        lista.forEach((x,i)=>{
+          abastosRows+=`<tr style="page-break-inside:avoid;break-inside:avoid;background:${i%2?'#fff5f8':'#fff'}"><td class="pfl-td" style="text-align:center;font-weight:800;width:8%">${i+1}</td><td class="pfl-td" style="font-weight:700;white-space:normal">${escHtml(x.r.nombre||'—')}</td><td class="pfl-td" style="white-space:normal;width:34%">${x.fechas.map(f=>fmt(f)).join(' · ')}</td></tr>`;
+        });
+      });
+      const abastosMesHtml=`<div class="pf-tap-hint" style="margin-bottom:.7rem">
+        <button type="button" onclick="togglePFAbastosMes()" style="display:flex;align-items:center;gap:.5rem;width:100%;justify-content:center;padding:.6rem .9rem;background:linear-gradient(135deg,#880e4f,#c2185b);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer">📦 Abastos entregados este mes <span style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 9px;font-size:.72rem">${totalEntregas}</span></button>
+        <div id="pf-abastos-mes" style="display:none;margin-top:.6rem">
+          <div style="font-size:.72rem;font-weight:800;color:#880e4f;text-transform:capitalize;margin-bottom:.35rem">Entregados en ${escHtml(mesNombre)} · ${totalMujeresMes} mujer${totalMujeresMes!==1?'es':''}</div>
+          ${abastosRows
+            ? `<div class="pfl-table-wrap"><table class="pfl-table" style="min-width:0"><colgroup><col style="width:8%"><col style="width:58%"><col style="width:34%"></colgroup><thead><tr><th class="pfl-th" style="text-align:center">N°</th><th class="pfl-th">Nombre</th><th class="pfl-th">Fecha de entrega</th></tr></thead><tbody>${abastosRows}</tbody></table></div>`
+            : '<div style="text-align:center;padding:1rem;color:#9e9e9e;font-size:.82rem">Aún no hay abastos entregados este mes.</div>'}
+        </div>
+      </div>`;
+
       const body=document.getElementById('pf-listado-body');
       body.style.minWidth='';
-      body.innerHTML=header+resumen+sections+footer;
+      body.innerHTML=header+resumen+abastosMesHtml+sections+footer;
       document.getElementById('pf-listado-bg').style.display='flex';
     }
     function closePFListado(){document.getElementById('pf-listado-bg').style.display='none';}
+    function togglePFAbastosMes(){
+      const el=document.getElementById('pf-abastos-mes');
+      if(el)el.style.display=el.style.display==='none'?'block':'none';
+    }
     let _pfListadoWasOpen=false;
     function registrarAbastoDesdeListado(id){
       _pfListadoWasOpen=true;
@@ -4970,6 +5013,8 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       document.getElementById('hm-tipo').value   = (rec.metodo && rec.metodo!=='ninguno') ? 'pf' : 'general';
       document.getElementById('hm-metodo').value = rec.metodo || 'oral';
       hmAdaptModal();
+      const _hmTitle2=document.querySelector('#hist-modal .hm-title');
+      if(_hmTitle2) _hmTitle2.textContent='📋 Registrar seguimiento'+(rec.nombre?' a '+rec.nombre:'');
       document.getElementById('hist-modal-bg').classList.add('open');
     }
     /* Versión pública: permite abrir el modal de seguimiento desde fuera del scope
@@ -4989,6 +5034,8 @@ const _MS_EXC_M = new Set(['jose maria','luca','job','elisha']);
       document.getElementById('hm-tipo').value   = (rec.metodo && rec.metodo!=='ninguno') ? 'pf' : 'general';
       document.getElementById('hm-metodo').value = rec.metodo || 'oral';
       hmAdaptModal();
+      const _hmTitle=document.querySelector('#hist-modal .hm-title');
+      if(_hmTitle) _hmTitle.textContent='📋 Registrar seguimiento'+(rec.nombre?' a '+rec.nombre:'');
       document.getElementById('hist-modal-bg').classList.add('open');
     };
 

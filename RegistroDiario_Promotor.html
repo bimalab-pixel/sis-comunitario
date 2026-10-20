@@ -2478,11 +2478,12 @@
                 <div id="rt-nueva-fam" style="display:none;margin-top:.5rem"></div>
                 <div class="rt-acciones">
                     <button type="button" class="rt-btn rt-btn-main" onclick="_rtAgregar()">➕ Agregar a la ruta</button>
-                    <button type="button" class="rt-btn" onclick="_rtTraerDeRegistros()">📥 Traer viviendas visitadas ese día</button>
+                    <button type="button" class="rt-btn" id="rt-btn-traer" onclick="_rtTraerDeRegistros()">📥 Traer viviendas visitadas ese día</button>
                 </div>
             </div>
         </div>
 
+        <div id="rt-pend-bar" style="display:none"></div>
         <div class="rt-resumen" id="rt-resumen"></div>
         <div class="rt-tabla-wrap">
             <table class="rt-tabla">
@@ -2728,7 +2729,25 @@
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
       </button>
-      <!-- Opción 4: volver al inicio -->
+      <!-- Opción 4: ver ruta de trabajo diaria -->
+      <button onclick="siguienteVerRuta()"
+        style="width:100%;display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;
+               background:var(--light);border:2px solid var(--border);border-radius:12px;
+               cursor:pointer;font-family:inherit;text-align:left;margin-bottom:.6rem;
+               transition:all .2s;color:var(--text);">
+        <div style="width:40px;height:40px;border-radius:9px;background:rgba(14,92,68,.12);
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy2)" stroke-width="2" width="22" height="22">
+            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:.9rem;color:var(--navy);">Ver ruta de trabajo diaria</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">Consulta las viviendas del día</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <!-- Opción 5: volver al inicio -->
       <button onclick="siguienteIrInicio()"
         style="width:100%;padding:.6rem;background:transparent;border:1.5px solid var(--border);
                border-radius:10px;cursor:pointer;font-family:inherit;font-size:.8rem;
@@ -7320,6 +7339,18 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
       _modoOtraPersona = null;
       limpiarFormulario(false);
       toast('✅ Listo para nueva vivienda', 'success');
+    }
+
+    // Opción: ir a la Ruta de Trabajo en vista Diaria (el registro ya está guardado)
+    function siguienteVerRuta() {
+      document.getElementById('modal-siguiente').classList.remove('show');
+      var f = (_ultimoRegistro && _ultimoRegistro.fecha) || hoy();
+      _modoOtraPersona = null;
+      limpiarFormulario(false);
+      _rtEstado.vista = 'dia';
+      var d = document.getElementById('rt-p-dia');
+      if (d) d.value = f;
+      irA('screen-ruta');
     }
 
     function siguienteIrInicio() {
@@ -14465,6 +14496,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
 .rt-tabla th{background:var(--navy);color:#fff;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:.55rem .5rem;text-align:left;position:sticky;top:0}
 .rt-tabla td{border-top:1px solid var(--border);padding:.3rem .35rem;vertical-align:top}
 .rt-tabla input,.rt-tabla textarea,.rt-tabla select{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;font-family:inherit;font-size:.8rem;padding:.3rem .3rem;border-radius:6px;color:inherit}
+.rt-tabla tr.rt-ini td{background:#fff3cf;border-top:2px solid var(--gold)}
+.rt-tabla tr.rt-ini td:first-child{border-left:5px solid var(--gold)}
 .rt-tabla textarea{resize:none;overflow:hidden;min-height:34px;line-height:1.4}
 .rt-tabla input:focus,.rt-tabla textarea:focus,.rt-tabla select:focus{outline:none;border-color:var(--teal2);background:#fff}
 .rt-tabla textarea.rt-edit{background:rgba(13,158,143,.06);border-color:rgba(13,158,143,.25)}
@@ -14480,6 +14513,27 @@ Notas (Acciones ya escritas): ${accion || '—'}
 var RT_KEY = 'rdps_ruta';
 var _rtEstado = { vista: 'dia', orden: (function () { try { return localStorage.getItem('rdps_rt_orden') === 'agregado' ? 'agregado' : 'num'; } catch (e) { return 'num'; } })() };
 var _rtUltOrden = 0;
+// Filas traídas de los registros (Mensual/Anual) que todavía NO se han guardado: solo están en pantalla
+var _rtPend = [];
+function _rtPasarPendientes() {
+  if (!_rtPend.length) return 0;
+  var a = _rtLeer(), n = _rtPend.length;
+  _rtPend.forEach(function (r) { a.push(r); });
+  _rtPend = [];
+  _rtGuardar(a);
+  return n;
+}
+function _rtGuardarPendientes(subirNube) {
+  var n = _rtPasarPendientes();
+  toast('💾 ' + n + ' vivienda(s) guardada(s) en el teléfono');
+  _rtRender();
+  if (subirNube) _rtGuardarManual();
+}
+function _rtDescartarPendientes() {
+  if (!confirm('¿Descartar las ' + _rtPend.length + ' viviendas sin guardar?')) return;
+  _rtPend = [];
+  _rtRender();
+}
 // Marca de orden de agregado: sube siempre (aunque se agreguen varias en el mismo milisegundo)
 function _rtSigOrden() { var t = Date.now(); if (t <= _rtUltOrden) t = _rtUltOrden + 1; _rtUltOrden = t; return t; }
 // Filas viejas sin 'orden': se usa la hora que lleva su id (rt_<hora>_xxxxx)
@@ -14497,9 +14551,27 @@ function _rtLeer() { try { return JSON.parse(localStorage.getItem(RT_KEY) || '[]
 function _rtGuardar(a) { localStorage.setItem(RT_KEY, JSON.stringify(a)); }
 function _rtNum(v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return isNaN(n) ? Infinity : n; }
 function _rtCmpViv(a, b) { var x = _rtNum(a), y = _rtNum(b); if (x !== y) return x < y ? -1 : 1; return String(a).localeCompare(String(b), 'es', { numeric: true }); }
+// Caché temporal (solo mientras se dibuja la lista o se traen viviendas): evita leer y re-parsear el catálogo completo por cada fila
+var _rtCat = null, _rtIdxVis = null;
+function _rtCatMapa() {
+  var m = {};
+  getCatalogo().forEach(function (v) { var k = String(v.vivienda).trim().toLowerCase(); if (!(k in m)) m[k] = v; });
+  return m;
+}
+function _rtIdxVisitas() {
+  var n = function (t) { return String(t == null ? '' : t).trim().toLowerCase(); };
+  var idx = { viv: {}, per: {} };
+  (typeof registros !== 'undefined' ? registros : []).forEach(function (x) {
+    if (!x || !x.fecha) return;
+    var kv = x.fecha + '|' + n(x.vivienda);
+    idx.viv[kv] = true; idx.per[kv + '|' + n(x.nombre)] = true;
+  });
+  return idx;
+}
 function _rtBuscarViv(num) {
   var q = String(num == null ? '' : num).trim().toLowerCase();
   if (!q) return null;
+  if (_rtCat) return _rtCat[q] || null;
   return getCatalogo().find(function (v) { return String(v.vivienda).trim().toLowerCase() === q; }) || null;
 }
 function _rtJefe(row) {
@@ -14519,6 +14591,7 @@ function _rtIniciar() {
 }
 function _rtVista(v) {
   _rtEstado.vista = v;
+  _rtEstado.limite = 100;
   ['dia', 'mes', 'anio'].forEach(function (k) {
     document.getElementById('rt-v-' + k).classList.toggle('active', k === v);
     document.getElementById('rt-g-' + k).style.display = (k === v) ? '' : 'none';
@@ -14531,7 +14604,7 @@ function _rtFiltradas() {
   else if (v === 'mes') pref = document.getElementById('rt-p-mes').value;
   else pref = String(document.getElementById('rt-p-anio').value || '').trim();
   if (!pref) return [];
-  var rows = _rtLeer().filter(function (r) {
+  var rows = _rtLeer().concat(_rtPend).filter(function (r) {
     if (v === 'dia') return r.fecha === pref;
     if (v === 'mes') return (r.fecha || '').slice(0, 7) === pref;
     return (r.fecha || '').slice(0, 4) === pref;
@@ -14543,52 +14616,82 @@ function _rtFiltradas() {
   });
   return rows;
 }
-function _rtRender() {
+function _rtRenderInterno() {
   var selOrd = document.getElementById('rt-orden');
   if (selOrd) selOrd.value = _rtEstado.orden;
+  var barP = document.getElementById('rt-pend-bar');
+  if (barP) {
+    if (_rtPend.length) {
+      barP.style.cssText = 'background:#eaf4ff;border:1.5px dashed #3b82c4;border-radius:12px;padding:.7rem;margin:.2rem 0 .6rem';
+      barP.innerHTML = '<div style="font-weight:700;color:#1e4f82;margin-bottom:.5rem">⚠️ ' + _rtPend.length + ' vivienda(s) traída(s) SIN guardar (solo se ven en pantalla)</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:.4rem">' +
+        '<button type="button" class="rt-btn rt-btn-main" onclick="_rtGuardarPendientes(false)">💾 Guardar en el teléfono</button>' +
+        '<button type="button" class="rt-btn" onclick="_rtGuardarPendientes(true)">☁️ Guardar y subir a la nube</button>' +
+        '<button type="button" class="rt-btn" onclick="_rtDescartarPendientes()">✖ Descartar</button></div>';
+    } else { barP.style.display = 'none'; barP.innerHTML = ''; }
+  }
+  var btnT = document.getElementById('rt-btn-traer');
+  if (btnT) btnT.textContent = '📥 Traer viviendas visitadas ' + (_rtEstado.vista === 'dia' ? 'ese día' : (_rtEstado.vista === 'mes' ? 'del mes' : 'del año'));
   var rows = _rtFiltradas();
   var tb = document.getElementById('rt-tbody');
-  document.getElementById('rt-resumen').textContent = rows.length + (rows.length === 1 ? ' vivienda en la ruta' : ' viviendas en la ruta');
+  document.getElementById('rt-resumen').textContent = rows.length + (rows.length === 1 ? ' vivienda en la ruta' : ' viviendas en la ruta') +
+    (_rtEstado.vista === 'mes' ? ' · 🟨 = inicio de la ruta de cada día' : (_rtEstado.vista === 'anio' ? ' · 🟨 = inicio de cada mes' : ''));
   if (!rows.length) {
     tb.innerHTML = '<tr><td colspan="7" class="rt-vacio">No hay viviendas en la ruta de este período.<br>Agrega una con el N° de vivienda o trae las visitadas ese día.</td></tr>';
     return;
   }
-  tb.innerHTML = rows.map(function (r) {
+  var vistaAct = _rtEstado.vista;
+  var limite = _rtEstado.limite || 100, restantes = Math.max(0, rows.length - limite);
+  tb.innerHTML = rows.slice(0, limite).map(function (r, i) {
     var j = _rtJefe(r), id = _hpEsc(r.id), jefeHtml;
+    // Primera fila de cada día (vista Mensual) o de cada mes (vista Anual): se marca de color
+    var inicio = (vistaAct === 'mes' && (i === 0 || rows[i - 1].fecha !== r.fecha)) ||
+                 (vistaAct === 'anio' && (i === 0 || String(rows[i - 1].fecha).slice(0, 7) !== String(r.fecha).slice(0, 7)));
     if (j.personas.length > 1) {
       jefeHtml = '<select onchange="_rtEditar(\'' + id + '\',\'jefeId\',this.value)">' +
         j.personas.map(function (p) { return '<option value="' + _hpEsc(p.id) + '"' + (p.id === j.id ? ' selected' : '') + '>' + _hpEsc(p.nombre) + '</option>'; }).join('') + '</select>';
     } else {
       jefeHtml = '<div style="padding:.35rem .3rem">' + (j.nombre ? _hpEsc(j.nombre) : '<span style="color:var(--muted)">— sin dato —</span>') + '</div>';
     }
-    return '<tr>' +
+    return '<tr' + (inicio ? ' class="rt-ini"' : '') + '>' +
       '<td><input type="date" value="' + _hpEsc(r.fecha) + '" onchange="_rtEditar(\'' + id + '\',\'fecha\',this.value)"/></td>' +
-      '<td class="rt-viv">' + _hpEsc(r.vivienda) + '</td>' +
+      '<td class="rt-viv">' + _hpEsc(r.vivienda) + (_rtPend.indexOf(r) >= 0 ? '<div style="font-size:.62rem;font-weight:700;color:#1e4f82;background:#dbeafe;border-radius:6px;padding:1px 4px;margin-top:3px">sin guardar</div>' : '') + '</td>' +
       '<td><textarea class="rt-edit" rows="1" placeholder="Lugar…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'lugar\',this.value)">' + _hpEsc(r.lugar || '') + '</textarea></td>' +
       '<td>' + jefeHtml + '</td>' +
       '<td><textarea class="rt-edit" rows="1" placeholder="Actividad…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'actividad\',this.value)">' + _hpEsc(r.actividad || '') + '</textarea></td>' +
       '<td style="text-align:center">' + _rtBtnVisita(r, id) + '</td>' +
       '<td><button type="button" class="rt-del" title="Quitar de la ruta" onclick="_rtEliminar(\'' + id + '\')">🗑️</button></td>' +
       '</tr>';
-  }).join('');
-  tb.querySelectorAll('textarea').forEach(_rtAuto);
+  }).join('') + (restantes ? '<tr><td colspan="7" style="text-align:center;padding:.7rem"><button type="button" class="rt-btn rt-btn-main" onclick="_rtMasFilas()">Mostrar ' + Math.min(100, restantes) + ' más (' + restantes + ' restantes)</button></td></tr>' : '');
+  _rtAutoTodos(tb.querySelectorAll('textarea'));
+}
+function _rtMasFilas() { _rtEstado.limite = (_rtEstado.limite || 100) + 100; _rtRender(); }
+// Ajustar la altura de todos los textarea con una sola lectura de diseño (antes era una por cada uno y se trababa)
+function _rtAutoTodos(lista) {
+  var arr = Array.prototype.slice.call(lista);
+  arr.forEach(function (t) { t.style.height = 'auto'; });
+  var hs = arr.map(function (t) { return t.scrollHeight + 2; });
+  arr.forEach(function (t, i) { t.style.height = hs[i] + 'px'; });
 }
 // ¿Ya hay un registro diario de esa vivienda en la fecha de la fila?
 function _rtYaVisitada(r) {
   var v = String(r.vivienda || '').trim().toLowerCase();
+  if (_rtIdxVis) return !!_rtIdxVis.viv[r.fecha + '|' + v];
   return (typeof registros !== 'undefined' ? registros : []).some(function (x) {
     return x && x.fecha === r.fecha && String(x.vivienda || '').trim().toLowerCase() === v;
   });
 }
 function _rtBtnVisita(r, id) {
   var hecha = _rtYaVisitada(r);
-  var j = _rtJefe(r), dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(hoy(), r.vivienda, j.nombre) : null;
+  var j = _rtJefe(r), dup;
+  if (_rtIdxVis) dup = !!_rtIdxVis.per[hoy() + '|' + String(r.vivienda || '').trim().toLowerCase() + '|' + String(j.nombre || '').trim().toLowerCase()];
+  else dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(hoy(), r.vivienda, j.nombre) : null;
   return '<button type="button" class="rt-btn rt-btn-main" style="padding:.4rem .5rem;font-size:.76rem;line-height:1.2" onclick="_rtVisitar(\'' + id + '\')">' + (dup ? '✏️ Editar visita' : '📝 Registrar visita') + '</button>' +
     (hecha ? '<div style="font-size:.7rem;color:var(--success);font-weight:700;margin-top:.2rem">✅ Ya registrada</div>' : '');
 }
 // Abre el formulario de registro con la vivienda y el nombre que están en la fila de la ruta
 function _rtVisitar(id) {
-  var r = _rtLeer().find(function (x) { return x.id === id; });
+  var r = _rtLeer().concat(_rtPend).find(function (x) { return x.id === id; });
   if (!r) return;
   var viv = _rtBuscarViv(r.vivienda);
   if (!viv) { toast('La vivienda ' + r.vivienda + ' no está en el catálogo', 'error'); return; }
@@ -14598,16 +14701,23 @@ function _rtVisitar(id) {
 }
 function _rtAuto(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function _rtEditar(id, campo, valor) {
-  var a = _rtLeer(), r = a.find(function (x) { return x.id === id; });
+  var a = _rtLeer(), r = a.find(function (x) { return x.id === id; }), pend = false;
+  if (!r) { r = _rtPend.find(function (x) { return x.id === id; }); pend = !!r; }
   if (!r) return;
   r[campo] = valor;
   r.actualizadoEn = new Date().toISOString();
+  if (pend) { if (campo === 'fecha') _rtRender(); return; } // fila sin guardar: solo se edita en pantalla
   if (campo === 'jefeId') { var j = _rtJefe(r); r.jefeNombre = j.nombre; }
   if (campo === 'fecha') { _rtGuardar(a); _rtRender(); return; }
   _rtGuardar(a);
 }
 function _rtEliminar(id) {
   if (!confirm('¿Quitar esta vivienda de la ruta?')) return;
+  if (_rtPend.some(function (x) { return x.id === id; })) { // fila sin guardar: solo se quita de la pantalla
+    _rtPend = _rtPend.filter(function (x) { return x.id !== id; });
+    _rtRender();
+    return;
+  }
   try {
     var lap = JSON.parse(localStorage.getItem('rdps_deleted_rt') || '{}');
     lap[id] = new Date().toISOString();
@@ -14679,22 +14789,82 @@ function _rtAgregar() {
   _rtIrAFecha(fecha);
   toast('Vivienda ' + viv.vivienda + ' agregada');
 }
+function _rtRender() {
+  _rtCat = _rtCatMapa(); _rtIdxVis = _rtIdxVisitas();
+  try { _rtRenderInterno(); } finally { _rtCat = null; _rtIdxVis = null; }
+}
 function _rtTraerDeRegistros() {
-  var fecha = document.getElementById('rt-nueva-fecha').value;
-  if (!fecha) { toast('Elige la fecha', 'error'); return; }
-  var vistas = {};
-  (registros || []).forEach(function (r) { if (r && r.fecha === fecha && r.vivienda) vistas[String(r.vivienda).trim()] = true; });
-  var nums = Object.keys(vistas).sort(_rtCmpViv);
-  if (!nums.length) { toast('No hay registros diarios con vivienda en esa fecha', 'error'); return; }
-  var a = _rtLeer(), n = 0;
-  nums.forEach(function (num) {
-    if (a.some(function (r) { return r.fecha === fecha && String(r.vivienda).toLowerCase() === num.toLowerCase(); })) return;
-    var viv = _rtBuscarViv(num) || { vivienda: num };
-    a.push(_rtNuevaFila(fecha, viv)); n++;
+  _rtCat = _rtCatMapa();
+  try { _rtTraerInterno(); } finally { _rtCat = null; }
+}
+// Edad escrita en el registro ("5 AÑOS", "8 MESES", "20 DÍAS") → años (NaN si no se entiende)
+function _rtEdadAnios(txt) {
+  var m = /(\d+(?:[.,]\d+)?)\s*([a-zA-ZñÑáéíóúÁÉÍÓÚ]*)/.exec(String(txt == null ? '' : txt));
+  if (!m) return NaN;
+  var n = parseFloat(m[1].replace(',', '.')), u = (m[2] || '').toLowerCase();
+  if (/^mes/.test(u)) return n / 12;
+  if (/^sem/.test(u)) return n / 52;
+  if (/^d[ií]a/.test(u)) return n / 365;
+  return n;
+}
+// De varias personas de una misma vivienda y día: la primera atendida que sea mayor de 18 años; si no hay, la de mayor edad
+function _rtElegirPersona(lista) {
+  var adulto = lista.find(function (x) { return x.anios > 18 || x.anios === 18; });
+  if (adulto) return adulto;
+  return lista.reduce(function (mejor, x) {
+    var a = isNaN(x.anios) ? -1 : x.anios, b = isNaN(mejor.anios) ? -1 : mejor.anios;
+    return a > b ? x : mejor;
+  }, lista[0]);
+}
+function _rtTraerInterno() {
+  var v = _rtEstado.vista, filtro;
+  if (v === 'dia') {
+    filtro = document.getElementById('rt-nueva-fecha').value;
+    if (!filtro) { toast('Elige la fecha', 'error'); return; }
+  } else if (v === 'mes') {
+    filtro = document.getElementById('rt-p-mes').value;
+    if (!filtro) { toast('Elige el mes', 'error'); return; }
+  } else {
+    filtro = String(document.getElementById('rt-p-anio').value || '').trim();
+    if (!filtro) { toast('Elige el año', 'error'); return; }
+  }
+  var largo = (v === 'dia') ? 10 : (v === 'mes' ? 7 : 4);
+  var norm = function (t) { return String(t == null ? '' : t).trim().toLowerCase(); };
+  // Agrupar los registros del período por fecha + vivienda (en el orden en que se atendieron)
+  var grupos = {}, claves = [];
+  (registros || []).slice().sort(function (x, y) {
+    return ((x.fecha || '') + ' ' + (x.hora || '')) < ((y.fecha || '') + ' ' + (y.hora || '')) ? -1 : 1;
+  }).forEach(function (r) {
+    if (!r || !r.fecha || !r.vivienda || String(r.fecha).slice(0, largo) !== filtro) return;
+    var k = r.fecha + '|' + norm(r.vivienda);
+    if (!grupos[k]) { grupos[k] = { fecha: r.fecha, vivienda: String(r.vivienda).trim(), personas: [] }; claves.push(k); }
+    grupos[k].personas.push({ nombre: r.nombre || '', anios: _rtEdadAnios(r.edad) });
   });
-  _rtGuardar(a);
-  _rtIrAFecha(fecha);
-  toast(n ? (n + ' vivienda(s) traída(s) de los registros') : 'Todas ya estaban en la ruta');
+  if (!claves.length) {
+    toast('No hay registros diarios con vivienda en ' + (v === 'dia' ? 'esa fecha' : (v === 'mes' ? 'ese mes' : 'ese año')), 'error');
+    return;
+  }
+  claves.sort(function (k1, k2) {
+    var g1 = grupos[k1], g2 = grupos[k2];
+    return g1.fecha !== g2.fecha ? (g1.fecha < g2.fecha ? -1 : 1) : _rtCmpViv(g1.vivienda, g2.vivienda);
+  });
+  var a = _rtLeer(), n = 0, ya = {}, sinGuardar = (v !== 'dia'); // Mensual/Anual: se muestran sin guardar hasta que se pida
+  a.concat(_rtPend).forEach(function (r) { ya[r.fecha + '|' + norm(r.vivienda)] = true; });
+  claves.forEach(function (k) {
+    var g = grupos[k];
+    if (ya[k]) return; // ya estaba en la ruta
+    var viv = _rtBuscarViv(g.vivienda) || { vivienda: g.vivienda };
+    var elegida = _rtElegirPersona(g.personas);
+    var pers = (viv.personas || []);
+    var enCat = pers.find(function (p) { return norm(p.nombre) === norm(elegida.nombre); });
+    var fila = _rtNuevaFila(g.fecha, viv, enCat ? enCat.id : '');
+    if (!pers.length && elegida.nombre) fila.jefeNombre = elegida.nombre; // vivienda sin personas en el catálogo
+    if (sinGuardar) _rtPend.push(fila); else a.push(fila);
+    n++;
+  });
+  if (!sinGuardar) _rtGuardar(a);
+  _rtIrAFecha(v === 'dia' ? filtro : grupos[claves[0]].fecha);
+  toast(n ? (n + ' vivienda(s) traída(s)' + (sinGuardar ? ' — SIN guardar: usa los botones de arriba para guardarlas' : ' de los registros')) : 'Todas ya estaban en la ruta');
 }
 // Ajusta el período mostrado para que se vea lo recién agregado
 function _rtIrAFecha(f) {
@@ -14747,7 +14917,7 @@ async function _rtSubirNube(db, docId) {
 }
 // Botón "Guardar ruta": confirma el guardado en el teléfono y sube SOLO la ruta a la nube (sin tocar registros ni familias)
 async function _rtGuardarManual() {
-  try { _rtGuardar(_rtLeer()); } catch (e) { toast('No se pudo guardar en el teléfono', 'error'); return; }
+  try { _rtPasarPendientes(); _rtGuardar(_rtLeer()); _rtRender(); } catch (e) { toast('No se pudo guardar en el teléfono', 'error'); return; }
   var docId;
   try { docId = _docIdPromotor(); } catch (e) { docId = ''; }
   if (!docId) { toast('💾 Ruta guardada en el teléfono (configura tu perfil para subirla a la nube)'); return; }
