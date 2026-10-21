@@ -369,6 +369,12 @@
         .perfil-sig-btns { display: flex; justify-content: flex-end; margin-top: 4px; }
         .perfil-sig-btns button { border: none; background: none; color: #c62828; font-size: .75rem; font-weight: 600; cursor: pointer; padding: 4px 6px; }
 
+        .perfil-sig-acc { display: none; gap: 6px; margin-top: 8px; }
+        .perfil-sig-acc.on { display: flex; }
+        .perfil-sig-acc button { flex: 1; padding: 9px 4px; border: 2px solid var(--teal-lt); background: #fff; color: var(--teal); border-radius: 10px; font-size: .72rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .perfil-sig-acc button:active { background: #e0f4f8; }
+        .perfil-sig-msg { font-size: .7rem; color: #2e7d32; font-weight: 600; text-align: center; min-height: 1em; margin-top: 4px; }
+
         /* Pad de firma a pantalla completa */
         #pfSigFull { position: fixed; inset: 0; z-index: 300; background: #fff; display: none; flex-direction: column; }
         #pfSigFull.active { display: flex; }
@@ -813,6 +819,12 @@
         <div class="perfil-sig-hint">Toca para editar</div>
       </div>
       <div class="perfil-sig-btns"><button type="button" onclick="pfSigQuitar()">✕ Borrar firma</button></div>
+      <div class="perfil-sig-acc" id="pfSigAcc">
+        <button type="button" onclick="pfSigCopiar()">📋 Copiar</button>
+        <button type="button" onclick="pfSigDescargar()">⬇️ PNG</button>
+        <button type="button" onclick="pfSigCompartir()">📤 Compartir</button>
+      </div>
+      <div class="perfil-sig-msg" id="pfSigMsg"></div>
     </div>
     </div>
     <p class="perfil-nota">💾 Se guarda en este dispositivo. Para cambiar tu perfil, hazlo siempre desde aquí.</p>
@@ -1289,6 +1301,49 @@ function sisMasterAlternar(){
     const w = document.getElementById('pfSigWrap'), im = document.getElementById('pfSigImg');
     if (dataUrl) { im.src = dataUrl; w.classList.add('firmada'); }
     else { im.removeAttribute('src'); w.classList.remove('firmada'); }
+    const ac = document.getElementById('pfSigAcc'); if (ac) ac.classList.toggle('on', !!dataUrl);
+    const ms = document.getElementById('pfSigMsg'); if (ms) ms.textContent = '';
+  }
+
+  // ── Copiar / descargar / compartir la firma (PNG con fondo transparente) ──
+  function pfSigUrl() { return (typeof pfFirma === 'string') ? pfFirma : (pfFirma === null ? null : localStorage.getItem(PF_SIG)); }
+  function pfSigMsg(t, err) {
+    const m = document.getElementById('pfSigMsg'); if (!m) return;
+    m.style.color = err ? '#c62828' : '#2e7d32'; m.textContent = t;
+    setTimeout(() => { if (m.textContent === t) m.textContent = ''; }, 5000);
+  }
+  function pfSigBlob() {
+    const u = pfSigUrl(); if (!u) return Promise.reject(new Error('sin firma'));
+    return fetch(u).then(r => r.blob());
+  }
+  function pfSigNombreArchivo() {
+    const p = pfLeer() || {};
+    const n = String(p.nombre || 'promotor').trim().replace(/[^\wÁÉÍÓÚÑáéíóúñ]+/g, '_').replace(/^_+|_+$/g, '');
+    return 'Firma_' + (n || 'promotor') + '.png';
+  }
+  function pfSigDescargar() {
+    pfSigBlob().then(b => {
+      const a = document.createElement('a'), url = URL.createObjectURL(b);
+      a.href = url; a.download = pfSigNombreArchivo(); document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+      pfSigMsg('✅ Firma descargada como PNG (fondo transparente)');
+    }).catch(() => pfSigMsg('No hay firma para descargar', true));
+  }
+  function pfSigCompartir() {
+    pfSigBlob().then(b => {
+      const f = new File([b], pfSigNombreArchivo(), { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        return navigator.share({ files: [f], title: 'Mi firma' }).catch(e => { if (e && e.name === 'AbortError') return; throw e; });
+      }
+      pfSigMsg('Este dispositivo no permite compartir; usa ⬇️ PNG', true);
+    }).catch(() => pfSigMsg('No se pudo compartir; usa ⬇️ PNG', true));
+  }
+  function pfSigCopiar() {
+    pfSigBlob().then(b => {
+      if (!(navigator.clipboard && window.ClipboardItem)) throw new Error('sin portapapeles');
+      return navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
+    }).then(() => pfSigMsg('✅ Firma copiada: pégala en Word, Excel, PowerPoint o PDF'))
+      .catch(() => pfSigMsg('Tu navegador no deja copiar imágenes; usa ⬇️ PNG o 📤 Compartir', true));
   }
   function pfSigQuitar() { pfFirma = null; pfSigMostrar(null); }
 

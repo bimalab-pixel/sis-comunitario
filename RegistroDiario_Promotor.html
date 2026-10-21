@@ -3506,7 +3506,8 @@
 ${css}
 @page { size: letter; margin: 1.5cm; }
 html, body { margin: 0; padding: 0 !important; background: #fff; }
-.inf-toolbar, .firma-modal-bg, .inf-firma-borrar, .inf-btn-regen-objetivo, .inf-estilo-obj, .inf-regen-mensaje, .inf-firma-placeholder { display: none !important; }
+.inf-toolbar, .firma-modal-bg, .inf-firma-borrar, .inf-firma-usar, .inf-firma-aviso, .inf-btn-regen-objetivo, .inf-estilo-obj, .inf-regen-mensaje, .inf-firma-placeholder { display: none !important; }
+img.inf-firma-preview { object-fit: contain; }
 .inf-tabla-wrap { overflow: visible; }
 .inf-linea, .inf-campo-full, .inf-header-row, .inf-firma-pad-wrap, table.inf-tabla tr { break-inside: avoid; page-break-inside: avoid; }
 .hoja { width: 185.9mm; height: 247mm; overflow: hidden; position: relative; break-after: page; page-break-after: always; }
@@ -8231,16 +8232,63 @@ Acciones ejecutadas: ${acciones || '—'}
       return true;
     }
 
-    function _infGuardarFirmaRegistro(campoId, dataURLOrNull) {
+    function _infGuardarFirmaRegistro(campoId, dataURLOrNull, huella) {
       if (!_infRegistroIdActual) return false;
       const idx = registros.findIndex(r => r.id === _infRegistroIdActual);
       if (idx < 0) return false;
       if (!registros[idx].firmas) registros[idx].firmas = { usuario: null, personal: null };
-      if (campoId === 'firma-usuario') registros[idx].firmas.usuario = dataURLOrNull;
-      else if (campoId === 'firma-personal') registros[idx].firmas.personal = dataURLOrNull;
+      const f = registros[idx].firmas;
+      // Junto con cada firma se guarda la "huella" del registro con la que se firmó, para
+      // poder avisar después si el registro cambió y esa firma quedó de una versión anterior.
+      if (campoId === 'firma-usuario')  { f.usuario  = dataURLOrNull; if (dataURLOrNull && huella) f.huellaUsuario  = huella; else delete f.huellaUsuario; }
+      else if (campoId === 'firma-personal') { f.personal = dataURLOrNull; if (dataURLOrNull && huella) f.huellaPersonal = huella; else delete f.huellaPersonal; }
       registros[idx].actualizadoEn = new Date().toISOString();
       _rdpsGuardarRegistrosLS();
       return true;
+    }
+
+    // "Mantener las firmas": el promotor confirma que siguen válidas con el registro actual.
+    function _infFirmasMantener(huella) {
+      if (!_infRegistroIdActual) return false;
+      const idx = registros.findIndex(r => r.id === _infRegistroIdActual);
+      if (idx < 0 || !registros[idx].firmas) return false;
+      const f = registros[idx].firmas;
+      if (f.usuario)  f.huellaUsuario  = huella;
+      if (f.personal) f.huellaPersonal = huella;
+      registros[idx].actualizadoEn = new Date().toISOString();
+      _rdpsGuardarRegistrosLS();
+      return true;
+    }
+
+    // Firma guardada en Mi perfil (la misma que usan el menú principal y las otras apps).
+    function _infFirmaPerfil() {
+      try { return localStorage.getItem('sig_personal_v1') || null; } catch (e) { return null; }
+    }
+
+    function _infNormNombre(t) {
+      return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+    }
+
+    // Firmas del USUARIO de visitas anteriores del mismo paciente (mismo nombre; si ambos
+    // registros traen N° de vivienda, también debe coincidir). Más recientes primero, sin repetidas.
+    function _infFirmasPreviasPaciente() {
+      const actual = _infRegistroIdActual ? registros.find(r => r.id === _infRegistroIdActual) : null;
+      if (!actual) return [];
+      const nom = _infNormNombre(actual.nombre);
+      if (!nom) return [];
+      const viv = String(actual.vivienda || '').trim().toUpperCase();
+      const vistos = {}, out = [];
+      registros
+        .filter(r => r && r.id !== actual.id && r.firmas && r.firmas.usuario && _infNormNombre(r.nombre) === nom)
+        .filter(r => { const v = String(r.vivienda || '').trim().toUpperCase(); return !viv || !v || v === viv; })
+        .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')))
+        .forEach(r => {
+          const u = r.firmas.usuario;
+          if (vistos[u] || out.length >= 8) return;
+          vistos[u] = true;
+          out.push({ fecha: r.fecha ? fmtFecha(r.fecha) : 'Sin fecha', url: u });
+        });
+      return out;
     }
 
     async function abrirInformeVisitaMINSAL(prefijo) {
@@ -8275,6 +8323,12 @@ Acciones ejecutadas: ${acciones || '—'}
       // firma) quedaron desactualizados y se recalculan con la información actual.
       const huellaActual = _infHuellaRegistro(nombre, hallazgos, acciones, fecha, hora, vivienda);
       const huellaCoincide = !!camposGuardados._huella && camposGuardados._huella === huellaActual;
+
+      // ¿Alguna firma se hizo con una versión anterior del registro? (las firmas viejas, sin
+      // huella guardada, no se pueden comparar y no generan aviso)
+      const _fh = firmasGuardadas || {};
+      const firmasDesfasadas = !!((_fh.usuario && _fh.huellaUsuario && _fh.huellaUsuario !== huellaActual) ||
+                                  (_fh.personal && _fh.huellaPersonal && _fh.huellaPersonal !== huellaActual));
 
       // El informe se genera SIEMPRE de inmediato con el objetivo calculado localmente
       // (sin usar IA ni internet en este paso, para no depender de conexión al generarlo).
@@ -8326,7 +8380,7 @@ Acciones ejecutadas: ${acciones || '—'}
         firmaUsuario: firmasGuardadas ? firmasGuardadas.usuario : null,
         firmaPersonal: firmasGuardadas ? firmasGuardadas.personal : null,
         nombreFirmaUsuario, nombreFirmaPersonal,
-        huellaActual,
+        huellaActual, firmasDesfasadas,
         expediente: camposGuardados.expediente || '',
         horaFin: camposGuardados.horaFin || '',
         fechaSeguimiento: camposGuardados.fechaSeguimiento || ''
@@ -8451,6 +8505,11 @@ Acciones ejecutadas: ${acciones || '—'}
   .inf-firma-placeholder { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; color:#a3a3a3; font-size:11.5px; font-style:italic; pointer-events:none; }
   .inf-firma-linea { max-width:380px; border-top:1px solid #333; }
   .inf-firma-pad-label { margin-top:.35rem; }
+  .inf-firma-usar { font-family:inherit; font-size:11px; margin-top:.3rem; margin-right:.3rem; padding:.25rem .6rem; border:1px solid #0b8a72; border-radius:6px; background:#eafaf5; color:#0b6a52; cursor:pointer; font-weight:600; }
+  .inf-firma-aviso { display:none; margin:.8rem 0 0; padding:.6rem .7rem; border:1px solid #d99a00; background:#fff7e0; border-radius:8px; font-size:12px; color:#6b4a00; line-height:1.4; }
+  .inf-firma-aviso button { font-family:inherit; font-size:11px; margin:.4rem .4rem 0 0; padding:.3rem .65rem; border-radius:6px; border:1px solid #999; background:#fff; cursor:pointer; }
+  .inf-firma-prev-item { display:flex; align-items:center; gap:.7rem; width:100%; padding:.4rem .6rem; border:1px solid #b7b7b7; border-radius:8px; background:#fff; cursor:pointer; font-family:inherit; font-size:12px; text-align:left; }
+  .inf-firma-prev-item img { height:56px; width:150px; object-fit:contain; background:#fff; border:1px dashed #ccc; border-radius:4px; }
   .inf-firma-borrar { font-family:inherit; font-size:11px; margin-top:.3rem; padding:.25rem .6rem; border:1px solid #999; border-radius:6px; background:#f5f5f5; cursor:pointer; }
   .inf-toolbar { text-align:center; margin-bottom: 1rem; }
   .inf-toolbar button { font-family: inherit; font-size: 13px; padding:.5rem 1rem; border-radius:8px; border:1px solid #0b8a72; background:#0b8a72; color:#fff; cursor:pointer; }
@@ -8473,7 +8532,7 @@ Acciones ejecutadas: ${acciones || '—'}
   .inf-regen-mensaje.ok { color:#0a6a44; }
   @media print {
     .inf-toolbar { display:none; }
-    .inf-firma-borrar { display:none; }
+    .inf-firma-borrar, .inf-firma-usar, .inf-firma-aviso { display:none !important; }
     .firma-modal-bg { display:none !important; }
     .inf-btn-regen-objetivo, .inf-estilo-obj { display:none !important; }
     .inf-regen-mensaje { display:none !important; }
@@ -8598,6 +8657,11 @@ Acciones ejecutadas: ${acciones || '—'}
     <span class="inf-valor" id="inf-fechaseg-box" contenteditable="true" data-ph="—" style="min-width:40%">${_infEsc(ta(d.fechaSeguimiento))}</span>
   </div>
 
+  <div class="inf-firma-aviso" id="inf-firma-aviso">
+    ⚠️ <b>El registro cambió después de firmar.</b> Las firmas de abajo se hicieron con una versión anterior del contenido.
+    <div><button type="button" onclick="quitarFirmasDesfasadas()">🧹 Quitar firmas y firmar de nuevo</button><button type="button" onclick="mantenerFirmas()">✓ Mantener firmas</button></div>
+  </div>
+
   <div class="inf-firma">
     <div class="inf-firma-pad-wrap">
       <div class="inf-firma-zona" data-target="firma-usuario" onclick="abrirFirmaModal('firma-usuario')">
@@ -8607,6 +8671,7 @@ Acciones ejecutadas: ${acciones || '—'}
       <div class="inf-firma-linea"></div>
       <div class="inf-firma-pad-label">Nombre y firma del usuario: <span class="inf-valor" id="inf-firmausuario-nombre-box" contenteditable="true" data-ph="—" style="border-bottom:none">${_infEsc(ta(d.nombreFirmaUsuario))}</span></div>
       <button type="button" class="inf-firma-borrar" data-target="firma-usuario">🧹 Borrar firma</button>
+      <button type="button" class="inf-firma-usar" id="inf-firma-prev-btn" style="display:none" onclick="abrirFirmasPrevias()">📂 Usar firma anterior del paciente</button>
     </div>
     <div class="inf-firma-pad-wrap">
       <div class="inf-firma-zona" data-target="firma-personal" onclick="abrirFirmaModal('firma-personal')">
@@ -8616,6 +8681,7 @@ Acciones ejecutadas: ${acciones || '—'}
       <div class="inf-firma-linea"></div>
       <div class="inf-firma-pad-label">Nombre y firma del personal de salud que realiza la visita: <span class="inf-valor" id="inf-firmapersonal-nombre-box" contenteditable="true" data-ph="—" style="border-bottom:none">${_infEsc(ta(d.nombreFirmaPersonal))}</span></div>
       <button type="button" class="inf-firma-borrar" data-target="firma-personal">🧹 Borrar firma</button>
+      <button type="button" class="inf-firma-usar" onclick="usarFirmaPerfil()">✍️ Usar mi firma del perfil</button>
     </div>
   </div>
   <div class="inf-regen-mensaje" id="inf-firma-mensaje"></div>
@@ -8633,6 +8699,15 @@ Acciones ejecutadas: ${acciones || '—'}
         <button type="button" class="fm-btn" onclick="cerrarFirmaModal()">Cancelar</button>
         <button type="button" class="fm-btn fm-guardar" onclick="guardarFirmaModal()">✓ Usar esta firma</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Firmas anteriores del paciente -->
+  <div class="firma-modal-bg" id="firma-prev-bg">
+    <div class="firma-modal-box">
+      <div class="firma-modal-titulo">Firmas anteriores de este paciente</div>
+      <div id="firma-prev-lista" style="display:flex;flex-direction:column;gap:.5rem;overflow:auto"></div>
+      <div class="firma-modal-botones"><button type="button" class="fm-btn" onclick="cerrarFirmasPrevias()">Cancelar</button></div>
     </div>
   </div>
 
@@ -8679,7 +8754,7 @@ Acciones ejecutadas: ${acciones || '—'}
         var img = new Image();
         img.onload = function() {
           var rect = canvas.getBoundingClientRect();
-          pctx.drawImage(img, 0, 0, rect.width, rect.height);
+          _dibujarContener(pctx, img, rect.width, rect.height);
         };
         img.src = previa;
         var ph = document.getElementById(id + '-ph');
@@ -8734,7 +8809,7 @@ Acciones ejecutadas: ${acciones || '—'}
           var img = new Image();
           img.onload = function() {
             var rect = _fmCanvas.getBoundingClientRect();
-            _fmCtx.drawImage(img, 0, 0, rect.width, rect.height);
+            _dibujarContener(_fmCtx, img, rect.width, rect.height);
             _fmTieneTrazo = true;
           };
           img.src = previa;
@@ -8773,7 +8848,7 @@ Acciones ejecutadas: ${acciones || '—'}
     // así se conserva aunque se cierre la ficha y se vuelva a abrir más adelante.
     function _infPersistirFirma(id, dataURLOrNull) {
       if (!window.parent || typeof window.parent._infGuardarFirmaRegistro !== 'function') return;
-      var guardado = window.parent._infGuardarFirmaRegistro(id, dataURLOrNull);
+      var guardado = window.parent._infGuardarFirmaRegistro(id, dataURLOrNull, _infHuellaActual);
       if (dataURLOrNull) {
         _infMostrarMensajeFirma(
           guardado ? '✅ Firma guardada — se mantendrá al volver a abrir esta ficha' : '⚠️ Guarda primero el registro para conservar esta firma la próxima vez',
@@ -8805,21 +8880,142 @@ Acciones ejecutadas: ${acciones || '—'}
         return;
       }
       var dataURL = _fmCanvas.toDataURL('image/png');
+      cerrarFirmaModal();
+      // Se recorta al trazo real y se acomoda en una caja de proporción fija: así no se deforma
+      _firmaNormalizar(dataURL, function(n) {
+        if (!n) { _borrarFirma(id); return; }
+        _firmaAplicar(id, n);
+      });
+    }
+
+    // ── Utilidades de firma ──
+    // Tinta única para TODAS las firmas (usuario, personal, perfil y anteriores)
+    var _FIRMA_COLOR = '#1a3d8f';
+
+    function _dibujarContener(ctx, img, w, h) {
+      var k = Math.min(w / img.width, h / img.height);
+      var dw = img.width * k, dh = img.height * k;
+      ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      // Se repinta el trazo con la tinta única, conservando la forma y la transparencia
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = _FIRMA_COLOR;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
+    // Recorta la firma a su trazo y la centra en un lienzo 4:1 (800x200), sin estirarla.
+    // Devuelve null si la imagen no tiene ningún trazo.
+    function _firmaNormalizar(src, cb) {
+      var im = new Image();
+      im.onload = function() {
+        try {
+          var c = document.createElement('canvas');
+          c.width = im.width; c.height = im.height;
+          var x = c.getContext('2d');
+          x.drawImage(im, 0, 0);
+          var d = x.getImageData(0, 0, c.width, c.height).data;
+          var x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+          for (var yy = 0; yy < c.height; yy++) {
+            for (var xx = 0; xx < c.width; xx++) {
+              if (d[(yy * c.width + xx) * 4 + 3] > 10) {
+                if (xx < x0) x0 = xx; if (xx > x1) x1 = xx;
+                if (yy < y0) y0 = yy; if (yy > y1) y1 = yy;
+              }
+            }
+          }
+          if (x1 < 0) { cb(null); return; }
+          var w = x1 - x0 + 1, h = y1 - y0 + 1;
+          var OW = 800, OH = 200;
+          var k = Math.min(OW * 0.92 / w, OH * 0.92 / h, 2);
+          var o = document.createElement('canvas');
+          o.width = OW; o.height = OH;
+          var dw = w * k, dh = h * k;
+          var ox = o.getContext('2d');
+          ox.drawImage(c, x0, y0, w, h, (OW - dw) / 2, (OH - dh) / 2, dw, dh);
+          ox.globalCompositeOperation = 'source-in';
+          ox.fillStyle = _FIRMA_COLOR;
+          ox.fillRect(0, 0, OW, OH);
+          cb(o.toDataURL('image/png'));
+        } catch (e) { cb(src); }
+      };
+      im.onerror = function() { cb(null); };
+      im.src = src;
+    }
+
+    // Pone una firma (ya normalizada) en su recuadro y la guarda en el registro
+    function _firmaAplicar(id, dataURL) {
       _firmaImgs[id] = dataURL;
       var preview = document.getElementById(id);
       var pctx = preview.getContext('2d');
       var rect = preview.getBoundingClientRect();
       pctx.clearRect(0, 0, rect.width, rect.height);
       var img = new Image();
-      img.onload = function() {
-        pctx.drawImage(img, 0, 0, rect.width, rect.height);
-      };
+      img.onload = function() { _dibujarContener(pctx, img, rect.width, rect.height); };
       img.src = dataURL;
       var ph = document.getElementById(id + '-ph');
       if (ph) ph.style.display = 'none';
-      cerrarFirmaModal();
       _infPersistirFirma(id, dataURL);
     }
+
+    // Firma del personal: la guardada en Mi perfil
+    function usarFirmaPerfil() {
+      var u = (window.parent && typeof window.parent._infFirmaPerfil === 'function') ? window.parent._infFirmaPerfil() : null;
+      if (!u) { _infMostrarMensajeFirma('⚠️ No tienes firma en Mi perfil. Créala allí y vuelve a intentarlo.', 'error'); return; }
+      _firmaNormalizar(u, function(n) {
+        if (!n) { _infMostrarMensajeFirma('⚠️ La firma del perfil está vacía.', 'error'); return; }
+        _firmaAplicar('firma-personal', n);
+      });
+    }
+
+    // Firma del usuario: elegir entre las de visitas anteriores del mismo paciente
+    function _firmasPreviasLista() {
+      try { return (window.parent && typeof window.parent._infFirmasPreviasPaciente === 'function') ? window.parent._infFirmasPreviasPaciente() : []; }
+      catch (e) { return []; }
+    }
+    function abrirFirmasPrevias() {
+      var lista = _firmasPreviasLista();
+      if (!lista.length) { _infMostrarMensajeFirma('Este paciente no tiene firmas anteriores guardadas.', 'error'); return; }
+      var cont = document.getElementById('firma-prev-lista');
+      cont.innerHTML = '';
+      lista.forEach(function(it) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'inf-firma-prev-item';
+        var im = document.createElement('img');
+        im.src = it.url;
+        var t = document.createElement('span');
+        t.textContent = 'Visita del ' + it.fecha;
+        b.appendChild(im); b.appendChild(t);
+        b.onclick = function() {
+          cerrarFirmasPrevias();
+          _firmaNormalizar(it.url, function(n) { _firmaAplicar('firma-usuario', n || it.url); });
+        };
+        cont.appendChild(b);
+      });
+      document.getElementById('firma-prev-bg').classList.add('show');
+    }
+    function cerrarFirmasPrevias() { document.getElementById('firma-prev-bg').classList.remove('show'); }
+
+    // Aviso cuando el registro cambió después de firmar
+    function mantenerFirmas() {
+      if (window.parent && typeof window.parent._infFirmasMantener === 'function') window.parent._infFirmasMantener(_infHuellaActual);
+      document.getElementById('inf-firma-aviso').style.display = 'none';
+      _infMostrarMensajeFirma('✅ Firmas confirmadas para esta versión del registro', 'ok');
+    }
+    function quitarFirmasDesfasadas() {
+      _borrarFirma('firma-usuario');
+      _borrarFirma('firma-personal');
+      document.getElementById('inf-firma-aviso').style.display = 'none';
+    }
+    if (${d.firmasDesfasadas ? 'true' : 'false'}) document.getElementById('inf-firma-aviso').style.display = 'block';
+    (function() {
+      var n = _firmasPreviasLista().length;
+      if (!n) return;
+      var b = document.getElementById('inf-firma-prev-btn');
+      b.style.display = '';
+      b.textContent = '📂 Usar firma anterior del paciente (' + n + ')';
+    })();
 
     var _botonesBorrarFirma = document.querySelectorAll('.inf-firma-borrar');
     for (var _bi = 0; _bi < _botonesBorrarFirma.length; _bi++) {
@@ -14243,6 +14439,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
 #pfxModal .pfx-sig.firmada .pfx-sig-ph{display:none}
 #pfxModal .pfx-sig-b{display:flex;justify-content:flex-end;margin-top:4px}
 #pfxModal .pfx-sig-b button{border:none;background:none;color:#c62828;font-size:.75rem;font-weight:600;cursor:pointer;padding:4px 6px}
+#pfxModal .pfx-sig-acc{display:flex;gap:6px;margin-top:8px}
+#pfxModal .pfx-sig-acc button{flex:1;padding:9px 4px;border:2px solid #17a2b8;background:#fff;color:#0d6e8a;border-radius:10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+#pfxModal .pfx-sig-acc button:active{background:#e0f4f8}
+#pfxModal .pfx-sig-acc{display:none}
+#pfxModal .pfx-sig-acc.on{display:flex}
+#pfxModal .pfx-sig-msg{font-size:.7rem;color:#2e7d32;font-weight:600;text-align:center;min-height:1em;margin-top:4px}
 #pfxModal .pfx-nota{font-size:.72rem;color:#546e7a;line-height:1.4;margin:2px 0 14px}
 #pfxModal .pfx-btns{display:flex;gap:10px}
 #pfxModal .pfx-btns button{padding:12px;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit}
@@ -14290,6 +14492,12 @@ Notas (Acciones ya escritas): ${accion || '—'}
           <div class="pfx-sig-ph">✍️ Toca para firmar en pantalla grande</div>
         </div>
         <div class="pfx-sig-b"><button type="button" onclick="pfxSigQuitar()">✕ Borrar firma</button></div>
+        <div class="pfx-sig-acc" id="pfxSigAcc">
+          <button type="button" onclick="pfxSigCopiar()">📋 Copiar</button>
+          <button type="button" onclick="pfxSigDescargar()">⬇️ PNG</button>
+          <button type="button" onclick="pfxSigCompartir()">📤 Compartir</button>
+        </div>
+        <div class="pfx-sig-msg" id="pfxSigMsg"></div>
       </div>
     </div>
     <p class="pfx-nota">💾 Si usas el menú principal (index), el perfil que guardes aquí es el mismo que verás allá cuando compartan almacenamiento.</p>
@@ -14341,7 +14549,48 @@ Notas (Acciones ya escritas): ${accion || '—'}
   function sigMostrar(url) {
     var w = $('pfxSigWrap'), im = $('pfxSigImg');
     if (url) { im.src = url; w.classList.add('firmada'); } else { im.removeAttribute('src'); w.classList.remove('firmada'); }
+    var ac = $('pfxSigAcc'); if (ac) ac.classList.toggle('on', !!url);
+    var ms = $('pfxSigMsg'); if (ms) ms.textContent = '';
   }
+
+  /* ---------- Copiar / descargar / compartir la firma (PNG transparente) ---------- */
+  function sigUrl() { return (typeof firma === 'string') ? firma : (firma === null ? null : localStorage.getItem(SIG)); }
+  function sigMsg(t, err) { var m = $('pfxSigMsg'); if (!m) return; m.style.color = err ? '#c62828' : '#2e7d32'; m.textContent = t; setTimeout(function () { if (m.textContent === t) m.textContent = ''; }, 5000); }
+  function sigBlob() {
+    var u = sigUrl(); if (!u) return Promise.reject(new Error('sin firma'));
+    return fetch(u).then(function (r) { return r.blob(); });
+  }
+  function nombreArchivo() {
+    var p = leer() || {}, n = String(p.nombre || 'promotor').trim().replace(/[^\wÁÉÍÓÚÑáéíóúñ]+/g, '_').replace(/^_+|_+$/g, '');
+    return 'Firma_' + (n || 'promotor') + '.png';
+  }
+  window.pfxSigDescargar = function () {
+    sigBlob().then(function (b) {
+      var a = document.createElement('a'), url = URL.createObjectURL(b);
+      a.href = url; a.download = nombreArchivo(); document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1500);
+      sigMsg('✅ Firma descargada como PNG (fondo transparente)');
+    }).catch(function () { sigMsg('No hay firma para descargar', true); });
+  };
+  window.pfxSigCompartir = function () {
+    sigBlob().then(function (b) {
+      var f = new File([b], nombreArchivo(), { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        return navigator.share({ files: [f], title: 'Mi firma' }).catch(function (e) { if (e && e.name === 'AbortError') return; throw e; });
+      }
+      sigMsg('Este dispositivo no permite compartir; usa ⬇️ PNG', true);
+    }).catch(function () { sigMsg('No se pudo compartir; usa ⬇️ PNG', true); });
+  };
+  window.pfxSigCopiar = function () {
+    sigBlob().then(function (b) {
+      if (!(navigator.clipboard && window.ClipboardItem)) throw new Error('sin portapapeles');
+      return navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
+    }).then(function () {
+      sigMsg('✅ Firma copiada: pégala en Word, Excel, PowerPoint o PDF');
+    }).catch(function () {
+      sigMsg('Tu navegador no deja copiar imágenes; usa ⬇️ PNG o 📤 Compartir', true);
+    });
+  };
   window.pfxSigQuitar = function () { firma = null; sigMostrar(null); };
 
   window.pfxAbrirPerfil = function () {
