@@ -13322,6 +13322,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           ));
           return personas.length ? { ...viv, personas } : null;
         }).filter(Boolean);
+        viviendas.sort((a, b) => String(a.vivienda).localeCompare(String(b.vivienda), 'es', { numeric: true }));
       }
 
       if (!viviendas.length) {
@@ -15793,16 +15794,16 @@ function _sgCalcular() {
   var hoyIso = _sgHoy();
   var idx = _sgIndiceRegistros();
   var cat = (typeof getCatalogo === 'function') ? getCatalogo() : [];
-  var personas = [], sinEdad = 0, sinSexo = 0;
+  var personas = [], sinEdad = [], sinSexo = [];
   cat.forEach(function (v) {
     (v.personas || []).forEach(function (p) {
       if (!p || !String(p.nombre || '').trim() || p.inactivo) return;
       var fn = _sgFnac(p.fnac), meses = fn ? _sgMesesDesde(fn, hoyIso) : null, aprox = false;
       if (meses == null) { meses = _sgMesesDeTexto(p.edad); aprox = meses != null; }
-      if (meses == null) { sinEdad++; return; }
+      if (meses == null) { sinEdad.push({ nombre: String(p.nombre).trim(), viv: v.vivienda }); return; }
       var anios = Math.floor(meses / 12), sexo = (p.sexo === 'F' || p.sexo === 'M') ? p.sexo : '';
       var grupos = SG_GRUPOS.filter(function (g) { return g.test(meses, anios, sexo); });
-      if (!grupos.length) { if (!sexo && anios >= 18 && anios <= 59) sinSexo++; return; }
+      if (!grupos.length) { if (!sexo && anios >= 18 && anios <= 59) sinSexo.push({ nombre: String(p.nombre).trim(), viv: v.vivienda }); return; }
       var frec = Math.min.apply(null, grupos.map(function (g) { return g.frec; }));
       var ultima = idx.porPersona[_sgNorm(v.vivienda) + '|' + _sgTok(p.nombre)] || '';
       var due = ultima ? _sgSumarMeses(ultima, frec) : '';
@@ -15943,8 +15944,11 @@ function _sgRenderGrupos() {
     : 'Todas las personas de los grupos: primero las que están en rojo y luego las que están al día.';
 
   var av = [];
-  if (d.sinSexo) av.push('⚠️ ' + d.sinSexo + ' persona' + (d.sinSexo !== 1 ? 's' : '') + ' de 18 a 59 años sin sexo registrado no entra' + (d.sinSexo !== 1 ? 'n' : '') + ' en MEF ni adultos. Corrígelo en el Catálogo.');
-  if (d.sinEdad) av.push('⚠️ ' + d.sinEdad + ' persona' + (d.sinEdad !== 1 ? 's' : '') + ' sin fecha de nacimiento ni edad no entra' + (d.sinEdad !== 1 ? 'n' : '') + ' en ningún grupo.');
+  var _sgNom = function (l) {
+    return '<br><b>' + l.map(function (x) { return _sgEsc(x.nombre) + (x.viv ? ' (Viv. ' + _sgEsc(String(x.viv)) + ')' : ''); }).join('</b>, <b>') + '</b>';
+  };
+  if (d.sinSexo.length) av.push('⚠️ ' + d.sinSexo.length + ' persona' + (d.sinSexo.length !== 1 ? 's' : '') + ' de 18 a 59 años sin sexo registrado no entra' + (d.sinSexo.length !== 1 ? 'n' : '') + ' en MEF ni adultos. Corrígelo en el Catálogo.' + _sgNom(d.sinSexo));
+  if (d.sinEdad.length) av.push('⚠️ ' + d.sinEdad.length + ' persona' + (d.sinEdad.length !== 1 ? 's' : '') + ' sin fecha de nacimiento ni edad no entra' + (d.sinEdad.length !== 1 ? 'n' : '') + ' en ningún grupo.' + _sgNom(d.sinEdad));
   var avEl = document.getElementById('sg-aviso'); if (avEl) avEl.innerHTML = av.length ? '<div class="sg-aviso">' + av.join('<br>') + '</div>' : '';
 
   var sel = _sgEstado.grupo;
