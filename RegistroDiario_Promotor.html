@@ -1266,7 +1266,37 @@
         }
         .firebase-status.ok{background:rgba(0,184,156,.15);color:#0a6a55;border-color:rgba(0,184,156,.4)}
         .firebase-status.err{background:rgba(192,57,43,.12);color:#a93226;border-color:rgba(192,57,43,.35)}
-    </style>
+    
+        /* ══════════ PROGRAMACIÓN DE SEGUIMIENTOS ══════════ */
+        .sg-tabs{display:flex;gap:.4rem;margin:0 0 .8rem}
+        .sg-tab{flex:1;padding:.55rem .3rem;border-radius:10px;border:1.5px solid var(--border);background:var(--white);color:var(--muted);font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;line-height:1.25;transition:all .15s}
+        .sg-tab small{display:block;font-weight:600;font-size:.66rem;opacity:.85}
+        .sg-tab.active{background:var(--navy2);border-color:var(--navy2);color:#fff}
+        .sg-fl{font-size:.7rem;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin:0 0 .35rem}
+        .sg-volver{display:flex;align-items:center;gap:.4rem;width:100%;padding:.65rem .9rem;margin:0 0 .8rem;border-radius:10px;border:1.5px solid var(--navy2);background:var(--white);color:var(--navy2);font-family:inherit;font-size:.85rem;font-weight:800;cursor:pointer}
+        .sg-volver:active{background:var(--light2)}
+        .sg-volver svg{width:16px;height:16px}
+        .sg-det-cab{background:var(--navy);color:#fff;border-radius:12px;padding:.8rem .95rem;margin:0 0 .8rem}
+        .sg-det-nombre{font-family:'DM Serif Display',serif;font-size:1.1rem;line-height:1.25}
+        .sg-det-sub{font-size:.72rem;opacity:.8;margin-top:2px}
+        .sg-det-cifras{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem}
+        .sg-det-cifras span{background:rgba(255,255,255,.14);border-radius:20px;padding:.2rem .65rem;font-size:.74rem;font-weight:700}
+        .sg-sep{height:1px;background:var(--light2);margin:.7rem 0}
+        .sg-nota{font-size:.72rem;color:var(--muted);margin:.1rem 0 .7rem;line-height:1.4}
+        .sg-aviso{font-size:.72rem;background:#fff1dc;color:#9a5b00;border-radius:8px;padding:.45rem .6rem;margin:0 0 .7rem;line-height:1.4}
+        .sg-tabla .sg-c-r{width:3.4rem;text-align:right;font-weight:800;color:var(--danger)}
+        .sg-tabla .sg-c-r.cero{color:var(--success)}
+        .sg-card{border-left:5px solid var(--success)}
+        .sg-card.sg-rojo{background:#fdecea;border-color:#e57368;border-left-color:var(--danger)}
+        .sg-card.sg-rojo .record-name{color:#b3261e}
+        .sg-card.sg-prox{border-left-color:var(--warn)}
+        .sg-b-rojo{background:var(--danger);color:#fff}
+        .sg-b-ok{background:#dcfce7;color:#166534}
+        .sg-b-prox{background:#ffedd5;color:#9a3412}
+        .sg-ver{border:1.5px solid var(--border);background:var(--white);color:var(--navy2);border-radius:20px;font-family:inherit;font-size:.68rem;font-weight:700;padding:.16rem .6rem;cursor:pointer}
+        .sg-leyenda{display:flex;gap:.8rem;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin:0 0 .6rem}
+        .sg-leyenda i{display:inline-block;width:.7rem;height:.7rem;border-radius:3px;margin-right:.25rem;vertical-align:-1px}
+</style>
     <style>
         /* ══════════════ BANNER DE INSTALACIÓN PWA ══════════════ */
         #pwaInstallBanner{
@@ -1506,6 +1536,17 @@
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
 
+        <button class="menu-btn" onclick="irA('screen-seguimiento')">
+            <div class="menu-btn-icon" style="background:#a12d4a">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Programación de Seguimientos</div>
+                <div class="mbs">Quién toca visitar: niños, adolescentes, MEF y adultos — casas pendientes</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
         <button class="menu-btn" onclick="irA('screen-historial')">
             <div class="menu-btn-icon" style="background:#0e5c44">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
@@ -1576,6 +1617,16 @@
             <div class="menu-btn-text">
                 <div class="mbt">Bajar de la Nube</div>
                 <div class="mbs">Restaurar datos desde Firebase</div>
+            </div>
+            <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+        <button class="menu-btn" id="btnLimpiarDup" onclick="limpiarViviendasDuplicadas()">
+            <div class="menu-btn-icon firebase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </div>
+            <div class="menu-btn-text">
+                <div class="mbt">Limpiar duplicados</div>
+                <div class="mbs">Fusionar viviendas repetidas del catálogo</div>
             </div>
             <div class="menu-btn-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>
         </button>
@@ -2409,6 +2460,85 @@
         <div id="ge-lista"></div>
     </div>
 </div><!-- /screen-grupos-etarios -->
+
+<!-- ════════════════════════════
+     SCREEN: PROGRAMACIÓN DE SEGUIMIENTOS
+════════════════════════════ -->
+<div class="screen" id="screen-seguimiento">
+    <div class="topbar">
+        <button class="back-btn" onclick="irA('screen-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Inicio
+        </button>
+        <span class="topbar-title">Programación de Seguimientos</span>
+    </div>
+    <div class="scroller">
+        <div class="sg-tabs" id="sg-tabs">
+            <button type="button" class="sg-tab active" id="sg-tab-grupos" onclick="_sgTab('grupos')">👥 Grupos etarios<small id="sg-tab-grupos-n"></small></button>
+            <button type="button" class="sg-tab" id="sg-tab-visitadas" onclick="_sgTab('visitadas')">✅ Casas visitadas<small id="sg-tab-visitadas-n"></small></button>
+            <button type="button" class="sg-tab" id="sg-tab-pendientes" onclick="_sgTab('pendientes')">⏳ Casas pendientes<small id="sg-tab-pendientes-n"></small></button>
+        </div>
+
+        <!-- Panel: grupos etarios -->
+        <div id="sg-panel-grupos">
+            <!-- Vista 1: solo los grupos -->
+            <div id="sg-vista-grupos">
+                <div class="sg-nota">Toca un grupo para ver a sus integrantes.</div>
+                <div id="sg-aviso"></div>
+                <div id="sg-tabla"></div>
+            </div>
+            <!-- Vista 2: detalle de un grupo -->
+            <div id="sg-vista-detalle" style="display:none">
+                <button type="button" class="sg-volver" onclick="_sgVolverGrupos()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>
+                    Volver a los grupos
+                </button>
+                <div class="sg-det-cab" id="sg-det-cab"></div>
+                <div class="rep-card">
+                <div class="rep-card-body">
+                    <div class="sg-fl">Mostrar</div>
+                    <div class="ctrl-periodo-botones" style="margin-bottom:0">
+                        <button type="button" class="ctrl-periodo-btn active" id="sg-ver-todos" onclick="_sgVer('todos')">Todos</button>
+                        <button type="button" class="ctrl-periodo-btn" id="sg-ver-visitar" onclick="_sgVer('visitar')">🔴 Por visitar</button>
+                        <button type="button" class="ctrl-periodo-btn" id="sg-ver-aldia" onclick="_sgVer('aldia')">✅ Al día</button>
+                    </div>
+                    <div id="sg-bloque-periodo" style="display:none">
+                        <div class="sg-sep"></div>
+                        <div class="sg-fl">Visitar en</div>
+                        <div class="ctrl-periodo-botones" style="margin-bottom:.5rem">
+                            <button type="button" class="ctrl-periodo-btn active" id="sg-per-hoy" onclick="_sgPeriodo('hoy')">Hoy</button>
+                            <button type="button" class="ctrl-periodo-btn" id="sg-per-mes" onclick="_sgPeriodo('mes')">Por mes</button>
+                            <button type="button" class="ctrl-periodo-btn" id="sg-per-anio" onclick="_sgPeriodo('anio')">Este año</button>
+                        </div>
+                        <div class="f-group" id="sg-g-mes" style="display:none"><label>Mes</label><input type="month" id="sg-mes" onchange="_sgRenderGrupos()"/></div>
+                    </div>
+                    <div class="sg-nota" id="sg-per-nota" style="margin:.6rem 0 0"></div>
+                </div>
+            </div>
+                <div class="sg-leyenda">
+                <span><i style="background:#c0392b"></i>Rojo: vencida o nunca visitada</span>
+                <span><i style="background:#e67e22"></i>Toca en el período</span>
+                <span><i style="background:#0a6a44"></i>Al día</span>
+            </div>
+                <div class="ge-lista-titulo" id="sg-lista-titulo"></div>
+            </div>
+        </div>
+
+        <!-- Panel: casas -->
+        <div id="sg-panel-casas" style="display:none">
+            <div class="ctrl-resumen" id="sg-casas-resumen"></div>
+            <div class="sg-nota" id="sg-casas-nota"></div>
+        </div>
+
+        <div class="ge-buscar" id="sg-buscar-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="sg-buscar" placeholder="Buscar por nombre o vivienda…" autocomplete="off" oninput="_sgBuscarCambio()"/>
+            <button type="button" class="ge-buscar-x" id="sg-buscar-x" onclick="_sgBuscarLimpiar()" aria-label="Limpiar búsqueda">✕</button>
+        </div>
+        <div id="sg-lista"></div>
+    </div>
+</div><!-- /screen-seguimiento -->
+
 
 <!-- ════════════════════════════
      SCREEN: HISTORIAL POR PERSONA
@@ -3551,6 +3681,7 @@ ${hojas}
       if (screenId === 'screen-home') actualizarHome();
       if (screenId === 'screen-control-entregas') _ctrlRenderLista();
       if (screenId === 'screen-grupos-etarios') _geRender();
+      if (screenId === 'screen-seguimiento' && typeof _sgIniciar === 'function') _sgIniciar();
       if (screenId === 'screen-historial') _hpRefrescar();
       if (screenId === 'screen-ruta') _rtIniciar();
       // Al abrir formulario nuevo (sin edición ni modo otra persona), refrescar fecha/hora actual
@@ -12234,7 +12365,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
         // Reutilizar para lápidas Y para comparar timestamps de subida
         const regMetaCloud = {}, famMetaCloud = {};
         regSnapCloud.forEach(d => { regMetaCloud[String(d.id)] = d.data().actualizadoEn || d.data().savedAt || ''; });
-        famSnapCloud.forEach(d => { famMetaCloud[String(d.id)] = d.data().actualizadoEn || ''; });
+        const famDataCloud = {};
+        famSnapCloud.forEach(d => { famMetaCloud[String(d.id)] = d.data().actualizadoEn || ''; famDataCloud[String(d.id)] = d.data(); });
 
         // ── Procesar lápidas de registros eliminados ──────────────
         // FIX: limpiar localStorage SOLO si el commit fue exitoso
@@ -12268,7 +12400,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           toDeleteFam.forEach(id => delBatchFam.delete(doc(db, 'rdps', docId, 'familias', id)));
           await delBatchFam.commit(); // si falla aquí, lanza excepción y NO limpiamos
           delFamCount = toDeleteFam.length;
-          toDeleteFam.forEach(id => delete deletedFam[id]);
+          toDeleteFam.forEach(id => { delete deletedFam[id]; delete famDataCloud[id]; });
           localStorage.setItem('rdps_deleted_fam', JSON.stringify(deletedFam));
         }
         const soloLocalesFam = Object.keys(deletedFam).filter(id => famMetaCloud[id] === undefined);
@@ -12304,7 +12436,54 @@ Notas (Acciones ya escritas): ${accion || '—'}
         _rdpsGuardarRegistrosLS();
 
         // ── Catálogo de familias (reusar famMetaCloud, sin segunda lectura) ──
-        const catalogo = getCatalogo();
+        let catalogo = getCatalogo();
+        // ── Anti-duplicados por NÚMERO DE VIVIENDA (igual que bajarNube) ──
+        // Una vivienda importada del Mapa trae id nuevo (viv_...), distinto al de la nube.
+        // Si el MISMO número ya existe en la nube con otro id, se fusionan y se adopta el id
+        // de la nube; así al subir se actualiza ese documento en vez de crear uno duplicado.
+        {
+          const _n = x => String(x == null ? '' : x).trim().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+          const nubePorNum = {};
+          Object.keys(famDataCloud).forEach(id => {
+            if (deletedFam[id]) return;
+            const k = _n(famDataCloud[id].vivienda);
+            if (k && !nubePorNum[k]) nubePorNum[k] = id;
+          });
+          const usados = new Set(), vistosNum = new Set();
+          let fusionadas = 0;
+          const nuevoCat = [];
+          catalogo.forEach(v => {
+            const idL = String(v.id), k = _n(v.vivienda);
+            if (famMetaCloud[idL] !== undefined) { usados.add(idL); nuevoCat.push(v); return; }
+            const idN = k && nubePorNum[k];
+            if (!idN || usados.has(idN)) { nuevoCat.push(v); return; }
+            // fusionar: manda la nube, solo se agregan/completan datos que le faltan
+            const nube = famDataCloud[idN];
+            const res = Object.assign({}, nube, { id: nube.id || idN });
+            res.personas = (nube.personas || []).map(p => Object.assign({}, p));
+            let cambio = false;
+            (v.personas || []).forEach(lp => {
+              const ln = _n(lp.nombre);
+              const np = res.personas.find(p =>
+                (lp.id && p.id === lp.id) ||
+                (lp.origenMapa && p.origenMapa && lp.origenMapa === p.origenMapa) ||
+                (ln && _n(p.nombre) === ln));
+              if (!np) { res.personas.push(Object.assign({}, lp)); cambio = true; return; }
+              ['sexo', 'fnac', 'edad', 'origenMapa'].forEach(f => {
+                if (!np[f] && lp[f]) { np[f] = lp[f]; cambio = true; }
+              });
+            });
+            if (cambio) res.actualizadoEn = new Date().toISOString();
+            usados.add(idN); fusionadas++;
+            nuevoCat.push(res);
+          });
+          if (fusionadas > 0) {
+            catalogo = nuevoCat;
+            saveCatalogo(catalogo);
+            try { renderCatalogo(); } catch (e) {}
+          }
+        }
         // FIX conflicto 4: viviendas sin actualizadoEn se suben siempre
         const toUploadFam = catalogo.filter(v => {
           const cTS = famMetaCloud[String(v.id)];
@@ -12951,6 +13130,66 @@ Notas (Acciones ya escritas): ${accion || '—'}
       }
     }
 
+    // ══════════════════════════════════════════
+    // LIMPIAR VIVIENDAS DUPLICADAS (mismo número de vivienda)
+    // Deja UNA por número (la que tenga más personas), le pasa las personas/datos que
+    // le falten de las repetidas y marca las repetidas con lápida para que "Subir a la
+    // Nube" también las borre de Firebase. No toca los registros diarios.
+    // ══════════════════════════════════════════
+    function limpiarViviendasDuplicadas() {
+      const _n = x => String(x == null ? '' : x).trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+      const cat = getCatalogo();
+      const grupos = {};
+      cat.forEach(v => {
+        const k = _n(v.vivienda);
+        if (!k) return;
+        (grupos[k] = grupos[k] || []).push(v);
+      });
+      const dups = Object.values(grupos).filter(g => g.length > 1);
+      if (!dups.length) {
+        toast('✅ No hay viviendas duplicadas en este dispositivo. Si aún las ves en la nube, primero usa "Bajar de la Nube".', 'success', 4500);
+        return;
+      }
+      const sobran = dups.reduce((a, g) => a + g.length - 1, 0);
+      const lista = dups.slice(0, 8).map(g => g[0].vivienda).join(', ') + (dups.length > 8 ? '…' : '');
+      if (!confirm(`Se encontraron ${dups.length} viviendas duplicadas (${lista}).\n\n` +
+        `• Se deja 1 por número y se fusionan sus personas.\n` +
+        `• Se eliminan ${sobran} copias repetidas.\n` +
+        `• Los registros diarios NO se tocan.\n\n` +
+        `Después presiona "Subir a la Nube" para borrar también las copias en Firebase.\n\n¿Continuar?`)) return;
+
+      const ahora = new Date().toISOString();
+      let lap = {};
+      try { lap = JSON.parse(localStorage.getItem('rdps_deleted_fam') || '{}'); } catch (e) {}
+      const quitar = new Set();
+      dups.forEach(g => {
+        // se queda la que tenga más personas (si empatan, la primera)
+        const keeper = g.slice().sort((a, b) => (b.personas || []).length - (a.personas || []).length)[0];
+        keeper.personas = keeper.personas || [];
+        g.forEach(v => {
+          if (v === keeper) return;
+          (v.personas || []).forEach(lp => {
+            const ln = _n(lp.nombre);
+            const np = keeper.personas.find(p =>
+              (lp.id && p.id === lp.id) ||
+              (lp.origenMapa && p.origenMapa && lp.origenMapa === p.origenMapa) ||
+              (ln && _n(p.nombre) === ln));
+            if (!np) { keeper.personas.push(Object.assign({}, lp)); return; }
+            ['sexo', 'fnac', 'edad', 'origenMapa'].forEach(f => { if (!np[f] && lp[f]) np[f] = lp[f]; });
+          });
+          quitar.add(v);
+          lap[String(v.id)] = ahora;
+        });
+        keeper.actualizadoEn = ahora; // para que suba con la fusión
+      });
+      saveCatalogo(cat.filter(v => !quitar.has(v)));
+      localStorage.setItem('rdps_deleted_fam', JSON.stringify(lap));
+      renderCatalogo();
+      try { actualizarHome(); } catch (e) {}
+      toast(`🧹 ${sobran} duplicadas eliminadas. Presiona "Subir a la Nube" para limpiar Firebase.`, 'success', 5000);
+    }
+
     function eliminarVivienda(vivId) {
       if (!confirm('¿Eliminar esta vivienda y todos sus integrantes del catálogo?')) return;
       let cat = getCatalogo().filter(v => v.id !== vivId);
@@ -13572,7 +13811,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
         });
       });
       const res = { personas: 0, deshab: 0, sinViv: 0 };
-      const items = [], vistos = new Set();
+      const items = [], vistos = new Set(), reclamadas = new Set();
+      const idsMapa = new Set();
+      mapa.forEach(mv => ((mv && mv.personas) || []).forEach(x => { if (x && x.id) idsMapa.add(x.id); }));
+      const _rmLow = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
       mapa.forEach(mv => {
         if (!mv) return;
         if (mv.deshabitada) { res.deshab++; return; }
@@ -13601,24 +13843,69 @@ Notas (Acciones ya escritas): ${accion || '—'}
               it.estado = 'conflicto';
               it.motivo = 'RD dice ' + (m.sexo === 'F' ? 'femenino' : 'masculino') + ' y el Mapa dice ' + (sexo === 'F' ? 'femenino' : 'masculino') + ': corrígelo a mano';
             } else {
-              if (sexo && !m.sexo) it.cambios.push('sexo');
-              if (nac && !m.fnac) it.cambios.push('fecha de nacimiento');
-              if (it.cambios.length) { it.estado = 'completar'; it.motivo = 'Se completa: ' + it.cambios.join(' y '); }
-              else { it.estado = 'igual'; it.motivo = 'Ya está completa en RD'; }
+              // ¿El Mapa trae el nombre distinto (renombrada o con tilde corregida)? El Mapa es la fuente.
+              const cambioNombre = _rmLow(m.nombre) !== _rmLow(nombre);
+              const choque = cambioNombre && (mViv.personas || []).some(x => x.id !== m.id && _rmNorm(x.nombre) === nk);
+              if (choque) {
+                it.estado = 'conflicto';
+                it.motivo = 'El nombre nuevo ya existe en otra persona de esta vivienda: corrígelo a mano';
+              } else {
+                if (cambioNombre) it.cambios.push('nombre');
+                if (sexo && !m.sexo) it.cambios.push('sexo');
+                if (nac && !m.fnac) it.cambios.push('fecha de nacimiento');
+                if (cambioNombre) { it.estado = 'renombrada'; it.motivo = 'Cambió el nombre: «' + m.nombre + '» → «' + nombre + '»'; }
+                else if (it.cambios.length) { it.estado = 'completar'; it.motivo = 'Se completa: ' + it.cambios.join(' y '); }
+                else { it.estado = 'igual'; it.motivo = 'Ya está completa en RD'; }
+              }
             }
             it.match = { vivId: mViv.id, perId: m.id };
+            reclamadas.add(m.id);
           } else {
             // 2) sin coincidencia exacta: avisar si parece la misma persona (otro orden de palabras o misma fecha en otra vivienda)
             const otroOrden = vivRD && (vivRD.personas || []).find(p => _rmTok(p.nombre) === tk);
             const enOtraViv = nac && globalNomNac[nk + '|' + nac];
-            if (otroOrden) { it.estado = 'posible'; it.motivo = 'Parece ser «' + otroOrden.nombre + '» (otro orden del nombre)'; }
+            if (otroOrden) {
+              it.estado = 'posible'; it.motivo = 'Parece ser «' + otroOrden.nombre + '» (otro orden del nombre)';
+              it.renombrarDe = { vivId: vivRD.id, perId: otroOrden.id };
+            }
             else if (enOtraViv) { it.estado = 'posible'; it.motivo = 'Mismo nombre y fecha en la vivienda ' + enOtraViv.viv.vivienda; }
+            else if (vivRD && nac) {
+              // Posible renombre: en la misma vivienda hay UNA persona de RD con la misma fecha de
+              // nacimiento (y mismo sexo si ambos lo tienen), que ya no aparece con su nombre en el Mapa
+              const nombresMapaViv = new Set((mv.personas || []).map(x => _rmNorm(x && x.nombre)));
+              const cand = (vivRD.personas || []).filter(p2 =>
+                _rmFecha(p2.fnac) === nac &&
+                (!sexo || !p2.sexo || p2.sexo === sexo) &&
+                !reclamadas.has(p2.id) &&
+                !nombresMapaViv.has(_rmNorm(p2.nombre)) &&
+                !(p2.origenMapa && idsMapa.has(p2.origenMapa)));
+              if (cand.length === 1) {
+                it.estado = 'posible';
+                it.motivo = 'Posible renombre de «' + cand[0].nombre + '» (misma vivienda y fecha de nacimiento)';
+                it.renombrarDe = { vivId: vivRD.id, perId: cand[0].id };
+                reclamadas.add(cand[0].id);
+              }
+            }
           }
           if (it.estado !== 'repetida') vistos.add(dupKey);
           it.vivNueva = !vivRD;
           items.push(it);
         });
       });
+      // Personas de RD vinculadas al Mapa (origenMapa) cuyo id YA NO existe en el Mapa:
+      // se ofrecen para eliminar (desmarcadas). Si el Mapa no tiene ninguna persona
+      // (catálogo vacío o sin bajar) no se propone nada, para evitar falsos avisos.
+      if (idsMapa.size) {
+        cat.forEach(v => (v.personas || []).forEach(p => {
+          if (!p.origenMapa || idsMapa.has(p.origenMapa) || reclamadas.has(p.id)) return;
+          items.push({
+            estado: 'huerfana', motivo: 'Ya no está en el Mapa Sanitario',
+            nombre: String(p.nombre || '').trim(), numViv: String(v.vivienda == null ? '' : v.vivienda).trim(),
+            nac: _rmFecha(p.fnac), sexo: p.sexo || '', mp: { edad: p.edad || '' },
+            cambios: [], match: { vivId: v.id, perId: p.id }
+          });
+        }));
+      }
       items.sort((a, b) => {
         const na = parseFloat(a.numViv), nb = parseFloat(b.numViv);
         if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
@@ -13627,6 +13914,33 @@ Notas (Acciones ya escritas): ${accion || '—'}
       });
       _rmRes = res;
       return items;
+    }
+
+    // Cambia el nombre de una persona de RD por el del Mapa (el Mapa es la fuente) y la vincula
+    function _rmRenombrar(cat, vivId, perId, it, ts) {
+      const viv = cat.find(v => v.id === vivId);
+      const p = viv && (viv.personas || []).find(x => x.id === perId);
+      if (!p) return false;
+      if ((viv.personas || []).some(x => x.id !== p.id && _rmNorm(x.nombre) === _rmNorm(it.nombre))) return false;
+      p.nombre = it.nombre;
+      if (it.sexo && !p.sexo) p.sexo = it.sexo;
+      if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; }
+      if (it.mp.id) p.origenMapa = it.mp.id;
+      viv.actualizadoEn = ts;
+      return true;
+    }
+    // Guarda el vínculo con la persona del Mapa (origenMapa) en las que ya existen en RD,
+    // para detectar sus cambios de nombre en el futuro
+    function _rmVincular(items, cat, ts) {
+      let n = 0;
+      (items || []).forEach(it => {
+        if (!it.match || !it.mp || !it.mp.id) return;
+        if (it.estado !== 'igual' && it.estado !== 'completar') return;
+        const viv = cat.find(v => v.id === it.match.vivId);
+        const p = viv && (viv.personas || []).find(x => x.id === it.match.perId);
+        if (p && !p.origenMapa) { p.origenMapa = it.mp.id; viv.actualizadoEn = ts; n++; }
+      });
+      return n;
     }
 
     function rmAbrir() {
@@ -13644,6 +13958,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
         return;
       }
       _rmItems = items;
+      try {
+        const _cat = getCatalogo();
+        if (_rmVincular(items, _cat, new Date().toISOString())) saveCatalogo(_cat);
+      } catch (e) {}
       document.getElementById('rm-tools').style.display = '';
       document.getElementById('rm-go').style.display = '';
       rmRender();
@@ -13656,9 +13974,10 @@ Notas (Acciones ya escritas): ${accion || '—'}
       const n = e => _rmItems.filter(i => i.estado === e).length;
       const sinSexo = _rmItems.filter(i => !i.sexo).length;
       document.getElementById('rm-sub').textContent =
-        'Mapa Sanitario: ' + _rmRes.personas + ' persona(s) · ' + n('nueva') + ' nueva(s) · ' + n('completar') +
+        'Mapa Sanitario: ' + _rmRes.personas + ' persona(s) · ' + n('nueva') + ' nueva(s) · ' + n('renombrada') + ' con nombre cambiado · ' + n('completar') +
         ' por completar (sexo o fecha) · ' + n('igual') + ' ya completas · ' + sinSexo + ' sin sexo en el Mapa' +
         (n('conflicto') ? ' · ' + n('conflicto') + ' con sexo distinto' : '') +
+        (n('huerfana') ? ' · ' + n('huerfana') + ' ya no están en el Mapa' : '') +
         (_rmRes.deshab ? ' · ' + _rmRes.deshab + ' vivienda(s) deshabitada(s) omitida(s)' : '') + '.';
       list.innerHTML = _rmItems.length
         ? _rmItems.map((it, ix) => _rmFila(it, ix)).join('')
@@ -13668,17 +13987,20 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
 
     function _rmFila(it, ix) {
-      const accionable = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'posible';
-      const marcada = it.estado === 'nueva' || it.estado === 'completar';
+      const accionable = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'posible' || it.estado === 'renombrada' || it.estado === 'huerfana';
+      const marcada = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'renombrada';
       const b = [];
       if (it.estado === 'nueva') b.push('<span class="rm-b ok">Nueva' + (it.vivNueva ? ' · vivienda nueva' : '') + '</span>');
       if (it.estado === 'completar') b.push('<span class="rm-b ok">' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'renombrada') b.push('<span class="rm-b ok">✏️ ' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'posible' && it.renombrarDe) b.push('<span class="rm-b ok">Al marcarla se renombra (no se crea otra)</span>');
       if (it.estado === 'igual') b.push('<span class="rm-b">' + _rmEsc(it.motivo) + '</span>');
       if (it.estado === 'posible' || it.estado === 'repetida') b.push('<span class="rm-b warn">' + _rmEsc(it.motivo) + '</span>');
       if (it.estado === 'conflicto') b.push('<span class="rm-b no">' + _rmEsc(it.motivo) + '</span>');
+      if (it.estado === 'huerfana') b.push('<span class="rm-b no">🗑️ ' + _rmEsc(it.motivo) + ' · márcala para eliminarla de RD</span>');
       if (it.sexo === 'F') b.push('<span class="rm-b ok">♀ Femenino</span>');
       else if (it.sexo === 'M') b.push('<span class="rm-b ok">♂ Masculino</span>');
-      else b.push('<span class="rm-b warn">Sin sexo en el Mapa</span>');
+      else if (it.estado !== 'huerfana') b.push('<span class="rm-b warn">Sin sexo en el Mapa</span>');
       const edad = it.nac ? calcularEdadTexto(it.nac) : (it.mp.edad || '');
       const meta = 'Viv. ' + _rmEsc(it.numViv) + (edad ? ' · ' + _rmEsc(edad) : '') +
         (it.nac ? ' · nac. ' + it.nac.split('-').reverse().join('/') : '');
@@ -13707,7 +14029,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       document.querySelectorAll('#rm-list .rm-row').forEach(r => {
         const it = _rmItems[+r.dataset.ix], c = r.querySelector('.rm-chk');
         if (!c || c.disabled || r.style.display === 'none') return;
-        c.checked = modo === 'todas' && (it.estado === 'nueva' || it.estado === 'completar');
+        c.checked = modo === 'todas' && (it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'renombrada');
       });
       rmConteo();
     }
@@ -13716,13 +14038,25 @@ Notas (Acciones ya escritas): ${accion || '—'}
       const filas = [...document.querySelectorAll('#rm-list .rm-row')]
         .filter(r => r.style.display !== 'none' && r.querySelector('.rm-chk') && r.querySelector('.rm-chk').checked);
       if (!filas.length) { toast('Selecciona al menos una persona', 'error'); return; }
+      const nHuerf = filas.filter(f => (_rmItems[+f.dataset.ix] || {}).estado === 'huerfana').length;
+      if (nHuerf && !confirm('Vas a ELIMINAR ' + nHuerf + ' persona(s) del catálogo de Registro Diario porque ya no están en el Mapa Sanitario.\n\nLos registros diarios ya guardados no se borran.\n\n¿Continuar?')) return;
       const cat = getCatalogo();
       const ts = new Date().toISOString();
-      let nuevas = 0, completadas = 0, vivNuevas = 0, omitidas = 0;
+      let nuevas = 0, completadas = 0, vivNuevas = 0, omitidas = 0, renombradas = 0, eliminadas = 0;
+      _rmVincular(_rmItems, cat, ts);
       filas.forEach(fila => {
         const it = _rmItems[+fila.dataset.ix];
         if (!it) return;
-        if (it.estado === 'completar') {
+        if (it.estado === 'huerfana') {
+          const viv = cat.find(v => v.id === it.match.vivId);
+          const antes = viv && (viv.personas || []).length;
+          if (viv) viv.personas = (viv.personas || []).filter(x => x.id !== it.match.perId);
+          if (viv && viv.personas.length < antes) { viv.actualizadoEn = ts; eliminadas++; } else omitidas++;
+        } else if (it.estado === 'renombrada') {
+          if (_rmRenombrar(cat, it.match.vivId, it.match.perId, it, ts)) renombradas++; else omitidas++;
+        } else if (it.estado === 'posible' && it.renombrarDe) {
+          if (_rmRenombrar(cat, it.renombrarDe.vivId, it.renombrarDe.perId, it, ts)) renombradas++; else omitidas++;
+        } else if (it.estado === 'completar') {
           const viv = cat.find(v => v.id === it.match.vivId);
           const p = viv && (viv.personas || []).find(x => x.id === it.match.perId);
           if (!p) { omitidas++; return; }
@@ -13764,6 +14098,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
       const partes = [];
       if (nuevas) partes.push(nuevas + ' nueva(s)');
       if (completadas) partes.push(completadas + ' completada(s)');
+      if (renombradas) partes.push(renombradas + ' renombrada(s)');
+      if (eliminadas) partes.push(eliminadas + ' eliminada(s)');
       if (vivNuevas) partes.push(vivNuevas + ' vivienda(s) nueva(s)');
       if (omitidas) partes.push(omitidas + ' omitida(s)');
       toast('✅ Mapa Sanitario: ' + (partes.join(' · ') || 'sin cambios'), 'success', 4200);
@@ -13810,6 +14146,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const cat = getCatalogo();
         const ts = new Date().toISOString();
         let nuevas = 0, completadas = 0, vivNuevas = 0, revisar = 0;
+        const vinculadas = _rmVincular(items, cat, ts);
         items.forEach(it => {
           if (it.estado === 'completar') {
             const viv = cat.find(v => v.id === it.match.vivId);
@@ -13831,9 +14168,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
               fnac: it.nac || '', sexo: it.sexo, origenMapa: it.mp.id || ''
             });
             viv.actualizadoEn = ts; nuevas++;
-          } else if (it.estado === 'posible' || it.estado === 'conflicto') revisar++;
+          } else if (it.estado === 'posible' || it.estado === 'conflicto' || it.estado === 'renombrada' || it.estado === 'huerfana') revisar++;
         });
-        if (nuevas || completadas) {
+        if (nuevas || completadas || vinculadas) {
           try { saveCatalogo(cat); } catch (e) { console.warn('[Población base] RD sin espacio', e); return; }
           try { renderCatalogo(); } catch (e) {}
         }
@@ -15203,6 +15540,390 @@ async function _rtBajarNube(db, docId, dataPrincipal) {
     else if (new Date(r.actualizadoEn || 0).getTime() > new Date(loc.actualizadoEn || 0).getTime()) { mapa[id] = r; actualizadas++; }
   });
   return { filas: Object.keys(mapa).map(function (k) { return mapa[k]; }), nuevas: nuevas, actualizadas: actualizadas };
+}
+</script>
+
+<script>
+// ══════════════ PROGRAMACIÓN DE SEGUIMIENTOS ══════════════
+// Toma a cada integrante del Catálogo de Familias, calcula su edad HOY (fecha de nacimiento; si no hay,
+// la edad escrita) y lo ubica en su grupo. La última visita sale de los registros diarios (misma vivienda
+// + mismo nombre). Frecuencia: 0-1a11m cada 1 mes · 2-4a11m cada 3 meses · el resto cada 12 meses.
+var SG_GRUPOS = [
+  { id: 'n0',    icono: '👶', corto: 'Niño 0-1a11m',   nombre: 'Niños de 0 a 1 año 11 meses',  frec: 1,  detalle: 'Visita cada mes',        test: function (m, a, s) { return m < 24; } },
+  { id: 'n2',    icono: '🧒', corto: 'Niño 2-4a11m',   nombre: 'Niños de 2 a 4 años 11 meses', frec: 3,  detalle: 'Visita cada 3 meses',    test: function (m, a, s) { return m >= 24 && a <= 4; } },
+  { id: 'n5',    icono: '🎒', corto: 'Niño 5-11',      nombre: 'Niños de 5 a 11 años',         frec: 12, detalle: 'Visita cada año',        test: function (m, a, s) { return a >= 5 && a <= 11; } },
+  { id: 'adol',  icono: '🧑', corto: 'Adolescente',    nombre: 'Adolescentes de 12 a 19 años', frec: 12, detalle: 'Masculinos y femeninos · cada año', test: function (m, a, s) { return a >= 12 && a <= 19; } },
+  { id: 'mef',   icono: '🤰', corto: 'MEF',            nombre: 'Mujeres en edad fértil',       frec: 12, detalle: '18 a 49 años · cada año', test: function (m, a, s) { return s === 'F' && a >= 18 && a <= 49; } },
+  { id: 'adm',   icono: '👨', corto: 'Adulto masc.',   nombre: 'Adultos masculinos',           frec: 12, detalle: '20 a 59 años · cada año', test: function (m, a, s) { return s === 'M' && a >= 20 && a <= 59; } },
+  { id: 'm5059', icono: '👩', corto: 'Mujer 50-59',    nombre: 'Mujeres de 50 a 59 años',      frec: 12, detalle: 'Visita cada año',        test: function (m, a, s) { return s === 'F' && a >= 50 && a <= 59; } },
+  { id: 'am',    icono: '🧓', corto: 'Adulto mayor',   nombre: 'Adultos mayores',              frec: 12, detalle: '60 años o más · ambos sexos · cada año', test: function (m, a, s) { return a >= 60; } }
+];
+var _sgEstado = { tab: 'grupos', vista: 'grupos', ver: 'todos', periodo: 'hoy', grupo: 'todos' };
+var _sgDatos = null;
+var _sgVisibles = [];
+var _sgBuscarT = null;
+
+function _sgEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function _sgNorm(s) { return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' '); }
+function _sgTok(s) { return _sgNorm(s).replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }
+function _sgFnac(v) {
+  var s = String(v || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '';
+}
+function _sgMesesDesde(fnac, ymd) {
+  var f = fnac.split('-').map(Number), h = ymd.split('-').map(Number);
+  if (!f[0] || !h[0]) return null;
+  var m = (h[0] - f[0]) * 12 + (h[1] - f[1]);
+  if (h[2] < f[2]) m--;
+  return (m >= 0 && m <= 1440) ? m : null;
+}
+function _sgMesesDeTexto(t) {
+  var s = _sgNorm(t);
+  if (!s) return null;
+  var a = s.match(/(\d+)\s*anos?/), me = s.match(/(\d+)\s*mes/);
+  if (a || me) return (a ? parseInt(a[1], 10) : 0) * 12 + (me ? parseInt(me[1], 10) : 0);
+  if (/dia|semana/.test(s)) return 0;
+  var n = s.match(/^(\d{1,3})$/);
+  return n ? parseInt(n[1], 10) * 12 : null;
+}
+function _sgEdadTxt(m) {
+  var a = Math.floor(m / 12), r = m % 12;
+  if (m < 12) return m + (m === 1 ? ' mes' : ' meses');
+  if (a < 5 && r) return a + (a === 1 ? ' año ' : ' años ') + r + (r === 1 ? ' mes' : ' meses');
+  return a + (a === 1 ? ' año' : ' años');
+}
+function _sgFmt(iso) { return iso ? iso.split('-').reverse().join('/') : ''; }
+function _sgISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _sgSumarMeses(iso, n) {
+  var p = iso.split('-').map(Number);
+  var tot = p[0] * 12 + (p[1] - 1) + n, y = Math.floor(tot / 12), mo = tot % 12;
+  var ult = new Date(y, mo + 1, 0).getDate();
+  return _sgISO(new Date(y, mo, Math.min(p[2], ult)));
+}
+function _sgDias(aIso, bIso) { // días de a a b
+  var x = aIso.split('-').map(Number), y = bIso.split('-').map(Number);
+  return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 86400000);
+}
+function _sgHace(dias) {
+  if (dias < 1) return 'hoy';
+  if (dias < 45) return 'hace ' + dias + (dias === 1 ? ' día' : ' días');
+  var m = Math.round(dias / 30.4);
+  return 'hace ' + m + (m === 1 ? ' mes' : ' meses');
+}
+function _sgHoy() { return (typeof hoy === 'function') ? hoy() : _sgISO(new Date()); }
+
+// Índices de visitas desde los registros diarios
+function _sgIndiceRegistros() {
+  var porPersona = {}, porViv = {}, anio = _sgHoy().slice(0, 4);
+  (typeof registros !== 'undefined' ? registros : []).forEach(function (r) {
+    if (!r || !r.fecha) return;
+    var vk = _sgNorm(r.vivienda);
+    if (vk) {
+      var v = porViv[vk] || (porViv[vk] = { total: 0, anio: 0, ultima: '' });
+      v.total++;
+      if (String(r.fecha).slice(0, 4) === anio) v.anio++;
+      if (r.fecha > v.ultima) v.ultima = r.fecha;
+    }
+    var tk = _sgTok(r.nombre);
+    if (vk && tk) {
+      var k = vk + '|' + tk;
+      if (!porPersona[k] || r.fecha > porPersona[k]) porPersona[k] = r.fecha;
+    }
+  });
+  return { porPersona: porPersona, porViv: porViv };
+}
+
+function _sgCalcular() {
+  var hoyIso = _sgHoy();
+  var idx = _sgIndiceRegistros();
+  var cat = (typeof getCatalogo === 'function') ? getCatalogo() : [];
+  var personas = [], sinEdad = 0, sinSexo = 0;
+  cat.forEach(function (v) {
+    (v.personas || []).forEach(function (p) {
+      if (!p || !String(p.nombre || '').trim()) return;
+      var fn = _sgFnac(p.fnac), meses = fn ? _sgMesesDesde(fn, hoyIso) : null, aprox = false;
+      if (meses == null) { meses = _sgMesesDeTexto(p.edad); aprox = meses != null; }
+      if (meses == null) { sinEdad++; return; }
+      var anios = Math.floor(meses / 12), sexo = (p.sexo === 'F' || p.sexo === 'M') ? p.sexo : '';
+      var grupos = SG_GRUPOS.filter(function (g) { return g.test(meses, anios, sexo); });
+      if (!grupos.length) { if (!sexo && anios >= 18 && anios <= 59) sinSexo++; return; }
+      var frec = Math.min.apply(null, grupos.map(function (g) { return g.frec; }));
+      var ultima = idx.porPersona[_sgNorm(v.vivienda) + '|' + _sgTok(p.nombre)] || '';
+      var due = ultima ? _sgSumarMeses(ultima, frec) : '';
+      personas.push({
+        nombre: String(p.nombre).trim(), vivienda: v.vivienda, vivId: v.id, perId: p.id || '',
+        meses: meses, aprox: aprox, sexo: sexo, grupos: grupos.map(function (g) { return g.id; }),
+        frec: frec, ultima: ultima, due: due,
+        nunca: !ultima, vencida: !ultima || due <= hoyIso
+      });
+    });
+  });
+  // Casas
+  var anio = hoyIso.slice(0, 4), casas = [];
+  cat.forEach(function (v) {
+    var d = idx.porViv[_sgNorm(v.vivienda)] || { total: 0, anio: 0, ultima: '' };
+    var pers = (v.personas || []).filter(function (p) { return p && String(p.nombre || '').trim(); });
+    casas.push({ id: v.id, vivienda: v.vivienda, jefe: pers.length ? String(pers[0].nombre).trim() : '', integrantes: pers.length,
+      total: d.total, anio: d.anio, ultima: d.ultima });
+  });
+  casas.sort(function (a, b) { return String(a.vivienda).localeCompare(String(b.vivienda), 'es', { numeric: true }); });
+  _sgDatos = { hoy: hoyIso, anio: anio, personas: personas, casas: casas, sinEdad: sinEdad, sinSexo: sinSexo };
+  return _sgDatos;
+}
+
+// ── Navegación ──
+function _sgIniciar() {
+  var mesEl = document.getElementById('sg-mes');
+  if (mesEl && !mesEl.value) mesEl.value = _sgHoy().slice(0, 7);
+  _sgEstado.tab = 'grupos'; _sgEstado.vista = 'grupos';
+  var b = document.getElementById('sg-buscar'); if (b) b.value = '';
+  _sgRenderTodo();
+  _sgArriba();
+}
+function _sgTab(t) {
+  _sgEstado.tab = t;
+  if (t === 'grupos') _sgEstado.vista = 'grupos';
+  var b = document.getElementById('sg-buscar'); if (b) b.value = '';
+  _sgRenderTodo();
+  _sgArriba();
+}
+function _sgPeriodo(p) {
+  _sgEstado.periodo = p;
+  _sgRenderGrupos();
+}
+function _sgArriba() {
+  var sc = document.querySelector('#screen-seguimiento .scroller'); if (sc) sc.scrollTop = 0;
+}
+function _sgSeleccionarGrupo(id) {
+  _sgEstado.grupo = id;
+  _sgEstado.vista = 'detalle';
+  var b = document.getElementById('sg-buscar'); if (b) b.value = '';
+  _sgRenderGrupos();
+  _sgArriba();
+}
+function _sgVolverGrupos() {
+  _sgEstado.vista = 'grupos';
+  var b = document.getElementById('sg-buscar'); if (b) b.value = '';
+  _sgRenderGrupos();
+  _sgArriba();
+}
+// Muestra la vista que corresponde: lista de grupos, detalle de un grupo, o casas
+function _sgAplicarVista() {
+  var t = _sgEstado.tab, det = (t === 'grupos' && _sgEstado.vista === 'detalle');
+  var show = function (id, v) { var e = document.getElementById(id); if (e) e.style.display = v ? '' : 'none'; };
+  show('sg-tabs', !det);
+  show('sg-panel-grupos', t === 'grupos');
+  show('sg-vista-grupos', t === 'grupos' && !det);
+  show('sg-vista-detalle', det);
+  show('sg-panel-casas', t !== 'grupos');
+  show('sg-buscar-wrap', t !== 'grupos' || det);
+  show('sg-lista', t !== 'grupos' || det);
+}
+function _sgBuscarCambio() {
+  clearTimeout(_sgBuscarT);
+  _sgBuscarT = setTimeout(function () { _sgRenderLista(); }, 180);
+}
+function _sgBuscarLimpiar() {
+  var b = document.getElementById('sg-buscar'); if (b) { b.value = ''; b.focus(); }
+  _sgRenderLista();
+}
+function _sgVerFamilia(vivId, perId) {
+  if (!vivId) return;
+  irA('screen-catalogo');
+  if (typeof verFamiliaCompleta === 'function') verFamiliaCompleta(vivId, perId || '');
+}
+
+function _sgRenderTodo() {
+  _sgCalcular();
+  var d = _sgDatos, t = _sgEstado.tab;
+  ['grupos', 'visitadas', 'pendientes'].forEach(function (x) {
+    var el = document.getElementById('sg-tab-' + x); if (el) el.classList.toggle('active', x === t);
+  });
+  var rojo = d.personas.filter(function (p) { return p.vencida; }).length;
+  var visit = d.casas.filter(function (c) { return c.anio > 0; }).length;
+  var pend = d.casas.filter(function (c) { return c.total === 0; }).length;
+  var s = function (id, txt) { var e = document.getElementById(id); if (e) e.textContent = txt; };
+  s('sg-tab-grupos-n', rojo + ' en rojo');
+  s('sg-tab-visitadas-n', visit + ' en ' + d.anio);
+  s('sg-tab-pendientes-n', pend + ' casas');
+  if (t === 'grupos') _sgRenderGrupos(); else { _sgAplicarVista(); _sgRenderCasas(); }
+}
+
+// ── Grupos etarios ──
+function _sgLimitePeriodo() {
+  var p = _sgEstado.periodo, h = _sgDatos.hoy;
+  if (p === 'hoy') return { lim: h, txt: 'Se muestran quienes ya les toca visita (en rojo): vencidas hasta hoy y personas nunca visitadas.' };
+  if (p === 'mes') {
+    var mv = (document.getElementById('sg-mes') || {}).value || h.slice(0, 7);
+    var y = parseInt(mv.slice(0, 4), 10), m = parseInt(mv.slice(5, 7), 10);
+    var ult = _sgISO(new Date(y, m, 0));
+    var nombres = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    return { lim: ult, txt: 'Se muestran quienes les toca visita a más tardar el ' + _sgFmt(ult) + ' (' + nombres[m - 1] + ' ' + y + '), incluyendo las que ya están en rojo.' };
+  }
+  if (p === 'anio') {
+    var f = _sgDatos.anio + '-12-31';
+    return { lim: f, txt: 'Se muestran quienes les toca visita a más tardar el 31/12/' + _sgDatos.anio + ', incluyendo las que ya están en rojo.' };
+  }
+  return { lim: null, txt: 'Se muestran todas las personas de los grupos.' };
+}
+function _sgPersonasGrupo(sel) {
+  var l = _sgDatos.personas;
+  return sel === 'todos' ? l : l.filter(function (p) { return p.grupos.indexOf(sel) >= 0; });
+}
+function _sgVer(v) { _sgEstado.ver = v; _sgRenderGrupos(); }
+function _sgRenderGrupos() {
+  var d = _sgDatos || _sgCalcular(), ver = _sgEstado.ver;
+  ['todos', 'visitar', 'aldia'].forEach(function (x) {
+    var b = document.getElementById('sg-ver-' + x); if (b) b.classList.toggle('active', x === ver);
+  });
+  ['hoy', 'mes', 'anio'].forEach(function (x) {
+    var b = document.getElementById('sg-per-' + x); if (b) b.classList.toggle('active', x === _sgEstado.periodo);
+  });
+  var bp = document.getElementById('sg-bloque-periodo'); if (bp) bp.style.display = (ver === 'visitar') ? '' : 'none';
+  var gm = document.getElementById('sg-g-mes'); if (gm) gm.style.display = (ver === 'visitar' && _sgEstado.periodo === 'mes') ? '' : 'none';
+  var nota = document.getElementById('sg-per-nota');
+  if (nota) nota.textContent = ver === 'visitar' ? _sgLimitePeriodo().txt
+    : ver === 'aldia' ? 'Personas que ya recibieron su visita y todavía no les toca la siguiente.'
+    : 'Todas las personas de los grupos: primero las que están en rojo y luego las que están al día.';
+
+  var av = [];
+  if (d.sinSexo) av.push('⚠️ ' + d.sinSexo + ' persona' + (d.sinSexo !== 1 ? 's' : '') + ' de 18 a 59 años sin sexo registrado no entra' + (d.sinSexo !== 1 ? 'n' : '') + ' en MEF ni adultos. Corrígelo en el Catálogo.');
+  if (d.sinEdad) av.push('⚠️ ' + d.sinEdad + ' persona' + (d.sinEdad !== 1 ? 's' : '') + ' sin fecha de nacimiento ni edad no entra' + (d.sinEdad !== 1 ? 'n' : '') + ' en ningún grupo.');
+  var avEl = document.getElementById('sg-aviso'); if (avEl) avEl.innerHTML = av.length ? '<div class="sg-aviso">' + av.join('<br>') + '</div>' : '';
+
+  var sel = _sgEstado.grupo;
+  var html = '<table class="ge-tabla sg-tabla"><thead><tr><th class="ge-c-n">N°</th><th>Grupo</th><th class="sg-c-r" style="text-align:right">Total</th><th class="sg-c-r" style="text-align:right">🔴</th><th class="sg-c-r" style="text-align:right">✅</th></tr></thead><tbody>';
+  var fila = function (id, n, nombre, detalle, l, extra) {
+    var r = l.filter(function (p) { return p.vencida; }).length, ok = l.length - r;
+    return '<tr class="ge-fila' + extra + (sel === id ? ' sel' : '') + '" onclick="_sgSeleccionarGrupo(\'' + id + '\')">' +
+      '<td class="ge-c-n">' + n + '</td><td><div class="ge-gnombre">' + nombre + '</div><div class="ge-gdetalle">' + _sgEsc(detalle) + '</div></td>' +
+      '<td class="sg-c-r" style="color:var(--navy2)">' + l.length + '</td>' +
+      '<td class="sg-c-r' + (r ? '' : ' cero') + '">' + r + '</td>' +
+      '<td class="sg-c-r cero">' + ok + '</td></tr>';
+  };
+  SG_GRUPOS.forEach(function (g, i) { html += fila(g.id, i + 1, g.icono + ' ' + _sgEsc(g.nombre), g.detalle, _sgPersonasGrupo(g.id), ''); });
+  html += fila('todos', SG_GRUPOS.length + 1, '👥 Todos los grupos', 'cada persona cuenta una sola vez', d.personas, ' ge-total') + '</tbody></table>';
+  var tEl = document.getElementById('sg-tabla'); if (tEl) tEl.innerHTML = html;
+
+  // Cabecera del grupo elegido
+  var g = SG_GRUPOS.filter(function (x) { return x.id === sel; })[0];
+  var lg = _sgPersonasGrupo(sel), rg = lg.filter(function (p) { return p.vencida; }).length;
+  var cab = document.getElementById('sg-det-cab');
+  if (cab) cab.innerHTML = '<div class="sg-det-nombre">' + (g ? g.icono + ' ' + _sgEsc(g.nombre) : '👥 Todos los grupos') + '</div>' +
+    '<div class="sg-det-sub">' + _sgEsc(g ? g.detalle : 'cada persona cuenta una sola vez') + '</div>' +
+    '<div class="sg-det-cifras"><span>👥 ' + lg.length + ' personas</span><span>🔴 ' + rg + ' en rojo</span><span>✅ ' + (lg.length - rg) + ' al día</span></div>';
+
+  _sgAplicarVista();
+  if (_sgEstado.vista === 'detalle') _sgRenderLista();
+}
+
+function _sgEstadoPersona(p, lim) {
+  if (p.nunca) return { cls: 'sg-rojo', badge: '<span class="badge sg-b-rojo">🔴 Nunca visitado</span>' };
+  if (p.due <= _sgDatos.hoy) {
+    var atraso = _sgDias(p.due, _sgDatos.hoy);
+    return { cls: 'sg-rojo', badge: '<span class="badge sg-b-rojo">🔴 Vencida desde el ' + _sgFmt(p.due) + ' (' + _sgHace(atraso) + ')</span>' };
+  }
+  if (lim && _sgEstado.periodo !== 'hoy' && p.due <= lim)
+    return { cls: 'sg-prox', badge: '<span class="badge sg-b-prox">🟠 Toca visita el ' + _sgFmt(p.due) + '</span>' };
+  return { cls: '', badge: '<span class="badge sg-b-ok">✅ Al día · próxima el ' + _sgFmt(p.due) + '</span>' };
+}
+function _sgOrdenar(a, b) {
+  var ka = a.nunca ? '0000-00-00' : a.due, kb = b.nunca ? '0000-00-00' : b.due;
+  return ka.localeCompare(kb) || a.nombre.localeCompare(b.nombre, 'es');
+}
+
+function _sgRenderLista() {
+  var cont = document.getElementById('sg-lista'); if (!cont) return;
+  var qEl = document.getElementById('sg-buscar'), q = _sgNorm(qEl ? qEl.value : '');
+  var xEl = document.getElementById('sg-buscar-x'); if (xEl) xEl.style.display = q ? 'block' : 'none';
+  if (!_sgDatos) _sgCalcular();
+  if (_sgEstado.tab === 'grupos') _sgListaPersonas(cont, q);
+  else _sgListaCasas(cont, q);
+}
+
+function _sgListaPersonas(cont, q) {
+  var ver = _sgEstado.ver, lim = (ver === 'visitar') ? _sgLimitePeriodo().lim : null, sel = _sgEstado.grupo;
+  var base = _sgPersonasGrupo(sel);
+  var filtrada = ver === 'visitar' ? base.filter(function (p) { return p.nunca || p.due <= lim; })
+    : ver === 'aldia' ? base.filter(function (p) { return !p.vencida; }) : base.slice();
+  var vis = q ? filtrada.filter(function (p) { return _sgNorm(p.nombre).indexOf(q) >= 0 || _sgNorm(p.vivienda).indexOf(q) >= 0; }) : filtrada;
+  vis.sort(_sgOrdenar);
+  _sgVisibles = vis;
+  var g = SG_GRUPOS.filter(function (x) { return x.id === sel; })[0];
+  var nombreG = g ? g.nombre : 'Todos los grupos';
+  var perTxt = ver === 'aldia' ? 'al día' : ver === 'todos' ? 'todos' : { hoy: 'a visitar hoy', mes: 'a visitar en el mes', anio: 'a visitar este año' }[_sgEstado.periodo];
+  var tEl = document.getElementById('sg-lista-titulo');
+  if (tEl) tEl.textContent = nombreG + ' — ' + perTxt + ' (' + vis.length + (q ? ' de ' + filtrada.length : '') + ')';
+  if (!vis.length) {
+    cont.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>' +
+      '<h3>' + (q ? 'Sin resultados' : ver === 'aldia' ? 'Aún no hay personas al día' : (_sgDatos.personas.length ? '¡Todo al día!' : 'Sin personas')) + '</h3>' +
+      '<p>' + (q ? 'Ninguna persona coincide con «' + _sgEsc(qEl.value.trim()) + '»' :
+        (ver === 'aldia' ? 'Cuando registres visitas, aparecerán aquí hasta que les toque la siguiente.' : _sgDatos.personas.length ? 'Nadie de este grupo toca visita en este período.' : 'Agrega familias con fecha de nacimiento y sexo en el Catálogo.')) + '</p></div>';
+    return;
+  }
+  var tarjeta = function (p, i) {
+    var e = _sgEstadoPersona(p, lim);
+    var sexoB = p.sexo === 'F' ? '<span class="badge ge-b-f">♀ Femenino</span>' : p.sexo === 'M' ? '<span class="badge ge-b-m">♂ Masculino</span>' : '';
+    var grupos = p.grupos.map(function (id) { return '<span class="badge badge-viv">' + _sgEsc(SG_GRUPOS.filter(function (x) { return x.id === id; })[0].corto) + '</span>'; }).join('');
+    return '<div class="record-card sg-card ' + e.cls + '"><div class="record-header"><div style="flex:1;min-width:0">' +
+      '<div class="record-name"><span class="ge-n">' + (i + 1) + '.</span> ' + _sgEsc(p.nombre) + '</div>' +
+      '<div class="record-meta">' + e.badge +
+      '<span class="badge badge-hora">🎂 ' + _sgEdadTxt(p.meses) + (p.aprox ? ' ≈' : '') + '</span>' + sexoB +
+      (p.vivienda ? '<span class="badge badge-viv">🏠 Viv. ' + _sgEsc(p.vivienda) + '</span>' : '') +
+      '<span class="badge badge-fecha">📅 Última visita: ' + (p.ultima ? _sgFmt(p.ultima) : 'ninguna') + '</span>' +
+      grupos +
+      '<button type="button" class="sg-ver" onclick="_sgVerFamilia(\'' + _sgEsc(p.vivId) + '\',\'' + _sgEsc(p.perId) + '\')">👪 Ver familia</button>' +
+      '</div></div></div></div>';
+  };
+  if (typeof _lazyRender === 'function') _lazyRender(cont, vis, tarjeta);
+  else cont.innerHTML = vis.map(tarjeta).join('');
+}
+
+// ── Casas ──
+function _sgRenderCasas() {
+  var d = _sgDatos || _sgCalcular(), t = _sgEstado.tab;
+  var visit = d.casas.filter(function (c) { return c.anio > 0; });
+  var pend = d.casas.filter(function (c) { return c.total === 0; });
+  var antes = d.casas.filter(function (c) { return c.total > 0 && c.anio === 0; }).length;
+  var r = document.getElementById('sg-casas-resumen'), n = document.getElementById('sg-casas-nota');
+  if (t === 'visitadas') {
+    if (r) r.textContent = '✅ ' + visit.length + ' de ' + d.casas.length + ' casas visitadas en ' + d.anio;
+    if (n) n.textContent = 'Casas donde se visitó al menos a un integrante este año.' + (antes ? ' Además hay ' + antes + ' casa' + (antes !== 1 ? 's' : '') + ' visitada' + (antes !== 1 ? 's' : '') + ' en años anteriores y todavía sin visita en ' + d.anio + '.' : '');
+  } else {
+    if (r) r.textContent = '⏳ ' + pend.length + ' de ' + d.casas.length + ' casas pendientes de visitar';
+    if (n) n.textContent = 'Casas a las que nunca se les ha visitado ningún integrante.';
+  }
+  var tEl = document.getElementById('sg-lista-titulo');
+  _sgRenderLista();
+}
+function _sgListaCasas(cont, q) {
+  var d = _sgDatos, t = _sgEstado.tab;
+  var base = d.casas.filter(function (c) { return t === 'visitadas' ? c.anio > 0 : c.total === 0; });
+  var vis = q ? base.filter(function (c) { return _sgNorm(c.vivienda).indexOf(q) >= 0 || _sgNorm(c.jefe).indexOf(q) >= 0; }) : base;
+  if (t === 'visitadas') vis = vis.slice().sort(function (a, b) { return String(b.ultima).localeCompare(String(a.ultima)); });
+  if (!vis.length) {
+    cont.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+      '<h3>' + (q ? 'Sin resultados' : (t === 'visitadas' ? 'Aún no hay casas visitadas' : '¡No hay casas pendientes!')) + '</h3>' +
+      '<p>' + (q ? 'Ninguna casa coincide con «' + _sgEsc(document.getElementById('sg-buscar').value.trim()) + '»' :
+        (t === 'visitadas' ? 'Cuando registres visitas este año aparecerán aquí.' : 'Todas las casas del catálogo tienen al menos una visita.')) + '</p></div>';
+    return;
+  }
+  var tarjeta = function (c, i) {
+    var rojo = t === 'pendientes';
+    return '<div class="record-card sg-card ' + (rojo ? 'sg-rojo' : '') + '"><div class="record-header"><div style="flex:1;min-width:0">' +
+      '<div class="record-name"><span class="ge-n">' + (i + 1) + '.</span> 🏠 Vivienda ' + _sgEsc(c.vivienda) + '</div>' +
+      '<div class="record-meta">' +
+      (rojo ? '<span class="badge sg-b-rojo">🔴 Nunca visitada</span>' : '<span class="badge sg-b-ok">✅ ' + c.anio + ' visita' + (c.anio !== 1 ? 's' : '') + ' en ' + d.anio + '</span>') +
+      (c.jefe ? '<span class="badge badge-hora">👤 ' + _sgEsc(c.jefe) + '</span>' : '') +
+      '<span class="badge badge-viv">👪 ' + c.integrantes + ' integrante' + (c.integrantes !== 1 ? 's' : '') + '</span>' +
+      (c.ultima ? '<span class="badge badge-fecha">📅 Última: ' + _sgFmt(c.ultima) + '</span>' : '') +
+      '<button type="button" class="sg-ver" onclick="_sgVerFamilia(\'' + _sgEsc(c.id) + '\',\'\')">👪 Ver familia</button>' +
+      '</div></div></div></div>';
+  };
+  if (typeof _lazyRender === 'function') _lazyRender(cont, vis, tarjeta);
+  else cont.innerHTML = vis.map(tarjeta).join('');
 }
 </script>
 </body>
