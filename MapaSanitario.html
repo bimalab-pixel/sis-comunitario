@@ -1861,15 +1861,30 @@ function calcRiesgoAuto(n){
 // Si riesgoManual===undefined se recalcula siempre (usado en import/carga inicial)
 // Si una vivienda marcada como deshabitada recibe integrantes (por registro manual,
 // importación Excel o sincronización RD→MS), se reactiva automáticamente como habitada.
+// Integrantes ACTIVOS (los inactivos se quedan en el catálogo pero no cuentan en grupos ni totales)
+function _perActivas(v){ return ((v&&v.personas)||[]).filter(p=>!p.inactivo); }
+function togglePersonaInactiva(vivId,perId){
+  const cat=getCatalogo(); const v=cat.find(x=>x.id===vivId); if(!v) return;
+  const p=(v.personas||[]).find(x=>x.id===perId); if(!p) return;
+  const ts=new Date().toISOString();
+  if(p.inactivo){ delete p.inactivo; delete p.inactivoDesde; }
+  else { p.inactivo=true; p.inactivoDesde=ts.slice(0,10); }
+  v.actualizadoEn=ts;
+  recalcRiesgoVivienda(v);
+  saveCatalogo(cat);renderCatalogo();actualizarHome();
+  if(_mapaZona) renderMarcadores(_filtroMapa);
+  try{ const mf=document.getElementById('modal-familia'); if(mf&&mf.classList.contains('show')) _mfamRender(); }catch(e){}
+  toast(p.inactivo?('⏸ '+p.nombre+' marcado/a como INACTIVO/A (no cuenta en los grupos)'):('▶️ '+p.nombre+' activo/a de nuevo'),'success');
+}
 function _reactivarSiTienePersonas(v){
-  if(v.deshabitada && v.personas && v.personas.length>0){
+  if(v.deshabitada && _perActivas(v).length>0){
     v.deshabitada=false;
   }
 }
 function recalcRiesgoVivienda(v){
   // Si tiene flag de override manual, no tocar
   if(v._riesgoManual) return;
-  const n=(v.personas||[]).length;
+  const n=_perActivas(v).length;
   v.riesgo=calcRiesgoAuto(n);
 }
 
@@ -1897,7 +1912,7 @@ function _mvivSetRiesgo(vivId){
     document.getElementById('mviv-riesgo').value=v.riesgo||'ninguno';
     if(chip){chip.textContent='✏️ Manual';chip.className='riesgo-auto-chip manual';}
   } else {
-    const n=v?(v.personas||[]).length:0;
+    const n=v?_perActivas(v).length:0;
     const auto=calcRiesgoAuto(n);
     document.getElementById('mviv-riesgo').value=auto;
     if(chip){chip.textContent='⚡ Auto';chip.className='riesgo-auto-chip auto';}
@@ -1998,7 +2013,7 @@ function actualizarHome(){
     if(v.deshabitada){ desh++; if(v.lat&&v.lng)geo++; return; }
     const r=v.riesgo||'ninguno';
     if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
-    pers+=(v.personas||[]).length;
+    pers+=_perActivas(v).length;
     if(v.lat&&v.lng)geo++;
   });
   document.getElementById('hc-sin').textContent=sin;
@@ -2121,19 +2136,20 @@ function renderCatalogo(opcs){
         return `<button type="button" class="cat-persona-item highlight-result" style="width:100%;text-align:left;background:#fefce8;border:none;border-left:3px solid #eab308;cursor:pointer;font-family:inherit;padding:.55rem 1rem;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--mist2);" onclick="abrirModalFamilia('${viv.id}','${p.id}')">
           <span class="cat-per-ico">👤</span>
           <div class="cat-per-info" style="flex:1;min-width:0">
-            <strong style="display:block;font-size:.82rem;color:var(--ink)">${p.nombre}</strong>
+            <strong style="display:block;font-size:.82rem;color:var(--ink)">${p.nombre}${p.inactivo?' <span style="font-size:.66rem;background:#9ca3af;color:#fff;border-radius:6px;padding:1px 6px">INACTIVO</span>':''}</strong>
             <span style="font-size:.7rem;color:var(--muted)">${edad?'🎂 '+edad:'Sin edad'}${p.fnac?' · Nac. '+p.fnac.split('-').reverse().join('/'):''}</span>
             <span style="display:block;font-size:.7rem;color:var(--teal);font-weight:700;margin-top:2px">✏️ Ver y editar familia completa</span>
           </div>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" style="flex-shrink:0;opacity:.4"><path d="M9 18l6-6-6-6"/></svg>
         </button>`;
       }
-      return `<div class="cat-persona-item">
-        <span class="cat-per-ico">👤</span>
+      return `<div class="cat-persona-item" style="${p.inactivo?'opacity:.6;background:#f3f4f6;':''}">
+        <span class="cat-per-ico">${p.inactivo?'⏸':'👤'}</span>
         <div class="cat-per-info">
-          <strong>${p.nombre}</strong>
-          <span>${edad?'🎂 '+edad:'Sin edad'}${p.fnac?' · Nac. '+p.fnac.split('-').reverse().join('/'):''}</span>
+          <strong>${p.nombre}${p.inactivo?' <span style="font-size:.68rem;background:#9ca3af;color:#fff;border-radius:6px;padding:1px 6px;margin-left:4px">INACTIVO</span>':''}</strong>
+          <span>${edad?'🎂 '+edad:'Sin edad'}${p.fnac?' · Nac. '+p.fnac.split('-').reverse().join('/'):''}${p.inactivo&&p.inactivoDesde?' · desde '+p.inactivoDesde.split('-').reverse().join('/'):''}</span>
         </div>
+        <button class="cat-per-edit" onclick="togglePersonaInactiva('${viv.id}','${p.id}')" title="${p.inactivo?'Activar de nuevo':'Marcar inactivo (se fue de la comunidad)'}" style="font-size:.95rem">${p.inactivo?'▶️':'⏸'}</button>
         <button class="cat-per-edit" onclick="abrirEditPersona('${viv.id}','${p.id}')" title="Editar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -2369,7 +2385,7 @@ function guardarPersona(){
   }
   v.actualizadoEn=ts;
   // Reactivar la vivienda si estaba marcada deshabitada y ahora tiene integrantes
-  const _seReactivo=v.deshabitada && v.personas.length>0;
+  const _seReactivo=v.deshabitada && _perActivas(v).length>0;
   _reactivarSiTienePersonas(v);
   // Recalcular riesgo automático si no tiene override manual
   recalcRiesgoVivienda(v);
@@ -2613,7 +2629,7 @@ function iconoLeaflet(color, label){
 // Filtros demográficos: ¿algún integrante de la vivienda cumple el criterio?
 function _vivCumpleDemografico(viv,filtro){
   if(viv.deshabitada) return false;
-  return (viv.personas||[]).some(p=>{
+  return _perActivas(viv).some(p=>{
     const m=mesesPersona(p);
     if(m===null) return false;
     if(filtro==='ninos2') return m<24;
@@ -2656,8 +2672,9 @@ function renderMarcadores(filtro){
       if(filtro==='rojo'&&rk!=='alto') return;
     }
 
-    const jefe=(viv.personas&&viv.personas.length)?viv.personas[0].nombre:'—';
-    const nP=viv.personas?viv.personas.length:0;
+    const _pa=_perActivas(viv);
+    const jefe=_pa.length?_pa[0].nombre:'—';
+    const nP=_pa.length;
     if(!viv.lat||!viv.lng){sinUbic.push(viv);return;}
     conUbic++;
 
@@ -2666,8 +2683,8 @@ function renderMarcadores(filtro){
     const bgN=desh?'#f5f5f5':rk==='alto'?'#ffebee':rk==='medio'?'#fefce8':'#f0fdf4';
     const bdN=desh?'#757575':rk==='alto'?'#c62828':rk==='medio'?'#eab308':'#16a34a';
 
-    const intList=(viv.personas||[]).slice(0,5).map(p=>`<div style="font-size:.77em;padding:2px 0;border-bottom:1px solid #f0f0f0;color:#444;">👤 ${p.nombre}${p.edad?' <span style="color:#888;font-size:.9em">· '+p.edad+'</span>':''}</div>`).join('')
-      +(viv.personas&&viv.personas.length>5?`<div style="font-size:.72em;color:#888;padding-top:2px">…y ${viv.personas.length-5} más</div>`:'');
+    const intList=_pa.slice(0,5).map(p=>`<div style="font-size:.77em;padding:2px 0;border-bottom:1px solid #f0f0f0;color:#444;">👤 ${p.nombre}${p.edad?' <span style="color:#888;font-size:.9em">· '+p.edad+'</span>':''}</div>`).join('')
+      +(_pa.length>5?`<div style="font-size:.72em;color:#888;padding-top:2px">…y ${_pa.length-5} más</div>`:'');
 
     const popupHTML=`<div style="min-width:190px;max-width:215px;font-family:sans-serif;padding:2px;">
       <div style="background:linear-gradient(135deg,#0c1f18,#1a3a2d);color:#fff;padding:7px 10px;border-radius:7px 7px 0 0;margin:-2px -2px 8px;display:flex;align-items:center;gap:6px;">
@@ -2829,8 +2846,9 @@ function _sghRenderLista(lista) {
     const rkClass = rk === 'alto' ? 'alt' : rk === 'medio' ? 'med' : 'sin';
     const rkLabel = rk === 'alto' ? 'Alto' : rk === 'medio' ? 'Medio' : 'Sin Riesgo';
     const ubic = v.lat && v.lng ? `✅ ${Number(v.lat).toFixed(4)}, ${Number(v.lng).toFixed(4)}` : '⚠️ Sin ubicación';
-    const nP = (v.personas || []).length;
-    const jefe = (v.personas && v.personas.length) ? v.personas[0].nombre : 'Sin integrantes';
+    const _pa = _perActivas(v);
+    const nP = _pa.length;
+    const jefe = _pa.length ? _pa[0].nombre : 'Sin integrantes';
     return `<div class="sgh-item" onclick="seleccionarVivGeoRef('${v.id}')">
       <span class="sgh-item-ico">🏠</span>
       <div class="sgh-item-txt">
@@ -2965,7 +2983,7 @@ function renderStats(){
   cat.forEach(v=>{
     const r=v.riesgo||'ninguno';
     if(r==='alto')alt++;else if(r==='medio')med++;else sin++;
-    (v.personas||[]).forEach(p=>{
+    _perActivas(v).forEach(p=>{
       total++;
       const sx=p.sexo||'';
       if(sx==='F')fem++;else if(sx==='M')masc++;else nd++;
@@ -3258,19 +3276,23 @@ function confirmarImport(){
     if(modo === 'sync'){
       // ── SINCRONIZAR: el Excel es la fuente de verdad para personas ──
       // Preservar ids existentes por nombre+fnac para no romper referencias
-      const idExistente = new Map(
-        (v.personas||[]).map(p=>[
-          (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'').trim()), p.id
-        ])
-      );
+      const _kPer = p => (String(p.nombre||'').toLowerCase().trim()+'|'+String(p.fnac||'').trim());
+      const prevPers = (v.personas||[]);
+      const idExistente = new Map(prevPers.map(p=>[_kPer(p), p.id]));
+      const inactPrev = new Map(prevPers.filter(p=>p.inactivo).map(p=>[_kPer(p), p]));
       v.personas = filaViv.filter(f=>!f.soloViv).map(f=>{
         const key = (f.nom.toLowerCase().trim()+'|'+(f.fnac||'').trim());
         const edad = f.fnac ? calcularEdadTexto(f.fnac)||'' : '';
-        return {
+        const o = {
           id: idExistente.get(key) || ('per_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)),
           nombre: f.nom, fnac: f.fnac||'', edad, sexo: f.sexo||''
         };
+        const ia = inactPrev.get(key);
+        if(ia){ o.inactivo = true; if(ia.inactivoDesde) o.inactivoDesde = ia.inactivoDesde; inactPrev.delete(key); }
+        return o;
       });
+      // Los inactivos que no vienen en el Excel NO se borran (pueden volver a la comunidad)
+      inactPrev.forEach(p => v.personas.push(p));
       v.actualizadoEn = ts;
 
     } else {
@@ -3705,7 +3727,7 @@ function abrirModalMEFDetalle(){
   const lista=[];
   getCatalogo().forEach(v=>{
     if(v.deshabitada) return;
-    (v.personas||[]).forEach(p=>{
+    _perActivas(v).forEach(p=>{
       if(p.sexo!=='F') return;
       const m=mesesPersona(p);
       if(m===null||m<216||m>=600) return;
@@ -3741,7 +3763,7 @@ function _personasDeGrupo(g){
   const lista=[];
   getCatalogo().forEach(v=>{
     if(v.deshabitada) return;
-    (v.personas||[]).forEach(p=>{
+    _perActivas(v).forEach(p=>{
       const m=mesesPersona(p);
       if(m===null||!g.test(p,m)) return;
       lista.push({nombre:p.nombre||'—',fnac:p.fnac,sexo:p.sexo||'',viv:v.vivienda,meses:m});
@@ -4098,13 +4120,14 @@ function _mfamRender() {
     const edad = fnacISO ? calcularEdadTexto(fnacISO) : (p.edad || '');
     const subtxt = fnacISO ? (() => { const [y,m,d] = fnacISO.split('-'); return `Nac. ${d}/${m}/${y}`; })() : '';
     const esResaltada = _mfamResaltarPerId === p.id;
-    return `<div class="mfam-persona-row${esResaltada ? ' resaltada' : ''}" id="mfam-row-${p.id}">
-      <span class="mfam-per-ico">👤</span>
+    return `<div class="mfam-persona-row${esResaltada ? ' resaltada' : ''}" id="mfam-row-${p.id}" style="${p.inactivo?'opacity:.6;background:#f3f4f6;':''}">
+      <span class="mfam-per-ico">${p.inactivo?'⏸':'👤'}</span>
       <div class="mfam-per-info">
-        <strong>${p.nombre}</strong>
+        <strong>${p.nombre}${p.inactivo?' <span style="font-size:.66rem;background:#9ca3af;color:#fff;border-radius:6px;padding:1px 6px">INACTIVO</span>':''}</strong>
         <span>${edad ? '🎂 ' + edad : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}</span>
       </div>
       <div class="mfam-per-btns">
+        <button class="mfam-btn-edit" onclick="togglePersonaInactiva('${viv.id}','${p.id}')" title="${p.inactivo?'Activar de nuevo':'Marcar inactivo (se fue de la comunidad)'}" style="font-size:.95rem">${p.inactivo?'▶️':'⏸'}</button>
         <button class="mfam-btn-edit" onclick="_mfamEditarPersona('${viv.id}','${p.id}')" title="Editar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -4260,7 +4283,7 @@ function _mlvRenderRows(lista){
     return;
   }
   cont.innerHTML=lista.map(v=>{
-    const per=v.personas||[];
+    const per=_perActivas(v);
     const primer=per.length?per[0].nombre:null;
     const total=per.length;
     const tieneGps=!!(v.lat&&v.lng);
@@ -4326,7 +4349,7 @@ function _mlvVerEnMapa(vivId){
 function imprimirListaViv(){
   const base=_mlvSorted.length?_mlvSorted:_mlvOrdenar(getCatalogo());
   const filas=base.map(v=>{
-    const per=v.personas||[];
+    const per=_perActivas(v);
     const primer=per.length?_mlvEsc(per[0].nombre):'—';
     return `<tr>
       <td style="text-align:center;font-weight:700;padding:.4rem .7rem;border:1px solid #cde">${_mlvEsc(v.vivienda)}</td>

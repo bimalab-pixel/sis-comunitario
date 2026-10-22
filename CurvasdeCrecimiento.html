@@ -1398,6 +1398,15 @@
         .mp-b.no { background: #fde7e5; color: #a12a20; }
         .mp-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
         .mp-count { font-size: 0.78rem; color: var(--muted); }
+        .mp-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
+        .mp-chip { border: 1.5px solid var(--border); background: #fff; color: #3b4560; border-radius: 16px; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 800; font-family: inherit; cursor: pointer; }
+        .mp-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .mp-chip.warn { border-color: #e0a040; color: #9a5b00; background: #fff8ec; }
+        .mp-chip.warn.on { background: #c77700; border-color: #c77700; color: #fff; }
+        .mp-sec { position: sticky; top: 0; z-index: 1; padding: 0.4rem 0.7rem; font-size: 0.76rem; font-weight: 800; background: #f1f5f4; color: #24433b; border-bottom: 1px solid var(--border); }
+        .mp-sec.warn { background: #fff1dc; color: #7a4800; }
+        .mp-fix { margin-top: 0.4rem; border: 1.5px solid #c77700; background: #fff8ec; color: #9a5b00; border-radius: 8px; padding: 0.3rem 0.7rem; font-size: 0.76rem; font-weight: 800; font-family: inherit; cursor: pointer; }
+        .mp-fix:active { background: #c77700; color: #fff; }
         .mp-empty { padding: 1.2rem 1rem; font-size: 0.88rem; color: var(--muted); line-height: 1.55; }
 
         .modal-header {
@@ -3109,6 +3118,7 @@
             </div>
             <div class="modal-body" style="padding:1rem;">
                 <p class="mp-sub" id="mp-sub"></p>
+                <div class="mp-chips" id="mp-chips"></div>
                 <div class="mp-tools" id="mp-tools">
                     <input type="search" id="mp-buscar" placeholder="Buscar por nombre…" oninput="mpFiltrar()">
                     <select id="mp-grupo" onchange="mpRender()">
@@ -4866,9 +4876,35 @@
             } catch (e) { return null; }
         }
 
+        // Copia a Curvas el estado ACTIVO/INACTIVO de cada persona tal como está en el Mapa Sanitario.
+        // Una persona inactiva (se fue de la comunidad) se queda con sus datos y mediciones,
+        // pero no cuenta en totales, grupos ni reportes; al reactivarla en el Mapa vuelve a contar.
+        function _mpSincInactivos() {
+            const cat = _mpLeerCatalogo();
+            if (!cat) return 0;
+            const porOrigen = new Map(), porClave = new Map();
+            DB.personas.forEach(p => {
+                if (p.origenMapa) porOrigen.set(p.origenMapa, p);
+                porClave.set(_mpNorm(p.nombre) + '|' + (p.fechaNacimiento || ''), p);
+            });
+            let n = 0;
+            cat.forEach(viv => ((viv && viv.personas) || []).forEach(mp => {
+                if (!mp) return;
+                const per = (mp.id && porOrigen.get(mp.id)) || porClave.get(_mpNorm(mp.nombre) + '|' + _mpFecha(mp.fnac));
+                if (!per) return;
+                if (!!per.inactivo !== !!mp.inactivo) { if (mp.inactivo) per.inactivo = true; else delete per.inactivo; n++; }
+            }));
+            if (n) {
+                try { guardarDatos(); } catch (e) { console.warn('[Inactivos] Curvas sin espacio', e); }
+                if (typeof mostrarPersonas === 'function') { try { mostrarPersonas(); } catch (e) {} }
+            }
+            return n;
+        }
+
         function _mpConstruir() {
             const cat = _mpLeerCatalogo();
             if (!cat) return null;
+            _mpSincInactivos();
             const existentes = new Set(DB.personas.map(p => _mpNorm(p.nombre) + '|' + (p.fechaNacimiento || '')));
             const origenes = new Set(DB.personas.map(p => p.origenMapa).filter(Boolean));
             const porNombre = {};
@@ -4889,9 +4925,10 @@
                     const key = _mpNorm(nombre) + '|' + nac;
                     const tok = _mpTok(nombre);
                     let estado = 'nueva', motivo = '';
-                    if (!nac) { estado = 'sinfecha'; motivo = 'Sin fecha de nacimiento en el Mapa'; }
+                    if (p.inactivo) { estado = 'inactiva'; motivo = 'Inactiva en el Mapa: no se importa'; }
+                    else if ((p.id && origenes.has(p.id)) || (nac && existentes.has(key))) { estado = 'existe'; motivo = 'Ya está en Curvas'; }
+                    else if (!nac) { estado = 'sinfecha'; motivo = 'Sin fecha de nacimiento en el Mapa'; }
                     else if (!sexo) { estado = 'sinsexo'; motivo = 'Sexo no indicado en el Mapa'; }
-                    else if ((p.id && origenes.has(p.id)) || existentes.has(key)) { estado = 'existe'; motivo = 'Ya está en Curvas'; }
                     else if (vistos.has(key)) { estado = 'repetida'; motivo = 'Aparece más de una vez en el Mapa'; }
                     else if (porNombre[tok] && porNombre[tok].length) {
                         const o = porNombre[tok][0];
@@ -4907,7 +4944,9 @@
             return items;
         }
 
-        function mpAbrir() {
+        let _mpFiltro = 'todas';
+        function mpAbrir(filtro) {
+            _mpFiltro = (typeof filtro === 'string') ? filtro : 'todas';
             const bg = document.getElementById('modalMapaImport');
             const items = _mpConstruir();
             const list = document.getElementById('mp-list');
@@ -4930,26 +4969,73 @@
             bg.classList.add('show');
         }
 
+        const MP_SECC = [
+            { id: 'faltan',  t: '⚠️ Faltan datos: complétalos aquí o en el Mapa', warn: true },
+            { id: 'revisar', t: '🔎 Por revisar (posibles repetidas)', warn: true },
+            { id: 'nueva',   t: '✅ Nuevas para importar' },
+            { id: 'existe',  t: 'Ya están en Curvas / inactivas' }
+        ];
+        function _mpSeccion(it) {
+            if (it.estado === 'sinfecha' || it.estado === 'sinsexo') return 'faltan';
+            if (it.estado === 'posible' || it.estado === 'repetida') return 'revisar';
+            if (it.estado === 'nueva') return 'nueva';
+            return 'existe';
+        }
+        function mpFiltroSet(f) { _mpFiltro = f; mpRender(); }
+
         function mpRender() {
             const g = MP_GRUPOS.find(x => x.id === document.getElementById('mp-grupo').value) || MP_GRUPOS[0];
             const list = document.getElementById('mp-list');
-            const vis = _mpItems.map((it, ix) => ({ it, ix }))
+            const enGrupo = _mpItems.map((it, ix) => ({ it, ix }))
                 .filter(o => o.it.meses == null || (o.it.meses >= g.min && o.it.meses <= g.max));
+            const cuenta = {};
+            enGrupo.forEach(o => { const k = _mpSeccion(o.it); cuenta[k] = (cuenta[k] || 0) + 1; });
+            if (_mpFiltro !== 'todas' && !cuenta[_mpFiltro]) _mpFiltro = 'todas';
+            // Lista: primero lo que hay que completar o revisar, luego lo nuevo, al final lo que ya está
+            const orden = MP_SECC.map(x => x.id);
+            const vis = enGrupo
+                .filter(o => _mpFiltro === 'todas' || _mpSeccion(o.it) === _mpFiltro)
+                .sort((a, b) => orden.indexOf(_mpSeccion(a.it)) - orden.indexOf(_mpSeccion(b.it)) || a.ix - b.ix);
             const r = _mpResumen;
             const nuevas = _mpItems.filter(i => i.estado === 'nueva').length;
             const yaEstan = _mpItems.filter(i => i.estado === 'existe').length;
-            const sinFecha = _mpItems.filter(i => i.estado === 'sinfecha').length;
-            const sinSexo = _mpItems.filter(i => i.estado === 'sinsexo').length;
             document.getElementById('mp-sub').textContent =
                 'Mapa Sanitario: ' + r.personas + ' persona(s) · ' + nuevas + ' nueva(s) para importar · ' + yaEstan + ' ya en Curvas'
-                + ' · sin importar: ' + sinFecha + ' sin fecha de nacimiento, ' + sinSexo + ' sin sexo indicado'
-                + (r.deshab ? ', ' + r.deshab + ' vivienda(s) deshabitada(s)' : '') + '.';
-            list.innerHTML = vis.length
-                ? vis.map((o, n) => mpFila(o.it, o.ix, n + 1)).join('')
-                : '<div class="mp-empty">No hay personas de este grupo de edad en el Mapa Sanitario.</div>';
+                + (r.deshab ? ' · ' + r.deshab + ' vivienda(s) deshabitada(s)' : '') + '.';
+            const chip = (id, txt, warn) => '<button type="button" class="mp-chip' + (warn ? ' warn' : '') + (_mpFiltro === id ? ' on' : '') + '" onclick="mpFiltroSet(\'' + id + '\')">' + txt + '</button>';
+            document.getElementById('mp-chips').innerHTML =
+                chip('todas', 'Todas (' + enGrupo.length + ')', false)
+                + MP_SECC.filter(x => cuenta[x.id]).map(x => chip(x.id, ({ faltan: '⚠️ Faltan datos', revisar: '🔎 Por revisar', nueva: 'Nuevas', existe: 'Ya están' })[x.id] + ' (' + cuenta[x.id] + ')', x.warn)).join('');
+            let html = '', n = 0, ultima = '';
+            vis.forEach(o => {
+                const sec = _mpSeccion(o.it);
+                if (sec !== ultima) {
+                    const def = MP_SECC.find(x => x.id === sec);
+                    html += '<div class="mp-sec' + (def.warn ? ' warn' : '') + '">' + def.t + ' (' + cuenta[sec] + ')</div>';
+                    ultima = sec;
+                }
+                html += mpFila(o.it, o.ix, ++n);
+            });
+            list.innerHTML = vis.length ? html : '<div class="mp-empty">No hay personas de este grupo de edad en el Mapa Sanitario.</div>';
             document.getElementById('mp-go').style.display = vis.length ? '' : 'none';
             mpFiltrar();
             mpConteo();
+        }
+
+        // Abre el formulario de agregar persona ya lleno con lo que se sabe, para completar lo que falta aquí mismo
+        function mpCompletar(ix) {
+            const it = _mpItems[ix];
+            if (!it) return;
+            mpCerrar();
+            mostrarPanel('personas');
+            abrirFormularioAgregar();
+            document.getElementById('nombre').value = it.nombre;
+            const v = document.getElementById('vivienda'); if (v) v.value = String(it.viv.vivienda || '');
+            const sx = document.getElementById('sexo'); if (sx) sx.value = it.sexo || '';
+            const ft = document.getElementById('fechaNacimiento'); if (ft && it.nac) ft.value = it.nac;
+            const foco = !it.nac ? ft : sx;
+            if (foco) foco.focus();
+            _sisPobAviso('Completa ' + (!it.nac ? 'la fecha de nacimiento' : 'el sexo') + ' de ' + it.nombre + ' y guarda.');
         }
 
         function mpFila(it, ix, n) {
@@ -4957,6 +5043,7 @@
             const b = [];
             if (it.estado === 'nueva') b.push('<span class="mp-b ok">Nueva</span>');
             if (it.estado === 'existe') b.push('<span class="mp-b">Ya está en Curvas</span>');
+            if (it.estado === 'inactiva') b.push('<span class="mp-b no">⏸ ' + _escaparHTML(it.motivo) + '</span>');
             if (it.estado === 'posible' || it.estado === 'repetida') b.push('<span class="mp-b warn">' + _escaparHTML(it.motivo) + '</span>');
             if (it.estado === 'sinfecha' || it.estado === 'sinsexo') b.push('<span class="mp-b no">' + _escaparHTML(it.motivo) + ' · complétalo en el Mapa</span>');
             if (it.sexo === 'femenino') b.push('<span class="mp-b ok">♀ Femenino</span>');
@@ -4969,7 +5056,9 @@
                 + '<input type="checkbox" class="mp-chk" ' + (it.estado === 'nueva' ? 'checked' : '') + ' ' + (bloqueada ? 'disabled' : '') + ' onchange="mpConteo()">'
                 + '<div class="mp-main"><div class="mp-name">' + _escaparHTML(it.nombre) + '</div>'
                 + '<div class="mp-meta">' + meta + '</div>'
-                + '<div class="mp-badges">' + b.join('') + '</div></div></div>';
+                + '<div class="mp-badges">' + b.join('') + '</div>'
+                + ((it.estado === 'sinfecha' || it.estado === 'sinsexo') ? '<button type="button" class="mp-fix" onclick="mpCompletar(' + ix + ')">✏️ Completar aquí</button>' : '')
+                + '</div></div>';
         }
 
         function mpConteo() {
@@ -4982,6 +5071,11 @@
             const q = _mpNorm(document.getElementById('mp-buscar').value);
             document.querySelectorAll('#mp-list .mp-row').forEach(r => {
                 r.style.display = (!q || (r.dataset.nombre || '').indexOf(q) > -1) ? '' : 'none';
+            });
+            document.querySelectorAll('#mp-list .mp-sec').forEach(h => {
+                let e = h.nextElementSibling, hay = false;
+                while (e && !e.classList.contains('mp-sec')) { if (e.style.display !== 'none') hay = true; e = e.nextElementSibling; }
+                h.style.display = hay ? '' : 'none';
             });
             mpConteo();
         }
@@ -5056,16 +5150,23 @@
           for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
           return s.length + ':' + (h >>> 0);
         }
-        function _sisPobAviso(msg) {
+        function _sisPobAviso(msg, accion) {
           try {
             let d = document.getElementById('sis-pob-aviso');
             if (!d) {
               d = document.createElement('div'); d.id = 'sis-pob-aviso';
-              d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:99999;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+              d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:18px;font-size:13px;line-height:1.4;z-index:99999;max-width:92%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
               document.body.appendChild(d);
             }
-            d.textContent = msg; d.style.display = 'block';
-            clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, 5200);
+            d.style.whiteSpace = 'pre-line'; d.textContent = msg;
+            if (accion && accion.fn) {
+              const b = document.createElement('button'); b.type = 'button'; b.textContent = accion.texto || 'Ver lista';
+              b.style.cssText = 'display:block;margin:8px auto 0;background:#fff;color:#1a2e3a;border:none;border-radius:14px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer';
+              b.onclick = () => { d.style.display = 'none'; accion.fn(); };
+              d.appendChild(b);
+            }
+            d.style.display = 'block';
+            clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, accion ? 14000 : 5200);
           } catch (e) {}
         }
 
@@ -5082,9 +5183,10 @@
                 const existentes = new Set(DB.personas.map(p => _mpNorm(p.nombre) + '|' + (p.fechaNacimiento || '')));
                 const ahoraIso = new Date().toISOString();
                 let base = Date.now(), nuevas = 0, faltanDatos = 0, revisar = 0;
+                const listaFalta = [];
                 items.forEach(it => {
-                    if (it.estado === 'sinfecha' || it.estado === 'sinsexo') { faltanDatos++; return; }
-                    if (it.estado === 'posible') { revisar++; return; }
+                    if (it.estado === 'sinfecha' || it.estado === 'sinsexo') { faltanDatos++; listaFalta.push(it.nombre + ' (' + (it.estado === 'sinfecha' ? 'sin fecha' : 'sin sexo') + ')'); return; }
+                    if (it.estado === 'posible') { revisar++; listaFalta.push(it.nombre + ' (por revisar)'); return; }
                     if (it.estado !== 'nueva') return;
                     const key = _mpNorm(it.nombre) + '|' + it.nac;
                     if (existentes.has(key)) return;
@@ -5109,8 +5211,10 @@
                     const partes = [];
                     if (nuevas) partes.push(nuevas + ' persona(s) nueva(s)');
                     if (faltanDatos) partes.push(faltanDatos + ' sin fecha o sexo en el Mapa');
-                    if (revisar) partes.push(revisar + ' por revisar (Importar del Mapa)');
-                    _sisPobAviso('👥 Población base: ' + partes.join(' · '));
+                    if (revisar) partes.push(revisar + ' por revisar');
+                    let msg = '👥 Población base: ' + partes.join(' · ');
+                    if (listaFalta.length) msg += '\n' + listaFalta.slice(0, 4).join(', ') + (listaFalta.length > 4 ? ' y ' + (listaFalta.length - 4) + ' más' : '');
+                    _sisPobAviso(msg, listaFalta.length ? { texto: 'Ver quiénes son', fn: () => mpAbrir(faltanDatos ? 'faltan' : 'revisar') } : null);
                 }
             } catch (e) { console.warn('[Población base] Curvas:', e); }
         }
@@ -5474,7 +5578,7 @@
                 card.innerHTML = `
                     <div class="avatar-circle ${persona.sexo}">${persona.sexo === 'femenino' ? '👧' : '👦'}</div>
                     <div class="list-row-info">
-                        <h3>${persona.nombre}</h3>
+                        <h3>${persona.nombre}${persona.inactivo ? ' <span style="font-size:.68rem;background:#9ca3af;color:#fff;border-radius:6px;padding:1px 6px;vertical-align:middle">INACTIVO</span>' : ''}</h3>
                         <div class="list-row-sub">Nacido/a ${formatearFechaSV(persona.fechaNacimiento, {day:'numeric', month:'short', year:'numeric'})}</div>
                         <div class="list-row-sub">${persona.edadActual} de edad</div>
                     </div>
@@ -5591,7 +5695,7 @@
             const select = document.getElementById('personaMedicion');
             const valorPrevio = select.value;
             select.innerHTML = '<option value="">-- Seleccionar persona --</option>';
-            DB.personas.forEach(p => {
+            DB.personas.filter(p => !p.inactivo).forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.id;
                 option.textContent = `${p.nombre} (${p.edadActual})`;
@@ -5898,6 +6002,7 @@
             let sobrepeso = 0, obesidad = 0, normal = 0, desnutrido = 0, desnutridoSevero = 0, sinDatos = 0;
 
             DB.personas.forEach(persona => {
+                if (persona.inactivo) return;
                 const meses = calcularEdadEnMeses(persona.fechaNacimiento, persona.semanasPrematuro || 0);
                 
                 // Filtrar por rango de edad
@@ -6147,6 +6252,7 @@
         function personasDeGrupoReporte(grupo) {
             return DB.personas
                 .filter(p => {
+                    if (p.inactivo) return false;
                     const meses = calcularEdadEnMeses(p.fechaNacimiento, p.semanasPrematuro || 0);
                     if (meses < grupo.minMeses || meses > grupo.maxMeses) return false;
                     if (grupo.sexo && p.sexo !== grupo.sexo) return false;
@@ -6434,7 +6540,7 @@
             const container = document.getElementById('dashboardCards');
 
             function pintarContadores() {
-                document.getElementById('totalPersonas').textContent = DB.personas.length;
+                document.getElementById('totalPersonas').textContent = DB.personas.filter(p => !p.inactivo).length;
                 document.getElementById('estadoObesidad').textContent = obesidad;
                 document.getElementById('estadoSobrepeso').textContent = sobrepeso;
                 document.getElementById('estadoNormal').textContent = normal;
@@ -6459,6 +6565,7 @@
             // de búsqueda del dashboard, para que las tarjetas de resumen no varíen
             // al escribir.
             DB.personas.forEach(persona => {
+                if (persona.inactivo) return;
                 const medicion = obtenerUltimaMedicion(persona.id);
                 const clasificacion = evaluarEstadoNutricional(persona, medicion);
                 const categoria = categoriaNutricionalDashboard(clasificacion);
@@ -6555,7 +6662,7 @@
                 container.appendChild(btnWrap);
             }
 
-            document.getElementById('totalPersonas').textContent = DB.personas.length;
+            document.getElementById('totalPersonas').textContent = DB.personas.filter(p => !p.inactivo).length;
             document.getElementById('estadoObesidad').textContent = obesidad;
             document.getElementById('estadoSobrepeso').textContent = sobrepeso;
             document.getElementById('estadoNormal').textContent = normal;
@@ -7651,7 +7758,7 @@
             if (volverBtn) volverBtn.style.display = curvaEstado.origenPersonaId ? 'inline-block' : 'none';
             const previoDom = select.value;
             select.innerHTML = '<option value="">-- Seleccionar --</option>';
-            DB.personas.forEach(p => {
+            DB.personas.filter(p => !p.inactivo).forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.id;
                 const edadMostrada = edadParaMostrarEnCurva(p);

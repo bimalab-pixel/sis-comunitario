@@ -835,6 +835,22 @@
         .rm-b.no{background:#fde7e5;color:#a12a20}
         .rm-foot{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.75rem;flex-wrap:wrap}
         .rm-count{font-size:.76rem;color:var(--muted)}
+.rm-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.55rem}
+        .rm-chip{border:1.5px solid var(--border);background:#fff;color:#3b4560;border-radius:16px;padding:.28rem .65rem;font-size:.72rem;font-weight:800;font-family:inherit;cursor:pointer}
+        .rm-chip.on{background:var(--teal2);border-color:var(--teal2);color:#fff}
+        .rm-chip.warn{border-color:#e0a040;color:#9a5b00;background:#fff8ec}
+        .rm-chip.warn.on{background:#c77700;border-color:#c77700;color:#fff}
+        .rm-sec{position:sticky;top:0;z-index:1;padding:.35rem .65rem;font-size:.72rem;font-weight:800;background:#f1f5f4;color:#24433b;border-bottom:1px solid var(--light2)}
+        .rm-sec.warn{background:#fff1dc;color:#7a4800}
+        .rm-acts{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+        .rm-fix{border:1.5px solid #c77700;background:#fff8ec;color:#9a5b00;border-radius:8px;padding:.28rem .6rem;font-size:.72rem;font-weight:800;font-family:inherit;cursor:pointer}
+        .rm-fix:active{background:#c77700;color:#fff}
+        .ge-alerta{background:#fff8ec;border:1.5px solid #e0a040;border-radius:12px;padding:.7rem .8rem;margin:.6rem 0}
+        .ge-alerta-t{font-weight:800;font-size:.82rem;color:#7a4800;margin-bottom:.45rem}
+        .ge-alerta-f{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-top:1px solid #f0dcb8}
+        .ge-alerta-i{flex:1;min-width:0}
+        .ge-alerta-n{font-weight:800;font-size:.84rem;color:var(--navy2);overflow-wrap:anywhere}
+        .ge-alerta-m{font-size:.72rem;color:#9a5b00}
         .rm-empty{padding:1.1rem .9rem;font-size:.84rem;color:var(--muted);line-height:1.55}
         .rm-map-btn{display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;padding:.7rem .9rem;margin-bottom:.5rem;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
         .rm-map-btn:active{transform:scale(.98)}
@@ -2044,6 +2060,7 @@
         </div>
         <div class="mcat-body">
             <p class="rm-sub" id="rm-sub"></p>
+            <div class="rm-chips" id="rm-chips"></div>
             <div class="rm-tools" id="rm-tools">
                 <input type="search" id="rm-buscar" placeholder="Buscar por nombre o vivienda…" oninput="rmFiltrar()">
                 <button type="button" class="rm-link" onclick="rmMarcar('todas')">Marcar todas</button>
@@ -10324,6 +10341,42 @@ Notas (Acciones ya escritas): ${accion || '—'}
     function _geSeleccionarGrupo(id) {
       _geGrupoSel = id;
       _geRender();
+      setTimeout(() => { const t = document.getElementById('ge-lista-titulo'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+    }
+
+    // Aviso arriba con los NOMBRES de quienes tienen sexo o edad sin especificar
+    let _geAlertaLista = [];
+    function _geRenderAlerta(lista) {
+      let el = document.getElementById('ge-alerta');
+      if (!el) {
+        const t = document.getElementById('ge-tabla');
+        if (!t) return;
+        el = document.createElement('div'); el.id = 'ge-alerta';
+        t.parentNode.insertBefore(el, t);
+      }
+      const pend = lista.filter(o => _geFaltaSexo(o) || _geSinEdad(o));
+      _geAlertaLista = pend;
+      if (!pend.length) { el.innerHTML = ''; return; }
+      const MAX = 6;
+      el.innerHTML = '<div class="ge-alerta"><div class="ge-alerta-t">⚠️ ' + pend.length + ' persona' + (pend.length !== 1 ? 's' : '') + ' sin sexo o sin edad — toca Corregir:</div>' +
+        pend.slice(0, MAX).map((o, k) => {
+          const f = [];
+          if (_geFaltaSexo(o)) f.push('falta el sexo');
+          if (_geSinEdad(o)) f.push('sin edad');
+          return '<div class="ge-alerta-f"><div class="ge-alerta-i"><div class="ge-alerta-n">' + _geEsc(o.nombre) + '</div>' +
+            '<div class="ge-alerta-m">' + (o.vivienda ? 'Viv. ' + _geEsc(o.vivienda) + ' · ' : '') + f.join(' · ') + '</div></div>' +
+            '<button type="button" class="ge-ojo ge-corregir" onclick="_geAlertaCorregir(' + k + ')">✏️ Corregir</button></div>';
+        }).join('') +
+        (pend.length > MAX ? '<div class="ge-alerta-f"><div class="ge-alerta-i ge-alerta-m">y ' + (pend.length - MAX) + ' más…</div>' +
+          '<button type="button" class="ge-ojo ge-corregir" onclick="_geSeleccionarGrupo(\'' + (pend.some(_geFaltaSexo) ? 'faltasexo' : 'sinedad') + '\')">Ver todas</button></div>' : '') +
+        '</div>';
+    }
+    function _geAlertaCorregir(k) {
+      const o = _geAlertaLista[k];
+      if (!o) return;
+      if (o.catVivId && o.catPerId) { irA('screen-catalogo'); verFamiliaCompleta(o.catVivId, o.catPerId); return; }
+      // Aún no está vinculada con el catálogo: mostrar su grupo, donde está el botón «Vincular nombre»
+      _geSeleccionarGrupo(_geSinEdad(o) ? 'sinedad' : 'faltasexo');
     }
 
     function _geRender() {
@@ -10351,6 +10404,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         `<td class="ge-c-p">${lista.length}</td></tr></tbody></table>`;
       const tablaEl = document.getElementById('ge-tabla');
       if (tablaEl) tablaEl.innerHTML = html;
+      _geRenderAlerta(lista);
 
       const resEl = document.getElementById('ge-resumen');
       if (resEl) {
@@ -12852,9 +12906,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
           return `
           <div class="cat-persona-item${esResultadoFiltrado ? ' highlight-result' : ''}${esSeleccionada ? ' persona-seleccionada' : ''}"
             ${esResultadoFiltrado ? `onclick="verFamiliaCompleta('${viv.id}','${p.id}')" title="Ver familia completa"` : ''}>
-            <span class="cat-persona-ico">👤</span>
-            <div class="cat-persona-info">
-              <strong>${p.nombre}</strong>
+            <span class="cat-persona-ico">${p.inactivo ? '⏸' : '👤'}</span>
+            <div class="cat-persona-info"${p.inactivo ? ' style="opacity:.6"' : ''}>
+              <strong>${p.nombre}${p.inactivo ? ' <span style="font-size:.66rem;background:#9ca3af;color:#fff;border-radius:6px;padding:1px 6px">INACTIVO</span>' : ''}</strong>
               <span>${edadViva ? '🎂 ' + edadViva : 'Sin edad'}${subtxt ? ' · ' + subtxt : ''}${p.sexo === 'F' ? ' · ♀ Femenino' : (p.sexo === 'M' ? ' · ♂ Masculino' : '')}</span>
               ${esResultadoFiltrado ? `<span class="cat-ver-familia">🏠 Ver familia completa</span>` : ''}
             </div>
@@ -13263,9 +13317,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
       } else {
         // Modo normal: mostrar todo, filtrar por búsqueda
         viviendas = cat.map(viv => {
-          const personas = (viv.personas || []).filter(p =>
+          const personas = (viv.personas || []).filter(p => !p.inactivo && (
             !q || p.nombre.toLowerCase().includes(q) || viv.vivienda.toLowerCase().includes(q)
-          );
+          ));
           return personas.length ? { ...viv, personas } : null;
         }).filter(Boolean);
       }
@@ -13828,7 +13882,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           const sexo = (mp.sexo === 'F' || mp.sexo === 'M') ? mp.sexo : '';
           const nac = _rmFecha(mp.fnac);
           const nk = _rmNorm(nombre), tk = _rmTok(nombre);
-          const it = { mp, numViv, nombre, nac, sexo, estado: 'nueva', motivo: '', match: null, cambios: [] };
+          const it = { mp, numViv, nombre, nac, sexo, estado: 'nueva', motivo: '', match: null, cambios: [], inactivo: !!mp.inactivo, inactivoDesde: mp.inactivoDesde || '' };
           // 1) ¿ya vinculada por id del Mapa, o con el mismo nombre en la misma vivienda?
           let m = (mp.id && porOrigen[mp.id]) ? porOrigen[mp.id].p : null;
           let mViv = (mp.id && porOrigen[mp.id]) ? porOrigen[mp.id].viv : null;
@@ -13850,6 +13904,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
                 it.estado = 'conflicto';
                 it.motivo = 'El nombre nuevo ya existe en otra persona de esta vivienda: corrígelo a mano';
               } else {
+                if (!!m.inactivo !== !!mp.inactivo) { it.cambiaAct = true; it.cambios.push(mp.inactivo ? 'queda INACTIVA (no cuenta en los grupos)' : 'vuelve a estar ACTIVA'); }
                 if (cambioNombre) it.cambios.push('nombre');
                 if (sexo && !m.sexo) it.cambios.push('sexo');
                 if (nac && !m.fnac) it.cambios.push('fecha de nacimiento');
@@ -13916,6 +13971,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
       return items;
     }
 
+    // Copia a RD el estado activo/inactivo de la persona tal como está en el Mapa
+    function _rmActividad(p, it) {
+      if (!it.cambiaAct) return false;
+      if (it.inactivo) { p.inactivo = true; p.inactivoDesde = it.inactivoDesde || ''; }
+      else { delete p.inactivo; delete p.inactivoDesde; }
+      return true;
+    }
     // Cambia el nombre de una persona de RD por el del Mapa (el Mapa es la fuente) y la vincula
     function _rmRenombrar(cat, vivId, perId, it, ts) {
       const viv = cat.find(v => v.id === vivId);
@@ -13926,6 +13988,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (it.sexo && !p.sexo) p.sexo = it.sexo;
       if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; }
       if (it.mp.id) p.origenMapa = it.mp.id;
+      _rmActividad(p, it);
       viv.actualizadoEn = ts;
       return true;
     }
@@ -13943,7 +14006,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
       return n;
     }
 
-    function rmAbrir() {
+    let _rmFiltro = 'todas';
+    function rmAbrir(filtro) {
+      _rmFiltro = (typeof filtro === 'string') ? filtro : 'todas';
       const items = _rmConstruir();
       const list = document.getElementById('rm-list');
       document.getElementById('rm-buscar').value = '';
@@ -13969,24 +14034,81 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
     function rmCerrar() { document.getElementById('modal-mapa-import').classList.remove('show'); }
 
+    // Secciones: lo que hay que corregir va primero; lo que ya está completo, al final
+    const RM_SECC = [
+      { id: 'corregir', t: '⚠️ Hay que corregir (sin sexo, sin edad o sexo distinto)', corto: '⚠️ Corregir', warn: true },
+      { id: 'revisar',  t: '🔎 Por revisar (posibles repetidas o que ya no están en el Mapa)', corto: '🔎 Revisar', warn: true },
+      { id: 'cambios',  t: '✏️ Cambios para aplicar (nombre o datos por completar)', corto: '✏️ Cambios' },
+      { id: 'nueva',    t: '🆕 Nuevas para importar', corto: 'Nuevas' },
+      { id: 'igual',    t: '✔ Ya están completas en RD', corto: 'Completas' }
+    ];
+    function _rmSinEdad(it) { return it.estado !== 'huerfana' && !it.nac && !(it.mp && it.mp.edad); }
+    function _rmSinSexo(it) { return it.estado !== 'huerfana' && !it.sexo; }
+    function _rmSeccion(it) {
+      if (it.estado === 'conflicto' || _rmSinSexo(it) || _rmSinEdad(it)) return 'corregir';
+      if (it.estado === 'posible' || it.estado === 'repetida' || it.estado === 'huerfana') return 'revisar';
+      if (it.estado === 'renombrada' || it.estado === 'completar') return 'cambios';
+      if (it.estado === 'nueva') return 'nueva';
+      return 'igual';
+    }
+    function rmFiltroSet(f) { _rmFiltro = f; rmRender(); }
+
     function rmRender() {
       const list = document.getElementById('rm-list');
       const n = e => _rmItems.filter(i => i.estado === e).length;
-      const sinSexo = _rmItems.filter(i => !i.sexo).length;
+      const sinSexo = _rmItems.filter(_rmSinSexo).length;
+      const sinEdad = _rmItems.filter(_rmSinEdad).length;
       document.getElementById('rm-sub').textContent =
         'Mapa Sanitario: ' + _rmRes.personas + ' persona(s) · ' + n('nueva') + ' nueva(s) · ' + n('renombrada') + ' con nombre cambiado · ' + n('completar') +
-        ' por completar (sexo o fecha) · ' + n('igual') + ' ya completas · ' + sinSexo + ' sin sexo en el Mapa' +
+        ' por completar · ' + n('igual') + ' ya completas · ' + sinSexo + ' sin sexo · ' + sinEdad + ' sin edad' +
         (n('conflicto') ? ' · ' + n('conflicto') + ' con sexo distinto' : '') +
         (n('huerfana') ? ' · ' + n('huerfana') + ' ya no están en el Mapa' : '') +
         (_rmRes.deshab ? ' · ' + _rmRes.deshab + ' vivienda(s) deshabitada(s) omitida(s)' : '') + '.';
-      list.innerHTML = _rmItems.length
-        ? _rmItems.map((it, ix) => _rmFila(it, ix)).join('')
-        : '<div class="rm-empty">El Mapa Sanitario no tiene personas registradas.</div>';
+      const cuenta = {};
+      _rmItems.forEach(it => { const k = _rmSeccion(it); cuenta[k] = (cuenta[k] || 0) + 1; });
+      if (_rmFiltro !== 'todas' && !cuenta[_rmFiltro]) _rmFiltro = 'todas';
+      const chip = (id, txt, warn) => '<button type="button" class="rm-chip' + (warn ? ' warn' : '') + (_rmFiltro === id ? ' on' : '') + '" onclick="rmFiltroSet(\'' + id + '\')">' + txt + '</button>';
+      document.getElementById('rm-chips').innerHTML = chip('todas', 'Todas (' + _rmItems.length + ')', false) +
+        RM_SECC.filter(x => cuenta[x.id]).map(x => chip(x.id, x.corto + ' (' + cuenta[x.id] + ')', x.warn)).join('');
+      const orden = RM_SECC.map(x => x.id);
+      const vis = _rmItems.map((it, ix) => ({ it, ix }))
+        .filter(o => _rmFiltro === 'todas' || _rmSeccion(o.it) === _rmFiltro)
+        .sort((a, b) => orden.indexOf(_rmSeccion(a.it)) - orden.indexOf(_rmSeccion(b.it)) || a.ix - b.ix);
+      let html = '', ultima = '', k = 0;
+      vis.forEach(o => {
+        const sec = _rmSeccion(o.it);
+        if (sec !== ultima) {
+          const d = RM_SECC.find(x => x.id === sec);
+          html += '<div class="rm-sec' + (d.warn ? ' warn' : '') + '">' + d.t + ' (' + cuenta[sec] + ')</div>';
+          ultima = sec;
+        }
+        html += _rmFila(o.it, o.ix, ++k);
+      });
+      list.innerHTML = vis.length ? html : '<div class="rm-empty">El Mapa Sanitario no tiene personas registradas.</div>';
       document.getElementById('rm-go').style.display = _rmItems.length ? '' : 'none';
       rmFiltrar();
     }
 
-    function _rmFila(it, ix) {
+    // Ir directo a la persona a corregir (sin buscarla en todo el catálogo)
+    function rmCorregir(ix) {
+      const it = _rmItems[ix];
+      if (!it) return;
+      let vivId = it.match && it.match.vivId, perId = it.match && it.match.perId;
+      if (!vivId) {
+        const v = getCatalogo().find(x => String(x.vivienda) === it.numViv);
+        if (v) { vivId = v.id; const p = (v.personas || []).find(x => _rmNorm(x.nombre) === _rmNorm(it.nombre)); perId = p ? p.id : ''; }
+      }
+      if (!vivId) { toast('Esta persona aún no está en el catálogo: márcala e impórtala primero', 'error', 3500); return; }
+      rmCerrar();
+      irA('screen-catalogo');
+      verFamiliaCompleta(vivId, perId || '');
+    }
+    function rmVerMapa(ix) {
+      const it = _rmItems[ix];
+      if (it) verEnMapaSanitarioDesdeCatalogo(it.numViv);
+    }
+
+    function _rmFila(it, ix, pos) {
       const accionable = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'posible' || it.estado === 'renombrada' || it.estado === 'huerfana';
       const marcada = it.estado === 'nueva' || it.estado === 'completar' || it.estado === 'renombrada';
       const b = [];
@@ -14000,16 +14122,20 @@ Notas (Acciones ya escritas): ${accion || '—'}
       if (it.estado === 'huerfana') b.push('<span class="rm-b no">🗑️ ' + _rmEsc(it.motivo) + ' · márcala para eliminarla de RD</span>');
       if (it.sexo === 'F') b.push('<span class="rm-b ok">♀ Femenino</span>');
       else if (it.sexo === 'M') b.push('<span class="rm-b ok">♂ Masculino</span>');
-      else if (it.estado !== 'huerfana') b.push('<span class="rm-b warn">Sin sexo en el Mapa</span>');
+      else if (it.estado !== 'huerfana') b.push('<span class="rm-b warn">⚠ Falta el sexo</span>');
+      if (_rmSinEdad(it)) b.push('<span class="rm-b warn">⚠ Falta la edad / fecha de nacimiento</span>');
       const edad = it.nac ? calcularEdadTexto(it.nac) : (it.mp.edad || '');
       const meta = 'Viv. ' + _rmEsc(it.numViv) + (edad ? ' · ' + _rmEsc(edad) : '') +
         (it.nac ? ' · nac. ' + it.nac.split('-').reverse().join('/') : '');
       return '<div class="rm-row' + (accionable ? '' : ' dis') + '" data-ix="' + ix + '" data-q="' + _rmEsc(_rmNorm(it.nombre) + ' ' + _rmNorm(it.numViv)) + '">' +
-        '<span class="rm-n">' + (ix + 1) + '</span>' +
+        '<span class="rm-n">' + (pos || ix + 1) + '</span>' +
         '<input type="checkbox" class="rm-chk" ' + (marcada ? 'checked' : '') + ' ' + (accionable ? '' : 'disabled') + ' onchange="rmConteo()">' +
         '<div class="rm-main"><div class="rm-name">' + _rmEsc(it.nombre) + '</div>' +
         '<div class="rm-meta">' + meta + '</div>' +
-        '<div class="rm-badges">' + b.join('') + '</div></div></div>';
+        '<div class="rm-badges">' + b.join('') + '</div>' +
+        (_rmSeccion(it) === 'corregir' ? '<div class="rm-acts"><button type="button" class="rm-fix" onclick="rmCorregir(' + ix + ')">🏠 Corregir en catálogo</button>' +
+          (it.numViv ? '<button type="button" class="rm-fix" onclick="rmVerMapa(' + ix + ')">🗺️ Ver en Mapa</button>' : '') + '</div>' : '') +
+        '</div></div>';
     }
 
     function rmConteo() {
@@ -14022,6 +14148,11 @@ Notas (Acciones ya escritas): ${accion || '—'}
       const q = _rmNorm(document.getElementById('rm-buscar').value);
       document.querySelectorAll('#rm-list .rm-row').forEach(r => {
         r.style.display = (!q || (r.dataset.q || '').indexOf(q) > -1) ? '' : 'none';
+      });
+      document.querySelectorAll('#rm-list .rm-sec').forEach(h => {
+        let e = h.nextElementSibling, hay = false;
+        while (e && !e.classList.contains('rm-sec')) { if (e.style.display !== 'none') hay = true; e = e.nextElementSibling; }
+        h.style.display = hay ? '' : 'none';
       });
       rmConteo();
     }
@@ -14065,6 +14196,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
           if (it.sexo && !p.sexo) { p.sexo = it.sexo; cambio = true; }
           if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; cambio = true; }
           if (!p.origenMapa && it.mp.id) p.origenMapa = it.mp.id;
+          if (_rmActividad(p, it)) cambio = true;
           if (cambio) { viv.actualizadoEn = ts; completadas++; } else omitidas++;
         } else if (it.estado === 'nueva' || it.estado === 'posible') {
           let viv = cat.find(v => String(v.vivienda) === it.numViv);
@@ -14081,7 +14213,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
             edad: it.nac ? (micatCalcEdadSV(it.nac) || '') : (it.mp.edad || ''),
             fnac: it.nac || '',
             sexo: it.sexo,
-            origenMapa: it.mp.id || ''
+            origenMapa: it.mp.id || '',
+            ...(it.inactivo ? { inactivo: true, inactivoDesde: it.inactivoDesde } : {})
           });
           viv.actualizadoEn = ts; // marca la vivienda como modificada para la sincronización
           nuevas++;
@@ -14122,18 +14255,25 @@ Notas (Acciones ya escritas): ${accion || '—'}
       for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
       return s.length + ':' + (h >>> 0);
     }
-    function _sisPobAviso(msg) {
-      try {
-        let d = document.getElementById('sis-pob-aviso');
-        if (!d) {
-          d = document.createElement('div'); d.id = 'sis-pob-aviso';
-          d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:99999;max-width:90%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
-          document.body.appendChild(d);
+    function _sisPobAviso(msg, accion) {
+          try {
+            let d = document.getElementById('sis-pob-aviso');
+            if (!d) {
+              d = document.createElement('div'); d.id = 'sis-pob-aviso';
+              d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1a2e3a;color:#fff;padding:11px 18px;border-radius:18px;font-size:13px;line-height:1.4;z-index:99999;max-width:92%;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+              document.body.appendChild(d);
+            }
+            d.textContent = msg;
+            if (accion && accion.fn) {
+              const b = document.createElement('button'); b.type = 'button'; b.textContent = accion.texto || 'Ver lista';
+              b.style.cssText = 'display:block;margin:8px auto 0;background:#fff;color:#1a2e3a;border:none;border-radius:14px;padding:7px 16px;font-weight:700;font-size:13px;cursor:pointer';
+              b.onclick = () => { d.style.display = 'none'; accion.fn(); };
+              d.appendChild(b);
+            }
+            d.style.display = 'block';
+            clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, accion ? 14000 : 5200);
+          } catch (e) {}
         }
-        d.textContent = msg; d.style.display = 'block';
-        clearTimeout(d._t); d._t = setTimeout(() => { d.style.display = 'none'; }, 5200);
-      } catch (e) {}
-    }
 
     function rmAutoImportar() {
       try {
@@ -14146,6 +14286,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
         const cat = getCatalogo();
         const ts = new Date().toISOString();
         let nuevas = 0, completadas = 0, vivNuevas = 0, revisar = 0;
+        const listaFalta = [];
+        items.filter(it => _rmSeccion(it) === 'corregir').forEach(it => {
+          const f = [];
+          if (it.estado === 'conflicto') f.push('sexo distinto'); else if (_rmSinSexo(it)) f.push('sin sexo');
+          if (_rmSinEdad(it)) f.push('sin edad');
+          listaFalta.push(it.nombre + ' (' + f.join(', ') + ')');
+        });
         const vinculadas = _rmVincular(items, cat, ts);
         items.forEach(it => {
           if (it.estado === 'completar') {
@@ -14156,6 +14303,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
             if (it.sexo && !p.sexo) { p.sexo = it.sexo; cambio = true; }
             if (it.nac && !p.fnac) { p.fnac = it.nac; p.edad = micatCalcEdadSV(it.nac) || p.edad || ''; cambio = true; }
             if (!p.origenMapa && it.mp.id) p.origenMapa = it.mp.id;
+            if (_rmActividad(p, it)) cambio = true;
             if (cambio) { viv.actualizadoEn = ts; completadas++; }
           } else if (it.estado === 'nueva') {
             let viv = cat.find(v => String(v.vivienda) === it.numViv);
@@ -14165,7 +14313,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
             viv.personas.push({
               id: 'per_' + _rmId(), nombre: it.nombre,
               edad: it.nac ? (micatCalcEdadSV(it.nac) || '') : (it.mp.edad || ''),
-              fnac: it.nac || '', sexo: it.sexo, origenMapa: it.mp.id || ''
+              fnac: it.nac || '', sexo: it.sexo, origenMapa: it.mp.id || '',
+              ...(it.inactivo ? { inactivo: true, inactivoDesde: it.inactivoDesde } : {})
             });
             viv.actualizadoEn = ts; nuevas++;
           } else if (it.estado === 'posible' || it.estado === 'conflicto' || it.estado === 'renombrada' || it.estado === 'huerfana') revisar++;
@@ -14175,13 +14324,16 @@ Notas (Acciones ya escritas): ${accion || '—'}
           try { renderCatalogo(); } catch (e) {}
         }
         localStorage.setItem('sis_pob_aplicada_rd', huella);
-        if (nuevas || completadas || revisar) {
+        if (nuevas || completadas || revisar || listaFalta.length) {
           const partes = [];
           if (nuevas) partes.push(nuevas + ' persona(s) nueva(s)');
           if (completadas) partes.push(completadas + ' completada(s)');
           if (vivNuevas) partes.push(vivNuevas + ' vivienda(s) nueva(s)');
-          if (revisar) partes.push(revisar + ' por revisar (Importar → Mapa Sanitario)');
-          toast('👥 Población base: ' + partes.join(' · '), 'success', 5200);
+          if (revisar) partes.push(revisar + ' por revisar');
+          if (listaFalta.length) partes.push(listaFalta.length + ' por corregir');
+          let msg = '👥 Población base: ' + partes.join(' · ');
+          if (listaFalta.length) msg += '\n' + listaFalta.slice(0, 4).join(', ') + (listaFalta.length > 4 ? ' y ' + (listaFalta.length - 4) + ' más' : '');
+          _sisPobAviso(msg, (listaFalta.length || revisar) ? { texto: 'Ver quiénes son', fn: () => rmAbrir(listaFalta.length ? 'corregir' : 'revisar') } : null);
         }
       } catch (e) { console.warn('[Población base] Registro Diario:', e); }
     }
@@ -14197,8 +14349,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
         return;
       }
       cont.innerHTML = lista.map(viv => {
-        const primer = (viv.personas && viv.personas.length) ? viv.personas[0].nombre : null;
-        const total  = viv.personas ? viv.personas.length : 0;
+        const _pa = (viv.personas || []).filter(p => !p.inactivo);
+        const primer = _pa.length ? _pa[0].nombre : null;
+        const total  = _pa.length;
         return `
         <div class="mlv-row">
           <div class="mlv-num">${viv.vivienda}</div>
@@ -14260,8 +14413,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
         return String(a.vivienda).localeCompare(String(b.vivienda));
       });
       const filas = sorted.map(viv => {
-        const primer = (viv.personas && viv.personas.length) ? viv.personas[0].nombre : '—';
-        const total  = viv.personas ? viv.personas.length : 0;
+        const _pa = (viv.personas || []).filter(p => !p.inactivo);
+        const primer = _pa.length ? _pa[0].nombre : '—';
+        const total  = _pa.length;
         return `<tr>
           <td style="text-align:center;font-weight:700;padding:.4rem .7rem;border:1px solid #cde">${viv.vivienda}</td>
           <td style="padding:.4rem .7rem;border:1px solid #cde">${primer}</td>
@@ -14486,7 +14640,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       abrirModalImportarCat, cerrarModalImportarCat, micatVolverPaso1,
       micatOnDrop, micatLeerArchivo, micatConfirmarImport, micatDescargarPlantilla,
       // Importar catálogo desde el Mapa Sanitario (con sexo)
-      rmAbrir, rmCerrar, rmFiltrar, rmMarcar, rmConteo, rmImportar,
+      rmAbrir, rmCerrar, rmFiltrar, rmMarcar, rmConteo, rmImportar, rmFiltroSet, rmCorregir, rmVerMapa,
       // Selector de paciente
       abrirSelectorPac, cerrarSelectorPac, renderSelectorPac,
       seleccionarPaciente, seleccionarSinCatalogo, limpiarPacSeleccionado, _buscarVisitaDuplicada,
@@ -14505,7 +14659,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       _ctrlAbrirFirma, _ctrlCerrarFirma, _ctrlLimpiarFirma, _ctrlGuardarFirma, _ctrlEliminarEntrada,
       // Seguimiento por grupos etarios
       _geBuscarCambio, _geBuscarLimpiar, _ctrlBuscarCambio, _ctrlBuscarLimpiar,
-      _geCambiarPeriodo, _geSeleccionarGrupo, _geRender, _geToggleFechas, _geAbrirFamilia,
+      _geCambiarPeriodo, _geSeleccionarGrupo, _geAlertaCorregir, _geRender, _geToggleFechas, _geAbrirFamilia,
       _geAbrirVincular, _geCerrarVincular, _geVincular
     });
 
@@ -15162,7 +15316,7 @@ function _rtBuscarViv(num) {
 }
 function _rtJefe(row) {
   var viv = _rtBuscarViv(row.vivienda);
-  var pers = (viv && viv.personas) || [];
+  var pers = ((viv && viv.personas) || []).filter(function (x) { return !x.inactivo; });
   if (!pers.length) return { nombre: row.jefeNombre || '', id: '', personas: [] };
   var p = pers.find(function (x) { return x.id === row.jefeId; }) || pers[0];
   return { nombre: p.nombre || '', id: p.id, personas: pers };
@@ -15346,7 +15500,7 @@ function _rtMostrarFamilia() {
   var cont = document.getElementById('rt-nueva-fam');
   if (!cont) return;
   var viv = _rtBuscarViv(document.getElementById('rt-nueva-viv').value);
-  var pers = ((viv && viv.personas) || []).filter(function (p) { return p && p.nombre; });
+  var pers = ((viv && viv.personas) || []).filter(function (p) { return p && p.nombre && !p.inactivo; });
   if (!pers.length) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
   cont.innerHTML = '<label style="display:block;font-weight:700;font-size:.8rem;margin:.1rem 0 .3rem">Integrantes de la familia — elige el nombre para la ruta</label>' +
     pers.map(function (p, i) {
@@ -15642,7 +15796,7 @@ function _sgCalcular() {
   var personas = [], sinEdad = 0, sinSexo = 0;
   cat.forEach(function (v) {
     (v.personas || []).forEach(function (p) {
-      if (!p || !String(p.nombre || '').trim()) return;
+      if (!p || !String(p.nombre || '').trim() || p.inactivo) return;
       var fn = _sgFnac(p.fnac), meses = fn ? _sgMesesDesde(fn, hoyIso) : null, aprox = false;
       if (meses == null) { meses = _sgMesesDeTexto(p.edad); aprox = meses != null; }
       if (meses == null) { sinEdad++; return; }
@@ -15664,7 +15818,7 @@ function _sgCalcular() {
   var anio = hoyIso.slice(0, 4), casas = [];
   cat.forEach(function (v) {
     var d = idx.porViv[_sgNorm(v.vivienda)] || { total: 0, anio: 0, ultima: '' };
-    var pers = (v.personas || []).filter(function (p) { return p && String(p.nombre || '').trim(); });
+    var pers = (v.personas || []).filter(function (p) { return p && !p.inactivo && String(p.nombre || '').trim(); });
     casas.push({ id: v.id, vivienda: v.vivienda, jefe: pers.length ? String(pers[0].nombre).trim() : '', integrantes: pers.length,
       total: d.total, anio: d.anio, ultima: d.ultima });
   });
