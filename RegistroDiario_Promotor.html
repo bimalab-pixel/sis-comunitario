@@ -15425,8 +15425,8 @@ function _rtYaVisitada(r) {
 function _rtBtnVisita(r, id) {
   var hecha = _rtYaVisitada(r);
   var j = _rtJefe(r), dup;
-  if (_rtIdxVis) dup = !!_rtIdxVis.per[hoy() + '|' + String(r.vivienda || '').trim().toLowerCase() + '|' + String(j.nombre || '').trim().toLowerCase()];
-  else dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(hoy(), r.vivienda, j.nombre) : null;
+  if (_rtIdxVis) dup = !!_rtIdxVis.per[r.fecha + '|' + String(r.vivienda || '').trim().toLowerCase() + '|' + String(j.nombre || '').trim().toLowerCase()];
+  else dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(r.fecha, r.vivienda, j.nombre) : null;
   return '<button type="button" class="rt-btn rt-btn-main" style="padding:.4rem .5rem;font-size:.76rem;line-height:1.2" onclick="_rtVisitar(\'' + id + '\')">' + (dup ? '✏️ Editar visita' : '📝 Registrar visita') + '</button>' +
     (hecha ? '<div style="font-size:.7rem;color:var(--success);font-weight:700;margin-top:.2rem">✅ Ya registrada</div>' : '');
 }
@@ -15437,6 +15437,9 @@ function _rtVisitar(id) {
   var viv = _rtBuscarViv(r.vivienda);
   if (!viv) { toast('La vivienda ' + r.vivienda + ' no está en el catálogo', 'error'); return; }
   var j = _rtJefe(r);
+  // Si la visita de esa fecha ya está registrada, abrir ESA visita para editarla
+  var ya = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(r.fecha, r.vivienda, j.nombre) : null;
+  if (ya && typeof editarRegistro === 'function') { editarRegistro(ya.id); return; }
   if (j.id && typeof atenderFamiliaPersona === 'function') atenderFamiliaPersona(viv.id, j.id);
   else if (typeof atenderFamilia === 'function') atenderFamilia(viv.id); // sin personas guardadas: abre el selector
 }
