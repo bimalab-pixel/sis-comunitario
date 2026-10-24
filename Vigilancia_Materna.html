@@ -1222,6 +1222,21 @@
 .pro-delete { background: rgb(43, 35, 35); color: #e53935; border: 2px solid #ffcdd2; }
 .pro-back { grid-column: span 2; background: #f5f5f5; color: #546e7a; margin-top: 5px; }
 
+
+/* --- BUSCADOR DE MUJERES DEL MAPA SANITARIO --- */
+.btn-buscar-mapa { width:100%; background:linear-gradient(135deg,#1565c0,#0d47a1); color:#fff; border:none; padding:13px 12px; border-radius:10px; font-weight:bold; font-size:1em; cursor:pointer; margin-bottom:14px; box-shadow:0 3px 8px rgba(13,71,161,.3); }
+.btn-buscar-mapa:active { transform:scale(.98); }
+#modal-buscar-mapa .modal-content { max-width:440px; text-align:left; padding:18px; max-height:88vh; display:flex; flex-direction:column; }
+#modal-buscar-mapa .modal-titulo { color:#1565c0; margin-bottom:6px; font-size:1.2em; }
+#buscar-mapa-input { width:100%; box-sizing:border-box; padding:11px; font-size:1em; border:2px solid #90caf9; border-radius:8px; margin:8px 0; }
+#buscar-mapa-lista { overflow-y:auto; flex:1; min-height:120px; margin-bottom:10px; }
+.bm-item { padding:10px 12px; border:1px solid #e0e0e0; border-radius:10px; margin-bottom:8px; background:#fafafa; cursor:pointer; }
+.bm-item:active { background:#e3f2fd; }
+.bm-nombre { font-weight:bold; color:#263238; }
+.bm-detalle { font-size:.85em; color:#607d8b; margin-top:3px; }
+.bm-ya { display:inline-block; background:#fff3e0; color:#e65100; border-radius:6px; padding:1px 6px; font-size:.78em; font-weight:bold; margin-left:6px; }
+.bm-vacio { text-align:center; color:#78909c; padding:20px 8px; font-size:.95em; }
+
 /* --- ESTILOS PARA LA VENTANA DE CONFIRMACIÓN DE PARTO --- */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -1506,6 +1521,7 @@
 
         <div id="form-embarazada" class="sub-section form-ocultable">
             <form id="registro-form-embarazada">
+                <button type="button" class="btn-buscar-mapa" onclick="abrirBuscadorMapa('emb')">🔎 Buscar en Mapa Sanitario (adolescentes y MEF)</button>
                 <label for="nombre-emb">Nombre de la Paciente:</label>
                 <input type="text" id="nombre-emb" required placeholder="Ej: Juana Pérez">
                 <label for="expediente-emb">Número de Expediente (Opcional):</label>
@@ -1609,6 +1625,7 @@
 
         <div id="form-puerpera" class="sub-section form-ocultable">
             <form id="registro-form-puerpera">
+                <button type="button" class="btn-buscar-mapa" onclick="abrirBuscadorMapa('puerp')">🔎 Buscar en Mapa Sanitario (adolescentes y MEF)</button>
                 <label for="nombre-puerp">Nombre de la Paciente:</label>
                 <input type="text" id="nombre-puerp" required placeholder="Ej: Ana Gómez">
                 <label for="expediente-puerp">Número de Expediente (Opcional):</label>
@@ -1735,6 +1752,16 @@
     </div>
 </div>
 
+
+<div id="modal-buscar-mapa" class="modal-overlay">
+    <div class="modal-content">
+        <h3 class="modal-titulo">🔎 Buscar en Mapa Sanitario</h3>
+        <div style="font-size:.85em;color:#607d8b;">Adolescentes mujeres (12 a 17 años) y mujeres en edad fértil (18 a 49 años). Toca una para traer su nombre y fecha de nacimiento.</div>
+        <input type="search" id="buscar-mapa-input" placeholder="Escribe el nombre o el N° de vivienda" autocomplete="off" oninput="filtrarBuscadorMapa()">
+        <div id="buscar-mapa-lista"></div>
+        <button type="button" class="btn-modal-cancel" onclick="cerrarBuscadorMapa()" style="width:100%;padding:12px;">❌ Cerrar</button>
+    </div>
+</div>
 
 <div id="modal-parto" class="modal-overlay">
     <div class="modal-content">
@@ -2563,6 +2590,93 @@ function importarDatos(event) {
         } else if (id === 'mapa-zona') {
             abrirMapaZona();
         }
+    }
+
+    // ── BUSCADOR: mujeres del catálogo de Mapa Sanitario (mismo localStorage) ──
+    // Solo mujeres activas, de viviendas habitadas, con fecha de nacimiento, de 12 a 49 años
+    // (adolescentes femeninas 12-17 + mujeres en edad fértil 18-49, igual que Mapa Sanitario).
+    let _bmTipo = 'emb';
+    let _bmTodas = [];
+    let _bmVista = [];
+
+    function _bmMeses(fnac) {
+        const f = new Date(fnac + 'T00:00:00');
+        if (isNaN(f)) return null;
+        const h = new Date();
+        if (f > h) return null;
+        let m = (h.getFullYear() - f.getFullYear()) * 12 + (h.getMonth() - f.getMonth());
+        if (h.getDate() < f.getDate()) m--;
+        return Math.max(0, m);
+    }
+    function _bmEsc(t) {
+        return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function _bmCargar() {
+        let cat = [];
+        try { cat = JSON.parse(localStorage.getItem('mapa_san_catalogo') || '[]'); } catch (e) { cat = []; }
+        if (!Array.isArray(cat)) cat = [];
+        const yaRegistradas = new Set();
+        ['embarazadas', 'puerperas'].forEach(k => {
+            try { (JSON.parse(localStorage.getItem(k) || '[]') || []).forEach(x => yaRegistradas.add(_rdNorm(x && x.nombre))); } catch (e) {}
+        });
+        const lista = [];
+        cat.forEach(v => {
+            if (!v || v.deshabitada) return;
+            (v.personas || []).forEach(p => {
+                if (!p || p.inactivo || p.sexo !== 'F' || !p.fnac || !p.nombre) return;
+                const m = _bmMeses(p.fnac);
+                if (m === null || m < 144 || m >= 600) return;
+                lista.push({
+                    nombre: p.nombre, fnac: p.fnac, anios: Math.floor(m / 12),
+                    viv: v.vivienda, ya: yaRegistradas.has(_rdNorm(p.nombre)), _n: _rdNorm(p.nombre)
+                });
+            });
+        });
+        lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+        return lista;
+    }
+    function abrirBuscadorMapa(tipo) {
+        _bmTipo = tipo;
+        _bmTodas = _bmCargar();
+        document.getElementById('buscar-mapa-input').value = '';
+        filtrarBuscadorMapa();
+        document.getElementById('modal-buscar-mapa').style.display = 'flex';
+    }
+    function cerrarBuscadorMapa() {
+        document.getElementById('modal-buscar-mapa').style.display = 'none';
+    }
+    function filtrarBuscadorMapa() {
+        const cont = document.getElementById('buscar-mapa-lista');
+        if (!_bmTodas.length) {
+            _bmVista = [];
+            cont.innerHTML = '<div class="bm-vacio">No hay mujeres cargadas desde Mapa Sanitario en este dispositivo.<br>Abre Mapa Sanitario y carga o sincroniza la población primero.</div>';
+            return;
+        }
+        const q = _rdNorm(document.getElementById('buscar-mapa-input').value);
+        const palabras = q ? q.split(' ') : [];
+        _bmVista = _bmTodas.filter(x => palabras.every(w => x._n.includes(w) || String(x.viv).toLowerCase() === w));
+        if (!_bmVista.length) {
+            cont.innerHTML = '<div class="bm-vacio">No se encontró ninguna mujer con ese nombre.</div>';
+            return;
+        }
+        const MAX = 60;
+        let html = _bmVista.slice(0, MAX).map((x, i) => {
+            const [y, m, d] = x.fnac.split('-');
+            return '<div class="bm-item" onclick="seleccionarDeMapa(' + i + ')">' +
+                '<div class="bm-nombre">' + _bmEsc(x.nombre) + (x.ya ? '<span class="bm-ya">Ya registrada</span>' : '') + '</div>' +
+                '<div class="bm-detalle">🎂 ' + x.anios + ' años · Nac. ' + d + '/' + m + '/' + y + ' · 🏠 Viv. ' + _bmEsc(x.viv) + '</div></div>';
+        }).join('');
+        if (_bmVista.length > MAX) html += '<div class="bm-vacio">Mostrando ' + MAX + ' de ' + _bmVista.length + '. Escribe más letras para acotar.</div>';
+        cont.innerHTML = html;
+    }
+    function seleccionarDeMapa(i) {
+        const x = _bmVista[i];
+        if (!x) return;
+        const n = document.getElementById('nombre-' + _bmTipo);
+        const f = document.getElementById('fn-' + _bmTipo);
+        if (n) { n.value = x.nombre; n.dispatchEvent(new Event('input', { bubbles: true })); }
+        if (f) { f.value = x.fnac; f.dispatchEvent(new Event('change', { bubbles: true })); }
+        cerrarBuscadorMapa();
     }
 
     function mostrarRegistroSub(id) {
