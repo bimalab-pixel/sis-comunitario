@@ -15,6 +15,7 @@ const PRECACHE_URLS = [
   './RegistroDiario_Promotor.html',
   './MapaSanitario.html',
   './CurvasdeCrecimiento.html',
+  './sisc-estado.js',
   './storage-shim.js'
 ];
 
