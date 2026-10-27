@@ -2617,9 +2617,9 @@
         <div class="rep-card">
             <div class="rep-card-body">
                 <div class="f-group"><label>Fecha de la visita</label><input type="date" id="rt-nueva-fecha"/></div>
-                <div class="f-group" style="margin-top:.5rem"><label>N° de vivienda</label>
+                <div class="f-group" style="margin-top:.5rem"><label>N° de vivienda o nombre</label>
                     <div class="rt-sug-wrap">
-                        <input type="text" id="rt-nueva-viv" placeholder="Escribe o elige el número…" autocomplete="off" inputmode="text" oninput="_rtSugerir();_rtMostrarFamilia()" onfocus="_rtSugerir()" onblur="setTimeout(_rtCerrarSug,150)" onkeydown="if(event.key==='Enter'){event.preventDefault();_rtCerrarSug();_rtAgregar();}"/>
+                        <input type="text" id="rt-nueva-viv" placeholder="N° de vivienda o nombre…" autocomplete="off" inputmode="text" oninput="_rtOnInput()" onfocus="_rtOnFoco()" onblur="setTimeout(_rtCerrarSug,150)" onkeydown="if(event.key==='Enter'){event.preventDefault();_rtCerrarSug();_rtAgregar();}"/>
                         <div id="rt-viv-sug" class="rt-sug" style="display:none"></div>
                     </div>
                 </div>
@@ -2628,6 +2628,10 @@
                     <button type="button" class="rt-btn rt-btn-main" onclick="_rtAgregar()">➕ Agregar a la ruta</button>
                     <button type="button" class="rt-btn" id="rt-btn-traer" onclick="_rtTraerDeRegistros()">📥 Traer viviendas visitadas ese día</button>
                 </div>
+                <label style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:.8rem;font-weight:600;cursor:pointer">
+                    <input type="checkbox" id="rt-autollenar" onchange="try{localStorage.setItem('rdps_rt_autollenar',this.checked?'1':'0')}catch(e){}"/>
+                    <span>Autollenar Lugar y Actividad al traer (si lo desmarcas, quedan vacíos para escribirlos tú)</span>
+                </label>
             </div>
         </div>
 
@@ -15232,6 +15236,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
 .rt-sug-item{padding:.65rem .9rem;font-size:1rem;cursor:pointer;border-bottom:1px solid var(--light2)}
 .rt-sug-item:last-child{border-bottom:none}
 .rt-sug-item:active{background:rgba(0,184,148,.15)}
+.rt-sug-h{position:sticky;top:0;background:var(--light2);color:var(--muted);font-size:.64rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:.3rem .9rem}
+.rt-sug-sub{display:block;font-size:.72rem;color:var(--muted);font-weight:600;margin-top:1px}
 .rt-sug-vacio{padding:.65rem .9rem;color:var(--muted);font-size:.9rem}
 .rt-tabla-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
 .rt-tabla{border-collapse:collapse;width:100%;min-width:720px;font-size:.8rem}
@@ -15324,6 +15330,8 @@ function _rtJefe(row) {
   return { nombre: p.nombre || '', id: p.id, personas: pers };
 }
 function _rtIniciar() {
+  try { var _c = document.getElementById('rt-autollenar'); if (_c) _c.checked = localStorage.getItem('rdps_rt_autollenar') !== '0'; } catch (e) {}
+  _rtIdx = null; _rtFamClave = null;
   var h = hoy();
   if (!document.getElementById('rt-p-dia').value) document.getElementById('rt-p-dia').value = h;
   if (!document.getElementById('rt-p-mes').value) document.getElementById('rt-p-mes').value = h.slice(0, 7);
@@ -15476,41 +15484,119 @@ function _rtNuevaFila(fecha, viv, personaId) {
   return { id: 'rt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), fecha: fecha, vivienda: String(viv.vivienda),
            jefeId: j.id, jefeNombre: j.nombre, lugar: '', actividad: '', orden: _rtSigOrden(), actualizadoEn: new Date().toISOString() };
 }
-// Al escribir/elegir el N° de vivienda: mostrar los integrantes para escoger el nombre que irá en la ruta
-// Lista propia de sugerencias de N° de vivienda (reemplaza el datalist nativo, que se veía mal en Android)
+// ── Buscador de la ruta: por N° de vivienda O por nombre del catálogo ──
+// Ligero: índice en memoria (se arma 1 vez al enfocar, no por tecla), sin tildes/mayúsculas,
+// espera 130 ms tras dejar de escribir, máx. 30 filas en pantalla y un solo listener (delegación).
+var _rtIdx = null, _rtSugT = null, _rtPersonaSel = '', _rtFamClave = null, _rtSugToque = 0, _rtSugXY = null, _rtSugListo = false;
+function _rtNorm(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+function _rtConstruirIdx() {
+  var cat = getCatalogo(), idx = { viv: [], per: [], mapa: {} };
+  cat.forEach(function (v) {
+    var n = String(v.vivienda == null ? '' : v.vivienda).trim();
+    if (!n) return;
+    var k = n.toLowerCase();
+    if (!(k in idx.mapa)) idx.mapa[k] = v;
+    idx.viv.push({ n: n, nl: _rtNorm(n) });
+    ((v.personas) || []).forEach(function (p) {
+      if (!p || !p.nombre || p.inactivo) return;
+      idx.per.push({ id: p.id, nombre: String(p.nombre), nl: _rtNorm(p.nombre), viv: n, edad: p.edad });
+    });
+  });
+  idx.viv.sort(function (a, b) { return _rtCmpViv(a.n, b.n); });
+  _rtIdx = idx;
+  return idx;
+}
+function _rtOnFoco() { _rtConstruirIdx(); _rtSugerir(); }
+function _rtOnInput() {
+  _rtPersonaSel = ''; // si escribe a mano, vuelve a elegir de la familia
+  clearTimeout(_rtSugT);
+  _rtSugT = setTimeout(function () { _rtSugerir(); _rtMostrarFamilia(); }, 130);
+}
 function _rtSugerir() {
   var box = document.getElementById('rt-viv-sug'), inp = document.getElementById('rt-nueva-viv');
   if (!box || !inp) return;
-  var q = inp.value.trim().toLowerCase();
-  var todas = getCatalogo().map(function (v) { return String(v.vivienda); }).sort(_rtCmpViv);
-  var lista = !q ? todas : todas.filter(function (n) { return n.toLowerCase().indexOf(q) === 0; })
-    .concat(todas.filter(function (n) { var l = n.toLowerCase(); return l.indexOf(q) > 0; }));
-  if (lista.length === 1 && lista[0].toLowerCase() === q) { box.style.display = 'none'; return; } // ya escribió el número exacto
-  box.innerHTML = lista.length
-    ? lista.slice(0, 200).map(function (n) {
-        return '<div class="rt-sug-item" data-n="' + _hpEsc(n) + '" onmousedown="event.preventDefault();_rtElegirViv(this.dataset.n)" ontouchstart="_rtSugToque=Date.now()" ontouchend="if(Date.now()-_rtSugToque<400){event.preventDefault();_rtElegirViv(this.dataset.n)}">' + _hpEsc(n) + '</div>';
-      }).join('')
-    : '<div class="rt-sug-vacio">Esa vivienda no está en el catálogo</div>';
+  var idx = _rtIdx || _rtConstruirIdx();
+  if (!_rtSugListo) { _rtSugListo = true; _rtSugEventos(box); }
+  var q = _rtNorm(inp.value), MAXV = 8, MAXP = 22, html = '';
+  var vivs = [], pers = [];
+  if (!q) {
+    vivs = idx.viv.slice(0, 30);
+  } else {
+    var pre = [], con = [], i, x;
+    for (i = 0; i < idx.viv.length && pre.length < MAXV; i++) {
+      x = idx.viv[i];
+      if (x.nl.indexOf(q) === 0) pre.push(x);
+    }
+    if (pre.length < MAXV) for (i = 0; i < idx.viv.length && pre.length + con.length < MAXV; i++) {
+      x = idx.viv[i];
+      if (x.nl.indexOf(q) > 0) con.push(x);
+    }
+    vivs = pre.concat(con);
+    var toks = q.split(' '), ini = [], ctn = [];
+    for (i = 0; i < idx.per.length && ini.length + ctn.length < MAXP * 3; i++) {
+      x = idx.per[i];
+      var ok = true, empieza = true;
+      for (var t = 0; t < toks.length; t++) {
+        var pos = x.nl.indexOf(toks[t]);
+        if (pos < 0) { ok = false; break; }
+        if (!(pos === 0 || x.nl.charAt(pos - 1) === ' ')) empieza = false;
+      }
+      if (ok) (empieza ? ini : ctn).push(x);
+    }
+    pers = ini.concat(ctn).slice(0, MAXP);
+  }
+  var soloNum = /\d/.test(q); // con dígitos: primero viviendas; con letras: primero nombres
+  if (vivs.length === 1 && !pers.length && vivs[0].nl === q) { box.style.display = 'none'; return; } // número exacto ya escrito
+  var hV = function () { return vivs.length ? '<div class="rt-sug-h">Viviendas</div>' + vivs.map(function (v) {
+      return '<div class="rt-sug-item" data-v="' + _hpEsc(v.n) + '">Viv. ' + _hpEsc(v.n) + '</div>'; }).join('') : ''; };
+  var hP = function () { return pers.length ? '<div class="rt-sug-h">Personas</div>' + pers.map(function (p) {
+      var ed = (p.edad !== undefined && p.edad !== null && p.edad !== '') ? ' · ' + _hpEsc(String(p.edad)) : '';
+      return '<div class="rt-sug-item" data-v="' + _hpEsc(p.viv) + '" data-p="' + _hpEsc(String(p.id)) + '">' + _hpEsc(p.nombre) +
+        '<span class="rt-sug-sub">Viv. ' + _hpEsc(p.viv) + ed + '</span></div>'; }).join('') : ''; };
+  html = soloNum || !q ? hV() + hP() : hP() + hV();
+  box.innerHTML = html || '<div class="rt-sug-vacio">No hay coincidencias en el catálogo</div>';
+  box.scrollTop = 0;
   box.style.display = '';
 }
-var _rtSugToque = 0;
+function _rtSugEventos(box) {
+  var elegir = function (e) {
+    var it = e.target.closest ? e.target.closest('.rt-sug-item') : null;
+    if (it) _rtElegirViv(it.getAttribute('data-v'), it.getAttribute('data-p') || '');
+  };
+  box.addEventListener('mousedown', function (e) { e.preventDefault(); elegir(e); });
+  box.addEventListener('touchstart', function (e) { var t = e.touches[0]; _rtSugXY = [t.clientX, t.clientY]; _rtSugToque = Date.now(); }, { passive: true });
+  box.addEventListener('touchend', function (e) {
+    var t = e.changedTouches[0];
+    if (_rtSugXY && Date.now() - _rtSugToque < 400 && Math.abs(t.clientX - _rtSugXY[0]) < 10 && Math.abs(t.clientY - _rtSugXY[1]) < 10) { e.preventDefault(); elegir(e); }
+  });
+}
 function _rtCerrarSug() { var b = document.getElementById('rt-viv-sug'); if (b) b.style.display = 'none'; }
-function _rtElegirViv(n) {
-  var inp = document.getElementById('rt-nueva-viv');
-  inp.value = n;
+function _rtElegirViv(n, personaId) {
+  clearTimeout(_rtSugT);
+  _rtPersonaSel = personaId || '';
+  document.getElementById('rt-nueva-viv').value = n;
   _rtCerrarSug();
+  _rtFamClave = null;
   _rtMostrarFamilia();
 }
+// Muestra los integrantes de la vivienda para escoger el nombre que irá en la ruta
 function _rtMostrarFamilia() {
   var cont = document.getElementById('rt-nueva-fam');
   if (!cont) return;
-  var viv = _rtBuscarViv(document.getElementById('rt-nueva-viv').value);
+  var idx = _rtIdx || _rtConstruirIdx();
+  var clave = document.getElementById('rt-nueva-viv').value.trim().toLowerCase();
+  var viv = clave ? idx.mapa[clave] : null;
   var pers = ((viv && viv.personas) || []).filter(function (p) { return p && p.nombre && !p.inactivo; });
-  if (!pers.length) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
+  if (!pers.length) { cont.style.display = 'none'; cont.innerHTML = ''; _rtFamClave = null; return; }
+  var ck = clave + '|' + _rtPersonaSel;
+  if (ck === _rtFamClave) return; // misma familia y misma selección: no redibujar
+  _rtFamClave = ck;
+  var haySel = pers.some(function (p) { return String(p.id) === String(_rtPersonaSel); });
   cont.innerHTML = '<label style="display:block;font-weight:700;font-size:.8rem;margin:.1rem 0 .3rem">Integrantes de la familia — elige el nombre para la ruta</label>' +
     pers.map(function (p, i) {
+      var chk = haySel ? (String(p.id) === String(_rtPersonaSel)) : (i === 0);
       return '<label style="display:flex;align-items:center;gap:.5rem;padding:.4rem .2rem;cursor:pointer">' +
-        '<input type="radio" name="rt-nueva-persona" value="' + _hpEsc(p.id) + '"' + (i === 0 ? ' checked' : '') + '/>' +
+        '<input type="radio" name="rt-nueva-persona" value="' + _hpEsc(p.id) + '"' + (chk ? ' checked' : '') + '/>' +
         '<span>' + _hpEsc(p.nombre) + (p.edad !== undefined && p.edad !== '' && p.edad !== null ? ' <span style="color:var(--muted)">(' + _hpEsc(String(p.edad)) + ')</span>' : '') + '</span></label>';
     }).join('');
   cont.style.display = '';
@@ -15530,6 +15616,7 @@ function _rtAgregar() {
   a.push(_rtNuevaFila(fecha, viv, sel ? sel.value : ''));
   _rtGuardar(a);
   document.getElementById('rt-nueva-viv').value = '';
+  _rtPersonaSel = ''; _rtFamClave = null;
   _rtMostrarFamilia();
   _rtIrAFecha(fecha);
   toast('Vivienda ' + viv.vivienda + ' agregada');
@@ -15552,14 +15639,30 @@ function _rtEdadAnios(txt) {
   if (/^d[ií]a/.test(u)) return n / 365;
   return n;
 }
-// De varias personas de una misma vivienda y día: la primera atendida que sea mayor de 18 años; si no hay, la de mayor edad
+// De varias personas de una misma vivienda y día: la de mayor edad (en empate, la primera atendida); si no se entiende ninguna edad, la primera atendida
 function _rtElegirPersona(lista) {
-  var adulto = lista.find(function (x) { return x.anios > 18 || x.anios === 18; });
-  if (adulto) return adulto;
   return lista.reduce(function (mejor, x) {
     var a = isNaN(x.anios) ? -1 : x.anios, b = isNaN(mejor.anios) ? -1 : mejor.anios;
     return a > b ? x : mejor;
   }, lista[0]);
+}
+// Actividad a Realizar sugerida: resumen corto de lo que se hizo en esa vivienda ese día (Acciones; si no hay, Hallazgos). Se puede editar después.
+function _rtAutollenarOn() { var c = document.getElementById('rt-autollenar'); return c ? c.checked : true; }
+function _rtActividadAuto(g) {
+  var vistos = {}, partes = [];
+  var tomar = function (txt) {
+    String(txt || '').split(/[\n;.]+/).forEach(function (f) {
+      f = f.replace(/\s+/g, ' ').trim();
+      if (f.length < 4) return;
+      if (f.length > 80) f = f.slice(0, 77).replace(/\s+\S*$/, '') + '…';
+      var k = f.toLowerCase();
+      if (vistos[k] || partes.length >= 3) return;
+      vistos[k] = true; partes.push(f);
+    });
+  };
+  g.personas.forEach(function (p) { tomar(p.acciones); });
+  if (!partes.length) g.personas.forEach(function (p) { tomar(p.hallazgos); });
+  return partes.length ? 'Visita domiciliar: ' + partes.join('; ') : 'Visita domiciliar';
 }
 function _rtTraerInterno() {
   var v = _rtEstado.vista, filtro;
@@ -15583,7 +15686,8 @@ function _rtTraerInterno() {
     if (!r || !r.fecha || !r.vivienda || String(r.fecha).slice(0, largo) !== filtro) return;
     var k = r.fecha + '|' + norm(r.vivienda);
     if (!grupos[k]) { grupos[k] = { fecha: r.fecha, vivienda: String(r.vivienda).trim(), personas: [] }; claves.push(k); }
-    grupos[k].personas.push({ nombre: r.nombre || '', anios: _rtEdadAnios(r.edad) });
+    grupos[k].personas.push({ nombre: r.nombre || '', anios: _rtEdadAnios(r.edad), acciones: r.acciones || '', hallazgos: r.hallazgos || '' });
+    if (!grupos[k].comunidad && r.comunidad) grupos[k].comunidad = String(r.comunidad).trim();
   });
   if (!claves.length) {
     toast('No hay registros diarios con vivienda en ' + (v === 'dia' ? 'esa fecha' : (v === 'mes' ? 'ese mes' : 'ese año')), 'error');
@@ -15604,6 +15708,10 @@ function _rtTraerInterno() {
     var enCat = pers.find(function (p) { return norm(p.nombre) === norm(elegida.nombre); });
     var fila = _rtNuevaFila(g.fecha, viv, enCat ? enCat.id : '');
     if (!pers.length && elegida.nombre) fila.jefeNombre = elegida.nombre; // vivienda sin personas en el catálogo
+    if (_rtAutollenarOn()) {
+    fila.lugar = g.comunidad || ((typeof perfil !== 'undefined' && perfil && perfil.comunidad) ? String(perfil.comunidad).trim() : '');
+    fila.actividad = _rtActividadAuto(g);
+    }
     if (sinGuardar) _rtPend.push(fila); else a.push(fila);
     n++;
   });
