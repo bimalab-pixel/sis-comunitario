@@ -2636,6 +2636,9 @@
         </div>
 
         <div id="rt-pend-bar" style="display:none"></div>
+        <div class="rt-acciones" style="margin:.2rem 0 .5rem">
+            <button type="button" class="rt-btn rt-btn-main" id="rt-btn-ia" onclick="_rtRutaLocal()">✨ Crear ruta inteligente</button>
+        </div>
         <div class="rt-resumen" id="rt-resumen"></div>
         <div class="rt-tabla-wrap">
             <table class="rt-tabla">
@@ -11092,6 +11095,13 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
 
     // ── HTML DEL REPORTE OFICIAL ──
+    // "08:20" -> "8:20<br>a. m."  (dos líneas cortas: cabe en la casilla al imprimir)
+    function _horaImpresion(h) {
+      const m = /^(\d{1,2}):(\d{2})/.exec(String(h || ''));
+      if (!m) return String(h || '');
+      const hh = parseInt(m[1], 10);
+      return (hh % 12 || 12) + ':' + m[2] + '<br>' + (hh < 12 ? 'a. m.' : 'p. m.');
+    }
     function htmlReporteOficial(titulo, registrosFiltrados, subtitulo) {
       const p = perfil;
       const filas = [...registrosFiltrados];
@@ -11101,7 +11111,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         rowsHTML += `
           <tr data-id="${r.id}">
             <td class="c-fecha" data-label="Fecha">${fmtFecha(r.fecha)}</td>
-            <td class="c-hora" data-label="Hora">${/^\d{2}:\d{2}/.test(r.hora || '') ? `<input type="time" class="hora-input" value="${r.hora.slice(0,5)}" aria-label="Hora de la visita">` : (r.hora || '')}</td>
+            <td class="c-hora" data-label="Hora">${/^\d{2}:\d{2}/.test(r.hora || '') ? `<input type="time" class="hora-input" value="${r.hora.slice(0,5)}" aria-label="Hora de la visita"><span class="hora-print">${_horaImpresion(r.hora)}</span>` : (r.hora || '')}</td>
             <td class="c-viv" data-label="Vivienda">${r.vivienda || ''}</td>
             <td class="c-nombre" data-label="Nombre">${r.nombre || ''}</td>
             <td class="c-edad" data-label="Edad">${r.edad || ''}</td>
@@ -11195,6 +11205,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
     .page-body { }
     /* ══ CELDAS EDITABLES ══ */
     @media screen {
+      .hora-print { display: none; }
+      .hora-input { min-width: 0; max-width: 100%; }
+      .hora-input::-webkit-calendar-picker-indicator { display: none; }
       .hora-input { width: 100%; box-sizing: border-box; border: 1px dashed transparent; background: transparent; font: inherit; color: inherit; text-align: center; padding: 2px 0; border-radius: 4px; }
       .hora-input:hover { border-color: #0b8a72; background: rgba(11,138,114,0.06); }
       .hora-input:focus { outline: 2px solid #0b8a72; background: #fff; }
@@ -11278,7 +11291,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
     }
     @media print {
       .c-editable { cursor: default !important; }
-      .hora-input { border: none !important; background: transparent !important; outline: none !important; }
+      .hora-input { display: none !important; }
+      .hora-print { display: block !important; text-align: center; font-size: 7pt; line-height: 1.2; white-space: normal; }
       .edit-hint, .ia-toolbar, .cambios-bar { display: none !important; }
     }
 
@@ -11451,9 +11465,9 @@ Notas (Acciones ya escritas): ${accion || '—'}
       }
       .tabla tr:nth-child(even) td { background-color: #f5faf8 !important; }
       .c-fecha  { width: 16mm !important; }
-      .c-hora   { width: 12mm !important; }
+      .c-hora   { width: 14mm !important; }
       .c-viv    { width: 13mm !important; }
-      .c-nombre { width: 44mm !important; }
+      .c-nombre { width: 42mm !important; }
       .c-edad   { width: 10mm !important; }
       .c-hall   { width: auto !important; }
       .c-acc    { width: auto !important; }
@@ -13354,7 +13368,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
               <div class="msp-pico">👤</div>
               <div class="msp-pname">
                 <strong>${p.nombre}</strong>
-                <span>${edadTxt ? '🎂 ' + edadTxt : 'Sin edad'}${!modoVivFija ? ' · Viv. ' + viv.vivienda : ''}</span>
+                <span>${edadTxt ? '🎂 ' + edadTxt : 'Sin edad'}${!modoVivFija ? ' · Viv. ' + viv.vivienda : ''}${(modoVivFija && _buscarVisitaDuplicada(_modoOtraPersona.fecha, _modoOtraPersona.vivienda, p.nombre)) ? ' · ✅ Ya registrado' : ''}</span>
               </div>
               <svg class="msp-pcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
             </div>`;
@@ -15245,6 +15259,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
 .rt-tabla td{border-top:1px solid var(--border);padding:.3rem .35rem;vertical-align:top}
 .rt-tabla input,.rt-tabla textarea,.rt-tabla select{width:100%;box-sizing:border-box;border:1px solid transparent;background:transparent;font-family:inherit;font-size:.8rem;padding:.3rem .3rem;border-radius:6px;color:inherit}
 .rt-tabla tr.rt-ini td{background:#fff3cf;border-top:2px solid var(--gold)}
+.rt-tabla tr.rt-hecha:not(.rt-ini) td{background:#eaf7ef}
 .rt-tabla tr.rt-ini td:first-child{border-left:5px solid var(--gold)}
 .rt-tabla textarea{resize:none;overflow:hidden;min-height:34px;line-height:1.4}
 .rt-tabla input:focus,.rt-tabla textarea:focus,.rt-tabla select:focus{outline:none;border-color:var(--teal2);background:#fff}
@@ -15308,11 +15323,12 @@ function _rtCatMapa() {
 }
 function _rtIdxVisitas() {
   var n = function (t) { return String(t == null ? '' : t).trim().toLowerCase(); };
-  var idx = { viv: {}, per: {} };
+  var idx = { viv: {}, per: {}, nom: {} };
   (typeof registros !== 'undefined' ? registros : []).forEach(function (x) {
     if (!x || !x.fecha) return;
     var kv = x.fecha + '|' + n(x.vivienda);
     idx.viv[kv] = true; idx.per[kv + '|' + n(x.nombre)] = true;
+    if (x.nombre) (idx.nom[kv] = idx.nom[kv] || []).push(String(x.nombre).trim());
   });
   return idx;
 }
@@ -15403,7 +15419,8 @@ function _rtRenderInterno() {
     } else {
       jefeHtml = '<div style="padding:.35rem .3rem">' + (j.nombre ? _hpEsc(j.nombre) : '<span style="color:var(--muted)">— sin dato —</span>') + '</div>';
     }
-    return '<tr' + (inicio ? ' class="rt-ini"' : '') + '>' +
+    var _clsF = (inicio ? 'rt-ini' : '') + (_rtYaVisitada(r) ? ' rt-hecha' : '');
+    return '<tr' + (_clsF.trim() ? ' class="' + _clsF.trim() + '"' : '') + '>' +
       '<td><input type="date" value="' + _hpEsc(r.fecha) + '" onchange="_rtEditar(\'' + id + '\',\'fecha\',this.value)"/></td>' +
       '<td class="rt-viv">' + _hpEsc(r.vivienda) + (_rtPend.indexOf(r) >= 0 ? '<div style="font-size:.62rem;font-weight:700;color:#1e4f82;background:#dbeafe;border-radius:6px;padding:1px 4px;margin-top:3px">sin guardar</div>' : '') + '</td>' +
       '<td><textarea class="rt-edit" rows="1" placeholder="Lugar…" oninput="_rtAuto(this)" onchange="_rtEditar(\'' + id + '\',\'lugar\',this.value)">' + _hpEsc(r.lugar || '') + '</textarea></td>' +
@@ -15432,25 +15449,22 @@ function _rtYaVisitada(r) {
   });
 }
 function _rtBtnVisita(r, id) {
-  var hecha = _rtYaVisitada(r);
-  var j = _rtJefe(r), dup;
-  if (_rtIdxVis) dup = !!_rtIdxVis.per[r.fecha + '|' + String(r.vivienda || '').trim().toLowerCase() + '|' + String(j.nombre || '').trim().toLowerCase()];
-  else dup = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(r.fecha, r.vivienda, j.nombre) : null;
-  return '<button type="button" class="rt-btn rt-btn-main" style="padding:.4rem .5rem;font-size:.76rem;line-height:1.2" onclick="_rtVisitar(\'' + id + '\')">' + (dup ? '✏️ Editar visita' : '📝 Registrar visita') + '</button>' +
-    (hecha ? '<div style="font-size:.7rem;color:var(--success);font-weight:700;margin-top:.2rem">✅ Ya registrada</div>' : '');
+  var hecha = _rtYaVisitada(r), kv = r.fecha + '|' + String(r.vivienda || '').trim().toLowerCase();
+  var quien = hecha && _rtIdxVis && _rtIdxVis.nom[kv] ? _rtIdxVis.nom[kv] : [];
+  var atendio = quien.length ? '<div style="font-size:.66rem;color:var(--muted);font-weight:600;line-height:1.25;margin-top:.1rem">' +
+    _hpEsc(quien.slice(0, 2).join(', ') + (quien.length > 2 ? ' +' + (quien.length - 2) : '')) + '</div>' : '';
+  return '<button type="button" class="rt-btn rt-btn-main" style="padding:.4rem .5rem;font-size:.76rem;line-height:1.2" onclick="_rtVisitar(\'' + id + '\')">' +
+    (hecha ? '👥 Ver / otro integrante' : '📝 Registrar visita') + '</button>' +
+    (hecha ? '<div style="font-size:.7rem;color:var(--success);font-weight:700;margin-top:.2rem">✅ Vivienda visitada</div>' + atendio : '');
 }
-// Abre el formulario de registro con la vivienda y el nombre que están en la fila de la ruta
+// Abre la lista de TODOS los integrantes de la vivienda para elegir a quién se atendió
+// (puede que no se encuentre a la persona anotada en la ruta y se atienda a otra de la familia)
 function _rtVisitar(id) {
   var r = _rtLeer().concat(_rtPend).find(function (x) { return x.id === id; });
   if (!r) return;
   var viv = _rtBuscarViv(r.vivienda);
   if (!viv) { toast('La vivienda ' + r.vivienda + ' no está en el catálogo', 'error'); return; }
-  var j = _rtJefe(r);
-  // Si la visita de esa fecha ya está registrada, abrir ESA visita para editarla
-  var ya = (typeof _buscarVisitaDuplicada === 'function') ? _buscarVisitaDuplicada(r.fecha, r.vivienda, j.nombre) : null;
-  if (ya && typeof editarRegistro === 'function') { editarRegistro(ya.id); return; }
-  if (j.id && typeof atenderFamiliaPersona === 'function') atenderFamiliaPersona(viv.id, j.id);
-  else if (typeof atenderFamilia === 'function') atenderFamilia(viv.id); // sin personas guardadas: abre el selector
+  if (typeof atenderFamilia === 'function') atenderFamilia(viv.id);
 }
 function _rtAuto(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
 function _rtEditar(id, campo, valor) {
@@ -15646,25 +15660,100 @@ function _rtElegirPersona(lista) {
     return a > b ? x : mejor;
   }, lista[0]);
 }
-// Actividad a Realizar sugerida: resumen corto de lo que se hizo en esa vivienda ese día (Acciones; si no hay, Hallazgos). Se puede editar después.
+// ── Redacción de la ruta SIN IA: detecta el tema por palabras clave (y por edades) y varía la forma de escribirlo ──
+var _RT_TEMAS = [
+  { k: 'prenatal', re: /embaraz|gestan|prenatal|\bcpn\b|\bfpp\b|\bfum\b/, et: 'control prenatal',
+    f: ['Control prenatal a gestante', 'Seguimiento de embarazo', 'Consejería a embarazada', 'Vigilancia del embarazo'] },
+  { k: 'puerperio', re: /puerper|posparto|post parto|cuarentena/, et: 'control de puerperio',
+    f: ['Control de puerperio', 'Atención a madre en posparto', 'Seguimiento posparto'] },
+  { k: 'recien', re: /recien nacid|neonat|lactancia/, et: 'control del recién nacido',
+    f: ['Control del recién nacido', 'Atención a neonato y madre', 'Apoyo a lactancia materna'] },
+  { k: 'crecimiento', re: /crecimiento|\bpeso\b|\btalla\b|desnutri|nutric|\bcred\b|anemia|hierro|suplement|micronutri|desarrollo/, et: 'crecimiento y nutrición',
+    f: ['Control de crecimiento y nutrición', 'Vigilancia nutricional infantil', 'Pesaje y tallaje de niñez', 'Consejería de alimentación infantil'] },
+  { k: 'vacuna', re: /vacun|esquema|inmuniz|\bdosis\b|refuerzo/, et: 'vacunación',
+    f: ['Revisión de esquema de vacunación', 'Búsqueda de vacunas pendientes', 'Seguimiento de inmunizaciones'] },
+  { k: 'pf', re: /planificacion|anticoncep|\bmetodo\b|\bmef\b|condon|inyectable|pastilla/, et: 'planificación familiar',
+    f: ['Consejería en planificación familiar', 'Seguimiento de método anticonceptivo', 'Orientación en salud reproductiva'] },
+  { k: 'cronica', re: /hipertens|diabet|glucosa|\bpresion\b|cronic|insulina|renal/, et: 'enfermedad crónica',
+    f: ['Seguimiento de enfermedad crónica', 'Control de presión y glucosa', 'Verificación de adherencia al tratamiento'] },
+  { k: 'aguda', re: /fiebre|\btos\b|diarrea|vomito|respirator|gripe|neumon|\bira\b|\beda\b|sintoma/, et: 'seguimiento de síntomas',
+    f: ['Seguimiento de caso con síntomas', 'Vigilancia de enfermedad aguda', 'Verificación de evolución del paciente'] },
+  { k: 'dengue', re: /dengue|zancud|criadero|abate|larva|chikung|zika|arbovir/, et: 'prevención de dengue',
+    f: ['Eliminación de criaderos de zancudo', 'Prevención de dengue', 'Inspección de criaderos'] },
+  { k: 'saneamiento', re: /\bagua\b|clor|letrin|basura|sanea|higiene|excreta|lavado de manos|desecho/, et: 'saneamiento básico',
+    f: ['Inspección de saneamiento básico', 'Promoción de higiene y agua segura', 'Orientación sobre agua y excretas'] },
+  { k: 'referencia', re: /referenc|referid|hospital|unidad de salud/, et: 'seguimiento de referencia',
+    f: ['Seguimiento de referencia a unidad de salud', 'Verificación de atención en unidad de salud', 'Acompañamiento de caso referido'] }
+];
+var _RT_POR_EDAD = {
+  infantil: { et: 'control infantil', f: ['Control infantil en el hogar', 'Valoración de niñez menor de 5 años', 'Vigilancia de salud infantil'] },
+  adolescente: { et: 'salud adolescente', f: ['Orientación a adolescente', 'Promoción de salud en adolescentes', 'Consejería para adolescentes'] },
+  adulto: { et: 'adulto mayor', f: ['Atención a adulto mayor', 'Valoración de persona adulta mayor', 'Seguimiento de salud en adulto mayor'] },
+  integral: { et: 'visita integral', f: ['Visita familiar integral', 'Valoración de salud del hogar', 'Promoción de salud familiar', 'Verificación de condiciones del hogar', 'Orientación a la familia'] }
+};
+var _rtUltPrimera = '', _rtContFrase = 0;
+function _rtPrimeraPalabra(t) { return _rtNorm(t).split(' ')[0] || ''; }
+// textoNorm: notas ya normalizadas; edades: arreglo de años (puede traer NaN)
+function _rtRedactar(textoNorm, edades) {
+  var temas = [];
+  for (var i = 0; i < _RT_TEMAS.length && temas.length < 2; i++) if (_RT_TEMAS[i].re.test(textoNorm)) temas.push(_RT_TEMAS[i]);
+  if (!temas.length) {
+    var e = (edades || []).filter(function (x) { return !isNaN(x); });
+    var menor5 = e.some(function (x) { return x < 5; }), adol = e.some(function (x) { return x >= 10 && x < 20; }), mayor = e.some(function (x) { return x >= 60; });
+    temas.push(menor5 ? _RT_POR_EDAD.infantil : (mayor ? _RT_POR_EDAD.adulto : (adol ? _RT_POR_EDAD.adolescente : _RT_POR_EDAD.integral)));
+  }
+  var f = temas[0].f, n = f.length, ini = _rtContFrase % n, elegida = f[ini];
+  for (var k = 0; k < n; k++) {
+    var c = f[(ini + k) % n];
+    if (_rtPrimeraPalabra(c) !== _rtUltPrimera) { elegida = c; break; }
+  }
+  _rtContFrase++;
+  _rtUltPrimera = _rtPrimeraPalabra(elegida);
+  if (temas[1] && (elegida + ' y ' + temas[1].et).length <= 78) elegida += ' y ' + temas[1].et;
+  return elegida;
+}
 function _rtAutollenarOn() { var c = document.getElementById('rt-autollenar'); return c ? c.checked : true; }
+// Al traer las visitadas: redacta desde las acciones/hallazgos de ese día
 function _rtActividadAuto(g) {
-  var vistos = {}, partes = [];
-  var tomar = function (txt) {
-    String(txt || '').split(/[\n;.]+/).forEach(function (f) {
-      f = f.replace(/\s+/g, ' ').trim();
-      if (f.length < 4) return;
-      if (f.length > 80) f = f.slice(0, 77).replace(/\s+\S*$/, '') + '…';
-      var k = f.toLowerCase();
-      if (vistos[k] || partes.length >= 3) return;
-      vistos[k] = true; partes.push(f);
-    });
-  };
-  g.personas.forEach(function (p) { tomar(p.acciones); });
-  if (!partes.length) g.personas.forEach(function (p) { tomar(p.hallazgos); });
-  return partes.length ? 'Visita domiciliar: ' + partes.join('; ') : 'Visita domiciliar';
+  var txt = _rtNorm(g.personas.map(function (p) { return (p.acciones || '') + ' ' + (p.hallazgos || ''); }).join(' '));
+  return _rtRedactar(txt, g.personas.map(function (p) { return p.anios; }));
+}
+// Botón ✨ Crear ruta inteligente (sin IA): reescribe Lugar y Actividad de las filas del período, variando la redacción
+function _rtRutaLocal() {
+  var rows = _rtFiltradas();
+  if (!rows.length) { toast('No hay viviendas en la ruta de este período', 'error'); return; }
+  if (!confirm('Se redactarán de nuevo "Lugar a Visitar" y "Actividad a Realizar" de las ' + rows.length + ' vivienda(s) de este período, en formato corto y variado. ¿Continuar?')) return;
+  var regs = (typeof registros !== 'undefined' ? registros : []);
+  var a = _rtLeer(), ids = {}, guardado = false, n = 0;
+  a.forEach(function (x) { ids[x.id] = x; });
+  _rtPend.forEach(function (x) { ids[x.id] = x; });
+  var perfilCom = (typeof perfil !== 'undefined' && perfil && perfil.comunidad) ? String(perfil.comunidad).trim() : '';
+  _rtUltPrimera = ''; _rtContFrase = 0;
+  rows.forEach(function (r) {
+    var t = ids[r.id]; if (!t) return;
+    var viv = String(r.vivienda || '').trim().toLowerCase();
+    var delDia = regs.filter(function (x) { return x && x.fecha === r.fecha && String(x.vivienda || '').trim().toLowerCase() === viv; });
+    var j = _rtJefe(r), txt, edades;
+    if (delDia.length) {
+      txt = _rtNorm(delDia.map(function (x) { return (x.acciones || '') + ' ' + (x.hallazgos || ''); }).join(' '));
+      edades = delDia.map(function (x) { return _rtEdadAnios(x.edad); });
+    } else {
+      txt = '';
+      edades = j.personas.map(function (x) { return _rtEdadAnios(x.edad); });
+    }
+    t.actividad = _rtRedactar(txt, edades);
+    var lug = (delDia[0] && delDia[0].comunidad ? String(delDia[0].comunidad).trim() : '') || t.lugar || perfilCom;
+    if (lug) t.lugar = lug;
+    t.actualizadoEn = new Date().toISOString();
+    n++;
+    if (_rtPend.indexOf(t) < 0) guardado = true;
+  });
+  if (guardado) _rtGuardar(a);
+  _rtRender();
+  toast('✨ Ruta lista: ' + n + ' vivienda(s). Revísala y guarda.');
 }
 function _rtTraerInterno() {
+  _rtUltPrimera = ''; _rtContFrase = 0;
   var v = _rtEstado.vista, filtro;
   if (v === 'dia') {
     filtro = document.getElementById('rt-nueva-fecha').value;
