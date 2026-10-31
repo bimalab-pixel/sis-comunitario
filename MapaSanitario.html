@@ -3643,6 +3643,18 @@ function _asegurarIdsMaterna(arr, key){
   if(cambiado){ try{ localStorage.setItem(key, JSON.stringify(arr)); }catch(e){} }
   return arr;
 }
+// N° de vivienda de una embarazada/puérpera vinculada (viv_id). Toma el número actual del catálogo;
+// si la vivienda ya no está, usa el que quedó guardado en el registro.
+function _vivNumMaterna(p){
+  if(!p) return '';
+  if(p.viv_id){
+    try{
+      const v=getCatalogo().find(x=>x && x.id===p.viv_id);
+      if(v && v.vivienda!=null && v.vivienda!=='') return String(v.vivienda);
+    }catch(e){}
+  }
+  return p.viv_num!=null ? String(p.viv_num) : '';
+}
 function getEmbarazadasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('embarazadas')||'[]'),'embarazadas'); }catch(e){ return []; } }
 // Misma regla que Vigilancia_Materna (auto-archivo): pasados los 42 días del parto (día 43 en adelante)
 // la mujer ya no es puérpera. Vigilancia_Materna solo la mueve a archivo cuando se abre esa app,
@@ -3886,6 +3898,7 @@ function abrirModalMaternoDetalle(){
     const fpp=_sumarDiasISO(p.fur,280);
     return `<div class="mat-item">
       <div class="mat-item-head"><strong>${p.nombre||'—'}</strong><span class="mat-item-edad">🎂 ${_edadMaterna(p)}</span></div>
+      ${_vivNumMaterna(p)?`<div class="mat-item-row">🏠 N° de vivienda: <strong>${_vivNumMaterna(p)}</strong></div>`:''}
       <div class="mat-item-row">📅 Fecha última regla: ${_fmtFechaISO(p.fur)}</div>
       <div class="mat-item-row">🍼 Fecha probable de parto: ${fpp?_fmtFechaISO(fpp):'—'}</div>
       <div class="mat-item-row">⏳ Semanas de gestación: ${g?`${g.semanas} sem + ${g.dias} día${g.dias!==1?'s':''}`:'—'}</div>
@@ -3897,7 +3910,8 @@ function abrirModalMaternoDetalle(){
     const finPuerp=_sumarDiasISO(p.fp,42);
     return `<div class="mat-item">
       <div class="mat-item-head"><strong>${p.nombre||'—'}</strong><span class="mat-item-edad">🎂 ${_edadMaterna(p)}</span></div>
-      <div class="mat-item-row">✅ Fecha que verificó parto: ${_fmtFechaISO(p.fp)}</div>
+      ${_vivNumMaterna(p)?`<div class="mat-item-row">🏠 N° de vivienda: <strong>${_vivNumMaterna(p)}</strong></div>`:''}
+      <div class="mat-item-row">✅ ${p.tipoEvento === 'aborto' ? 'Fecha del aborto' : 'Fecha que verificó parto'}: ${_fmtFechaISO(p.fp)}</div>
       <div class="mat-item-row">🏁 Finalización de puerperio: ${finPuerp?_fmtFechaISO(finPuerp):'—'}</div>
       <div class="mat-item-row">⏳ Días de puerperio: ${dias!==null?dias:'—'}</div>
     </div>`;
@@ -3970,7 +3984,7 @@ function _popupMaterna(p, tipo){
   const tieneRiesgo = p.riesgo_obstetrico === 'si';
 
   // Badge de tipo (mismo estilo que Vigilancia_Materna)
-  const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : '🤱 PUÉRPERA';
+  const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : (p.tipoEvento === 'aborto' ? '🤱 PUÉRPERA · ABORTO' : '🤱 PUÉRPERA');
   const tipoTextColor = tipo === 'puerpera' ? '#333' : 'white';
   const tipoBadge = `<span style="display:inline-block;background:${color};color:${tipoTextColor};font-size:0.72em;font-weight:bold;padding:2px 8px;border-radius:10px;letter-spacing:0.3px;margin-bottom:5px;">${tipoLabel}</span>`;
 
@@ -4013,7 +4027,7 @@ function _popupMaterna(p, tipo){
     fechasClaveInfo = `
       <div style="display:flex;gap:4px;margin:5px 0;">
           <div style="flex:1;background:#7e57c2;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
-              <div style="font-size:0.68em;opacity:0.9;">Parto</div>
+              <div style="font-size:0.68em;opacity:0.9;">${p.tipoEvento === 'aborto' ? 'Aborto' : 'Parto'}</div>
               <div style="font-size:0.78em;font-weight:bold;">${_fmtFechaISO(p.fp)}</div>
           </div>
           <div style="flex:1;background:#ff7043;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
@@ -4039,7 +4053,7 @@ function _popupMaterna(p, tipo){
         <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
         ${fechasClaveInfo}
         ${riesgoTag}
-        <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
+        <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}${_vivNumMaterna(p)?' · 🏠 Viv. '+_vivNumMaterna(p):''}</div>
         <div style="margin-bottom:8px;">${origenTag}</div>
         <button onclick="abrirFichaEnVigilancia('${p.id||''}','${tipo}')"
             style="width:100%;background:#00796b;color:white;border:none;padding:7px 0;

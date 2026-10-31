@@ -3206,7 +3206,7 @@ function importarDatos(event) {
                             <small style="opacity:0.9">Exp: ${p.expediente || (index + 1)}</small>
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                            <span class="ficha-badge">🤱 Puérpera</span>
+                            <span class="ficha-badge">🤱 Puérpera${p.tipoEvento === 'aborto' ? ' · Aborto' : ''}</span>
                             <button onclick="iniciarEdicion(${index},'puerpera')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.6);color:white;border-radius:20px;padding:4px 12px;font-size:0.8em;font-weight:600;cursor:pointer;">✏️ Editar</button>
                         </div>
                     </div>
@@ -3223,7 +3223,7 @@ function importarDatos(event) {
 
                         <div class="fechas-clave">
                             <div class="fecha-clave-box fecha-clave-parto">
-                                <span class="dato-label">🤱 Fecha de Parto</span>
+                                <span class="dato-label">🤱 Fecha de ${p.tipoEvento === 'aborto' ? 'Aborto' : 'Parto'}</span>
                                 <span class="dato-valor">${p.fp ? formatDate(crearFechaLocal(p.fp)) : 'No registrada'}</span>
                             </div>
                             <div class="fecha-clave-box fecha-clave-finpuerp">
@@ -4995,7 +4995,7 @@ async function generarReporteGlobal() {
                         datoFur = limpiarFecha(p.fur);
                         if(p.fur) datoFpp = getFPP(p.fur);
                     } else {
-                        datoFpp = p.fp ? `Parto: ${limpiarFecha(p.fp)}` : '';
+                        datoFpp = p.fp ? `${p.tipoEvento === 'aborto' ? 'Aborto' : 'Parto'}: ${limpiarFecha(p.fp)}` : '';
                         if(p.historial_embarazo && p.historial_embarazo.fur) {
                             datoFur = limpiarFecha(p.historial_embarazo.fur);
                         }
@@ -5212,7 +5212,7 @@ function generarReporteHTML() {
                 ${p.expediente ? `<span>📁 <b>Exp:</b> ${p.expediente}</span>` : ''}
                 <span>🎂 <b>Edad:</b> ${edad}</span>
                 <span>📍 <b>Dir:</b> ${p.direccion||'-'}</span>
-                ${p._tipo==='EMB' ? `<span>📅 <b>FUR:</b> ${furLabel}</span><span style="color:#c2185b;font-weight:bold;">🏁 <b>FPP:</b> ${fpp}</span>` : `<span>📅 <b>${p._tipo==='PUE'?'Parto':'Fecha'}:</b> ${furLabel}</span>`}
+                ${p._tipo==='EMB' ? `<span>📅 <b>FUR:</b> ${furLabel}</span><span style="color:#c2185b;font-weight:bold;">🏁 <b>FPP:</b> ${fpp}</span>` : `<span>📅 <b>${p._tipo==='PUE'?(p.tipoEvento === 'aborto' ? 'Aborto' : 'Parto'):'Fecha'}:</b> ${furLabel}</span>`}
                 ${semanasHtml}
                 ${puerperioHtml}
                 ${sangre}
@@ -5681,7 +5681,7 @@ function renderizarMarcadores(filtro) {
 
             // Badge tipo con color explícito
             const tipoBadgeColor = tipo === 'embarazada' ? '#d32f2f' : '#f9a825';
-            const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : '🤱 PUÉRPERA';
+            const tipoLabel = tipo === 'embarazada' ? '🤰 EMBARAZADA' : (p.tipoEvento === 'aborto' ? '🤱 PUÉRPERA · ABORTO' : '🤱 PUÉRPERA');
             const tipoTextColor = tipo === 'puerpera' ? '#333' : 'white';
 
             // Pastilla de riesgo (verde=sin riesgo, rojo=con riesgo)
@@ -5753,7 +5753,7 @@ function renderizarMarcadores(filtro) {
                     fechasClaveInfo = `
                         <div style="display:flex;gap:4px;margin:5px 0;">
                             <div style="flex:1;background:#7e57c2;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
-                                <div style="font-size:0.68em;opacity:0.9;">Parto</div>
+                                <div style="font-size:0.68em;opacity:0.9;">${p.tipoEvento === 'aborto' ? 'Aborto' : 'Parto'}</div>
                                 <div style="font-size:0.78em;font-weight:bold;">${formatDate(fpD)}</div>
                             </div>
                             <div style="flex:1;background:#ff7043;color:#fff;border-radius:6px;padding:3px 5px;text-align:center;">
@@ -6392,6 +6392,8 @@ function descargarPDF(index, tipo) {
         `);
     } else if (tipo === 'puerpera') {
         // Puerperio actual
+        const _esAborto = paciente.tipoEvento === 'aborto';
+        const _evtTxt = _esAborto ? 'ABORTO' : 'PARTO';
         let diasPuerp = '-', diasRestantes = '-', estadoPuerp = '';
         try {
             const puerp = calcularPuerperio(crearFechaLocal(paciente.fp));
@@ -6401,12 +6403,12 @@ function descargarPDF(index, tipo) {
         } catch(e) {}
 
         doc.write(`
-            <div class="seccion-head" style="color:#880e4f; border-left:5px solid #e91e63;">ESTADO ACTUAL: PUÉRPERA</div>
+            <div class="seccion-head" style="color:#880e4f; border-left:5px solid #e91e63;">ESTADO ACTUAL: PUÉRPERA${_esAborto ? ' (POST-ABORTO)' : ''}</div>
             <div class="fila" style="background:#fce4ec; font-weight:bold;">
                 <span class="label">🤱 DÍAS DE PUERPERIO:</span>
                 <span class="valor" style="color:#880e4f; font-size:15px;">${diasPuerp} días transcurridos</span>
             </div>
-            <div class="fila"><span class="label">FECHA DE PARTO/ABORTO (FP):</span><span class="valor" style="color:#2e7d32; font-weight:bold;">${fpRealDoc}</span></div>
+            <div class="fila"><span class="label">FECHA DE ${_evtTxt} (FP):</span><span class="valor" style="color:#2e7d32; font-weight:bold;">${fpRealDoc}</span></div>
             <div class="fila"><span class="label">FIN DE PUERPERIO (42 DÍAS):</span><span class="valor" style="color:#c2185b; font-weight:bold;">${finPuerperioDoc}</span></div>
             <div class="fila"><span class="label">ESTADO:</span><span class="valor">${diasRestantes}</span></div>
         `);
@@ -6417,7 +6419,7 @@ function descargarPDF(index, tipo) {
             <div class="fila"><span class="label">FECHA FUR:</span><span class="valor">${furDoc}</span></div>
             <div class="fila"><span class="label">FPP ESTIMADA:</span><span class="valor">${fppDoc}</span></div>
             <div class="fila" style="background:#e8f5e9; font-weight:bold;">
-                <span class="label">FECHA REAL DE PARTO/ABORTO:</span>
+                <span class="label">FECHA REAL DE ${_evtTxt}:</span>
                 <span class="valor" style="color:#2e7d32;">${fpRealDoc}</span>
             </div>
             <div class="fila" style="background:#fce4ec; font-weight:bold;">
@@ -6439,7 +6441,7 @@ function descargarPDF(index, tipo) {
         doc.write(`
             <div class="seccion-head" style="color:#4a148c; border-left:5px solid #673ab7;">📜 HISTORIAL DEL EMBARAZO ANTERIOR</div>
             <div class="historial-box">
-                <div class="fila"><span class="label">EDAD GESTACIONAL AL PARTO:</span><span class="valor"><strong>${semanasAlNacer}</strong></span></div>
+                <div class="fila"><span class="label">EDAD GESTACIONAL AL ${_evtTxt}:</span><span class="valor"><strong>${semanasAlNacer}</strong></span></div>
                 <div class="fila"><span class="label">FUR DE ESE EMBARAZO:</span><span class="valor">${formatearConPlecas(h.fur)}</span></div>
                 <div class="fila"><span class="label">MÉTODO DE CÁLCULO:</span><span class="valor">${h.metodo || 'FUR'}</span></div>
                 ${(h.riesgo_obstetrico === 'si') ? `<div class="fila" style="background:#fff3e0;"><span class="label">RIESGO EN EMBARAZO:</span><span class="valor" style="color:#c62828;font-weight:bold;">⚠️ SÍ — ${h.tipo_riesgo || 'No especificado'}</span></div>` : `<div class="fila"><span class="label">RIESGO EN EMBARAZO:</span><span class="valor" style="color:#2e7d32;">✅ Sin riesgo</span></div>`}
