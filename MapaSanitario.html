@@ -3644,7 +3644,19 @@ function _asegurarIdsMaterna(arr, key){
   return arr;
 }
 function getEmbarazadasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('embarazadas')||'[]'),'embarazadas'); }catch(e){ return []; } }
-function getPuerperasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('puerperas')||'[]'),'puerperas'); }catch(e){ return []; } }
+// Misma regla que Vigilancia_Materna (auto-archivo): pasados los 42 días del parto (día 43 en adelante)
+// la mujer ya no es puérpera. Vigilancia_Materna solo la mueve a archivo cuando se abre esa app,
+// así que aquí se oculta de inmediato sin tocar los datos guardados.
+function _puerperaVigente(p){
+  if(!p || !p.fp) return true;
+  const f=String(p.fp).slice(0,10).split('-').map(Number);
+  if(f.length<3 || f.some(isNaN)) return true;
+  const fp=new Date(f[0],f[1]-1,f[2]);
+  const h=new Date(); const hoy=new Date(h.getFullYear(),h.getMonth(),h.getDate());
+  const dias=Math.floor((hoy-fp)/86400000);
+  return !(dias>42);
+}
+function getPuerperasLS(){ try{ return _asegurarIdsMaterna(JSON.parse(localStorage.getItem('puerperas')||'[]'),'puerperas').filter(_puerperaVigente); }catch(e){ return []; } }
 
 // ── Detalle de Embarazadas/Puérperas (tarjeta bajo MEF) ──
 function _fmtFechaISO(iso){

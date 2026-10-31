@@ -1548,6 +1548,8 @@
                     <input type="hidden" id="lat-emb" value="">
                     <input type="hidden" id="lng-emb" value="">
                     <input type="hidden" id="origen-ubic-emb" value="">
+                    <input type="hidden" id="viv-id-emb" value="">
+                    <input type="hidden" id="viv-num-emb" value="">
                 </div>
 
                 <label for="grupo-sanguineo-emb">🩸 Grupo Sanguíneo (Opcional):</label>
@@ -1652,6 +1654,8 @@
                     <input type="hidden" id="lat-puerp" value="">
                     <input type="hidden" id="lng-puerp" value="">
                     <input type="hidden" id="origen-ubic-puerp" value="">
+                    <input type="hidden" id="viv-num-puerp" value="">
+                    <input type="hidden" id="viv-id-puerp" value="">
                 </div>
 
                 <label style="margin-top: 15px; font-weight: 600; color: #555;">⚠️ Riesgo Obstétrico:</label>
@@ -2179,6 +2183,38 @@ function obtenerFechaLocalISO() {
     }
 
     // FUNCIÓN DE GUARDADO MODIFICADA PARA ARCHIVADAS
+    // ── SINCRONIZAR UBICACIÓN CON LA VIVIENDA DE MAPA SANITARIO ──
+    // Solo se actualizan las pacientes vinculadas (viv_id) cuya ubicación NO fue
+    // marcada a mano ni con GPS propio (origen vacío o 'vivienda').
+    function sincronizarUbicacionesVivienda() {
+        let cat = [];
+        try { cat = JSON.parse(localStorage.getItem('mapa_san_catalogo') || '[]'); } catch (e) { return false; }
+        if (!Array.isArray(cat) || !cat.length) return false;
+        const porId = {};
+        cat.forEach(v => { if (v && v.id) porId[v.id] = v; });
+        let hubo = false;
+        [['embarazadas', embarazadas], ['puerperas', puerperas], ['archivadas', archivadas]].forEach(([nombre, lista]) => {
+            let cambio = false;
+            (lista || []).forEach(p => {
+                if (!p || !p.viv_id) return;
+                const v = porId[p.viv_id];
+                if (!v) return;
+                const num = (v.vivienda == null) ? null : String(v.vivienda);
+                if (num !== null && p.viv_num !== num) { p.viv_num = num; cambio = true; }
+                if (p.origen_ubic && p.origen_ubic !== 'vivienda') return;
+                if (!v.lat || !v.lng) return;
+                const la = Number(v.lat), ln = Number(v.lng);
+                if (p.lat !== la || p.lng !== ln || p.origen_ubic !== 'vivienda') {
+                    p.lat = la; p.lng = ln; p.origen_ubic = 'vivienda';
+                    cambio = true;
+                }
+            });
+            if (cambio) { guardarDatos(nombre); hubo = true; }
+        });
+        return hubo;
+    }
+    window.sincronizarUbicacionesVivienda = sincronizarUbicacionesVivienda;
+
     function guardarDatos(tipo) {
          if (tipo === 'embarazadas') {
             localStorage.setItem(tipo, JSON.stringify(embarazadas));
@@ -2597,6 +2633,7 @@ function importarDatos(event) {
     // Solo mujeres activas, de viviendas habitadas, con fecha de nacimiento, de 12 a 49 años
     // (adolescentes femeninas 12-17 + mujeres en edad fértil 18-49, igual que Mapa Sanitario).
     let _bmTipo = 'emb';
+    let _bmVinc = null; // {index, tipo} cuando se vincula una paciente ya registrada
     let _bmTodas = [];
     let _bmVista = [];
 
@@ -2629,14 +2666,51 @@ function importarDatos(event) {
                 if (m === null || m < 144 || m >= 600) return;
                 lista.push({
                     nombre: p.nombre, fnac: p.fnac, anios: Math.floor(m / 12),
-                    viv: v.vivienda, ya: yaRegistradas.has(_rdNorm(p.nombre)), _n: _rdNorm(p.nombre)
+                    viv: v.vivienda, ya: yaRegistradas.has(_rdNorm(p.nombre)), _n: _rdNorm(p.nombre),
+                    vivId: v.id || '',
+                    lat: (v.lat && v.lng) ? Number(v.lat) : null,
+                    lng: (v.lat && v.lng) ? Number(v.lng) : null
                 });
             });
         });
         lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
         return lista;
     }
+    // Vincular una paciente YA registrada: solo agrega N° de vivienda, vínculo y ubicación; no toca el resto de sus datos
+    function abrirVincularMapa(index, tipo) {
+        const lista = tipo === 'embarazada' ? embarazadas : (tipo === 'puerpera' ? puerperas : archivadas);
+        const pac = lista[index];
+        if (!pac) return;
+        _bmVinc = { index, tipo };
+        _bmTodas = _bmCargar();
+        document.getElementById('buscar-mapa-input').value = pac.nombre || '';
+        filtrarBuscadorMapa();
+        document.getElementById('modal-buscar-mapa').style.display = 'flex';
+    }
+    function _aplicarVinculoMapa(x) {
+        const { index, tipo } = _bmVinc;
+        const clave = tipo === 'embarazada' ? 'embarazadas' : (tipo === 'puerpera' ? 'puerperas' : 'archivadas');
+        const lista = tipo === 'embarazada' ? embarazadas : (tipo === 'puerpera' ? puerperas : archivadas);
+        const pac = lista[index];
+        if (!pac) { cerrarBuscadorMapa(); return; }
+        if (!confirm('¿Vincular a ' + pac.nombre + ' con la Viv. ' + x.viv + ' de Mapa Sanitario?\n\nSolo se agregará el N° de vivienda' + (x.lat ? ' y su ubicación (si no tiene una propia)' : '') + '. No se borra ningún otro dato.')) return;
+        pac.viv_id = x.vivId || null;
+        pac.viv_num = (x.viv == null) ? null : String(x.viv);
+        if (x.lat && x.lng) {
+            if (pac.lat && pac.lng) {
+                // Ya tiene ubicación propia: se respeta (si no tenía origen, se marca manual para que no se sobrescriba)
+                if (!pac.origen_ubic) pac.origen_ubic = 'manual';
+            } else {
+                pac.lat = x.lat; pac.lng = x.lng; pac.origen_ubic = 'vivienda';
+            }
+        }
+        guardarDatos(clave);
+        cerrarBuscadorMapa();
+        if (tipo === 'archivada') mostrarDetalleArchivada(index); else mostrarDetalle(index, tipo);
+        try { if (typeof _mapaZona !== 'undefined' && _mapaZona) renderizarMarcadores(_mapaFiltroActual); } catch (e) {}
+    }
     function abrirBuscadorMapa(tipo) {
+        _bmVinc = null;
         _bmTipo = tipo;
         _bmTodas = _bmCargar();
         document.getElementById('buscar-mapa-input').value = '';
@@ -2644,6 +2718,7 @@ function importarDatos(event) {
         document.getElementById('modal-buscar-mapa').style.display = 'flex';
     }
     function cerrarBuscadorMapa() {
+        _bmVinc = null;
         document.getElementById('modal-buscar-mapa').style.display = 'none';
     }
     function filtrarBuscadorMapa() {
@@ -2664,8 +2739,8 @@ function importarDatos(event) {
         let html = _bmVista.slice(0, MAX).map((x, i) => {
             const [y, m, d] = x.fnac.split('-');
             return '<div class="bm-item" onclick="seleccionarDeMapa(' + i + ')">' +
-                '<div class="bm-nombre">' + _bmEsc(x.nombre) + (x.ya ? '<span class="bm-ya">Ya registrada</span>' : '') + '</div>' +
-                '<div class="bm-detalle">🎂 ' + x.anios + ' años · Nac. ' + d + '/' + m + '/' + y + ' · 🏠 Viv. ' + _bmEsc(x.viv) + '</div></div>';
+                '<div class="bm-nombre">' + _bmEsc(x.nombre) + (x.ya && !_bmVinc ? '<span class="bm-ya">Ya registrada</span>' : '') + '</div>' +
+                '<div class="bm-detalle">🎂 ' + x.anios + ' años · Nac. ' + d + '/' + m + '/' + y + ' · 🏠 Viv. ' + _bmEsc(x.viv) + (x.lat ? ' · 📍' : ' · sin GPS') + '</div></div>';
         }).join('');
         if (_bmVista.length > MAX) html += '<div class="bm-vacio">Mostrando ' + MAX + ' de ' + _bmVista.length + '. Escribe más letras para acotar.</div>';
         cont.innerHTML = html;
@@ -2673,10 +2748,28 @@ function importarDatos(event) {
     function seleccionarDeMapa(i) {
         const x = _bmVista[i];
         if (!x) return;
+        if (_bmVinc) { _aplicarVinculoMapa(x); return; }
         const n = document.getElementById('nombre-' + _bmTipo);
         const f = document.getElementById('fn-' + _bmTipo);
         if (n) { n.value = x.nombre; n.dispatchEvent(new Event('input', { bubbles: true })); }
         if (f) { f.value = x.fnac; f.dispatchEvent(new Event('change', { bubbles: true })); }
+        // Vincular con la vivienda de Mapa Sanitario: copia su ubicación y se mantiene sincronizada
+        const _t = _bmTipo;
+        const elViv = document.getElementById('viv-id-' + _t);
+        const elLat = document.getElementById('lat-' + _t);
+        const elLng = document.getElementById('lng-' + _t);
+        const elOri = document.getElementById('origen-ubic-' + _t);
+        const elSt = document.getElementById('ubicacion-status-' + _t);
+        if (elViv) elViv.value = x.vivId || '';
+        const elNum = document.getElementById('viv-num-' + _t);
+        if (elNum) elNum.value = (x.viv == null) ? '' : String(x.viv);
+        if (x.lat && x.lng && elLat && elLng && elOri) {
+            elLat.value = x.lat; elLng.value = x.lng; elOri.value = 'vivienda';
+            if (elSt) elSt.innerHTML = '✅ Ubicación tomada de la Viv. ' + _bmEsc(x.viv) + ' de Mapa Sanitario <small style="color:#888;">(se actualiza sola)</small>';
+        } else if (elSt && x.vivId) {
+            if (elLat) elLat.value = ''; if (elLng) elLng.value = ''; if (elOri) elOri.value = '';
+            elSt.innerHTML = '🏠 Vinculada a la Viv. ' + _bmEsc(x.viv) + ' (aún sin GPS en Mapa Sanitario; se aplicará sola cuando la vivienda tenga ubicación)';
+        }
         cerrarBuscadorMapa();
     }
 
@@ -2889,6 +2982,7 @@ function importarDatos(event) {
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
                             </div>
+                            ${p.viv_num ? `<div class="dato-item"><span class="dato-label">🏠 N° de Vivienda</span><span class="dato-valor"><strong>${p.viv_num}</strong></span></div>` : `<div class="dato-item" style="grid-column: span 2;"><button type="button" class="btn-pro full-width" style="background:linear-gradient(135deg,#6a1b9a,#4a148c);margin:4px 0;" onclick="abrirVincularMapa(${index},'embarazada')">🔗 Vincular con Mapa Sanitario</button></div>`}
                             <div class="dato-item">
                                 <span class="dato-label">N° Expediente</span>
                                 <span class="dato-valor">${p.expediente || 'No registrado'}</span>
@@ -2999,7 +3093,7 @@ function importarDatos(event) {
                         <button class="btn-pro full-width" onclick="agregarUbicacionDesdeDetalle(${index},'embarazada')"
                             style="background:${p.lat ? 'linear-gradient(135deg,#43a047,#2e7d32)' : 'linear-gradient(135deg,#1976d2,#0d47a1)'};">
                             <span>${p.lat ? '📍' : '🗺️'}</span>
-                            ${p.lat ? 'Actualizar Ubicación (' + (p.origen_ubic === 'gps' ? 'GPS' : 'Manual') + ')' : 'Agregar al Mapa'}
+                            ${p.lat ? 'Actualizar Ubicación (' + (p.origen_ubic === 'gps' ? 'GPS' : (p.origen_ubic === 'vivienda' ? 'Vivienda' : 'Manual')) + ')' : 'Agregar al Mapa'}
                         </button>
                         <button class="btn-pro pro-delete full-width" onclick="eliminarPaciente(${index}, 'embarazada')">
                             <span>🗑️</span> Eliminar
@@ -3151,6 +3245,7 @@ function importarDatos(event) {
                                 <span class="dato-label">Dirección</span>
                                 <span class="dato-valor">${p.direccion || 'No especificada'}</span>
                             </div>
+                            ${p.viv_num ? `<div class="dato-item"><span class="dato-label">🏠 N° de Vivienda</span><span class="dato-valor"><strong>${p.viv_num}</strong></span></div>` : `<div class="dato-item" style="grid-column: span 2;"><button type="button" class="btn-pro full-width" style="background:linear-gradient(135deg,#6a1b9a,#4a148c);margin:4px 0;" onclick="abrirVincularMapa(${index},'puerpera')">🔗 Vincular con Mapa Sanitario</button></div>`}
                             <div class="dato-item">
                                 <span class="dato-label">N° Expediente</span>
                                 <span class="dato-valor">${p.expediente || 'No registrado'}</span>
@@ -3225,7 +3320,7 @@ function importarDatos(event) {
                         <button class="btn-pro full-width" onclick="agregarUbicacionDesdeDetalle(${index},'puerpera')"
                             style="background:${p.lat ? 'linear-gradient(135deg,#43a047,#2e7d32)' : 'linear-gradient(135deg,#1976d2,#0d47a1)'};">
                             <span>${p.lat ? '📍' : '🗺️'}</span>
-                            ${p.lat ? 'Actualizar Ubicación (' + (p.origen_ubic === 'gps' ? 'GPS' : 'Manual') + ')' : 'Agregar al Mapa'}
+                            ${p.lat ? 'Actualizar Ubicación (' + (p.origen_ubic === 'gps' ? 'GPS' : (p.origen_ubic === 'vivienda' ? 'Vivienda' : 'Manual')) + ')' : 'Agregar al Mapa'}
                         </button>
 
                         <button class="btn-pro pro-delete full-width" onclick="eliminarPaciente(${index}, 'puerpera')">
@@ -3378,6 +3473,7 @@ function importarDatos(event) {
                             <span class="dato-label">🏠 Dirección</span>
                             <span class="dato-valor">${p.direccion || 'No registrada'}</span>
                         </div>
+                        ${p.viv_num ? `<div class="dato-item"><span class="dato-label">🏠 N° de Vivienda</span><span class="dato-valor"><strong>${p.viv_num}</strong></span></div>` : `<div class="dato-item" style="grid-column: span 2;"><button type="button" class="btn-pro full-width" style="background:linear-gradient(135deg,#6a1b9a,#4a148c);margin:4px 0;" onclick="abrirVincularMapa(${index},'archivada')">🔗 Vincular con Mapa Sanitario</button></div>`}
                     </div>
                     ${contenidoEspecifico}
                     <h4 class="seccion-titulo" style="margin-top: 30px;">📝 Historial Completo de Notas</h4>
@@ -3714,6 +3810,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         const latEmb = document.getElementById('lat-emb').value;
         const lngEmb = document.getElementById('lng-emb').value;
         const origenUbicEmb = document.getElementById('origen-ubic-emb').value;
+        const vivIdEmb = document.getElementById('viv-id-emb').value;
+        const vivNumEmb = document.getElementById('viv-num-emb').value;
 
         let nuevoRegistro = {
             id: Date.now().toString(),
@@ -3732,6 +3830,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
             lat: latEmb ? parseFloat(latEmb) : null,
             lng: lngEmb ? parseFloat(lngEmb) : null,
             origen_ubic: origenUbicEmb || null,
+            viv_id: vivIdEmb || null,
+            viv_num: vivNumEmb || null,
             vacunas: {
                 influenza: document.getElementById('vacuna-influenza').value,
                 dtpa: document.getElementById('vacuna-dtpa').value,
@@ -3768,6 +3868,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         document.getElementById('lat-emb').value = '';
         document.getElementById('lng-emb').value = '';
         document.getElementById('origen-ubic-emb').value = '';
+        document.getElementById('viv-id-emb').value = '';
+        document.getElementById('viv-num-emb').value = '';
         document.getElementById('ubicacion-status-emb').textContent = 'Sin ubicación capturada';
         const miniEmb = document.getElementById('mini-mapa-emb');
         miniEmb.style.display = 'none';
@@ -3803,6 +3905,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
         const latPuerp = document.getElementById('lat-puerp').value;
         const lngPuerp = document.getElementById('lng-puerp').value;
         const origenUbicPuerp = document.getElementById('origen-ubic-puerp').value;
+        const vivIdPuerp = document.getElementById('viv-id-puerp').value;
+        const vivNumPuerp = document.getElementById('viv-num-puerp').value;
         puerperas.push({
             id: Date.now().toString(),
             registrado_por: MI_USUARIO,
@@ -3816,6 +3920,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
             lat: latPuerp ? parseFloat(latPuerp) : null,
             lng: lngPuerp ? parseFloat(lngPuerp) : null,
             origen_ubic: origenUbicPuerp || null,
+            viv_id: vivIdPuerp || null,
+            viv_num: vivNumPuerp || null,
             notas: []
         });
             guardarDatos('puerperas');
@@ -3824,6 +3930,8 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
             document.getElementById('lat-puerp').value = '';
             document.getElementById('lng-puerp').value = '';
             document.getElementById('origen-ubic-puerp').value = '';
+            document.getElementById('viv-id-puerp').value = '';
+            document.getElementById('viv-num-puerp').value = '';
             document.getElementById('ubicacion-status-puerp').textContent = 'Sin ubicación capturada';
             const miniPuerp = document.getElementById('mini-mapa-puerp');
             miniPuerp.style.display = 'none';
@@ -3837,6 +3945,13 @@ document.getElementById('registro-form-embarazada').addEventListener('submit', f
 
     // --- INICIALIZACIÓN ---
        // --- INICIALIZACIÓN SEGURA ---
+    try { sincronizarUbicacionesVivienda(); } catch (e) { console.warn('Sync ubicaciones:', e); }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        try {
+            if (sincronizarUbicacionesVivienda() && typeof _mapaZona !== 'undefined' && _mapaZona) renderizarMarcadores(_mapaFiltroActual);
+        } catch (e) {}
+    });
     document.addEventListener('DOMContentLoaded', () => {
         actualizarSelectorAnios();
         document.querySelectorAll('.buscador-input').forEach(input => {
@@ -3976,6 +4091,8 @@ function confirmarParto() {
         lat: paciente.lat,
         lng: paciente.lng,
         origen_ubic: paciente.origen_ubic,
+        viv_id: paciente.viv_id || null,
+        viv_num: paciente.viv_num || null,
         notas: paciente.notas ? [...paciente.notas] : [],
         historial_embarazo: {
             fur: paciente.fur,
@@ -5529,6 +5646,7 @@ async function abrirMapaZona() {
 function renderizarMarcadores(filtro) {
     if (!_mapaZona) return;
     _mapaFiltroActual = filtro;
+    try { sincronizarUbicacionesVivienda(); } catch (e) {}
 
     // Limpiar marcadores anteriores
     _marcadoresMapa.forEach(m => m.remove());
@@ -5652,7 +5770,9 @@ function renderizarMarcadores(filtro) {
 
             const origenTag = p.origen_ubic === 'gps'
                 ? '<span style="color:#2e7d32;font-size:0.75em;">🛰️ GPS</span>'
-                : '<span style="color:#1976d2;font-size:0.75em;">🖊️ Manual</span>';
+                : (p.origen_ubic === 'vivienda'
+                    ? '<span style="color:#6a1b9a;font-size:0.75em;">🏠 Ubicación de la vivienda</span>'
+                    : '<span style="color:#1976d2;font-size:0.75em;">🖊️ Manual</span>');
 
             const seccion = tipo === 'embarazada' ? 'listado-embarazadas' : 'listado-puerperas';
             // ID único para el botón Mover de este marcador
@@ -5666,7 +5786,7 @@ function renderizarMarcadores(filtro) {
                     <div style="font-size:0.82em;color:#444;margin:4px 0;">${estadoInfo}</div>
                     ${fechasClaveInfo}
                     ${riesgoTag}
-                    <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}</div>
+                    <div style="font-size:0.78em;color:#777;margin-bottom:2px;">📍 ${p.direccion || 'Sin dirección'}${p.viv_num ? ' · 🏠 Viv. ' + p.viv_num : ''}</div>
                     <div style="font-size:0.75em;color:#888;margin-bottom:2px;">👤 <em>Registrada por:</em> ${p.registrado_por || 'Desconocido'}</div>
                     <div style="margin-bottom:8px;">${origenTag}</div>
                     <div style="display:flex;gap:6px;">
@@ -6206,6 +6326,7 @@ function descargarPDF(index, tipo) {
         <div class="fila"><span class="label">NOMBRE COMPLETO:</span><span class="valor">${paciente.nombre}</span></div>
         <div class="fila"><span class="label">N° EXPEDIENTE:</span><span class="valor">${paciente.expediente || 'No registrado'}</span></div>
         <div class="fila"><span class="label">DIRECCIÓN:</span><span class="valor">${paciente.direccion || 'No registrada'}</span></div>
+        ${paciente.viv_num ? `<div class="fila"><span class="label">N° DE VIVIENDA:</span><span class="valor">${paciente.viv_num}</span></div>` : ''}
         <div class="fila"><span class="label">EDAD:</span><span class="valor">${edadDoc}</span></div>
         <div class="fila"><span class="label">FECHA DE NACIMIENTO:</span><span class="valor">${paciente.fecha_nacimiento ? formatearConPlecas(paciente.fecha_nacimiento) : 'No registrada'}</span></div>
         <div class="fila" style="background:#fce4ec;">
