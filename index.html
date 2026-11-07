@@ -3,8 +3,40 @@
 <head>
 <script src="storage-shim.js"></script>
 <script src="sisc-estado.js"></script>
-<script src="sisc-notificaciones.js"></script>
 <style>html:not(.sis-nube-on) .sync-card{display:none!important}</style>
+<style id="siscAhCss">
+/* ── Tarjeta y ventana "Alertas de hoy" (las conecta el script al final de este archivo) ── */
+#siscAhCard{grid-column:1/-1;background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;text-align:center;position:relative}
+#siscAhCard .t{font-weight:800;font-size:1rem;color:var(--text)}
+#siscAhCard .s{font-size:.8rem;color:var(--sub);margin:4px 0 12px;line-height:1.35;min-height:1.2em}
+#siscAhCard .ah-btn{width:100%;max-width:420px;padding:13px;border:0;border-radius:12px;color:#fff;font-weight:700;font-size:.92rem;cursor:pointer;background:linear-gradient(135deg,#c62828,#ef5350);box-shadow:0 4px 12px rgba(198,40,40,.32)}
+#siscAhCard .ah-btn:active{transform:scale(.98)}
+#siscAhCard .ah-web{display:block;margin:10px auto 0;background:none;border:0;color:var(--teal);font-weight:700;font-size:.78rem;text-decoration:underline;cursor:pointer}
+#siscAhCard [hidden]{display:none!important}
+#siscAhCard .ah-webest{font-size:.72rem;color:var(--sub);margin-top:8px}
+#siscAhCard .s .sah-cnt{display:flex;align-items:center;justify-content:center;min-width:60px;width:max-content;height:60px;padding:0 8px;box-sizing:border-box;margin:4px auto 6px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ff7a6b,#c62828);color:#fff;font-size:2.1rem;font-weight:900;position:relative;box-shadow:0 4px 12px rgba(198,40,40,.45);animation:sahLat 1.3s ease-in-out infinite}
+#siscAhCard .s .sah-cnt::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid #ef5350;animation:sahOnda 1.3s ease-out infinite}
+#siscAhCard .s .sah-txt{display:block;font-size:1.02rem;font-weight:800;color:#c62828;margin-bottom:2px}
+#siscAhCard.hay{box-shadow:0 0 0 2px rgba(239,83,80,.35),var(--shadow)}
+#siscAhCard.hay .t .camp{display:inline-block;transform-origin:50% 0;animation:sahCampana 2.6s ease-in-out infinite}
+#siscAhCard.hay .ah-btn{animation:sahBrillo 1.8s ease-in-out infinite}
+@keyframes sahLat{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@keyframes sahOnda{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.75);opacity:0}}
+@keyframes sahCampana{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(16deg)}20%{transform:rotate(-14deg)}30%{transform:rotate(10deg)}40%{transform:rotate(-6deg)}50%{transform:rotate(3deg)}}
+@keyframes sahBrillo{0%,100%{box-shadow:0 4px 12px rgba(198,40,40,.32)}50%{box-shadow:0 0 0 6px rgba(239,83,80,.28),0 4px 16px rgba(198,40,40,.5)}}
+@media (prefers-reduced-motion:reduce){#siscAhCard .s .sah-cnt,#siscAhCard .s .sah-cnt::after,#siscAhCard.hay .t .camp,#siscAhCard.hay .ah-btn{animation:none!important}}
+#siscAhBox{max-width:430px;max-height:90vh;overflow-y:auto}
+#siscAhBox .fecha{text-align:center;font-size:.78rem;color:#546e7a;margin:-2px 0 10px}
+#siscAhBox .est{text-align:center;font-size:.72rem;color:#78909c;margin:8px 0 2px;min-height:1em}
+.sah-app{border:1.5px solid #e0e8ec;border-radius:14px;margin-bottom:10px;overflow:hidden}
+.sah-h{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f3f8fa;font-weight:700;font-size:.88rem;color:#1a2e3a;cursor:pointer}
+.sah-h .n{margin-left:auto;background:#c62828;color:#fff;border-radius:999px;padding:1px 9px;font-size:.78rem}
+.sah-h .n.cero{background:#90a4ae}
+.sah-i{padding:8px 12px;border-top:1px solid #eef3f5;font-size:.82rem;color:#263238;line-height:1.35}
+.sah-i b{display:block;font-weight:700}
+.sah-i span{color:#546e7a}
+.sah-v{padding:8px 12px;font-size:.78rem;color:#78909c;border-top:1px solid #eef3f5}
+</style>
 <script>
 /* Interruptor maestro (5 toques en el logo): activa/desactiva de una vez IA, nube y botón flotante
    escribiendo las MISMAS claves que usa cada app con su propio gesto, así cada app puede seguir
@@ -669,8 +701,8 @@
         <img src="icon-192.png" alt="SIS Comunitario" style="pointer-events:none;-webkit-user-drag:none;"/>
     </div>
     <div class="header-text">
-        <h1>Sistema de Vigilancia y Atención Comunitaria</h1>
-        <p>Salud Comunitaria-Promoción y Prevención</p>
+        <h1>Sistema Integrado Salud Comunitaria El Salvador</h1>
+        <p>Salud Integral Familiar de Promoción y Prevención</p>
     </div>
 </header>
 
@@ -701,6 +733,13 @@
 <div class="section-title">📱 Aplicaciones disponibles</div>
 
 <main>
+    <!-- 🔔 Alertas de hoy: la llena el script de más abajo (solo muestra, sin notificaciones) -->
+    <div id="siscAhCard">
+        <div class="t"><span class="camp">🔔</span> Alertas de hoy</div>
+        <div class="s" id="siscAhSub">Toca para ver las alertas de Materna, MEF y Visita</div>
+        <button type="button" class="ah-btn" id="siscAhBtn">Ver alertas de hoy</button>
+    </div>
+
     <a class="app-card card-vigilancia" href="Vigilancia_Materna.html">
         <div class="card-icon icon-vigilancia">👩‍⚕️</div>
         <div class="card-label">Vigilancia Materna</div>
@@ -1053,6 +1092,21 @@
   </div>
 </div>
 
+<!-- ── ALERTAS DE HOY (ventana) ── -->
+<div class="modal-overlay" id="siscAhOv">
+  <div class="modal-box" id="siscAhBox">
+    <div class="modal-icon">🔔</div>
+    <div class="modal-title">Alertas de hoy</div>
+    <div class="fecha" id="siscAhFecha"></div>
+    <div id="siscAhLista"></div>
+    <div class="est" id="siscAhEst"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      <button type="button" class="btn-open sec" id="siscAhAct" style="flex:none;width:100%">🔄 Actualizar</button>
+      <button type="button" class="btn-cancel" id="siscAhCer" style="flex:none;width:100%">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── VENTANA QUE EJECUTA EL BOTÓN DE CADA APP ── -->
 <div id="syncRunner">
   <div class="sr-bar">
@@ -1253,6 +1307,8 @@ function sisMasterAlternar(){
     syncToast(cancelado
       ? 'Sincronización cancelada'
       : (sube ? '⬆️ Subida revisada: ' : '⬇️ Bajada revisada: ') + syncHechas + ' de ' + syncCola.length + ' apps');
+    // Tras bajar datos de la nube: calcular las alertas de Materna, MEF y Visita sin tener que abrirlas
+    if (!cancelado && !sube && window.siscRecalcularAlertas) setTimeout(window.siscRecalcularAlertas, 1500);
   }
 </script>
 
@@ -1759,5 +1815,155 @@ function sisMasterAlternar(){
   pobPintar();
 </script>
 
+<script>
+/* Alertas de hoy (solo mostrar, sin notificaciones). Funciona solo con este index.html:
+   abre cada app en un marco oculto del mismo sitio y le pregunta sus alertas de hoy. */
+(function () {
+  'use strict';
+  var META = [
+    { f: 'Vigilancia_Materna.html', titulo: 'Vigilancia Materna', emoji: '🤰' },
+    { f: 'mef.html', titulo: 'MEF · Seguimiento', emoji: '🩺' },
+    { f: 'visita_domiciliar.html', titulo: 'Visita Domiciliar', emoji: '🏠' }
+  ];
+  var CALC = {
+    'Vigilancia_Materna.html': {
+      primerDia: true,
+      listo: function (w) { return typeof w.calcularAlertas === 'function' && typeof w.eval('embarazadas') !== 'undefined' && typeof w.eval('puerperas') !== 'undefined'; },
+      lista: function (w) { return w.calcularAlertas().map(function (a) { return { n: a.p || '—', m: a.m || '' }; }); }
+    },
+    'mef.html': {
+      listo: function (w) { return typeof w.getAllAlertsFlat === 'function' && typeof w.eval('records') !== 'undefined'; },
+      lista: function (w) { return w.getAllAlertsFlat().filter(function (a) { return a.diff === 0; }).map(function (a) { return { n: (a.rec && a.rec.nombre) || '—', m: (a.label || 'Seguimiento') + ' — hoy' }; }); }
+    },
+    'visita_domiciliar.html': {
+      listo: function (w) { return typeof w.getAlerts === 'function' && typeof w.eval('records') !== 'undefined'; },
+      lista: function (w) { return w.getAlerts().filter(function (r) { return r._diff === 0; }).map(function (r) { return { n: r.nombre || '—', m: 'Seguimiento de visita — hoy' }; }); }
+    }
+  };
+  var RLS = null; try { RLS = window.localStorage; } catch (e) {}
+  var KEY = '__sisc_hoy_v1';
+  var estado = { fecha: '', apps: {} }, ocupado = false;
+
+  function hoyStr() { var d = new Date(), p = function (n) { return n < 10 ? '0' + n : '' + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function cargar() { try { var o = JSON.parse(RLS.getItem(KEY)); if (o && o.fecha === hoyStr()) estado = o; } catch (e) {} }
+  function guardar() { try { RLS.setItem(KEY, JSON.stringify(estado)); } catch (e) {} }
+
+  /* Ejecuta fn() dentro del marco simulando que hoy es dentro de "off" días. */
+  function conHoy(w, off, fn) {
+    var Real = w.Date, log = w.console.log, base = new Real(); base.setDate(base.getDate() + off);
+    var t = base.getTime();
+    var Fake = function () { return Reflect.construct(Real, arguments.length ? arguments : [t], Real); };
+    Fake.prototype = Real.prototype; Fake.now = function () { return t; }; Fake.parse = Real.parse; Fake.UTC = Real.UTC;
+    try { w.Date = Fake; w.console.log = function () {}; return fn(); }
+    finally { w.Date = Real; w.console.log = log; }
+  }
+
+  function calcularApp(m) {
+    return new Promise(function (res) {
+      var cfg = CALC[m.f], fr = document.createElement('iframe'), t0 = Date.now(), fin = false;
+      fr.name = 'sisc-calc'; fr.setAttribute('aria-hidden', 'true');
+      fr.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px;height:640px;border:0;visibility:hidden;pointer-events:none';
+      function cerrar(r) { if (fin) return; fin = true; clearInterval(iv); try { fr.src = 'about:blank'; fr.parentNode.removeChild(fr); } catch (e) {} res(r); }
+      var iv = setInterval(function () {
+        try {
+          var w = fr.contentWindow;
+          if (w && w.document.readyState === 'complete' && cfg.listo(w)) {
+            clearInterval(iv);
+            setTimeout(function () {   /* margen: MEF y Visita llenan sus registros un poco después de cargar */
+              try {
+                var hoy = conHoy(w, 0, function () { return cfg.lista(w); }) || [];
+                if (cfg.primerDia) {   /* Materna: solo el primer día de cada alerta */
+                  var ayer = conHoy(w, -1, function () { return cfg.lista(w); }) || [], vistas = {};
+                  ayer.forEach(function (a) { vistas[a.n + '|' + a.m] = 1; });
+                  hoy = hoy.filter(function (a) { return !vistas[a.n + '|' + a.m]; });
+                }
+                cerrar({ items: hoy, t: Date.now() });
+              } catch (e) { cerrar(null); }
+            }, 2500);
+          } else if (Date.now() - t0 > 25000) cerrar(null);
+        } catch (e) { if (Date.now() - t0 > 25000) cerrar(null); }
+      }, 400);
+      fr.src = m.f; document.body.appendChild(fr);
+    });
+  }
+
+  function recalcular(prog) {
+    if (ocupado) return Promise.resolve(false);
+    ocupado = true;
+    var p = Promise.resolve();
+    META.forEach(function (m, i) {
+      p = p.then(function () { if (prog) prog(i + 1, META.length); return calcularApp(m); })
+           .then(function (r) { if (r) { estado.apps[m.f] = r; estado.fecha = hoyStr(); guardar(); } });
+    });
+    return p.then(function () { ocupado = false; return true; });
+  }
+  window.siscRecalcularAlertas = function () { return recalcular(); };
+
+  function total() { var n = 0; META.forEach(function (m) { var a = estado.apps[m.f]; if (a) n += a.items.length; }); return n; }
+  function sinDatos() { return META.some(function (m) { return !estado.apps[m.f]; }); }
+  function viejo(ms) { return META.some(function (m) { var a = estado.apps[m.f]; return !a || Date.now() - a.t > ms; }); }
+
+  function resumen() {
+    var sub = document.getElementById('siscAhSub'), card = document.getElementById('siscAhCard'); if (!sub) return;
+    var n = total(); sub.textContent = '';
+    if (n === 0 && sinDatos()) { card.classList.remove('hay'); sub.textContent = 'Toca para ver las alertas de Materna, MEF y Visita'; return; }
+    if (n === 0) { card.classList.remove('hay'); sub.textContent = 'Hoy no hay alertas pendientes ✓'; return; }
+    card.classList.add('hay');
+    var c = document.createElement('span'); c.className = 'sah-cnt'; c.textContent = n;
+    var t = document.createElement('span'); t.className = 'sah-txt'; t.textContent = (n === 1 ? 'alerta' : 'alertas') + ' para hoy';
+    sub.appendChild(c); sub.appendChild(t);
+  }
+
+  function ui() {
+    var ov = document.getElementById('siscAhOv'); if (!ov) return;
+    function est(t) { document.getElementById('siscAhEst').textContent = t || ''; }
+    function pintar() {
+      var fe = document.getElementById('siscAhFecha');
+      try { var tx = new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }); fe.textContent = tx.charAt(0).toUpperCase() + tx.slice(1); } catch (e) {}
+      var cont = document.getElementById('siscAhLista'); cont.textContent = '';
+      META.forEach(function (m) {
+        var a = estado.apps[m.f], items = a ? a.items : [];
+        var box = document.createElement('div'); box.className = 'sah-app';
+        var h = document.createElement('div'); h.className = 'sah-h';
+        h.appendChild(document.createTextNode(m.emoji + ' ' + m.titulo));
+        var n = document.createElement('span'); n.className = 'n' + (items.length ? '' : ' cero'); n.textContent = items.length; h.appendChild(n);
+        h.onclick = function () { location.href = m.f; };
+        box.appendChild(h);
+        if (!items.length) { var v = document.createElement('div'); v.className = 'sah-v'; v.textContent = a ? 'Sin alertas para hoy' : 'Aún sin datos: toca 🔄 Actualizar'; box.appendChild(v); }
+        items.forEach(function (it) {
+          var d = document.createElement('div'); d.className = 'sah-i';
+          var b = document.createElement('b'); b.textContent = it.n; var s = document.createElement('span'); s.textContent = it.m;
+          d.appendChild(b); d.appendChild(s); box.appendChild(d);
+        });
+        cont.appendChild(box);
+      });
+    }
+    function actualizar() {
+      var bt = document.getElementById('siscAhAct'); if (ocupado) return;
+      bt.disabled = true; est('Actualizando… 0 de ' + META.length);
+      recalcular(function (i, n) { est('Actualizando… ' + i + ' de ' + n); }).then(function () {
+        bt.disabled = false; pintar(); resumen();
+        var h = new Date(); est('Actualizado a las ' + ('0' + h.getHours()).slice(-2) + ':' + ('0' + h.getMinutes()).slice(-2));
+      });
+    }
+    document.getElementById('siscAhBtn').onclick = function () {
+      pintar(); resumen(); est(''); ov.classList.add('active');
+      if (viejo(30 * 60 * 1000)) actualizar();
+    };
+    document.getElementById('siscAhAct').onclick = actualizar;
+    document.getElementById('siscAhCer').onclick = function () { ov.classList.remove('active'); };
+    ov.onclick = function (e) { if (e.target === ov) ov.classList.remove('active'); };
+    resumen();
+  }
+
+  cargar();
+  window.addEventListener('load', function () {
+    ui();
+    setTimeout(function () {   /* al abrir el menú: calcular solo si faltan datos o están viejos (+30 min) */
+      if (!document.hidden && viejo(30 * 60 * 1000)) recalcular().then(resumen);
+    }, 5000);
+  });
+})();
+</script>
 </body>
 </html>
