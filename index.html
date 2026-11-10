@@ -701,8 +701,8 @@
         <img src="icon-192.png" alt="SIS Comunitario" style="pointer-events:none;-webkit-user-drag:none;"/>
     </div>
     <div class="header-text">
-        <h1>Sistema Integrado Salud Comunitaria El Salvador</h1>
-        <p>Salud Integral Familiar de Promoción y Prevención</p>
+        <h1>Sistema Integral de Atención Preventiva y Vigilancia Materna</h1>
+        <p>Salud Comunitaria El Salvador</p>
     </div>
 </header>
 
@@ -1123,7 +1123,7 @@
   <iframe id="srFrame" title="App"></iframe>
 </div>
 <script>
-/* 5 toques en el logo = activar / desactivar TODO (IA, nube, botón flotante) en todas las apps */
+/* 5 toques en el logo = activar / desactivar la nube y el botón flotante en todas las apps. La IA NO se maneja desde aquí: solo desde Registro Diario. */
 var _sisMT=0,_sisMTT=null;
 function sisMasterToque(){
   _sisMT++; clearTimeout(_sisMTT); _sisMTT=setTimeout(function(){_sisMT=0;},1500);
@@ -1132,10 +1132,9 @@ function sisMasterToque(){
 function sisMasterAlternar(){
   var ls=localStorage, m=ls.getItem('sis_master_v1'), on;
   if(m==='1'||m==='0') on=(m!=='1');                       // alterna el estado del maestro
-  else on=!(ls.getItem('rdps_ia_funciones_visibles')==='1'||ls.getItem('sisnav_visible_v1')==='1'); // primera vez
+  else on=!(ls.getItem('sisnav_visible_v1')==='1'); // primera vez
   var a=on?'1':'0', oc=on?'0':'1';
   ls.setItem('sis_master_v1',a);
-  ls.setItem('rdps_ia_funciones_visibles',a);   // Registro Diario: IA + sección de nube + guía
   ls.setItem('sisnav_visible_v1',a);            // botón flotante de todas las apps
   ls.setItem('sync_panel_desbloqueado',a);      // Curvas de Crecimiento: panel de nube
   ls.setItem('ms_cloudOptsHidden',oc);          // Mapa Sanitario: opciones de nube
@@ -1145,7 +1144,7 @@ function sisMasterAlternar(){
   sisMasterAplicar();
   try{navigator.vibrate&&navigator.vibrate(40);}catch(e){}
   var d=document.createElement('div');
-  d.textContent=on?'🔓 IA, nube y botón flotante ACTIVADOS en todas las apps':'🔒 IA, nube y botón flotante OCULTOS en todas las apps';
+  d.textContent=on?'🔓 Nube y botón flotante ACTIVADOS en todas las apps':'🔒 Nube y botón flotante OCULTOS en todas las apps';
   d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);max-width:88%;text-align:center;background:rgba(22,26,34,.94);color:#fff;padding:12px 18px;border-radius:12px;font:600 .85rem sans-serif;z-index:100010;box-shadow:0 4px 16px rgba(0,0,0,.3)';
   document.body.appendChild(d); setTimeout(function(){d.remove();},2600);
 }

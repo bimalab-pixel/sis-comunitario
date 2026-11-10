@@ -482,7 +482,7 @@
         .btn.secondary{background:var(--white);border:1.5px solid var(--border);color:var(--navy2)}.btn.secondary:hover{background:var(--light2)}
         .btn.gold{background:var(--gold);color:#fff}.btn.gold:hover{filter:brightness(1.1)}
 
-        /* ══════════════ SECCIÓN IA OCULTABLE (5 toques en el logo de inicio) ══════════════ */
+        /* ══════════════ SECCIÓN IA OCULTABLE (7 toques en el título de Ajustes) ══════════════ */
         .rdps-ia-oculto{display:none !important;}
 
         /* ══════════════ BOTÓN MÁGICO — Generar con IA ══════════════ */
@@ -509,7 +509,7 @@
         .btn-magic-hint{display:none;font-size:.68rem;color:var(--muted);text-align:center;margin:-.15rem 0 .5rem;}
         /* Selector de estilo de redacción (Técnico / Sencillo) */
         .estilo-ia-seg{display:flex;gap:0;border:1.5px solid #1e3a8a;border-radius:10px;overflow:hidden;background:#fff;}
-        .estilo-ia-seg button{flex:1;padding:.55rem .4rem;border:none;background:transparent;color:#1e3a8a;
+        .estilo-ia-seg button{flex:1;padding:.55rem .25rem;border:none;background:transparent;color:#1e3a8a;
           font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;line-height:1.2;transition:background .15s,color .15s;}
         .estilo-ia-seg button + button{border-left:1.5px solid #1e3a8a;}
         .estilo-ia-seg button.activo{background:#1e3a8a;color:#fff;}
@@ -1417,8 +1417,8 @@
             <svg class="icon-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
             <svg class="icon-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         </button>
-        <button type="button" class="home-tema-toggle home-config-btn" id="btn-config-home" onclick="abrirConfig()" title="Ajustes (MAYÚSCULAS, IA)" aria-label="Ajustes">⚙️</button>
-        <div class="home-logo" id="rdps-toque-secreto-ia" onclick="rdpsToqueSecretoIA()" style="cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">
+        <button type="button" class="home-tema-toggle home-config-btn" id="btn-config-home" onclick="abrirConfig()" title="Ajustes" aria-label="Ajustes">⚙️</button>
+        <div class="home-logo" id="rdps-toque-secreto-ia" style="cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
                 <rect x="9" y="3" width="6" height="4" rx="2"/>
@@ -1798,6 +1798,7 @@
                             <div class="estilo-ia-seg">
                                 <button type="button" data-estilo="tecnico" onclick="rdpsSetEstiloIA('tecnico')">🩺 Técnico profesional</button>
                                 <button type="button" data-estilo="sencillo" onclick="rdpsSetEstiloIA('sencillo')">🏘️ Técnico comunitario</button>
+                                <button type="button" data-estilo="comunidad" onclick="rdpsSetEstiloIA('comunidad')">🤝 Lenguaje sencillo</button>
                             </div>
                         </div>
                         <button type="button" class="btn-magic" id="btn-magic-ia" onclick="generarConIA()">
@@ -2669,7 +2670,7 @@
     <div class="modal-box" onclick="event.stopPropagation()">
         <div class="modal-box-inner" style="position:relative">
             <button class="modal-close-x" onclick="cerrarModal('modal-config')">✕</button>
-            <h3 style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:.3rem">Ajustes</h3>
+            <h3 id="rdps-toque-secreto-ia2" onclick="rdpsToqueSecretoIA()" style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--navy);margin-bottom:.3rem;cursor:default;-webkit-tap-highlight-color:transparent;user-select:none">Ajustes</h3>
             <p style="font-size:.8rem;color:var(--muted);margin-bottom:1.1rem">Ajustes de esta app. Tu perfil (nombre, comunidad, establecimiento, municipio) es único y lo editas con el botón de perfil.</p>
             <div class="profile-modal-body">
                 <div class="profile-field">
@@ -3328,7 +3329,7 @@
     }
 
     // ══════════════ INTERRUPTOR SECRETO — mostrar/ocultar funciones de IA ══════════════
-    // 5 toques en "MINSAL — El Salvador" (pantalla de inicio) activan o bloquean
+    // 7 toques seguidos en el título "Ajustes" (dentro de ⚙️ Ajustes) activan o bloquean
     // todo lo relacionado a IA: botones "Generar Informe Profesional" y la
     // configuración de clave API / modelo en Mi Perfil.
     const RDPS_IA_VISIBLE_KEY = 'rdps_ia_funciones_visibles';
@@ -3338,8 +3339,8 @@
     function rdpsToqueSecretoIA() {
       _rdpsToques++;
       clearTimeout(_rdpsToquesTimer);
-      _rdpsToquesTimer = setTimeout(() => { _rdpsToques = 0; }, 1500);
-      if (_rdpsToques >= 5) {
+      _rdpsToquesTimer = setTimeout(() => { _rdpsToques = 0; }, 2500);
+      if (_rdpsToques >= 7) {
         _rdpsToques = 0;
         clearTimeout(_rdpsToquesTimer);
         const activarAhora = localStorage.getItem(RDPS_IA_VISIBLE_KEY) !== '1';
@@ -6684,7 +6685,7 @@ function _riesgoActualizarGrafica(indicadorId) {
     // Se recuerda en el dispositivo y lo comparten el formulario de registro y la tabla del reporte.
     const RDPS_ESTILO_IA_KEY = 'rdps_estilo_ia';
     function rdpsGetEstiloIA() {
-      try { return localStorage.getItem(RDPS_ESTILO_IA_KEY) === 'sencillo' ? 'sencillo' : 'tecnico'; }
+      try { var _v = localStorage.getItem(RDPS_ESTILO_IA_KEY); return (_v === 'sencillo' || _v === 'comunidad') ? _v : 'tecnico'; }
       catch (e) { return 'tecnico'; }
     }
     function rdpsPintarEstiloIA() {
@@ -6694,7 +6695,7 @@ function _riesgoActualizarGrafica(indicadorId) {
       });
     }
     function rdpsSetEstiloIA(valor) {
-      try { localStorage.setItem(RDPS_ESTILO_IA_KEY, valor === 'sencillo' ? 'sencillo' : 'tecnico'); } catch (e) {}
+      try { localStorage.setItem(RDPS_ESTILO_IA_KEY, (valor === 'sencillo' || valor === 'comunidad') ? valor : 'tecnico'); } catch (e) {}
       rdpsPintarEstiloIA();
     }
     rdpsPintarEstiloIA();
@@ -6945,7 +6946,16 @@ function _riesgoActualizarGrafica(indicadorId) {
       }
 
       // Bloque que se agrega al prompt solo cuando se eligió "Técnico comunitario"
-      const reglaEstilo = estilo === 'sencillo' ? `
+      const reglaComunidad = `
+LENGUAJE SENCILLO Y RESPETUOSO PARA LA COMUNIDAD (regla crítica: SUSTITUYE las instrucciones de "redacción técnica formal", de aperturas técnicas y de vocabulario clínico):
+   - Escribe como si la persona que va a leer o escuchar esto tuviera poco estudio: palabras de todos los días, oraciones cortas (una idea por oración) y ningún término que haya que buscar en un diccionario.
+   - Cuando haya una palabra médica difícil, usa la forma sencilla: "hipertensión" → "presión alta"; "diabetes" → "azúcar alta en la sangre (diabetes)"; "anemia" → "sangre baja (anemia)"; "desnutrición" → "poco peso o poca talla por falta de buena alimentación"; "deshidratación" → "falta de agua en el cuerpo"; "cefalea" → "dolor de cabeza"; "edema" → "hinchazón"; "control prenatal" → "chequeo del embarazo"; "esquema de vacunación" → "vacunas al día"; "lactancia materna" → "dar pecho"; "signos de peligro" → "señales de alarma". Puedes dejar la palabra técnica entre paréntesis solo si ayuda.
+   - TRATO RESPETUOSO SIEMPRE: habla con dignidad de la persona y su familia. Está PROHIBIDO usar palabras despectivas, burlonas o que culpen o humillen (por ejemplo: "ignorante", "descuidado/a", "irresponsable", "no entiende", "terco/a", "sucio", "mal hábito" dicho con reproche). Describe lo que se observó sin juzgar, y presenta lo que hay que mejorar como algo que se puede lograr con apoyo ("se acordó", "se le animó a", "se le explicó cómo").
+   - No infantilices: nada de diminutivos ni de tono de regaño o de lástima. Es un lenguaje sencillo, no un lenguaje de niños.
+   - Usa tercera persona y tiempo pasado ("Se encontró que...", "Se le explicó que...", "Se acordó con la familia que..."). Nunca "paciente".
+   - Solo cambia el LENGUAJE, no el contenido: todas las demás reglas siguen vigentes (cifras con su unidad exacta, sexo, peso/talla, cobertura de TODOS los temas, no inventar nada, no recortar lo ya escrito, acuerdo claro, formato TSV de 4 columnas y mismo formato de edad). Las cifras (140/90, kg, cm, semanas, fechas) se conservan exactas.
+`;
+      const reglaEstilo = estilo === 'comunidad' ? reglaComunidad : estilo === 'sencillo' ? `
 ESTILO DE REDACCIÓN: TÉCNICO EN SALUD COMUNITARIA (regla crítica, SUSTITUYE las instrucciones anteriores de "redacción técnica formal", de aperturas técnicas y de vocabulario clínico especializado):
    - Redacta con el registro profesional de un promotor o técnico de salud comunitaria que documenta su visita: lenguaje claro, preciso y ordenado, comprensible para cualquier persona del equipo de salud o de la comunidad, pero SIN sonar coloquial, infantil ni simplista (no uses diminutivos, expresiones de plática ni frases como "como un vecino").
    - Usa los términos propios del primer nivel de atención y de la salud comunitaria, que sí son de uso común: hipertensión arterial, diabetes, control prenatal, signos de peligro, esquema de vacunación, lactancia materna, desnutrición, deshidratación, consejería, seguimiento, referencia al establecimiento de salud, usuario/usuaria, vivienda, grupo familiar. Estos NO se simplifican.
@@ -7067,7 +7077,7 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
             _iaRegistrarAperturaUsada(_iaHistorialAperturas.hallazgos, _iaDetectarApertura(hallazgosFinal, _iaAperturasHallazgos));
             _iaRegistrarAperturaUsada(_iaHistorialAperturas.acciones, _iaDetectarApertura(accionesFinal, _iaAperturasAcciones));
           }
-          toast(estilo === 'sencillo' ? '✨ Redacción en estilo técnico comunitario generada — revisa antes de guardar' : '✨ Redacción generada — revisa antes de guardar', 'success');
+          toast(estilo === 'comunidad' ? '✨ Redacción en lenguaje sencillo generada — revisa antes de guardar' : estilo === 'sencillo' ? '✨ Redacción en estilo técnico comunitario generada — revisa antes de guardar' : '✨ Redacción generada — revisa antes de guardar', 'success');
         } else {
           toast('❌ La IA no devolvió contenido válido. Intenta de nuevo.', 'error');
         }
@@ -11534,7 +11544,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
       <span>Toca una celda de <b>Hallazgos</b> o <b>Acciones</b> para editar. Los cambios se guardan en el registro.</span>
     </div>
 
-    <div class="ia-toolbar" id="ia-toolbar">
+    <div class="ia-toolbar" id="ia-toolbar" style="${localStorage.getItem('rdps_ia_funciones_visibles') === '1' ? '' : 'display:none'}">
       <button type="button" class="btn-magic-tabla" id="btn-magic-tabla" onclick="generarConIATabla()">
         <span id="btn-magic-tabla-texto">✨ Generar  Informe Profesional</span>
       </button>
@@ -11543,6 +11553,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         <select id="rep-estilo-ia" onchange="_repGuardarEstilo()">
           <option value="tecnico" selected>🩺 Técnico profesional</option>
           <option value="sencillo">🏘️ Técnico comunitario</option>
+          <option value="comunidad">🤝 Lenguaje sencillo</option>
         </select>
       </span>
       <span class="ia-nivel-wrap">
@@ -11875,7 +11886,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     ];
     function _repEstiloActual() {
       var el = document.getElementById('rep-estilo-ia');
-      return (el && el.value === 'sencillo') ? 'sencillo' : 'tecnico';
+      return (el && (el.value === 'sencillo' || el.value === 'comunidad')) ? el.value : 'tecnico';
     }
     function _repGuardarEstilo() {
       try { localStorage.setItem('rdps_estilo_ia', _repEstiloActual()); } catch (e) {}
@@ -11883,7 +11894,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
     (function() {
       try {
         var el = document.getElementById('rep-estilo-ia');
-        if (el && localStorage.getItem('rdps_estilo_ia') === 'sencillo') el.value = 'sencillo';
+        var _ev = localStorage.getItem('rdps_estilo_ia'); if (el && (_ev === 'sencillo' || _ev === 'comunidad')) el.value = _ev;
       } catch (e) {}
     })();
 
@@ -11924,7 +11935,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
 
     function _repConstruirPromptLote(items, nivel, refuerzos) {
       var regla = _repReglaNivel(nivel);
-      var sencillo = !!(items[0] && items[0].estilo === 'sencillo');
+      var comunidad = !!(items[0] && items[0].estilo === 'comunidad');
+      var sencillo = comunidad || !!(items[0] && items[0].estilo === 'sencillo');
       var hayRiesgoDetectado = false;
       var personas = items.map(function(it) {
         var ref = (refuerzos && refuerzos[it.idx]) ? (' [DEBES incluir textualmente estas cifras que faltaron antes: ' + refuerzos[it.idx].join(', ') + ']') : '';
@@ -11943,6 +11955,7 @@ Notas (Acciones ya escritas): ${accion || '—'}
         'Debes devolver EXACTAMENTE ' + items.length + ' filas, una por persona, respetando el número N° indicado para cada una (no lo cambies, no lo omitas, no reordenes).',
         'REGLAS PARA TODAS LAS FILAS:',
         '1. Edad: adultos y niños mayores con la palabra completa ("35 años"); bebés/niños pequeños con años y meses ("1 año 2 meses", "8 meses").',
+        comunidad ? '2. LENGUAJE SENCILLO Y RESPETUOSO PARA LA COMUNIDAD (regla crítica, SUSTITUYE la redacción técnica): escribe para una persona con poco estudio: palabras de todos los días, oraciones cortas (una idea por oración), sin términos médicos difíciles (di "presión alta" en vez de hipertensión, "sangre baja (anemia)", "chequeo del embarazo", "dar pecho", "señales de alarma", "falta de agua en el cuerpo", "dolor de cabeza", "hinchazón"). TRATO RESPETUOSO SIEMPRE: PROHIBIDO usar palabras despectivas, burlonas o que culpen o humillen (ignorante, descuidado/a, irresponsable, no entiende, terco/a, sucio, etc.); describe lo observado sin juzgar y presenta lo que hay que mejorar como algo que se logra con apoyo. No infantilices (sin diminutivos ni tono de regaño). Tercera persona y tiempo pasado ("Se encontró que...", "Se le explicó que...", "Se acordó que..."), nunca "paciente". Solo cambia el lenguaje, no el contenido: cifras con su unidad exacta, sexo, peso/talla, todos los temas cubiertos, sin inventar nada ni recortar lo ya escrito.' :
         sencillo ? '2. ESTILO: TÉCNICO EN SALUD COMUNITARIA (regla crítica, SUSTITUYE cualquier idea de redacción técnica formal): redacta con el registro profesional de un promotor o técnico de salud comunitaria que documenta su visita: lenguaje claro, preciso y ordenado, comprensible para el equipo de salud y la comunidad, pero SIN sonar coloquial, infantil ni simplista (sin diminutivos ni expresiones de plática). Usa pretérito simple y tercera persona; nunca paciente ni el equipo de salud. Usa con naturalidad los términos propios del primer nivel de atención, que NO se simplifican: hipertensión arterial, diabetes, control prenatal, signos de peligro, esquema de vacunación, lactancia materna, desnutrición, deshidratación, consejería, seguimiento, referencia al establecimiento de salud, usuario o usuaria, vivienda, grupo familiar. Solo reemplaza el vocabulario clínico especializado u hospitalario por su equivalente claro: sintomatología → síntomas; cefalea → dolor de cabeza; disnea → dificultad para respirar; edema → hinchazón; hiperglucemia → glucosa elevada; adherencia al tratamiento → cumplimiento del tratamiento; cuadro clínico → situación de salud. Si usas un término poco común, aclara brevemente entre paréntesis. Explica los riesgos de forma directa (ej. riesgo de complicaciones). Para el ACUERDO usa fórmulas como Acuerdo: ..., Se acordó que..., La persona se comprometió a..., Se estableció el compromiso de.... Solo cambia el REGISTRO del lenguaje, no el contenido: TODAS las demás reglas siguen vigentes y las cifras (140/90, kg, cm, semanas, fechas) se conservan exactas.' :
         '2. Redacción técnica formal (pretérito perfecto impersonal). Evita usar "paciente" como sustantivo por defecto (usa "la persona", "el usuario", "el señor"/"la señora", "el niño"/"la niña"). Nunca "el equipo de salud" ni "el personal de salud".',
         '3. INICIO FIJO POR PERSONA (no negociable): cada persona tiene asignado su propio inicio para Hallazgos y para Acciones (ver lista de personas abajo). Úsalo literalmente al comenzar esa columna para esa persona; distintas personas ya tienen distintos inicios asignados, así que el resultado tendrá variedad automáticamente.',
@@ -12034,8 +12047,8 @@ Notas (Acciones ya escritas): ${accion || '—'}
       var nivelSel = document.getElementById('rep-nivel-ia');
       var nivel = nivelSel ? nivelSel.value : 'balanceado';
       var estilo = _repEstiloActual();
-      var _listaApH = estilo === 'sencillo' ? _repAperturasHallazgosSencillo : _repAperturasHallazgos;
-      var _listaApA = estilo === 'sencillo' ? _repAperturasAccionesSencillo : _repAperturasAcciones;
+      var _listaApH = estilo !== 'tecnico' ? _repAperturasHallazgosSencillo : _repAperturasHallazgos;
+      var _listaApA = estilo !== 'tecnico' ? _repAperturasAccionesSencillo : _repAperturasAcciones;
 
       var btn = document.getElementById('btn-magic-tabla');
       var btnTexto = document.getElementById('btn-magic-tabla-texto');
