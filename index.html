@@ -1896,7 +1896,11 @@ function sisMasterAlternar(){
     });
     return p.then(function () { ocupado = false; return true; });
   }
-  window.siscRecalcularAlertas = function () { return recalcular(); };
+  window.siscRecalcularAlertas = function () {
+    var sub = document.getElementById('siscAhSub'), card = document.getElementById('siscAhCard');
+    if (sub && card && !ocupado) { card.classList.remove('hay'); sub.textContent = 'Calculando alertas…'; }
+    return recalcular().then(resumen);
+  };
 
   function total() { var n = 0; META.forEach(function (m) { var a = estado.apps[m.f]; if (a) n += a.items.length; }); return n; }
   function sinDatos() { return META.some(function (m) { return !estado.apps[m.f]; }); }
