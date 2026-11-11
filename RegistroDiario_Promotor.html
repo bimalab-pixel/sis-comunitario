@@ -556,6 +556,60 @@
         /* ══════════════ MODAL ══════════════ */
         .modal-bg{display:none;position:fixed;inset:0;background:rgba(10,20,40,.52);z-index:900;align-items:center;justify-content:center;padding:1rem;}
         .modal-bg.show{display:flex}
+        /* Ficha de Vigilancia Materna (solo lectura) dentro de Registro Diario */
+        .vm-ficha-btn{display:none;align-items:center;gap:.4rem;margin-top:.45rem;padding:.42rem .85rem;border-radius:999px;border:1.5px solid var(--teal);background:var(--light);color:var(--navy2);font-weight:700;font-size:.78rem;line-height:1.1;cursor:pointer}
+        .vm-ficha-btn:active{transform:scale(.97)}
+        .vmf-card{margin:0 0 .2rem}
+        .vmf-head{padding:1rem 1.1rem .8rem;color:#fff}
+        .vmf-head.emb{background:linear-gradient(135deg,#6a1b9a,#8e24aa)}
+        .vmf-head.puer{background:linear-gradient(135deg,#ad1457,#d81b60)}
+        .vmf-head h3{margin:0;font-size:1.1rem;color:#fff}
+        .vmf-head small{opacity:.9}
+        .vmf-badge{display:inline-block;margin-top:.35rem;background:rgba(255,255,255,.22);border-radius:999px;padding:.15rem .6rem;font-size:.72rem;font-weight:700}
+        .vmf-body{padding:.9rem 1.1rem 1rem}
+        .vmf-big{background:var(--light);border:1.5px solid var(--border);border-radius:12px;padding:.7rem .9rem;text-align:center;margin-bottom:.7rem}
+        .vmf-big.alerta{background:#fdecea;border-color:#e57373}
+        .vmf-big .l{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+        .vmf-big .g{display:block;font-size:1.55rem;font-weight:800;color:var(--navy)}
+        .vmf-big .s{display:block;font-size:.8rem;color:var(--muted)}
+        .vmf-grid{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.7rem}
+        .vmf-it{background:#fafafa;border:1px solid #e6ecea;border-radius:9px;padding:.4rem .55rem}
+        .vmf-it>span{display:block;font-size:.64rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+        .vmf-it b{display:block;font-size:.86rem;color:var(--text);word-break:break-word}
+        .vmf-it.full{grid-column:1/-1}
+        .vmf-t{margin:.8rem 0 .4rem;font-size:.82rem;font-weight:800;color:var(--navy2)}
+        .vmf-nota{border-left:3px solid var(--teal2);background:#f6fbf9;border-radius:6px;padding:.4rem .6rem;margin-bottom:.4rem}
+        .vmf-nota p{margin:0;font-size:.82rem;white-space:pre-wrap;color:var(--text)}
+        .vmf-nota .f{font-weight:700;font-size:.74rem;color:#3f51b5;margin-bottom:.15rem}
+        .vmf-foot{font-size:.72rem;color:var(--muted);text-align:center;margin-top:.6rem}
+        .vm-ficha-btn{margin-right:.4rem}
+        /* Historia clínica (visitas de Registro Diario) */
+        .vmf-head.hist{background:linear-gradient(135deg,var(--navy) 0%,var(--teal) 100%)}
+        #vm-hist-cuerpo .vmf-head h3{color:#fff!important;font-family:inherit;margin:0 0 .2rem}
+        .vmh-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem;margin-bottom:.7rem}
+        .vmh-stat{background:var(--light);border:1.5px solid var(--border);border-radius:11px;padding:.5rem .3rem;text-align:center}
+        .vmh-stat b{display:block;font-size:1.15rem;color:var(--navy)}
+        .vmh-stat span{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+        .vmh-chip{display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:#f3e5f5;border:1px solid #ce93d8;color:#6a1b9a;border-radius:10px;padding:.45rem .65rem;font-size:.8rem;font-weight:700;margin-bottom:.7rem}
+        .vmh-chip button{border:0;background:#8e24aa;color:#fff;border-radius:999px;padding:.3rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer}
+        .vmh-tabla-wrap{overflow-x:auto;border:1px solid #e0ebe7;border-radius:10px}
+        .vmh-tabla{border-collapse:collapse;width:100%;font-size:.76rem;min-width:100%}
+        .vmh-tabla th{background:var(--light2);color:var(--navy2);font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;padding:.4rem .5rem;text-align:center;white-space:nowrap}
+        .vmh-tabla td{padding:.38rem .5rem;text-align:center;border-top:1px solid #edf3f1;white-space:nowrap;color:var(--text)}
+        .vmh-tabla td:first-child,.vmh-tabla th:first-child{text-align:left;position:sticky;left:0;background:#fff}
+        .vmh-tabla th:first-child{background:var(--light2)}
+        .vmh-tend{font-size:.76rem;color:var(--muted);margin-top:.4rem}
+        .vmh-linea{position:relative;margin-left:.55rem;padding-left:.9rem;border-left:2px solid var(--border)}
+        .vmh-visita{position:relative;background:#fff;border:1px solid #e0ebe7;border-radius:11px;padding:.55rem .7rem;margin-bottom:.6rem;box-shadow:var(--shadow-sm)}
+        .vmh-visita::before{content:'';position:absolute;left:-1.34rem;top:.8rem;width:.7rem;height:.7rem;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 0 0 2px var(--border)}
+        .vmh-vh{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .5rem;margin-bottom:.3rem}
+        .vmh-vh .f{font-weight:800;font-size:.84rem;color:var(--navy)}
+        .vmh-vh .m{font-size:.7rem;color:var(--muted)}
+        .vmh-tag{font-size:.62rem;font-weight:800;border-radius:999px;padding:.1rem .5rem;background:var(--teal);color:#fff}
+        .vmh-tag.old{background:#78909c}
+        .vmh-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--teal);margin:.35rem 0 .1rem}
+        .vmh-txt{margin:0;font-size:.82rem;white-space:pre-wrap;color:var(--text)}
+        .vmh-mas{display:block;width:100%;margin:.2rem 0 .6rem;padding:.55rem;border:1.5px dashed var(--teal);background:var(--light);color:var(--navy2);border-radius:10px;font-weight:700;font-size:.8rem;cursor:pointer}
         .modal-box{background:var(--white);border-radius:var(--radius);padding:1.6rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(10,20,40,.28);animation:fadeIn .22s ease;max-height:90vh;overflow-y:auto;}
         .modal-box h3{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--navy);margin-bottom:.4rem}
         .modal-box p{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.55}
@@ -1754,6 +1808,8 @@
                     <div class="f-group sp">
                         <label>Nombre del Usuario *</label>
                         <input type="text" id="r-nombre" placeholder="Nombre completo de la persona visitada"/>
+                        <button type="button" id="vm-btn-ficha" class="vm-ficha-btn" onclick="vmAbrirFicha()"></button>
+                        <button type="button" id="vm-btn-historia" class="vm-ficha-btn" onclick="vmAbrirHistoria()"></button>
                     </div>
                     <div class="f-group sp">
                         <div class="lbl-row">
@@ -2812,6 +2868,24 @@
 <!-- ════════════════════════════
      MODAL: SIGUIENTE ACCIÓN
 ════════════════════════════ -->
+<div class="modal-bg" id="modal-vm-hist" onclick="if(event.target===this)vmCerrarHistoria()">
+  <div class="modal-box" style="max-width:440px;padding:0;overflow:hidden;border-radius:16px;max-height:92vh;display:flex;flex-direction:column;">
+    <div id="vm-hist-cuerpo" style="overflow-y:auto;flex:1;"></div>
+    <div style="padding:.65rem 1rem;border-top:1px solid var(--border);background:#fff;">
+      <button type="button" onclick="vmCerrarHistoria()" style="width:100%;padding:.7rem;border:0;border-radius:10px;background:var(--teal);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-vm-ficha" onclick="if(event.target===this)vmCerrarFicha()">
+  <div class="modal-box" style="max-width:420px;padding:0;overflow:hidden;border-radius:16px;max-height:90vh;display:flex;flex-direction:column;">
+    <div id="vm-ficha-cuerpo" style="overflow-y:auto;flex:1;"></div>
+    <div style="padding:.65rem 1rem;border-top:1px solid var(--border);background:#fff;">
+      <button type="button" onclick="vmCerrarFicha()" style="width:100%;padding:.7rem;border:0;border-radius:10px;background:var(--teal);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-siguiente">
   <div class="modal-box" style="max-width:360px;padding:0;overflow:hidden;border-radius:16px;">
     <!-- Header -->
@@ -7181,6 +7255,234 @@ Nombre: ${nombre || 'No especificado'} | Edad: ${edad || 'No especificada'} | No
         document.getElementById('modal-siguiente').classList.add('show');
       }
     }
+
+    // ── Ficha clínica de Vigilancia Materna (solo lectura) ─────────────────────
+    // Si el nombre del formulario coincide EXACTO (sin mayúsculas ni tildes) con una embarazada o
+    // puérpera de Vigilancia Materna, aparece un botoncito bajo el nombre que abre su ficha.
+    // Solo lee ('embarazadas' y 'puerperas' del almacenamiento compartido); no modifica nada.
+    function _vmEsc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function _vmFechaLocal(iso) {
+      const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    }
+    function _vmFmt(d) {
+      return d ? String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear() : 'No registrada';
+    }
+    function _vmHoy() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+    function _vmDifDias(a, b) { return Math.round((b.getTime() - a.getTime()) / 86400000); }
+    function _vmMasDias(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+    function _vmLeer(k) {
+      try { const l = JSON.parse(localStorage.getItem(k) || 'null'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+    }
+    function _vmBuscarFichas(nombre) {
+      const n = _vmNorm(nombre);
+      if (!n) return [];
+      const out = [];
+      [['embarazadas', 'embarazada'], ['puerperas', 'puerpera']].forEach(([k, tipo]) => {
+        _vmLeer(k).forEach(p => { if (p && _vmNorm(p.nombre) === n) out.push({ tipo, p }); });
+      });
+      return out;
+    }
+    function _vmIt(l, v, full) {
+      return '<div class="vmf-it' + (full ? ' full' : '') + '"><span>' + l + '</span><b>' + v + '</b></div>';
+    }
+    function _vmNotaFecha(n) {
+      const m = String((n && n.fecha) || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : 0;
+    }
+    function _vmFichaHTML(f) {
+      const p = f.p, hoy = _vmHoy(), emb = f.tipo === 'embarazada';
+      const aborto = !emb && p.tipoEvento === 'aborto';
+      const fn = _vmFechaLocal(p.fecha_nacimiento);
+      let edad = 'N/A';
+      if (fn) {
+        let e = hoy.getFullYear() - fn.getFullYear();
+        if (hoy.getMonth() < fn.getMonth() || (hoy.getMonth() === fn.getMonth() && hoy.getDate() < fn.getDate())) e--;
+        edad = e + ' años';
+      }
+      let h = '<div class="vmf-card"><div class="vmf-head ' + (emb ? 'emb' : 'puer') + '">' +
+        '<h3>' + _vmEsc(p.nombre) + '</h3><small>Exp: ' + _vmEsc(p.expediente || 'No registrado') + '</small><br>' +
+        '<span class="vmf-badge">' + (emb ? '🤰 Embarazada' : '🤱 Puérpera' + (aborto ? ' · Aborto' : '')) + '</span></div><div class="vmf-body">';
+
+      if (emb) {
+        const fur = _vmFechaLocal(p.fur);
+        if (fur) {
+          const dias = Math.max(0, _vmDifDias(fur, hoy)), rest = 280 - dias;
+          h += '<div class="vmf-big' + (rest <= 0 ? ' alerta' : '') + '"><span class="l">Edad gestacional actual</span><span class="g">' +
+            Math.floor(dias / 7) + ' sem + ' + (dias % 7) + ' d</span><span class="s">' +
+            (rest <= 0 ? '⚠️ Parto completado o post-término' : 'FPP estimada en ' + Math.ceil(rest / 7) + ' semanas') + '</span></div>';
+          h += '<div class="vmf-grid">' + _vmIt('📅 FUR', _vmFmt(fur)) + _vmIt('🏁 Fecha probable de parto', _vmFmt(_vmMasDias(fur, 280))) + '</div>';
+        }
+      } else {
+        const fp = _vmFechaLocal(p.fp);
+        if (fp) {
+          const dias = _vmDifDias(fp, hoy), rest = 42 - dias;
+          h += '<div class="vmf-big' + (rest <= 0 ? ' alerta' : '') + '"><span class="l">Progreso del puerperio</span><span class="g">' + dias +
+            ' días</span><span class="s">' + (rest <= 0 ? 'Puerperio finalizado hace ' + Math.abs(rest) + ' días' : 'Faltan ' + rest + ' días para el alta') + '</span></div>';
+          h += '<div class="vmf-grid">' + _vmIt('🤱 Fecha de ' + (aborto ? 'aborto' : 'parto'), _vmFmt(fp)) + _vmIt('🏁 Fin de puerperio (42 d)', _vmFmt(_vmMasDias(fp, 42))) + '</div>';
+        }
+      }
+
+      const riesgo = p.riesgo_obstetrico === 'si' ? '<span style="color:#c62828">⚠️ SÍ — ' + _vmEsc(p.tipo_riesgo || 'No especificado') + '</span>' : '<span style="color:#2e7d32">No</span>';
+      h += '<div class="vmf-grid">' +
+        _vmIt('Edad', _vmEsc(edad)) + _vmIt('Fecha de nacimiento', _vmFmt(fn)) +
+        _vmIt('Dirección', _vmEsc(p.direccion || 'No especificada'), true) +
+        (p.viv_num ? _vmIt('🏠 N° de vivienda', _vmEsc(p.viv_num)) : '') +
+        _vmIt('🩸 Grupo sanguíneo', _vmEsc(p.grupo_sanguineo || 'No registrado')) +
+        _vmIt('⚠️ Riesgo obstétrico', riesgo, true) + '</div>';
+
+      if (emb) {
+        const v = p.vacunas || {}, vf = d => d ? 'Aplicada ' + _vmFmt(_vmFechaLocal(d)) : 'Pendiente';
+        h += '<div class="vmf-t">💉 Esquema de vacunación</div><div class="vmf-grid">' +
+          _vmIt('Influenza', vf(v.influenza)) + _vmIt('DTPa', vf(v.dtpa)) + _vmIt('DT adulto', vf(v.dtadulto)) + _vmIt('VRS', vf(v.vrs)) + '</div>';
+      } else {
+        const fp = _vmFechaLocal(p.fp);
+        if (fp) {
+          h += '<div class="vmf-t">🗓️ Calendario de seguimiento</div><div class="vmf-grid">' +
+            [['Detección (24 h)', 1], ['Control 3 días', 3], ['Control 7 días', 7], ['Control 15 días', 15], ['Control 28 días', 28]]
+              .map(([l, d]) => _vmIt(l, _vmFmt(_vmMasDias(fp, d)))).join('') + '</div>';
+        }
+      }
+
+      const hist = p.historial_embarazo || {};
+      const gpa = k => (p[k] !== undefined && p[k] !== null && p[k] !== '') ? p[k] : (hist[k] !== undefined ? hist[k] : '-');
+      h += '<div class="vmf-t">🤰 Antecedentes obstétricos</div><div class="vmf-grid" style="grid-template-columns:repeat(3,1fr)">' +
+        _vmIt('Embarazos', _vmEsc(gpa('embarazos_anteriores'))) + _vmIt('Partos', _vmEsc(gpa('partos_anteriores'))) + _vmIt('Abortos', _vmEsc(gpa('abortos_anteriores'))) + '</div>';
+
+      const notas = Array.isArray(p.notas) ? p.notas.slice().sort((a, b) => _vmNotaFecha(b) - _vmNotaFecha(a)) : [];
+      h += '<div class="vmf-t">📝 Notas clínicas (' + notas.length + ')' + (notas.length > 6 ? ' — últimas 6' : '') + '</div>';
+      if (!notas.length) h += '<div class="vmf-foot" style="text-align:left">No hay notas registradas.</div>';
+      notas.slice(0, 6).forEach(n => {
+        h += '<div class="vmf-nota"><div class="f">' + _vmEsc(String(n.fecha || '').split(',')[0]) + (n.etapa ? ' · ' + _vmEsc(n.etapa) : '') + '</div><p>' + _vmEsc(n.texto) + '</p></div>';
+      });
+      return h + '<div class="vmf-foot">Solo lectura. Para editar la ficha, abre Vigilancia Materna.</div></div></div>';
+    }
+    function vmAbrirFicha() {
+      const fichas = _vmBuscarFichas(document.getElementById('r-nombre').value);
+      if (!fichas.length) { toast('No se encontró la ficha en Vigilancia Materna', 'error'); return; }
+      document.getElementById('vm-ficha-cuerpo').innerHTML = fichas.map(_vmFichaHTML).join('');
+      document.getElementById('modal-vm-ficha').classList.add('show');
+    }
+    function vmCerrarFicha() { document.getElementById('modal-vm-ficha').classList.remove('show'); }
+
+    // ── Historia clínica: todas las visitas guardadas de esa persona (nombre exacto) ──
+    function _vmVisitasDe(nombre) {
+      const n = _vmNorm(nombre);
+      if (!n) return [];
+      let lista;
+      try { lista = (typeof registros !== 'undefined' && Array.isArray(registros)) ? registros : _vmLeer('rdps_registros'); }
+      catch (e) { lista = _vmLeer('rdps_registros'); }
+      return lista.filter(r => r && _vmNorm(r.nombre) === n)
+        .sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')) || String(b.hora || '').localeCompare(String(a.hora || '')));
+    }
+    function _vmMedidas(r) {
+      let d = {};
+      try { d = _riesgoParsearNota(r.hallazgos || '', r.nombre || '') || {}; } catch (e) {}
+      const o = {};
+      if (d.pesoKg != null && d.pesoKg >= 0.5 && d.pesoKg <= 300) o.peso = d.pesoKg;
+      if (d.tallaCm != null && d.tallaCm >= 25 && d.tallaCm <= 250) o.talla = d.tallaCm;
+      if (d.paSistolica != null && d.paDiastolica != null) o.pa = d.paSistolica + '/' + d.paDiastolica;
+      if (d.hbGdl != null) o.hb = d.hbGdl;
+      if (d.glucosaMgDl != null) o.glu = d.glucosaMgDl;
+      if (d.temperaturaC != null) o.temp = d.temperaturaC;
+      if (d.fcLpm != null) o.fc = d.fcLpm;
+      if (d.frRpm != null) o.fr = d.frRpm;
+      return o;
+    }
+    function _vmHistoriaHTML(vis, nombre) {
+      const ult = vis[0], pri = vis[vis.length - 1];
+      const fd = r => _vmFmt(_vmFechaLocal(r.fecha));
+      let h = '<div class="vmf-card"><div class="vmf-head hist"><h3>' + _vmEsc(ult.nombre || nombre) + '</h3>' +
+        '<small>Edad: ' + _vmEsc(ult.edad || 'No registrada') + (ult.vivienda ? ' · Vivienda ' + _vmEsc(ult.vivienda) : '') + '</small><br>' +
+        '<span class="vmf-badge">📋 Historia clínica</span></div><div class="vmf-body">';
+      h += '<div class="vmh-stats"><div class="vmh-stat"><b>' + vis.length + '</b><span>Visitas</span></div>' +
+        '<div class="vmh-stat"><b style="font-size:.88rem">' + fd(pri) + '</b><span>Primera</span></div>' +
+        '<div class="vmh-stat"><b style="font-size:.88rem">' + fd(ult) + '</b><span>Última</span></div></div>';
+
+      const mf = _vmBuscarFichas(nombre);
+      if (mf.length) {
+        const emb = mf.some(f => f.tipo === 'embarazada'), pu = mf.some(f => f.tipo === 'puerpera');
+        h += '<div class="vmh-chip"><span>' + (emb ? '🤰 Embarazada' : '') + (emb && pu ? ' · ' : '') + (pu ? '🤱 Puérpera' : '') +
+          ' en Vigilancia Materna</span><button type="button" onclick="vmCerrarHistoria();vmAbrirFicha()">Ver ficha</button></div>';
+      }
+
+      // Mediciones detectadas en los hallazgos
+      const filas = vis.map(r => ({ r, m: _vmMedidas(r) })).filter(x => Object.keys(x.m).length);
+      const cols = [['peso', 'Peso kg'], ['talla', 'Talla cm'], ['pa', 'PA'], ['hb', 'Hb'], ['glu', 'Glucosa'], ['temp', 'T °C'], ['fc', 'FC'], ['fr', 'FR']]
+        .filter(c => filas.some(x => x.m[c[0]] != null));
+      if (filas.length && cols.length) {
+        h += '<div class="vmf-t">📈 Mediciones registradas</div><div class="vmh-tabla-wrap"><table class="vmh-tabla"><thead><tr><th>Fecha</th>' +
+          cols.map(c => '<th>' + c[1] + '</th>').join('') + '</tr></thead><tbody>' +
+          filas.map(x => '<tr><td>' + fd(x.r) + '</td>' + cols.map(c => '<td>' + (x.m[c[0]] != null ? _vmEsc(x.m[c[0]]) : '—') + '</td>').join('') + '</tr>').join('') +
+          '</tbody></table></div>';
+        const cp = filas.filter(x => x.m.peso != null);
+        if (cp.length >= 2) {
+          const nuevo = cp[0], viejo = cp[cp.length - 1], dif = Math.round((nuevo.m.peso - viejo.m.peso) * 10) / 10;
+          h += '<div class="vmh-tend">⚖️ Peso: ' + (dif > 0 ? '+' : '') + dif + ' kg desde el ' + fd(viejo.r) + ' (' + viejo.m.peso + ' → ' + nuevo.m.peso + ' kg)</div>';
+        }
+        const ct = filas.filter(x => x.m.talla != null);
+        if (ct.length >= 2) {
+          const dif = Math.round((ct[0].m.talla - ct[ct.length - 1].m.talla) * 10) / 10;
+          h += '<div class="vmh-tend">📏 Talla: ' + (dif > 0 ? '+' : '') + dif + ' cm desde el ' + fd(ct[ct.length - 1].r) + '</div>';
+        }
+      }
+
+      // Línea de tiempo (más reciente primero)
+      h += '<div class="vmf-t">🗓️ Visitas (de la más reciente a la más antigua)</div><div class="vmh-linea">';
+      const visita = (r, i) => '<div class="vmh-visita"><div class="vmh-vh"><span class="f">' + fd(r) + '</span>' +
+        (r.hora ? '<span class="m">' + _vmEsc(r.hora) + '</span>' : '') +
+        (r.edad ? '<span class="m">· ' + _vmEsc(r.edad) + '</span>' : '') +
+        (r.vivienda ? '<span class="m">· Viv. ' + _vmEsc(r.vivienda) + '</span>' : '') +
+        (i === 0 ? '<span class="vmh-tag">Última</span>' : (i === vis.length - 1 ? '<span class="vmh-tag old">Primera</span>' : '')) + '</div>' +
+        (r.hallazgos ? '<div class="vmh-lbl">Hallazgos</div><p class="vmh-txt">' + _vmEsc(r.hallazgos) + '</p>' : '') +
+        (r.acciones ? '<div class="vmh-lbl">Acciones ejecutadas</div><p class="vmh-txt">' + _vmEsc(r.acciones) + '</p>' : '') +
+        (!r.hallazgos && !r.acciones ? '<p class="vmh-txt" style="color:var(--muted)">Sin detalle registrado.</p>' : '') + '</div>';
+      const LIM = 8;
+      h += vis.slice(0, LIM).map((r, i) => visita(r, i)).join('');
+      if (vis.length > LIM) {
+        h += '<button type="button" class="vmh-mas" id="vmh-btn-mas" onclick="document.getElementById(\'vmh-mas\').style.display=\'block\';this.style.display=\'none\'">Mostrar las ' + (vis.length - LIM) + ' visitas anteriores</button>' +
+          '<div id="vmh-mas" style="display:none">' + vis.slice(LIM).map((r, i) => visita(r, i + LIM)).join('') + '</div>';
+      }
+      h += '</div><div class="vmf-foot">Solo lectura. Se arma con las visitas guardadas en este dispositivo para este nombre exacto.</div></div></div>';
+      return h;
+    }
+    function vmAbrirHistoria() {
+      const nombre = document.getElementById('r-nombre').value;
+      const vis = _vmVisitasDe(nombre);
+      if (!vis.length) { toast('Esta persona aún no tiene visitas guardadas', 'error'); return; }
+      document.getElementById('vm-hist-cuerpo').innerHTML = _vmHistoriaHTML(vis, nombre);
+      document.getElementById('modal-vm-hist').classList.add('show');
+    }
+    function vmCerrarHistoria() { document.getElementById('modal-vm-hist').classList.remove('show'); }
+
+    // Los botones aparecen solo si el nombre coincide con una embarazada/puérpera (ficha) o con visitas ya
+    // guardadas (historia). Se revisa mientras se escribe y también cuando el nombre se rellena solo
+    // (selector de paciente, editar un registro, limpiar...) o cambia el total de visitas guardadas.
+    let _vmUltimaFirma = null;
+    function vmRefrescarBotonFicha() {
+      const inp = document.getElementById('r-nombre'), b = document.getElementById('vm-btn-ficha'), bh = document.getElementById('vm-btn-historia');
+      if (!inp || !b) return;
+      const v = inp.value;
+      let total = 0;
+      try { total = (typeof registros !== 'undefined' && Array.isArray(registros)) ? registros.length : 0; } catch (e) {}
+      const firma = v + '|' + total;
+      if (firma === _vmUltimaFirma) return;
+      _vmUltimaFirma = firma;
+      const fs = _vmBuscarFichas(v);
+      if (!fs.length) b.style.display = 'none';
+      else {
+        b.textContent = fs.length > 1 ? '📋 Ver ficha clínica (' + fs.length + ')' : (fs[0].tipo === 'embarazada' ? '🤰 Ver ficha de embarazada' : '🤱 Ver ficha de puérpera');
+        b.style.display = 'inline-flex';
+      }
+      if (bh) {
+        const n = _vmVisitasDe(v).length;
+        if (!n) bh.style.display = 'none';
+        else { bh.textContent = '📋 Historia clínica (' + n + (n === 1 ? ' visita)' : ' visitas)'); bh.style.display = 'inline-flex'; }
+      }
+    }
+    setInterval(vmRefrescarBotonFicha, 500);
 
     // ── Nota clínica automática en Vigilancia Materna ──────────────────────────
     // Al guardar una visita, si la persona ya está en Vigilancia Materna (coincidencia EXACTA
